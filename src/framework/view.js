@@ -8,6 +8,7 @@ import {
     Matrix4,
     Group,
     OrthographicCamera,
+    PerspectiveCamera,
     Vector2,
     LineMeshMaterial,
     LineGeometry,
@@ -16,8 +17,13 @@ import {
     TrianglesDrawMode,
     Texture,
     Sprite,
+    TextSprite,
     SpriteMaterial,
-    RepeatWrapping
+    RepeatWrapping,
+    LinearFilter,
+    Math as _Math,
+    Color
+
 
 } from "mmgl/src/index"
 
@@ -37,6 +43,14 @@ class View {
         this.width = 0;
         this.height = 0;
 
+        this.aspect = 1;
+        this.fov = 75;
+        this.near = 1;
+        this.far = 1000;
+        this.mode = null;
+
+        //todo:相机变化需要派发事件出来
+
     }
 
     setSize(width, height) {
@@ -44,7 +58,9 @@ class View {
         this.height = height;
 
         this.renderer.setPixelRatio(window.devicePixelRatio || 1);
-        this.renderer.setSize(width, height, true);
+        this.renderer.setSize(width, height);
+
+
     }
 
     setBackground(color) {
@@ -72,15 +88,65 @@ class View {
     //mode: "ortho" || "perspective"    
     project(aspect, frustumSize, mode) {
 
-        //渲染Label的时候使用正交投影,这样相机位置变化了,label大小不变
+        this.aspect = aspect;
+        this.mode = mode;
 
         if (mode === 'perspective') {
+            this._camera = new PerspectiveCamera(this.fov, this.aspect, this.near, this.far);
+            //默认绘制的物体是贴近近裁面的,根据近裁面呈现高度为frustumSize的物体需要相机位置
+            //let centerPosition = new Vector3(0, 0, (this.far - this.near)/2);
+
+           
+
+            let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+
+            var dist = frustumSize / (2 * Math.tan(vFOV / 2));
+            this._camera.position.set(0, 0, dist);
+
 
         } else {
             //给定一个大的投影空间,方便数据的计算
-            this._camera = new OrthographicCamera(frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, -1, 10000);
-            this._camera.position.set(0, 0, 130);
+            this._camera = new OrthographicCamera(frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
+            this._camera.position.set(0, 0, 20);
         }
+
+        // this._camera.rotateX(_Math.degToRad(10));
+        // this._camera.rotateY(_Math.degToRad(15));
+
+        console.info("getVisableSize", this.getVisableSize());
+
+    }
+
+    getVisableSize(z) {
+        z = z || this.near;
+
+        let result = { width: 0, height: 0, ratio: 0 };
+
+        if (this.mode == "ortho") {
+            result.width = Math.round(this._camera.right - this._camera.left);
+            result.height = Math.round(this._camera.top - this._camera.bottom);
+
+        }
+
+        if (this.mode == "perspective") {
+            let currPosition = new Vector3(0, 0, z);
+            let cameraPosition = this._camera.position.clone();
+            let dist = cameraPosition.distanceTo(currPosition);
+            let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+            let height = 2 * Math.tan(vFOV / 2) * dist;
+
+            result.width = height * this.aspect;
+            result.height = height;
+
+
+        }
+        if (this.width != 0) {
+            result.ratio = result.width / this.width;
+        }
+
+
+
+        return result;
 
     }
 
@@ -179,7 +245,7 @@ class View {
         let maxHeight = -Infinity;
         //todo  模糊需要解决
         //label高度
-        let spriteHeight = 12 * 4;
+        let spriteHeight = 14 * 4;
 
         fontStyle = {
             enabled: 1,
@@ -211,6 +277,8 @@ class View {
             texture.image = renderFont.canvas;
             texture.wrapS = RepeatWrapping;
             texture.wrapT = RepeatWrapping;
+            texture.minFilter = LinearFilter;
+            texture.magFilter = LinearFilter;
 
             texture.repeat.set(1 / texts.length, 1);
             texture.offset.set(index / texts.length, 0);
@@ -233,6 +301,30 @@ class View {
         return textGroup;
 
     }
+
+    createTextSprite(text, fontSize, color) {
+        let group = new Group();
+        let sprite = new TextSprite({
+            fontSize: fontSize,
+            texture: {  //纹理中需要的文字大小不需要指定,TextSprite会自动计算
+                padding: 0,
+                text: text,
+                fontFamily: 'SimHei, Arial, Helvetica, sans-serif',
+            },
+            material: {
+                color: color || 0x333333,
+                transparent: true
+            }
+        });
+        group.add(sprite);
+        return group;
+    }
+
+    getObjectScale(object) {
+        const objectWorldScale = new Vector3();
+        return object.getWorldScale(objectWorldScale);
+    }
+
 
 
 

@@ -114,8 +114,6 @@ var Chartx3d = {
 
         chart.setCoord(Coord);
 
-        chart.init();
-
         for (var p in components) {
             chart.addComponent(components[p]);
         }
@@ -125,6 +123,7 @@ var Chartx3d = {
 
         //chart = new Coord(el, data, opts, graphs, components);
         if (chart) {
+
             chart.draw();
 
             me.instances[chart.id] = chart;

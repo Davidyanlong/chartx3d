@@ -7,7 +7,7 @@ class RenderFont {
         this.scale = params.scale || window.devicePixelRatio || 1;
         this.style = {
             color: params.color || new Color('#000'),
-            fontSize: params.fontSize || 12,
+            fontSize: params.fontSize || 14,
             fontFamily: params.fontFamily || '微软雅黑,sans-serif',
             isBold: params.isBold || false,
             textAlign: params.textAlign || 'top',
@@ -68,8 +68,7 @@ class RenderFont {
         me.context.textAlign = me.style.textAlign;
         me.context.textBaseline = me.style.textBaseline;
         me.context.webkitImageSmoothingEnabled = true;
-
-        me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
+        me.context.font = me.style.isBold ? 'bold ' : 'normal ' + (me.style.fontSize * me.scale * 4) + 'px ' + me.style.fontFamily;
         // var offset = 0.8;
         // me.context.fillStyle = "#222222";
         // me.context.fillText(text, left - offset, top - offset);
@@ -149,18 +148,19 @@ class RenderFont {
             me.context.webkitImageSmoothingEnabled = true;
 
             me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
-            // var offset = 0.8;
-            // me.context.fillStyle = "#222222";
+            // var offset = 0.1;
+            // me.context.fillStyle = "#222";
             // me.context.fillText(text, left - offset, top - offset);
-            // me.context.fillStyle = "#222222";
+            // me.context.fillStyle = "#222";
             // me.context.fillText(text, left + offset, top - offset);
-            // me.context.fillStyle = "#222222";
+            // me.context.fillStyle = "#222";
             // me.context.fillText(text, left - offset, top + offset);
-            // me.context.fillStyle = "#222222";
+            // me.context.fillStyle = "#222";
             // me.context.fillText(text, left + offset, top + offset);
             me.context.fillStyle = "#" + me.style.color.getHexString();
 
-            me.context.fillText(text, left* this.scale, top*this.scale);
+            //me.context.fillText(text, left * this.scale, top*this.scale);
+            me.context.fillText(text, left , top);
 
             window._debug = true;
             if (window._debug) {
@@ -186,11 +186,16 @@ class RenderFont {
         let width = size.width;//_Math.ceilPowerOfTwo(size.width);
         let height = size.height;//_Math.ceilPowerOfTwo(size.height);
 
-        me.canvas.style.width = width + 'px';
-        me.canvas.style.height = height + 'px';
+       
 
         me.canvas.width = width * this.scale;
         me.canvas.height = height * this.scale;
+
+        me.canvas.style.width = width + 'px';
+        me.canvas.style.height = height + 'px';
+
+        me.context.scale( this.scale, this.scale);
+
 
         this.textureWidth = width;
         this.textureHeight = height;
@@ -211,7 +216,8 @@ class RenderFont {
         div.style.left = '-9999px';
         div.style.fontFamily = this.style.fontFamily;
         div.style.fontWeight = this.style.isBold ? 'bold' : 'normal';
-        div.style.fontSize = this.style.fontSize * 1 + 'px'; // or 'px'
+        div.style.fontSize = this.style.fontSize  + 'px'; // or 'px'
+
         document.body.appendChild(div);
         size = {
             width: div.offsetWidth,

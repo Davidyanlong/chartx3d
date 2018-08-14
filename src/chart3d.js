@@ -12,17 +12,22 @@ let _cid = 0;
 class Chart3d extends Events {
     constructor(opt) {
         super();
+
         this.el = null;
         this.opt = opt;
+
         this.view = null;
-        this.stageView = null;
         this.domView = null;
-        this.canvasDom = null;
-        this.width = 0;
-        this.height = 0;
+        this.stageView = null;
+
+        this.canvasDom = null;   //画布DOM元素
+
+        this.width = 0;     //画布的宽
+        this.height = 0;    //画布的高 
+
         this.renderer = null;
         this.renderView = null;
-
+        this.app = null;
         this.currCoord = null;
 
 
@@ -39,23 +44,22 @@ class Chart3d extends Events {
         this._data = parse2MatrixData(opt.data);
 
         //三维引擎初始化
-        //初始化渲染器
+        this.app = new Application();
 
-        //宽高比
+
+        //初始化渲染器
+        this.renderer = this.app._framework.renderer;
+
+        //初始化相机
         this.aspect = this.height !== 0 ? this.width / this.height : 1;
+
 
         //投影空间的全高默认值
         this.frustumSize = 1000;
 
-        this._initRenderer();
 
 
 
-
-        //初始化相机
-
-        //默认正交投影
-        this.renderView.project(this.aspect, this.frustumSize, 'or');
 
         //初始化物体的惯性坐标(放在具体的坐标系下)
 
@@ -65,22 +69,29 @@ class Chart3d extends Events {
         this.components = [];
 
         this.inited = false;
-        this.dataFrame = this._initData(this._data); //每个图表的数据集合 都 存放在dataFrame中。
+        this.dataFrame = this._initData(this._data,opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
-        this.setCoord(Coord3d);
+        this.init();
 
 
     }
     init() {
-        this.startDraw();
+        this._initRenderer();
+
+        //默认正交投影
+        this.renderView.project(this.aspect, this.frustumSize, 'perspective'); //'ortho' | 'perspective',
+
+        this.setCoord(Coord3d);
+        //启动渲染进程
+        this.app.launch();
     }
     setCoord(coord) {
         if (coord === Coord3d || coord.prototype instanceof Coord3d) {
             this.currCoord = new coord(this);
             this.rootStage.add(this.currCoord.group);
         }
-        this.currCoord.drawCoordUI()
-
+        this.currCoord.initCoordUI();
+        this.currCoord.draw();
 
     }
     //添加组件
@@ -106,9 +117,6 @@ class Chart3d extends Events {
         this.draw();
     }
 
-    startDraw() {
-        this.app.render();
-    }
     draw() {
         this.app._framework.isUpdate = true;
     }
@@ -138,25 +146,30 @@ class Chart3d extends Events {
 
         this.id = "chartx_" + this._cid;
         this.el.setAttribute("chart_id", this.id);
-        this.el.setAttribute("chartx_version", "2.0");
+        this.el.setAttribute("chartx3d_version", "1.0");
     }
 
-    _initData(data) {
+    _initData(data,opt) {
 
-        return DataFrame.call(this, data);
+        return DataFrame.call(this, data,opt);
     }
 
     _initRenderer() {
-        let app = this.app = new Application();
-        this.renderer = app._framework.renderer;
-
+        let app = this.app;
+        let renderView = null;
         this.stageView.appendChild(this.renderer.domElement);
+
         this.canvasDom = this.renderer.domElement;
-        let renderView = this.renderView = app.view[0];
+
+        if (app.view.length > 0) { //默认使用第0个view
+            renderView = this.renderView = app.view[0];
+        }
+
+
         this.rootStage = renderView.addGroup({ name: 'rootStage' });
         renderView.addObject(this.rootStage);
         renderView.setSize(this.width, this.height);
-        renderView.setBackground(0xFFFFFF);
+       // renderView.setBackground(0xFFFFFF);
     }
     resize() {
         //todo 窗口大小发生变化
@@ -166,7 +179,10 @@ class Chart3d extends Events {
 
     }
 
-    resetData(){
+    resetData() {
+
+    }
+    destroy(){
         
     }
 }

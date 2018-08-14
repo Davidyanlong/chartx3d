@@ -473,6 +473,25 @@ var Chartx = (function () {
   }
 
   /**
+   * 数字千分位加','号
+   * @param  {[Number]} $n [数字]
+   * @param  {[type]} $s [千分位上的符号]
+   * @return {[String]}    [根据$s提供的值 对千分位进行分隔 并且小数点上自动加上'.'号  组合成字符串]
+   */
+  function numAddSymbol($n, $s) {
+      var s = Number($n);
+      var symbol = $s ? $s : ',';
+      if (!s) {
+          return String($n);
+      }    if (s >= 1000) {
+          var num = parseInt(s / 1000);
+          return String($n.toString().replace(num, num + symbol));
+      } else {
+          return String($n);
+      }
+  }
+
+  /**
    * @class Events 事件对象
    * @description 事件对象
    * @author bujue
@@ -559,7 +578,7 @@ var Chartx = (function () {
       }
   }
 
-  const REVISION = '0.0.1';
+  const REVISION = '0.0.10';
 
   //draw Line mode
   const LinesMode = 1;
@@ -2962,7 +2981,7 @@ var Chartx = (function () {
       }
 
       expandByObject(object) {
-          return expandByObject(object);
+          return expandByObject.call(this, object);
       }
 
       containsPoint(point) {
@@ -3064,11 +3083,11 @@ var Chartx = (function () {
       }
 
       distanceToPoint(point) {
-          return distanceToPoint(point);
+          return distanceToPoint.call(this,point);
       }
 
       getBoundingSphere(optionalTarget) {
-          return getBoundingSphere(optionalTarget);
+          return getBoundingSphere.call(this,optionalTarget);
       }
 
       intersect(box) {
@@ -8717,8 +8736,8 @@ var Chartx = (function () {
 
           }
 
-          _gl.texParameteri(textureType, _gl.TEXTURE_MAG_FILTER, filterFallback(texture.magFilter));
-          _gl.texParameteri(textureType, _gl.TEXTURE_MIN_FILTER, filterFallback(texture.minFilter));
+          _gl.texParameteri(textureType, _gl.TEXTURE_MAG_FILTER, filterFallback.call(this,texture.magFilter));
+          _gl.texParameteri(textureType, _gl.TEXTURE_MIN_FILTER, filterFallback.call(this,texture.minFilter));
 
           if (texture.minFilter !== NearestFilter && texture.minFilter !== LinearFilter) {
 
@@ -8736,7 +8755,7 @@ var Chartx = (function () {
 
   function filterFallback(f) {
 
-      let gl = this.gl;
+      let _gl = this.gl;
 
       if (f === NearestFilter || f === NearestMipMapNearestFilter || f === NearestMipMapLinearFilter) {
 
@@ -11439,12 +11458,13 @@ var Chartx = (function () {
           this.frustumCulled = true;
           this.renderOrder = 0;
 
-          //渲染前调用
-          this.onBeforeRender = function (renderer, scene, camera, geometry, material, group) { };
-          //渲染后调用
-          this.onAfterRender = function (renderer, scene, camera, geometry, material, group) { };
       }
-
+      onBeforeRender(renderer, scene, camera, geometry, material, group) {
+          //继承实现 渲染前调用
+      }
+      onAfterRender(renderer, scene, camera, geometry, material, group) {
+          //继承实现 渲染后调用
+      }
 
       applyMatrix(matrix) {
 
@@ -11546,9 +11566,6 @@ var Chartx = (function () {
 
       }
 
-      getWorldQuaternion(target) {
-          return getWorldQuaternion.call(this, target);
-      }
 
       updateMatrixWorld(force) {
 
@@ -11765,36 +11782,43 @@ var Chartx = (function () {
           let m1 = new Matrix4();
           return vector.applyMatrix4(m1.getInverse(this.matrixWorld));
       }
+      getWorldPosition(target) {
+
+          if (target === undefined) {
+
+              console.warn('Object3D: .getWorldPosition() target is now required');
+              target = new Vector3$1();
+
+          }
+
+          this.updateMatrixWorld(true);
+
+          return target.setFromMatrixPosition(this.matrixWorld);
+
+      }
+
+      getWorldQuaternion(target) {
+
+          return getWorldQuaternion.call(this, target)
+
+      }
+
+      getWorldScale(target) {
+
+          return getWorldScale.call(this, target)
+
+      }
+      getWorldDirection(target) {
+          return getWorldDirection.call(this, target);
+
+      }
+
       raycast() { }
 
   }
 
   Object3D.DefaultUp = new Vector3$1(0, 1, 0);
   Object3D.DefaultMatrixAutoUpdate = true;
-
-  let getWorldQuaternion = (function () {
-
-      let position = new Vector3$1();
-      let scale = new Vector3$1();
-
-      return function getWorldQuaternion(target) {
-
-          if (target === undefined) {
-
-              console.warn('Object3D: .getWorldQuaternion() target is now required');
-              target = new Quaternion();
-
-          }
-
-          this.updateMatrixWorld(true);
-
-          this.matrixWorld.decompose(position, target, scale);
-
-          return target;
-
-      };
-
-  })();
 
 
   let lookAt = (function () {
@@ -11827,6 +11851,77 @@ var Chartx = (function () {
           }
 
           this.quaternion.setFromRotationMatrix(m1);
+
+      };
+
+  })();
+
+
+  let getWorldQuaternion = (function () {
+
+      var position = new Vector3$1();
+      var scale = new Vector3$1();
+
+      return function getWorldQuaternion(target) {
+
+          if (target === undefined) {
+
+              console.warn('Object3D: .getWorldQuaternion() target is now required');
+              target = new Quaternion();
+
+          }
+
+          this.updateMatrixWorld(true);
+
+          this.matrixWorld.decompose(position, target, scale);
+
+          return target;
+
+      };
+
+  })();
+
+
+  let getWorldScale = (function () {
+
+      var position = new Vector3$1();
+      var quaternion = new Quaternion();
+
+      return function getWorldScale(target) {
+
+          if (target === undefined) {
+
+              console.warn('Object3D: .getWorldScale() target is now required');
+              target = new Vector3$1();
+
+          }
+
+          this.updateMatrixWorld(true);
+
+          this.matrixWorld.decompose(position, quaternion, target);
+
+          return target;
+
+      };
+
+  })();
+
+  let getWorldDirection = (function () {
+
+      var quaternion = new Quaternion();
+
+      return function getWorldDirection(target) {
+
+          if (target === undefined) {
+
+              console.warn('Object3D: .getWorldDirection() target is now required');
+              target = new Vector3$1();
+
+          }
+
+          this.getWorldQuaternion(quaternion);
+
+          return target.set(0, 0, 1).applyQuaternion(quaternion);
 
       };
 
@@ -13930,6 +14025,448 @@ var Chartx = (function () {
 
   }());
 
+  class TextTexture extends Texture {
+      constructor(
+          { autoRedraw = true,
+              text = '',
+              textAlign = 'center',
+              textLineHeight = 1.15,
+              fontFamily = 'sans-serif',
+              fontSize = 16,
+              fontWeight = 'normal',
+              fontVariant = 'normal',
+              fontStyle = 'normal',
+              fillStyle = 'white',
+              lineWidth = 0,
+              strokeStyle = 'black',
+              padding = 0.25,
+              magFilter = LinearFilter,
+              minFilter = LinearFilter,
+              mapping,
+              wrapS,
+              wrapT,
+              format,
+              type,
+              anisotropy } = {}) {
+
+          super(
+              createCanvas(),
+              mapping,
+              wrapS,
+              wrapT,
+              magFilter,
+              minFilter,
+              format,
+              type,
+              anisotropy
+          );
+
+          this.autoRedraw = autoRedraw;
+          this._text = text;
+          this._textAlign = textAlign;
+          this._textLineHeight = textLineHeight;
+          this._fontFamily = fontFamily;
+          this._fontSize = fontSize;
+          this._fontWeight = fontWeight;
+          this._fontVariant = fontVariant;
+          this._fontStyle = fontStyle;
+          this._fillStyle = fillStyle;
+          this._lineWidth = lineWidth;
+          this._strokeStyle = strokeStyle;
+          this._padding = padding;
+
+          this.redraw();
+
+
+      }
+      get isTextTexture() {
+          return true;
+      }
+      redraw() {
+
+          let ctx = this.image.getContext('2d');
+          ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+          if (this.textWidthInPixels && this.textHeightInPixels) {
+              ctx.canvas.width = this.imageWidthInPixels;
+              ctx.canvas.height = this.imageHeightInPixels;
+
+              ctx.font = this.font;
+              ctx.textBaseline = 'middle';
+              let left;
+              switch (this.textAlign) {
+                  case 'left':
+                      ctx.textAlign = 'left';
+                      left = this.paddingInPixels + this.lineWidthInPixels / 2;
+                      break;
+                  case 'right':
+                      ctx.textAlign = 'right';
+                      left = this.paddingInPixels + this.lineWidthInPixels / 2 + this.textWidthInPixels;
+                      break;
+                  case 'center':
+                      ctx.textAlign = 'center';
+                      left = this.paddingInPixels + this.lineWidthInPixels / 4 + this.textWidthInPixels / 2;
+                      break;
+              }
+              let top = this.paddingInPixels + this.lineWidthInPixels / 2 + this.fontSize / 2;
+              ctx.fillStyle = this.fillStyle;
+              ctx.miterLimit = 1;
+              ctx.lineWidth = this.lineWidthInPixels;
+              ctx.strokeStyle = this.strokeStyle;
+              
+              this.textLines.forEach(text => {
+                  if (this.lineWidth) {
+                      ctx.strokeText(text, left, top);
+                  }
+                  ctx.fillText(text, left, top);
+                  top += this.textLineHeightInPixels;
+              });
+          } else {
+              ctx.canvas.width = ctx.canvas.height = 1;
+          }
+          this.needsUpdate = true;
+      }
+
+      _redrawIfAuto() {
+          if (this.autoRedraw) {
+              this.redraw();
+          }
+      }
+
+      get text() {
+          return this._text;
+      }
+
+      set text(value) {
+          if (this._text !== value) {
+              this._text = value;
+              this._textLines = undefined;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get textAlign() {
+          return this._textAlign;
+      }
+
+      set textAlign(value) {
+          if (this._textAlign !== value) {
+              this._textAlign = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get textLines() {
+          if (Lang_isUndefined(this._textLines)) {
+              this._textLines = getTextLines(this.text);
+          }
+          return this._textLines;
+      }
+
+      get textLineHeight() {
+          return this._textLineHeight;
+      }
+
+      set textLineHeight(value) {
+          if (this._textLineHeight !== value) {
+              this._textLineHeight = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get textLineHeightInPixels() {
+          return this.fontSize * this.textLineHeight;
+      }
+
+      get fontFamily() {
+          return this._fontFamily;
+      }
+
+      set fontFamily(value) {
+          if (this._fontFamily !== value) {
+              this._fontFamily = value;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get fontSize() {
+          return this._fontSize;
+      }
+
+      set fontSize(value) {
+          if (this._fontSize !== value) {
+              this._fontSize = value;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get fontWeight() {
+          return this._fontWeight;
+      }
+
+      set fontWeight(value) {
+          if (this._fontWeight !== value) {
+              this._fontWeight = value;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get fontVariant() {
+          return this._fontVariant;
+      }
+
+      set fontVariant(value) {
+          if (this._fontVariant !== value) {
+              this._fontVariant = value;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get fontStyle() {
+          return this._fontStyle;
+      }
+
+      set fontStyle(value) {
+          if (this._fontStyle !== value) {
+              this._fontStyle = value;
+              this._textWidthInPixels = undefined;
+              this._redrawIfAuto();
+          }
+      }
+
+      get font() {
+          return getFont(
+              this.fontStyle,
+              this.fontVariant,
+              this.fontWeight,
+              this.fontSize,
+              this.fontFamily,
+          );
+      }
+
+      get fillStyle() {
+          return this._fillStyle;
+      }
+
+      set fillStyle(value) {
+          if (this._fillStyle !== value) {
+              this._fillStyle = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get lineWidth() {
+          return this._lineWidth;
+      }
+
+      set lineWidth(value) {
+          if (this._lineWidth !== value) {
+              this._lineWidth = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get lineWidthInPixels() {
+          return this._lineWidth * this.fontSize;
+      }
+
+      get strokeStyle() {
+          return this._strokeStyle;
+      }
+
+      set strokeStyle(value) {
+          if (this._strokeStyle !== value) {
+              this._strokeStyle = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get textWidthInPixels() {
+          if (Lang_isUndefined(this._textWidthInPixels)) {
+              this._textWidthInPixels = getTextWidth(
+                  this.textLines,
+                  this.font,
+              );
+          }
+          return this._textWidthInPixels;
+      }
+
+      get textHeight() {
+          return this.textLineHeight * (this.textLines.length - 1) + 1;
+      }
+
+      get textHeightInPixels() {
+          return this.textHeight * this.fontSize;
+      }
+
+      get padding() {
+          return this._padding;
+      }
+
+      set padding(value) {
+          if (this._padding !== value) {
+              this._padding = value;
+              this._redrawIfAuto();
+          }
+      }
+
+      get paddingInPixels() {
+          return this.padding * this.fontSize;
+      }
+
+      get imageWidthInPixels() {
+          return this.textWidthInPixels + this.lineWidthInPixels + this.paddingInPixels * 2;
+      }
+
+      get imageHeight() {
+          return this.textHeight + this.lineWidth + this.padding * 2;
+      }
+
+      get imageHeightInPixels() {
+          return this.imageHeight * this.fontSize;
+      }
+
+      get imageAspect() {
+          if (this.image.width && this.image.height) {
+              return this.image.width / this.image.height;
+          }
+          return 1;
+      }
+      static getTextWidth(textLines, font) {
+          return getTextWidth(textLines, font);
+      }
+
+  }
+
+  function Lang_isUndefined(value) {
+      return value === undefined;
+  }
+  function getTextLines(text) {
+      return text ? text.split('\n') : [];
+  }
+
+  function getFont(fontStyle, fontVariant, fontWeight, fontSize, fontFamily) {
+      return [fontStyle, fontVariant, fontWeight, `${fontSize}px`, fontFamily].join(' ');
+  }
+
+
+  function getTextWidth(textLines, font) {
+      if (textLines.length) {
+          let ctx = createCanvas().getContext('2d');
+          ctx.font = font;
+          return Array_max(textLines.map(text => ctx.measureText(text).width));
+      }
+      return 0;
+  }
+
+
+  function Array_max(array) {
+      if (array.length > 0) {
+          return array.reduce((maxValue, value) => Math.max(maxValue, value));
+      }
+  }
+
+
+  function createCanvas() {
+      return document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
+  }
+
+  class TextSprite extends Sprite {
+      constructor({
+          fontSize = 16,
+          redrawInterval = 1,
+          material = {},
+          texture = {},
+      } = {}) {
+          super(new SpriteMaterial$$1({ ...material, map: new TextTexture(texture) }));
+
+          this.fontSize = fontSize;
+          this.redrawInterval = redrawInterval;
+          this.lastRedraw = 0;
+      }
+
+      get isTextSprite() {
+          return true;
+      }
+
+      onBeforeRender(renderer, scene, camera) {
+          this.redraw(renderer, camera);
+      }
+      updateScale(renderer, camera) {
+
+              let fontsize = this.fontSize;
+              
+              let screenHeight = renderer.domElement.clientHeight;
+              let dist = camera.position.distanceTo(this.position);
+
+              var vFOV = _Math.degToRad(camera.fov); // convert vertical fov to radians
+
+              var height = 2 * Math.tan(vFOV / 2) * dist; // visible height
+
+
+              //投影位置全屏的Height 与 屏幕的高度比乘以字体的高度 
+              let actualFontSize = height / screenHeight * fontsize;
+
+              this.scale.set(this.material.map.imageAspect, 1, 1).multiplyScalar(Math.round(actualFontSize));
+
+      }
+
+      // updateMatrix(...args) {
+      //     this.updateScale(...args);
+      //     return super.updateMatrix(...args);
+      // }
+
+      redraw(renderer, camera) {
+          if (this.lastRedraw + this.redrawInterval < Date.now()) {
+              if (this.redrawInterval) {
+                  setTimeout(() => {
+                      this.redrawNow(renderer, camera);
+                  }, 1);
+              } else {
+                  this.redrawNow(renderer, camera);
+              }
+          }
+      }
+
+      redrawNow(renderer, camera) {
+          this.updateScale(renderer, camera);
+          this.material.map.autoRedraw = true;
+          
+          this.material.map.fontSize =_Math.ceilPowerOfTwo(getOptimalFontSize(this, renderer, camera));
+
+          this.lastRedraw = Date.now();
+      }
+
+      dispose() {
+          this.material.map.dispose();
+          this.material.dispose();
+      }
+
+  }
+
+  let getOptimalFontSize = (function () {
+      const objectWorldPosition = new Vector3$1();
+      const cameraWorldPosition = new Vector3$1();
+      const objectWorldScale = new Vector3$1();
+      return function getOptimalFontSize(object, renderer, camera) {
+          if (renderer.domElement.width && renderer.domElement.height && object.material.map.textLines.length) {
+              let distance = object.getWorldPosition(objectWorldPosition).distanceTo(camera.getWorldPosition(cameraWorldPosition));
+              if (distance) {
+                  let heightInPixels = object.getWorldScale(objectWorldScale).y * renderer.domElement.height / distance;
+                  if (heightInPixels) {
+                      return Math.round(heightInPixels / object.material.map.imageHeight);
+                  }
+              }
+          }
+          return 0;
+      }
+
+  })();
+
   /**
    * @class BufferGeometry 三维几何体的基类
    * @description 实现三维几何体的一些基本操作
@@ -15026,13 +15563,13 @@ var Chartx = (function () {
       }
 
       getWorldDirection(target) {
-          return getWorldDirection.call(this, target);
+          return getWorldDirection$1.call(this, target);
       }
 
 
   }
 
-  let getWorldDirection = (function () {
+  let getWorldDirection$1 = (function () {
 
       let quaternion = new Quaternion();
 
@@ -15052,6 +15589,48 @@ var Chartx = (function () {
       };
 
   })();
+
+  /**
+   * @class 透视相机
+   * @author bujue
+   */
+
+  class PerspectiveCamera extends Camera {
+      constructor(fov, aspect, near, far) {
+          super();
+
+          this.type = 'PerspectiveCamera';
+
+          this.fov = fov !== undefined ? fov : 50;
+          this.zoom = 1;
+
+          this.near = near !== undefined ? near : 0.1;
+          this.far = far !== undefined ? far : 2000;
+          this.focus = 10;
+
+          this.aspect = aspect !== undefined ? aspect : 1;
+          this.view = null;
+
+
+          this.updateProjectionMatrix();
+
+          this.isPerspectiveCamera = true;
+      }
+
+      updateProjectionMatrix() {
+
+          var near = this.near,
+              top = near * Math.tan(
+                  _Math.DEG2RAD * 0.5 * this.fov) / this.zoom,
+              height = 2 * top,
+              width = this.aspect * height,
+              left = - 0.5 * width,
+              view = this.view;
+
+          this.projectionMatrix.makePerspective(left, left + width, top, top - height, near, this.far);
+
+      }
+  }
 
   /**
    * @class 正交投影相机
@@ -15178,7 +15757,7 @@ var Chartx = (function () {
           this.scale = params.scale || window.devicePixelRatio || 1;
           this.style = {
               color: params.color || new Color$1('#000'),
-              fontSize: params.fontSize || 12,
+              fontSize: params.fontSize || 14,
               fontFamily: params.fontFamily || '微软雅黑,sans-serif',
               isBold: params.isBold || false,
               textAlign: params.textAlign || 'top',
@@ -15234,8 +15813,7 @@ var Chartx = (function () {
           me.context.textAlign = me.style.textAlign;
           me.context.textBaseline = me.style.textBaseline;
           me.context.webkitImageSmoothingEnabled = true;
-
-          me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
+          me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale * 4 + 'px ' + me.style.fontFamily;
           // var offset = 0.8;
           // me.context.fillStyle = "#222222";
           // me.context.fillText(text, left - offset, top - offset);
@@ -15313,18 +15891,19 @@ var Chartx = (function () {
               me.context.webkitImageSmoothingEnabled = true;
 
               me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
-              // var offset = 0.8;
-              // me.context.fillStyle = "#222222";
+              // var offset = 0.1;
+              // me.context.fillStyle = "#222";
               // me.context.fillText(text, left - offset, top - offset);
-              // me.context.fillStyle = "#222222";
+              // me.context.fillStyle = "#222";
               // me.context.fillText(text, left + offset, top - offset);
-              // me.context.fillStyle = "#222222";
+              // me.context.fillStyle = "#222";
               // me.context.fillText(text, left - offset, top + offset);
-              // me.context.fillStyle = "#222222";
+              // me.context.fillStyle = "#222";
               // me.context.fillText(text, left + offset, top + offset);
               me.context.fillStyle = "#" + me.style.color.getHexString();
 
-              me.context.fillText(text, left * this.scale, top * this.scale);
+              //me.context.fillText(text, left * this.scale, top*this.scale);
+              me.context.fillText(text, left, top);
 
               window._debug = true;
               if (window._debug) {
@@ -15348,11 +15927,14 @@ var Chartx = (function () {
           let width = size.width; //_Math.ceilPowerOfTwo(size.width);
           let height = size.height; //_Math.ceilPowerOfTwo(size.height);
 
-          me.canvas.style.width = width + 'px';
-          me.canvas.style.height = height + 'px';
 
           me.canvas.width = width * this.scale;
           me.canvas.height = height * this.scale;
+
+          me.canvas.style.width = width + 'px';
+          me.canvas.style.height = height + 'px';
+
+          me.context.scale(this.scale, this.scale);
 
           this.textureWidth = width;
           this.textureHeight = height;
@@ -15372,7 +15954,8 @@ var Chartx = (function () {
           div.style.left = '-9999px';
           div.style.fontFamily = this.style.fontFamily;
           div.style.fontWeight = this.style.isBold ? 'bold' : 'normal';
-          div.style.fontSize = this.style.fontSize * 1 + 'px'; // or 'px'
+          div.style.fontSize = this.style.fontSize + 'px'; // or 'px'
+
           document.body.appendChild(div);
           size = {
               width: div.offsetWidth,
@@ -15397,6 +15980,14 @@ var Chartx = (function () {
           _frameWork.addView(this);
           this.width = 0;
           this.height = 0;
+
+          this.aspect = 1;
+          this.fov = 75;
+          this.near = 1;
+          this.far = 1000;
+          this.mode = null;
+
+          //todo:相机变化需要派发事件出来
       }
 
       setSize(width, height) {
@@ -15404,7 +15995,7 @@ var Chartx = (function () {
           this.height = height;
 
           this.renderer.setPixelRatio(window.devicePixelRatio || 1);
-          this.renderer.setSize(width, height, true);
+          this.renderer.setSize(width, height);
       }
 
       setBackground(color) {
@@ -15431,13 +16022,56 @@ var Chartx = (function () {
       //mode: "ortho" || "perspective"    
       project(aspect, frustumSize, mode) {
 
-          //渲染Label的时候使用正交投影,这样相机位置变化了,label大小不变
+          this.aspect = aspect;
+          this.mode = mode;
 
-          if (mode === 'perspective') ; else {
+          if (mode === 'perspective') {
+              this._camera = new PerspectiveCamera(this.fov, this.aspect, this.near, this.far);
+              //默认绘制的物体是贴近近裁面的,根据近裁面呈现高度为frustumSize的物体需要相机位置
+              //let centerPosition = new Vector3(0, 0, (this.far - this.near)/2);
+
+
+              let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+
+              var dist = frustumSize / (2 * Math.tan(vFOV / 2));
+              this._camera.position.set(0, 0, dist);
+          } else {
               //给定一个大的投影空间,方便数据的计算
-              this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, -1, 10000);
-              this._camera.position.set(0, 0, 130);
+              this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, this.near, this.far);
+              this._camera.position.set(0, 0, 20);
           }
+
+          // this._camera.rotateX(_Math.degToRad(10));
+          // this._camera.rotateY(_Math.degToRad(15));
+
+          console.info("getVisableSize", this.getVisableSize());
+      }
+
+      getVisableSize(z) {
+          z = z || this.near;
+
+          let result = { width: 0, height: 0, ratio: 0 };
+
+          if (this.mode == "ortho") {
+              result.width = Math.round(this._camera.right - this._camera.left);
+              result.height = Math.round(this._camera.top - this._camera.bottom);
+          }
+
+          if (this.mode == "perspective") {
+              let currPosition = new Vector3$1(0, 0, z);
+              let cameraPosition = this._camera.position.clone();
+              let dist = cameraPosition.distanceTo(currPosition);
+              let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+              let height = 2 * Math.tan(vFOV / 2) * dist;
+
+              result.width = height * this.aspect;
+              result.height = height;
+          }
+          if (this.width != 0) {
+              result.ratio = result.width / this.width;
+          }
+
+          return result;
       }
 
       //创建一个box
@@ -15525,7 +16159,7 @@ var Chartx = (function () {
           });
           //todo  模糊需要解决
           //label高度
-          let spriteHeight = 12 * 4;
+          let spriteHeight = 14 * 4;
 
           fontStyle = {
               enabled: 1,
@@ -15555,6 +16189,8 @@ var Chartx = (function () {
               texture.image = renderFont.canvas;
               texture.wrapS = RepeatWrapping;
               texture.wrapT = RepeatWrapping;
+              texture.minFilter = LinearFilter;
+              texture.magFilter = LinearFilter;
 
               texture.repeat.set(1 / texts.length, 1);
               texture.offset.set(index / texts.length, 0);
@@ -15575,6 +16211,29 @@ var Chartx = (function () {
           return textGroup;
       }
 
+      createTextSprite(text, fontSize, color) {
+          let group = new Group();
+          let sprite = new TextSprite({
+              fontSize: fontSize,
+              texture: { //纹理中需要的文字大小不需要指定,TextSprite会自动计算
+                  padding: 0,
+                  text: text,
+                  fontFamily: 'SimHei, Arial, Helvetica, sans-serif'
+              },
+              material: {
+                  color: color || 0x333333,
+                  transparent: true
+              }
+          });
+          group.add(sprite);
+          return group;
+      }
+
+      getObjectScale(object) {
+          const objectWorldScale = new Vector3$1();
+          return object.getWorldScale(objectWorldScale);
+      }
+
   }
 
   class Application {
@@ -15586,18 +16245,16 @@ var Chartx = (function () {
 
           //默认值有一个view;
           this.view = [];
-          this.view[0] = new View(this._framework);
+
+          this.createView();
       }
 
-      render() {
-
+      launch() {
           this._framework.renderFrame();
       }
 
-      createBox(width, height, depth) {
-
-          let box = this.view.createBox(width, height, depth);
-          this.view.addObject(box);
+      createView() {
+          this.view.push(new View(this._framework));
       }
 
   }
@@ -15607,38 +16264,53 @@ var Chartx = (function () {
       constructor(root) {
           super();
           this._root = root;
+
+          let opts = _.clone(this._root.opt.opts);
+          this.coord = {};
           //坐标原点
           this.origin = new Vector3$1(0, 0, 0);
           //中心的
           this.center = new Vector3$1(0, 0, 0);
           this.padding = {
-              left: 100,
-              top: 100,
-              right: 100,
-              bottom: 100,
+              left: 20,
+              top: 20,
+              right: 20,
+              bottom: 20,
               front: 0,
               back: 0
           };
 
           this.group = root.renderView.addGroup({ name: 'Coord3d' });
 
-          console.log("from Coord3d boundbox", this.getBoundbox());
+          //console.log("from Coord3d boundbox",this.getBoundbox());
+
+
+          // this._graphs = [];
+          // if (opts.graphs) {
+          //     opts.graphs = _.flatten([opts.graphs]);
+          // };
+
+          _.extend(true, this, this.setDefaultOpts(opts));
+      }
+
+      setDefaultOpts(opts) {
+          return opts;
       }
 
       getBoundbox() {
-
+          let ratio = this._root.renderView.getVisableSize().ratio;
           let aspect = this._root.aspect;
           let frustumSize = this._root.frustumSize;
           let boundbox = new Box3();
 
           let width = aspect * frustumSize;
 
-          let minX = -width * 0.5 + this.padding.left;
-          let minY = -frustumSize * 0.5 + this.padding.bottom;
+          let minX = -width * 0.5 + this.padding.left * ratio;
+          let minY = -frustumSize * 0.5 + this.padding.bottom * ratio;
           let minZ = 0 + this.padding.front;
 
-          let maxX = width * 0.5 - this.padding.right;
-          let maxY = frustumSize * 0.5 - this.padding.top;
+          let maxX = width * 0.5 - this.padding.right * ratio;
+          let maxY = frustumSize * 0.5 - this.padding.top * ratio;
           let maxZ = 1000 - this.padding.back;
 
           boundbox.min.set(minX, minY, minZ);
@@ -15652,20 +16324,21 @@ var Chartx = (function () {
 
       pointToData() {}
 
-      drawCoordUI() {
+      initCoordUI() {
           //什么都不做
           return null;
       }
+      draw() {}
 
   }
 
   //组件的标准
   class Component extends Events {
-      constructor(coord) {
+      constructor(_coord) {
           super();
 
-          this._coord = coord;
-          this._root = coord._root;
+          this._coord = _coord;
+          this._root = _coord._root;
 
           // //每一个组件存放在一个Group中
           // this.group = new Group();
@@ -15686,7 +16359,7 @@ var Chartx = (function () {
   * 这样的结构化数据格式。
   */
 
-  function DataFrame (data) {
+  function DataFrame (data, opt) {
 
       var dataFrame = { //数据框架集合
           length: 0,
@@ -15695,7 +16368,11 @@ var Chartx = (function () {
           getRowData: _getRowData,
           getFieldData: _getFieldData,
           getDataOrg: getDataOrg,
-          fields: []
+          fields: [],
+          range: {
+              start: 0,
+              end: 0
+          }
       };
 
       if (!data || data.length == 0) {
@@ -15707,6 +16384,12 @@ var Chartx = (function () {
           dataFrame.length = data.length;
       } else {
           dataFrame.length = data.length - 1;
+      }
+      //设置好数据区间end值
+      dataFrame.range.end = dataFrame.length - 1;
+      //然后检查opts中是否有dataZoom.range
+      if (opt && opt.dataZoom && opt.dataZoom.range) {
+          _.extend(dataFrame.range, opt.dataZoom.range);
       }
       dataFrame.org = data;
       dataFrame.fields = data[0] ? data[0] : []; //所有的字段集合;
@@ -15724,10 +16407,13 @@ var Chartx = (function () {
       for (var a = 1, al = data.length; a < al; a++) {
           for (var b = 0, bl = data[a].length; b < bl; b++) {
 
+              /*
               var _val = data[a][b];
-              if (!isNaN(_val)) {
-                  _val = Number(_val);
-              }
+              if( !isNaN( _val ) ){
+                  _val = Number( _val );
+              };
+              */
+
               total[b].data.push(data[a][b]);
           }
       }
@@ -15765,7 +16451,7 @@ var Chartx = (function () {
                       _fieldData = [];
                   }                for (var ii = 0, iil = arr.length; ii < iil; ii++) {
                       if ($field[i] == arr[ii].field) {
-                          _fieldData.push(_format(arr[ii].data));
+                          _fieldData.push(_format(arr[ii].data.slice(dataFrame.range.start, dataFrame.range.end + 1)));
                           break;
                       }
                   }                if (!lev) {
@@ -15779,12 +16465,9 @@ var Chartx = (function () {
       function _getRowData(index) {
           var o = {};
           var data = dataFrame.data;
-          for (var a = 0, al = data.length; a < al; a++) {
-              if (data[a]) {
-                  o[data[a].field] = data[a].data[index];
-              }
-          }
-          return o;
+          for (var a = 0; a < data.length; a++) {
+              o[data[a].field] = data[a].data[dataFrame.range.start + index];
+          }        return o;
       }
 
       function _getFieldData(field) {
@@ -15795,7 +16478,7 @@ var Chartx = (function () {
               }
           });
           if (data) {
-              return data.data;
+              return data.data.slice(dataFrame.range.start, dataFrame.range.end + 1);
           } else {
               return [];
           }
@@ -15807,17 +16490,22 @@ var Chartx = (function () {
   class Chart3d extends Events {
       constructor(opt) {
           super();
+
           this.el = null;
           this.opt = opt;
+
           this.view = null;
-          this.stageView = null;
           this.domView = null;
-          this.canvasDom = null;
-          this.width = 0;
-          this.height = 0;
+          this.stageView = null;
+
+          this.canvasDom = null; //画布DOM元素
+
+          this.width = 0; //画布的宽
+          this.height = 0; //画布的高 
+
           this.renderer = null;
           this.renderView = null;
-
+          this.app = null;
           this.currCoord = null;
 
           //初始化画布
@@ -15832,20 +16520,16 @@ var Chartx = (function () {
           this._data = parse2MatrixData(opt.data);
 
           //三维引擎初始化
-          //初始化渲染器
+          this.app = new Application();
 
-          //宽高比
+          //初始化渲染器
+          this.renderer = this.app._framework.renderer;
+
+          //初始化相机
           this.aspect = this.height !== 0 ? this.width / this.height : 1;
 
           //投影空间的全高默认值
           this.frustumSize = 1000;
-
-          this._initRenderer();
-
-          //初始化相机
-
-          //默认正交投影
-          this.renderView.project(this.aspect, this.frustumSize, 'or');
 
           //初始化物体的惯性坐标(放在具体的坐标系下)
 
@@ -15854,19 +16538,27 @@ var Chartx = (function () {
           this.components = [];
 
           this.inited = false;
-          this.dataFrame = this._initData(this._data); //每个图表的数据集合 都 存放在dataFrame中。
+          this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
-          this.setCoord(Coord3d);
+          this.init();
       }
       init() {
-          this.startDraw();
+          this._initRenderer();
+
+          //默认正交投影
+          this.renderView.project(this.aspect, this.frustumSize, 'perspective'); //'ortho' | 'perspective',
+
+          this.setCoord(Coord3d);
+          //启动渲染进程
+          this.app.launch();
       }
       setCoord(coord) {
           if (coord === Coord3d || coord.prototype instanceof Coord3d) {
               this.currCoord = new coord(this);
               this.rootStage.add(this.currCoord.group);
           }
-          this.currCoord.drawCoordUI();
+          this.currCoord.initCoordUI();
+          this.currCoord.draw();
       }
       //添加组件
       addComponent(cmp) {
@@ -15890,9 +16582,6 @@ var Chartx = (function () {
           this.draw();
       }
 
-      startDraw() {
-          this.app.render();
-      }
       draw() {
           this.app._framework.isUpdate = true;
       }
@@ -15918,25 +16607,30 @@ var Chartx = (function () {
 
           this.id = "chartx_" + this._cid;
           this.el.setAttribute("chart_id", this.id);
-          this.el.setAttribute("chartx_version", "2.0");
+          this.el.setAttribute("chartx3d_version", "1.0");
       }
 
-      _initData(data) {
+      _initData(data, opt) {
 
-          return DataFrame.call(this, data);
+          return DataFrame.call(this, data, opt);
       }
 
       _initRenderer() {
-          let app = this.app = new Application();
-          this.renderer = app._framework.renderer;
-
+          let app = this.app;
+          let renderView = null;
           this.stageView.appendChild(this.renderer.domElement);
+
           this.canvasDom = this.renderer.domElement;
-          let renderView = this.renderView = app.view[0];
+
+          if (app.view.length > 0) {
+              //默认使用第0个view
+              renderView = this.renderView = app.view[0];
+          }
+
           this.rootStage = renderView.addGroup({ name: 'rootStage' });
           renderView.addObject(this.rootStage);
           renderView.setSize(this.width, this.height);
-          renderView.setBackground(0xFFFFFF);
+          // renderView.setBackground(0xFFFFFF);
       }
       resize() {}
       //todo 窗口大小发生变化
@@ -15945,11 +16639,17 @@ var Chartx = (function () {
       reset() {}
 
       resetData() {}
+      destroy() {}
   }
 
   class AxisLine extends Component {
-      constructor(coord) {
+      constructor(coord, opts) {
           super(coord);
+
+          // enabled: 1,
+          // lineWidth: 1,
+          // strokeStyle: '#cccccc'
+
 
           //轴的起点
           this.origin = new Vector3$1(0, 0, 0);
@@ -15961,12 +16661,17 @@ var Chartx = (function () {
           this.length = 1;
 
           //轴线的宽带
-          this.lineWidth = 2;
+          this.lineWidth = opts.lineWidth || 2;
 
           //轴线的颜色 (默认黑色)
-          this.color = 0xff0000;
+          this.color = opts.strokeStyle;
+
+          this.axis = null;
 
           this.group = this._root.renderView.addGroup({ name: 'axisLine' });
+
+          //不可见    
+          this.group.visible = !!opts.enabled;
       }
 
       defaultStyle() {
@@ -15994,19 +16699,63 @@ var Chartx = (function () {
           this.group.name = name;
       }
 
+      drawStart() {
+          this.axis = this._root.renderView.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color);
+      }
+
       draw() {
 
-          let axis = this._root.renderView.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color);
-          this.group.add(axis);
+          this.group.add(this.axis);
+      }
+
+      getBoundBox() {
+          let result = new Box3();
+
+          this.axis.traverse(function (mesh) {
+              if (mesh instanceof Mesh) {
+                  mesh.geometry.computeBoundingBox();
+                  result = mesh.geometry.boundingBox;
+              }
+          });
+
+          //根据绘制的线宽计算三维空间的宽带
+
+          let visableSize = this._root.renderView.getVisableSize();
+          let width = 0,
+              height = 0;
+          //如果是y轴或者z轴计算轴的宽度
+          if (this.dir.equals(new Vector3$1(0, 1, 0)) || this.dir.equals(new Vector3$1(0, 0, -1))) {
+              width = visableSize.width / this._root.width;
+          }
+          //如果x轴计算轴的高度
+          if (this.dir.equals(new Vector3$1(1, 0, 0))) {
+              height = visableSize.height / this._root.height;
+          }
+
+          result.min.x = result.min.x - width * 0.5;
+          result.max.x = result.max.x + width * 0.5;
+
+          result.min.y = result.min.y - height * 0.5;
+          result.max.y = result.max.y + height * 0.5;
+
+          return result;
       }
 
   }
 
+  // this.tickLine = {//刻度线
+  //     enabled: 1,
+  //     lineWidth: 1, //线宽
+  //     lineLength: 4, //线长
+  //     strokeStyle: '#cccccc',
+  //     // distance: 2,
+  //     offset: 2,
+  // };
+
+
   class TickLines extends Component {
-      constructor(coord) {
+      constructor(coord, opts) {
           super(coord);
-          this._coord = coord;
-          this._root = coord._root;
 
           //点的起点位置集合
           this.origins = [];
@@ -16015,191 +16764,920 @@ var Chartx = (function () {
           this.dir = new Vector3$1();
 
           //刻度线的宽带
-          this.lineWidth = 1;
+          this.lineWidth = opts.lineWidth;
 
           //刻度线的长度
-          //todo 轴线的长度是个数组
-          this.length = 20;
+          //todo 轴线的长度是个数组 通过像素值转换
+          this.length = opts.lineLength;
 
-          this.color = 0xff0000;
+          this.color = opts.strokeStyle;
+
+          this.offset = opts.offset;
+
+          this._tickLine = null;
 
           this.group = this._root.renderView.addGroup({ name: 'tickLine' });
-      }
-      init(axis, attribute) {
-          let me = this;
 
+          this.group.visible = !!opts.enabled;
+      }
+      initData(axis, attribute) {
+          let me = this;
+          let _dir = new Vector3$1();
           let axisSectionLength = axis.length / (attribute.section.length - 1);
+          let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
 
           attribute.section.forEach((num, index) => {
               //起点
               let startPoint = new Vector3$1();
+
               startPoint.copy(axis.dir);
               startPoint.multiplyScalar(axisSectionLength * index);
+              startPoint.add(_offset);
               me.origins.push(startPoint);
           });
       }
+      set length(len) {
+          let ratio = this._root.renderView.getVisableSize().ratio;
+          this._length = len * ratio;
+      }
+      get length() {
+          return this._length;
+      }
+
+      set offset(_offset) {
+          let ratio = this._root.renderView.getVisableSize().ratio;
+          this._offset = _offset * ratio;
+      }
+
+      get offset() {
+          return this._offset;
+      }
+
       setDir(dir) {
           this.dir = dir;
       }
-
-      draw() {
-
-          let axis = this._root.renderView.createLine(this.origins, this.dir, this.length, this.lineWidth, this.color);
-          this.group.add(axis);
+      drawStart() {
+          this._tickLine = this._root.renderView.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
       }
 
+      draw() {
+          this.group.add(this._tickLine);
+      }
+
+      getBoundBox() {
+          let result = new Box3();
+          result.makeEmpty();
+          this._tickLine.traverse(function (mesh) {
+              if (mesh instanceof Mesh) {
+                  mesh.geometry.computeBoundingBox();
+                  result.expandByPoint(mesh.geometry.boundingBox.min);
+                  result.expandByPoint(mesh.geometry.boundingBox.max);
+              }
+          });
+
+          return result;
+      }
   }
 
+  // {
+  //     enabled: 1,
+  //     fontColor: '#999',
+  //     fontSize: 16,
+  //     format: null,
+  //     rotation: 0,
+  //     textAlign: null,//"right",
+  //     lineHeight: 1,
+  //     offset: 2     //和刻度线的距离
+  // }
   class TickTexts extends Component {
-      constructor(coord) {
+      constructor(coord, opts) {
           super(coord);
-          this._coord = coord;
-          this._root = coord._root;
 
           //起点位置集合
           this.origins = [];
           this.texts = [];
 
-          //刻度线的绘制方向
-          //todo 这个值应该是一个数组,暂时先用一个值来替代
-          this.offsets = new Vector3$1(-70, 0, 0);
+          this.fontColor = opts.fontColor || '#333';
+
+          this.rotation = 0;
+
+          this.textAlign = opts.textAlign;
+
+          this.dir = new Vector3$1();
+
+          this.offset = opts.offset;
+
+          this._tickTextGroup = null;
 
           this.group = this._root.renderView.addGroup({ name: 'tickText' });
+
+          this.group.visible = !!opts.enabled;
       }
 
-      init(axis, attribute) {
+      initData(axis, attribute) {
           let me = this;
-
+          let _dir = new Vector3$1();
           let axisSectionLength = axis.length / (attribute.section.length - 1);
-          this.texts = [];
+          let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
+
           attribute.section.forEach((num, index) => {
               //起点
               let startPoint = new Vector3$1();
               startPoint.copy(axis.dir);
               startPoint.multiplyScalar(axisSectionLength * index);
-              startPoint.add(this.offsets);
+              startPoint.add(_offset);
               me.origins.push(startPoint);
-              //保存文本
-              this.texts.push(num);
           });
       }
 
+      set offset(_offset) {
+          let ratio = this._root.renderView.getVisableSize().ratio;
+          this._offset = _offset * ratio;
+      }
+
+      get offset() {
+          return this._offset;
+      }
+      setDir(dir) {
+          this.dir = dir;
+      }
+      drawStart(texts) {
+          let me = this;
+          this._tickTextGroup = this._root.renderView.addGroup({ name: 'tickTexts' });
+          // this._tickTextGroup.removeAll();
+
+          let ratio = this._root.renderView.getVisableSize().ratio;
+          let maxWidth = TextTexture.getTextWidth(texts, ['normal', 'normal', this.fontColor, this.fontSize].join(' '));
+
+          (texts || []).forEach((text, index) => {
+              let width = TextTexture.getTextWidth([text], ['normal', 'normal', me.fontColor, me.fontSize].join(' '));
+              let obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor);
+              obj.position.copy(me.origins[index]);
+              if (me.textAlign == 'right') {
+                  obj.position.add(new Vector3$1((maxWidth - width) * ratio / 2, 0, 0));
+              }
+              if (me.textAlign == 'left') {
+                  obj.position.add(new Vector3$1(-(maxWidth - width) * ratio / 2, 0, 0));
+              }
+              me._tickTextGroup.add(obj);
+          });
+          //todo:通过计算最长文本在三维空间中的位置
+          // this._tickTexts = this._root.renderView.creatSpriteText(this.texts, this.origins)
+      }
       draw() {
 
-          let textGroup = this._root.renderView.creatSpriteText(this.texts, this.origins);
-          this.group.add(textGroup);
+          this.group.add(this._tickTextGroup);
+      }
+      getBoundBox() {
+          //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
+          //没有计算文本旋转后的长度
+          let result = new Box3();
+          result.makeEmpty();
+          this._tickTexts.traverse(function (sprite) {
+              if (sprite instanceof Sprite) {
+                  let min = new Vector3$1();
+                  let max = new Vector3$1();
+                  let halfScale = new Vector3$1();
+                  halfScale.copy(sprite.scale);
+                  halfScale.multiplyScalar(0.5);
+                  min.copy(sprite.position);
+                  max.copy(sprite.position);
+
+                  min.sub(halfScale);
+                  max.add(halfScale);
+
+                  result.expandByPoint(min);
+                  result.expandByPoint(max);
+              }
+          });
+          return result;
       }
 
   }
 
   class YAxis extends Component {
-      constructor(coord) {
-          super(coord);
-          let coordBoundBox = coord.getBoundbox();
+      constructor(_coord) {
+          super(_coord);
 
-          this.group = this._root.renderView.addGroup({ name: 'yAxis' });
+          let opt = this._coord;
+          this._opt = opt;
 
-          this.axisLine = new AxisLine(coord);
-          this.group.add(this.axisLine.group);
-
-          //设置坐标轴的方向
-          this.axisLine.setDir(new Vector3$1(0, 1, 0));
-
-          this.axisLine.setOrigin(coordBoundBox.min);
-          this.axisLine.setLength(coordBoundBox.max.y);
-          this.axisLine.setGroupName('yAxisLine');
-          this.axisLine.draw();
-          //不可见    
-          //this.axisLine.group.visible = false;
+          //this._coord = _coord || {};
 
 
-          //传相关的tick 配置进去
-          let tickLineOptions = {};
-          this.tickLine = new TickLines(coord, tickLineOptions);
-          this.group.add(this.tickLine.group);
-          this.tickLine.setDir(new Vector3$1(-1, 0, 0));
-          this.tickLine.init(this.axisLine, coord.yAxisAttribute);
+          this.width = null; //第一次计算后就会有值
+          this.yMaxHeight = 0; //y轴最大高
+          this.height = 0; //y轴第一条线到原点的高
 
-          this.tickLine.draw();
+          this.maxW = 0; //最大文本的 width
+          this.field = []; //这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
 
-          //绘制刻度值
-          let tickTextOptions = {};
-          this.tickText = new TickTexts(coord, tickTextOptions);
-          this.group.add(this.tickText.group);
-          this.tickText.init(this.axisLine, coord.yAxisAttribute);
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.label对应的文本对象
 
-          this.tickText.draw();
+          this.enabled = true;
+          this.tickLine = { //刻度线
+              enabled: 1,
+              lineWidth: 2, //线宽
+              lineLength: 4, //线长
+              strokeStyle: '#cccccc',
+              // distance: 2,
+              offset: 0
+          };
+          this.axisLine = { //轴线
+              enabled: 1,
+              lineWidth: 1,
+              strokeStyle: '#cccccc'
+          };
+          this.label = {
+              enabled: 1,
+              fontColor: '#999',
+              fontSize: 12,
+              format: null,
+              rotation: 0,
+              textAlign: "right",
+              lineHeight: 1,
+              offset: 2 //和刻度线的距离
+          };
+
+          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+              //如果是横向直角坐标系图
+              this.label.rotation = 90;
+          }
+          this.pos = {
+              x: 0,
+              y: 0
+          };
+          this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
+
+          this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
+          this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
+          this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
+
+          //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
+          this.dataSectionGroup = [];
+
+          //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
+          this.middleweight = null;
+
+          this.dataOrg = data.org || []; //源数据
+
+          this.group = null;
+
+          this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
+          this.basePoint = null; //value为 baseNumber 的point {x,y}
+          this.min = null;
+          this.max = null; //后面加的，目前还没用
+
+          this._yOriginTrans = 0; //当设置的 baseNumber 和datasection的min不同的时候，
+
+
+          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+          this.filter = null; //function(params){}; 
+
+          this.isH = false; //是否横向
+
+          this.animation = false;
+
+          this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
+
+          this.layoutType = "proportion"; // rule , peak, proportion
+
+          _.extend(true, this, opt);
+
+          this.init(opt, this._coord.yAxisAttribute);
+
+          this._getName();
       }
 
-      init() {}
+      init(opt, data) {
 
-      getBoundbox() {}
+          //extend会设置好this.field
+          //先要矫正子啊field确保一定是个array
+          if (!_.isArray(this.field)) {
+              this.field = [this.field];
+          }
+          this._initData(data);
+
+          this.group = this._root.renderView.addGroup({ name: 'yAxisLeft' });
+          // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesGroup' });
+          // this.group.add(this.rulesGroup);
+
+      }
+      _initModules() {
+          //初始化轴线
+          const _axisDir = new Vector3$1(0, 1, 0);
+          const _coord = this._coord;
+          let coordBoundBox = _coord.getBoundbox();
+
+          this._axisLine = new AxisLine(_coord, this.axisLine);
+          this._axisLine.setDir(_axisDir);
+          this._axisLine.setOrigin(coordBoundBox.min);
+          this._axisLine.setLength(coordBoundBox.max.y);
+          this._axisLine.setGroupName('yAxisLine');
+          this._axisLine.drawStart();
+
+          this.group.add(this._axisLine.group);
+
+          //初始化tickLine
+          const _tickLineDir = new Vector3$1(-1, 0, 0);
+          this._tickLine = new TickLines(_coord, this.tickLine);
+          this._tickLine.setDir(_tickLineDir);
+          this._tickLine.initData(this._axisLine, _coord.yAxisAttribute);
+          this._tickLine.drawStart();
+
+          this.group.add(this._tickLine.group);
+
+          //初始化tickText
+          this._tickText = new TickTexts(_coord, this.label);
+          this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+
+          this._tickText.setDir(_tickLineDir);
+          this._tickText.initData(this._axisLine, _coord.yAxisAttribute);
+          this._tickText.drawStart(this._formatTextSection);
+          this.group.add(this._tickText.group);
+      }
+      _getName() {}
+      _initData(data) {
+          var me = this;
+
+          //如果用户传入了自定义的dataSection， 那么优先级最高
+          if (!this._opt.dataSection) {
+
+              this.dataSection = data.section;
+          } else {
+              this.dataSection = this._opt.dataSection;
+          }
+          //如果还是0
+          if (this.dataSection.length == 0) {
+              this.dataSection = [0];
+          }
+          // if( _.min(this.dataSection) < this._opt.min ){
+          //     var minDiss = me._opt.min - _.min(me.dataSection);
+          //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
+          //     _.each( this.dataSection, function( num, i ){
+          //         me.dataSection[i] += minDiss;
+          //     } );
+          // };
+
+          //如果有 middleweight 设置，就会重新设置dataSectionGroup
+          this.dataSectionGroup = [_.clone(this.dataSection)];
+
+          // this._sort();
+          // this._setBottomAndBaseNumber();
+
+          // this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
+
+          me._formatTextSection = [];
+          me._textElements = [];
+          _.each(me.dataSection, function (val, i) {
+              me._formatTextSection[i] = me._getFormatText(val, i);
+              //从_formatTextSection中取出对应的格式化后的文本
+
+              // var txt = me._root.renderView.createTextSprite("" + me._formatTextSection[i], me.label.fontSize,me.label.fontColor)
+
+              // // var txt = new Canvax.Display.Text(me._formatTextSection[i], {
+              // //     context: {
+              // //         fontSize: me.label.fontSize
+              // //     }
+              // // });
+
+              // me._textElements[i] = txt;
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+
+          this._setYAxisWidth();
+      }
+
+      _getFormatText(val, i) {
+          var res;
+          if (_.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+
+      //设置布局
+      setLayout(opt) {}
+
+      draw() {
+
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+      }
+
+      getBoundbox() {
+          let result = new Box3();
+
+          //轴线的boundBox
+          let _axisLineBoundBox = this.axisLine.getBoundBox();
+
+          //刻度线的boundBox
+          let tickLineBoundBox = this.tickLine.getBoundBox();
+
+          //刻度文本的boundBox
+          let _axisTextBoundBox = this.tickText.getBoundBox();
+
+          result.union(_axisLineBoundBox);
+          result.union(tickLineBoundBox);
+          result.union(_axisTextBoundBox);
+
+          return result;
+      }
+
+      getAxisYWidth() {
+          let boundbox = this.getBoundbox();
+          return Math.round(boundbox.max.x - boundbox.min.x);
+      }
+      _setYAxisWidth() {
+          //检测下文字的宽度
+          var me = this;
+          if (!me.enabled) {
+              me.width = 0;
+          } else {
+              var _maxTextWidth = 0;
+
+              if (this.label.enabled) {
+
+                  //me._formatTextSection.forEach((val)=>{
+                  let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '));
+                  _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //})
+                  // _.each(me.dataSection, function (val, i) {
+
+                  //     //从_formatTextSection中取出对应的格式化后的文本
+                  //     let txt = me._textElements[i];
+                  //     let scale = me._root.renderView.getObjectScale(txt);
+
+                  //     let textWidth = scale.x;
+                  //     let textHeight = scale.y;
+
+                  //     let width = textWidth; //文本在外接矩形width
+                  //     let height = textHeight;//文本在外接矩形height
+
+                  //     if (!!me.label.rotation) {
+                  //         //有设置旋转
+                  //         if (me.label.rotation == 90) {
+                  //             width = textHeight;
+                  //             height = textWidth;
+                  //         } else {
+                  //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             height = parseInt(sinR * textWidth);
+                  //             width = parseInt(cosR * textWidth);
+                  //         };
+                  //     };
+
+                  //     _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //     console.log('width',width);
+                  // });
+              }            this._maxTextWidth = _maxTextWidth;
+              let ratio = me._root.renderView.getVisableSize().ratio;
+              this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+              //this.width+=10;
+              // if (this._title) {
+              //     this.height += this._title.getTextHeight()
+              // };
+          }
+      }
 
   }
 
   class XAxis extends Component {
-      constructor(coord) {
-          super(coord);
+      constructor(_coord) {
+          super(_coord);
 
-          //设置坐标轴的方向
+          let opt = this._coord;
+          this._opt = opt;
 
-          let coordBoundBox = coord.getBoundbox();
+          //this._coord = _coord || {};
 
+          this.width = 0;
+          this.height = 0;
+
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.title对应的文本对象
+
+          this.enabled = true;
+          this.tickLine = {
+              enabled: 1, //是否有刻度线
+              lineWidth: 1, //线宽
+              lineLength: 4, //线长
+              offset: 2,
+              strokeStyle: '#cccccc'
+          };
+          this.axisLine = {
+              enabled: 1, //是否有轴线
+              lineWidth: 1,
+              strokeStyle: '#cccccc'
+          };
+          this.label = {
+              enabled: 1,
+              fontColor: '#999',
+              fontSize: 12,
+              rotation: 0,
+              format: null,
+              offset: 2,
+              textAlign: "center",
+              lineHeight: 1,
+              evade: true //是否开启逃避检测，目前的逃避只是隐藏
+          };
+          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+              //如果是横向直角坐标系图
+              this.label.rotation = 90;
+          }
+          this.maxTxtH = 0;
+
+          this.pos = {
+              x: 0,
+              y: 0
+          };
+
+          this.dataOrg = []; //源数据
+          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
+
+          this.layoutData = []; //{x:100, value:'1000',visible:true}
+
+          this.sprite = null;
+
+          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+          this.filter = null; //function(params){}; 
+
+          this.isH = false; //是否为横向转向的x轴
+
+          this.animation = false;
+
+          //layoutType == "proportion"的时候才有效
+          this.maxVal = null;
+          this.minVal = null;
+
+          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
+
+          this.layoutType = "rule"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+
+          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
+          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
+          //function
+          this.trimLayout = null;
+
+          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+
+          _.extend(true, this, opt);
+
+          this.init(opt, this._coord.xAxisAttribute);
+
+          //xAxis的field只有一个值,
+          //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
+
+      }
+      init(opt, data) {
           this.group = this._root.renderView.addGroup({ name: 'xAxis' });
 
-          this.axisLine = new AxisLine(coord);
-          this.group.add(this.axisLine.group);
+          // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
 
-          //设置坐标轴的方向
-          this.axisLine.setDir(new Vector3$1(1, 0, 0));
+          // this.group.add(this.rulesGroup);
 
-          this.axisLine.setOrigin(coordBoundBox.min);
-          this.axisLine.setLength(coordBoundBox.max.x);
-          this.axisLine.setGroupName('xAxisLine');
-          this.axisLine.draw();
+          this._initHandle(data);
+      }
+      _initHandle(data) {
+          var me = this;
 
-          //刻度线
-          let tickOptions = {};
-          this.tickLine = new TickLines(coord, tickOptions);
-          this.group.add(this.tickLine.group);
-          this.tickLine.setDir(new Vector3$1(0, -1, 0));
-          this.tickLine.init(this.axisLine, coord.xAxisAttribute);
+          if (data && data.field) {
+              this.field = data.field;
+          }
 
-          this.tickLine.draw();
+          if (data && data.data) {
+              this.dataOrg = _.flatten(data.data);
+          }        if (!this._opt.dataSection && this.dataOrg) {
+              //如果没有传入指定的dataSection，才需要计算dataSection
+              this.dataSection = data.section; // this._initDataSection(this.dataOrg);
+          }
+          me._formatTextSection = [];
+          me._textElements = [];
+          _.each(me.dataSection, function (val, i) {
+              me._formatTextSection[i] = me._getFormatText(val, i);
+              //从_formatTextSection中取出对应的格式化后的文本
+
+              // var txt = me._root.renderView.createTextSprite(""+me._formatTextSection[i],me.label.fontSize)
+
+              // // var txt = new Canvax.Display.Text(me._formatTextSection[i], {
+              // //     context: {
+              // //         fontSize: me.label.fontSize
+              // //     }
+              // // });
+
+              // me._textElements[i] = txt;
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+
+          this._setXAxisHeight();
+      }
+      _getFormatText(val, i) {
+          var res;
+          if (_.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+      _initModules() {
+
+          //初始化轴线
+          const _axisDir = new Vector3$1(1, 0, 0);
+          const _coord = this._coord;
+          let coordBoundBox = _coord.getBoundbox();
+
+          this._axisLine = new AxisLine(_coord, this.axisLine);
+          this._axisLine.setDir(_axisDir);
+          this._axisLine.setOrigin(coordBoundBox.min);
+          this._axisLine.setLength(coordBoundBox.max.x);
+          this._axisLine.setGroupName('xAxisLine');
+          this._axisLine.drawStart();
+
+          this.group.add(this._axisLine.group);
+
+          //初始化tickLine
+          const _tickLineDir = new Vector3$1(0, -1, 0);
+          this._tickLine = new TickLines(_coord, this.tickLine);
+          this._tickLine.setDir(_tickLineDir);
+          this._tickLine.initData(this._axisLine, _coord.xAxisAttribute);
+          this._tickLine.drawStart();
+
+          this.group.add(this._tickLine.group);
+
+          //初始化tickText
+          this._tickText = new TickTexts(_coord, this.label);
+          this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+
+          this._tickText.setDir(_tickLineDir);
+          this._tickText.initData(this._axisLine, _coord.xAxisAttribute);
+          this._tickText.drawStart(this._formatTextSection);
+          this.group.add(this._tickText.group);
+      }
+      _getName() {
+          // if ( this.title.content ) {
+          //     if( !this._title ){
+          //         this._title = new Canvax.Display.Text(this.title.content, {
+          //             context: {
+          //                 fontSize: this.title.fontSize,
+          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+          //                 fillStyle: this.title.fontColor,
+          //                 strokeStyle: this.title.strokeStyle,
+          //                 lineWidth : this.title.lineWidth,
+          //                 rotation: this.isH ? -180 : 0
+          //             }
+          //         });
+          //     } else {
+          //         this._title.resetText( this.title.content );
+          //     }
+          // }
+      }
+
+      _setXAxisHeight() {
+          //检测下文字的高等
+          var me = this;
+          if (!me.enabled) {
+              me.height = 0;
+          } else {
+              var _maxTextHeight = 0;
+
+              if (this.label.enabled) {
+                  let height = this.label.fontSize * 1.2;
+                  _maxTextHeight = Math.max(_maxTextHeight, height);
+              }
+              let ratio = me._root.renderView.getVisableSize().ratio;
+              this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+              this._maxTextHeight = _maxTextHeight;
+              // if (this._title) {
+              //     this.height += this._title.getTextHeight()
+              // };
+          }
+      }
+      //设置布局
+      setLayout(opt) {}
+      draw() {
+
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+      }
+  }
+
+  class Grid extends Component {
+      constructor(_coord) {
+          super(_coord);
+          this.init();
+      }
+      init() {
+          this.group = this._root.renderView.addGroup({ name: 'grid' });
       }
   }
 
   class Decare3dUI extends Component {
-      constructor(coord) {
-          super(coord);
-          this._coord = coord;
-          this._root = coord._root;
-          this.group = this._root.renderView.addGroup({ name: 'Decare3dUI' });
+      constructor(_coord) {
+          super(_coord);
 
-          this.xAxis = null;
-          this.yAxis = null;
-          this.zAxis = null;
+          this._xAxis = null;
+          this._yAxis = [];
 
-          this.init();
+          this._yAxisLeft = null;
+          this._yAxisRight = null;
+
+          this._zAxis = null;
+          this._grid = null;
+
+          let opt = _coord.coord;
+
+          this.type = "decare3d";
+
+          this.horizontal = false;
+
+          this.xAxis = opt.xAxis || {};
+          this.yAxis = opt.yAxis || [];
+          this.grid = opt.grid || {};
+
+          _.extend(true, this, opt);
+
+          if (opt.horizontal) {
+              this.xAxis.isH = true;
+              _.each(this.yAxis, function (yAxis) {
+                  yAxis.isH = true;
+              });
+          }
+          if ("enabled" in opt) {
+              //如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
+              _.extend(true, this.xAxis, {
+                  enabled: opt.enabled
+              });
+              _.each(this.yAxis, function (yAxis) {
+                  _.extend(true, yAxis, {
+                      enabled: opt.enabled
+                  });
+              });
+
+              /*
+              this.xAxis.enabled = opt.enabled;
+              _.each( this.yAxis , function( yAxis ){
+                  yAxis.enabled = opt.enabled;
+              });
+              */
+
+              this.grid.enabled = opt.enabled;
+          }
+          this.init(opt);
       }
 
-      init() {
+      init(opt) {
+
+          this.group = this._root.renderView.addGroup({ name: 'Decare3dUI' });
+
+          this._initModules();
+
+          let offset = new Vector3$1(this._yAxisLeft.width, this._xAxis.height, 0);
+          this._coord.updateOrigin(offset);
+
+          //需要更新坐标系后绘制
+          this._yAxisLeft._initModules();
+
+          this._xAxis._initModules();
+
+          //创建好了坐标系统后，设置 _fieldsDisplayMap 的值，
+          // _fieldsDisplayMap 的结构里包含每个字段是否在显示状态的enabled 和 这个字段属于哪个yAxis
+          //this.fieldsMap = this._setFieldsMap();
+
 
           //先绘制Y轴
-          this.axisY = new YAxis(this._coord);
+          // this.axisY = new YAxis(this._coord);
+          // let width = this.axisY.getAxisYWidth();
 
-          this.axisX = new XAxis(this._coord);
+
+          //this.axisX = new XAxis(this._coord);
+
 
           //test
-          let pos = this._coord._getPos(new Vector3$1(0, 0, 0));
-          console.log("原点位置", pos);
+          //let pos = this._coord._getPos(new Vector3(0, 0, 0));
+          //console.log("原点位置", pos);
 
-          let box = this._root.renderView.createBox(100, 100, 100);
+          //let box = this._root.renderView.createBox(100, 100, 100);
 
-          this.group.add(this.axisY.group);
-          this.group.add(this.axisX.group);
+
+          //this.group.add(this.axisY.group);
+          // this.group.add(this.axisX.group);
 
           //this.group.add(box);
+      }
+      _initModules() {
+          this._grid = new Grid(this);
+          this.group.add(this._grid.group);
+
+          //var _xAxisDataFrame = this._getAxisDataFrame(this.xAxis.field);
+          this._xAxis = new XAxis(this);
+          this.group.add(this._xAxis.group);
+
+          //这里定义的是配置
+          var yAxis = this.yAxis;
+          var yAxisLeft;
+
+          // yAxis 肯定是个数组
+          if (!_.isArray(yAxis)) {
+              yAxis = [yAxis];
+          }
+          //left是一定有的
+          yAxisLeft = _.find(yAxis, function (ya) {
+              return ya.align == "left";
+          });
+
+          if (yAxisLeft) {
+              //yAxisLeftDataFrame = this._getAxisDataFrame( yAxisLeft.field );
+              this._yAxisLeft = new YAxis(this);
+              this._yAxisLeft.axis = yAxisLeft;
+              this.group.add(this._yAxisLeft.group);
+              this._yAxis.push(this._yAxisLeft);
+          }
+
+          //后续坐标系如果还受其他组件的影响,继续计算并加入进来
+
+          // yAxisRight = _.find( yAxis , function( ya ){
+          //     return ya.align == "right"
+          // } );
+          // if( yAxisRight ){
+          //     yAxisRightDataFrame = this._getAxisDataFrame( yAxisRight.field )
+          //     this._yAxisRight = new yAxisConstructor( yAxisRight, yAxisRightDataFrame );
+          //     this._yAxisRight.axis = yAxisRight;
+          //     this.sprite.addChild( this._yAxisRight.sprite );
+          //     this._yAxis.push( this._yAxisRight );
+          // };
+
+          //todo 更新坐标系
+      }
+      draw() {
+          this._yAxisLeft.draw();
+          this._xAxis.draw();
       }
   }
 
@@ -16316,6 +17794,22 @@ var Chartx = (function () {
       }
   };
 
+  /** note: 
+   * 获取所有的配置信息,取去配置中影响布局的相关参数
+   * coord{
+   *    xAsix{}
+   *    yAxis{} 
+   *    zAxis{} 
+   * }
+   * 
+   * graphs{}
+   * 
+   * makeline其他组件
+   * 
+   * 通过Data和相关的配置,给出各个坐标轴的DataSection,计算出各个轴上数据点对应的位置
+   * 
+   * ***/
+
   class Decare3d extends Coord3d {
       constructor(root) {
           super(root);
@@ -16324,18 +17818,122 @@ var Chartx = (function () {
 
           //相对与世界坐标的原点位置
           this.origin = baseBoundbox.min;
-          this.center = new Vector3$1(0, 0, 0);
+          // this.center = new Vector3(0, 0, 0);
 
-          this.group = root.renderView.addGroup({ name: 'Decare3d' });
-
-          console.log("from Decare3d boundbox", this.getBoundbox());
 
           this.xAxisAttribute = new AxisAttribute();
           this.yAxisAttribute = new AxisAttribute();
           this.zAxisAttribute = new AxisAttribute();
 
+          this._coordUI = null;
+
           this.init();
       }
+      setDefaultOpts(opts) {
+          //todo 先那里使用
+
+          var me = this;
+          me.coord = {
+              xAxis: {
+                  //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
+                  layoutType: "rule", //"peak",  
+                  //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
+                  //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
+                  posParseToInt: false
+              }
+          };
+
+          opts = _.clone(opts);
+          if (opts.coord.yAxis) {
+              var _nyarr = [];
+              //TODO: 因为我们的deep extend 对于数组是整个对象引用过去，所以，这里需要
+              //把每个子元素单独clone一遍，恩恩恩， 在canvax中优化extend对于array的处理
+              _.each(_.flatten([opts.coord.yAxis]), function (yopt) {
+                  _nyarr.push(_.clone(yopt));
+              });
+              opts.coord.yAxis = _nyarr;
+          } else {
+              opts.coord.yAxis = [];
+          }
+
+          //根据opt中得Graphs配置，来设置 coord.yAxis
+          if (opts.graphs) {
+              //有graphs的就要用找到这个graphs.field来设置coord.yAxis
+              for (var i = 0; i < opts.graphs.length; i++) {
+                  var graphs = opts.graphs[i];
+                  if (graphs.type == "bar") {
+                      //如果graphs里面有柱状图，那么就整个xAxis都强制使用 peak 的layoutType
+                      me.coord.xAxis.layoutType = "peak";
+                  }
+                  if (graphs.field) {
+                      //没有配置field的话就不绘制这个 graphs了
+                      var align = "left"; //默认left
+                      if (graphs.yAxisAlign == "right") {
+                          align = "right";
+                      }
+                      var optsYaxisObj = null;
+                      optsYaxisObj = _.find(opts.coord.yAxis, function (obj, i) {
+                          return obj.align == align || !obj.align && i == (align == "left" ? 0 : 1);
+                      });
+
+                      if (!optsYaxisObj) {
+                          optsYaxisObj = {
+                              align: align,
+                              field: []
+                          };
+                          opts.coord.yAxis.push(optsYaxisObj);
+                      } else {
+                          if (!optsYaxisObj.align) {
+                              optsYaxisObj.align = align;
+                          }
+                      }
+
+                      if (!optsYaxisObj.field) {
+                          optsYaxisObj.field = [];
+                      } else {
+                          if (!_.isArray(optsYaxisObj.field)) {
+                              optsYaxisObj.field = [optsYaxisObj.field];
+                          }
+                      }
+
+                      if (_.isArray(graphs.field)) {
+                          optsYaxisObj.field = optsYaxisObj.field.concat(graphs.field);
+                      } else {
+                          optsYaxisObj.field.push(graphs.field);
+                      }
+                  } else {
+                      //在，直角坐标系中，每个graphs一定要有一个field设置，如果没有，就去掉这个graphs
+                      opts.graphs.splice(i--, 1);
+                  }
+              }
+          }        //再梳理一遍yAxis，get没有align的手动配置上align
+          //要手动把yAxis 按照 left , right的顺序做次排序
+          var _lys = [],
+              _rys = [];
+          _.each(opts.coord.yAxis, function (yAxis, i) {
+              if (!yAxis.align) {
+                  yAxis.align = i ? "right" : "left";
+              }
+              if (yAxis.align == "left") {
+                  _lys.push(yAxis);
+              } else {
+                  _rys.push(yAxis);
+              }
+          });
+          opts.coord.yAxis = _lys.concat(_rys);
+
+          //todo Z坐标初始化
+
+          if (!opts.coord.zAxis) {
+              this.coord.zAxis = {
+                  field: '',
+                  depth: 100 //最大深度是1000
+              };
+          }
+
+          return opts;
+      }
+
       getBoundbox() {
           //笛卡尔坐标的原点默认为左下方
           let boundbox = new Box3();
@@ -16348,42 +17946,167 @@ var Chartx = (function () {
       }
 
       init() {
+
+          this.group = this._root.renderView.addGroup({ name: 'Decare3d' });
           // let view = this._root.renderView;
           // let camera = view._camera;
-          let opt = this.opt = _.clone(this._root.opt.opts);
+          let opt = _.clone(this._root.opt.opts);
 
           //这个判断不安全
           if (_.isSafeObject(opt, 'coord.xAxis.field')) {
               this.xAxisAttribute.setField(opt.coord.xAxis.field);
               this.xAxisAttribute.setData(this._getAxisDataFrame(opt.coord.xAxis.field));
+
               if (!_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
-                  this.xAxisAttribute.computeDataSection();
+                  var arr = _.flatten(this.xAxisAttribute.data);
+
+                  if (this.coord.xAxis.layoutType == "proportion") {
+                      if (arr.length == 1) {
+                          arr.push(0);
+                          arr.push(arr[0] * 2);
+                      }                    arr = arr.sort(function (a, b) {
+                          return a - b;
+                      });
+                      arr = DataSection.section(arr);
+                  }
+                  this.xAxisAttribute.setDataSection(arr);
               }
           }
 
           //获取axisY
           let yFields = [];
           if (_.isSafeObject(opt, 'coord.yAxis.field')) {
-              yFields.push(opt.coord.yAxis.field);
+              if (_.isArray(opt.coord.yAxis.field)) {
+                  yFields = yFields.concat(opt.coord.yAxis.field);
+              } else {
+                  yFields.push(opt.coord.yAxis.field);
+              }
           }
 
           opt.graphs && opt.graphs.forEach(cp => {
-              yFields.push(cp.field);
+              if (_.isArray(cp.field)) {
+                  yFields = yFields.concat(cp.field);
+              } else {
+                  yFields.push(cp.field);
+              }
           });
 
           yFields = _.uniq(yFields);
           this.yAxisAttribute.setField(yFields);
-          this.yAxisAttribute.setData(this._getAxisDataFrame(yFields));
+          let dataOrgY = this._getAxisDataFrame(yFields);
+          let _section = this._setDataSection(yFields);
+
+          this.yAxisAttribute.setData(dataOrgY);
           if (!_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
-              this.yAxisAttribute.computeDataSection();
+              let joinArr = [];
+              if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
+                  joinArr.push(opt.coord.yAxis.waterLine);
+              }
+
+              if (_.isSafeObject(opt, "coord.yAxis.min")) {
+                  joinArr.push(opt.coord.yAxis.min);
+              }            if (dataOrgY.length == 1) {
+                  joinArr.push(dataOrgY[0] * 2);
+              }
+              // if( this._opt.baseNumber != undefined ){
+              //     arr.push( this.baseNumber );
+              // }; 
+              // if( this._opt.minNumber != undefined ){
+              //     arr.push( this.minNumber );
+              // }; 
+              // if( this._opt.maxNumber != undefined ){
+              //     arr.push( this.maxNumber );
+              // }; 
+
+
+              this.yAxisAttribute.computeDataSection(joinArr);
           }
 
           //变换渲染图层的原点位置
-          this.group.position.copy(this.origin);
+          this.setOrigin(this.origin);
+      }
+
+      _setDataSection(yFields) {
+          //如果有堆叠，比如[ ["uv","pv"], "click" ]
+          //那么这个 this.dataOrg， 也是个对应的结构
+          //vLen就会等于2
+          var vLen = 1;
+
+          _.each(yFields, function (f) {
+              // vLen = Math.max( vLen, 1 );
+              if (_.isArray(f) && f.length > 1) {
+                  // _.each( f, function( _f ){
+                  //     vLen = Math.max( vLen, 2 );
+                  // } );
+                  vLen = 2;
+              }
+          });
+
+          if (vLen == 1) {
+              return this._oneDimensional(yFields);
+          }        if (vLen == 2) {
+              return this._twoDimensional(yFields);
+          }    }
+
+      _oneDimensional(yFields) {
+          debugger;
+          let dataOrg = this._getAxisDataFrame(yFields);
+          var arr = _.flatten(dataOrg); //_.flatten( data.org );
+
+          for (var i = 0, il = arr.length; i < il; i++) {
+              arr[i] = arr[i] || 0;
+          }
+          return arr;
+      }
+
+      //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
+      _twoDimensional(yFields) {
+          let d = this._getAxisDataFrame(yFields);
+          var arr = [];
+          var min;
+          _.each(d, function (d, i) {
+              if (!d.length) {
+                  return;
+              }
+              //有数据的情况下 
+              if (!_.isArray(d[0])) {
+                  arr.push(d);
+                  return;
+              }
+              var varr = [];
+              var len = d[0].length;
+              var vLen = d.length;
+
+              for (var i = 0; i < len; i++) {
+                  var up_count = 0;
+                  var up_i = 0;
+
+                  var down_count = 0;
+                  var down_i = 0;
+
+                  for (var ii = 0; ii < vLen; ii++) {
+                      !min && (min = d[ii][i]);
+                      min = Math.min(min, d[ii][i]);
+
+                      if (d[ii][i] >= 0) {
+                          up_count += d[ii][i];
+                          up_i++;
+                      } else {
+                          down_count += d[ii][i];
+                          down_i++;
+                      }
+                  }
+                  up_i && varr.push(up_count);
+                  down_i && varr.push(down_count);
+              }            arr.push(varr);
+          });
+          arr.push(min);
+          return _.flatten(arr);
       }
 
       _getAxisDataFrame(fields) {
           let dataFrame = this._root.dataFrame;
+
           return dataFrame.getDataOrg(fields, function (val) {
               if (val === undefined || val === null || val == "") {
                   return val;
@@ -16391,8 +18114,19 @@ var Chartx = (function () {
               return isNaN(Number(val)) ? val : Number(val);
           });
       }
+      //更新坐标原点
+      updateOrigin(offset) {
 
-      //根据局部坐标点,返回世界坐标点
+          offset.add(this.origin);
+          this.setOrigin(offset);
+          this.boundbox = this.getBoundbox();
+      }
+      setOrigin(pos) {
+          this.origin.copy(pos);
+          this.group.position.copy(pos);
+      }
+
+      //根据世界坐标返回惯性坐标
       _getPos(pos) {
 
           let transMatrix = new Matrix4();
@@ -16402,10 +18136,14 @@ var Chartx = (function () {
           return pos.applyMatrix4(transMatrix);
       }
 
-      drawCoordUI() {
+      initCoordUI() {
 
-          let coordUI = new Decare3dUI(this);
-          this.group.add(coordUI.group);
+          this._coordUI = new Decare3dUI(this);
+          this.group.add(this._coordUI.group);
+      }
+
+      draw() {
+          this._coordUI.draw();
       }
 
       dataToPoint() {}
@@ -16425,8 +18163,12 @@ var Chartx = (function () {
       setData(data) {
           this.data = data;
       }
-      computeDataSection() {
-          let arr = _.flatten(this.data);
+      setDataSection(section) {
+          this.section = section;
+      }
+      computeDataSection(joinArr = []) {
+          joinArr = joinArr.concat(this.data);
+          let arr = _.flatten(joinArr);
           for (var i = 0, il = arr.length; i < il; i++) {
               arr[i] = Number(arr[i] || 0);
               if (isNaN(arr[i])) {
@@ -16488,8 +18230,6 @@ var Chartx = (function () {
 
           chart.setCoord(Coord);
 
-          chart.init();
-
           for (var p in components) {
               chart.addComponent(components[p]);
           }
@@ -16498,6 +18238,7 @@ var Chartx = (function () {
 
           //chart = new Coord(el, data, opts, graphs, components);
           if (chart) {
+
               chart.draw();
 
               me.instances[chart.id] = chart;

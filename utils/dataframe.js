@@ -10,7 +10,7 @@
 import { parse2MatrixData } from "./tools"
 import _ from '../lib/underscore';
 
-export default function (data) {
+export default function (data,opt) {
 
     var dataFrame = {        //数据框架集合
         length: 0,
@@ -19,7 +19,11 @@ export default function (data) {
         getRowData: _getRowData,
         getFieldData: _getFieldData,
         getDataOrg: getDataOrg,
-        fields: []
+        fields: [],
+        range: {
+            start: 0,
+            end: 0
+        }
     };
 
     if (!data || data.length == 0) {
@@ -33,6 +37,14 @@ export default function (data) {
     } else {
         dataFrame.length = data.length - 1;
     };
+
+    //设置好数据区间end值
+    dataFrame.range.end = dataFrame.length - 1;
+    //然后检查opts中是否有dataZoom.range
+    if (opt && opt.dataZoom && opt.dataZoom.range) {
+        _.extend(dataFrame.range, opt.dataZoom.range);
+    };
+
 
     dataFrame.org = data;
     dataFrame.fields = data[0] ? data[0] : []; //所有的字段集合;
@@ -51,10 +63,12 @@ export default function (data) {
     for (var a = 1, al = data.length; a < al; a++) {
         for (var b = 0, bl = data[a].length; b < bl; b++) {
 
+            /*
             var _val = data[a][b];
-            if (!isNaN(_val)) {
-                _val = Number(_val);
+            if( !isNaN( _val ) ){
+                _val = Number( _val );
             };
+            */
 
             total[b].data.push(data[a][b]);
         }
@@ -99,7 +113,7 @@ export default function (data) {
                 for (var ii = 0, iil = arr.length; ii < iil; ii++) {
                     if ($field[i] == arr[ii].field) {
                         fieldInTotal = true;
-                        _fieldData.push(_format(arr[ii].data));
+                        _fieldData.push(_format(arr[ii].data.slice(dataFrame.range.start, dataFrame.range.end + 1)));
                         break;
                     }
                 };
@@ -117,11 +131,9 @@ export default function (data) {
     function _getRowData(index) {
         var o = {}
         var data = dataFrame.data
-        for (var a = 0, al = data.length; a < al; a++) {
-            if (data[a]) {
-                o[data[a].field] = data[a].data[index]
-            }
-        }
+        for (var a = 0; a < data.length; a++) {
+            o[data[a].field] = data[a].data[dataFrame.range.start + index]
+        };
         return o
     }
 
@@ -133,7 +145,7 @@ export default function (data) {
             }
         });
         if (data) {
-            return data.data;
+            return data.data.slice(dataFrame.range.start, dataFrame.range.end + 1);
         } else {
             return []
         }
