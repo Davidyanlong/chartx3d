@@ -28,12 +28,13 @@
     "onchange": "^3.0.2",
     "rollup": "^0.58.2",
     "rollup-plugin-babel": "^3.0.4",
-    "rollup-plugin-commonjs": "^9.1.4",
+    "rollup-plugin-commonjs": "^9.1.5",
+    "rollup-plugin-json": "^3.0.0",
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-uglify": "^3.0.0"
   },
   "dependencies": {
-    "mmgl": "0.0.10"
+    "mmgl": "0.0.14"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

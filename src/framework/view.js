@@ -22,7 +22,15 @@ import {
     RepeatWrapping,
     LinearFilter,
     Math as _Math,
-    Color
+    Color,
+    Object3D,
+    PlaneGeometry,
+    DoubleSide,
+    FrontSide,
+    Geometry,
+    Line,
+    LineBasicMaterial,
+    LineDashedMaterial
 
 
 } from "mmgl/src/index"
@@ -35,7 +43,7 @@ class View {
     constructor(_frameWork) {
 
         this._scene = new Scene();
-        this._camera = new Camera();
+        this._camera = null;
 
         this._frameWork = _frameWork;
         this.renderer = _frameWork.renderer;
@@ -45,9 +53,11 @@ class View {
 
         this.aspect = 1;
         this.fov = 75;
-        this.near = 1;
-        this.far = 1000;
+        this.near = 0.1;
+        this.far = 10000;
         this.mode = null;
+
+        this.controls = null;
 
         //todo:相机变化需要派发事件出来
 
@@ -56,7 +66,7 @@ class View {
     setSize(width, height) {
         this.width = width;
         this.height = height;
-
+        this.aspect = this.height ? this.width / this.height : 1;
         this.renderer.setPixelRatio(window.devicePixelRatio || 1);
         this.renderer.setSize(width, height);
 
@@ -76,6 +86,15 @@ class View {
 
     addGroup(opt) {
         let _group = new Group();
+        // _group.on('removed', function () {
+        //     debugger
+        //     if (this.geometry) {
+        //         this.geometry.dispose();
+        //     }
+        //     if (this.material) {
+        //         this.material.dispose();
+        //     }
+        // });
         _group.name = (opt && opt.name) || '';
         return _group;
     }
@@ -86,39 +105,40 @@ class View {
     }
 
     //mode: "ortho" || "perspective"    
-    project(aspect, frustumSize, mode) {
-
-        this.aspect = aspect;
+    project(controlsOpts, mode) {
         this.mode = mode;
+        this.controls = controlsOpts;
+
+        let aspect = this.aspect;
+        let frustumSize = controlsOpts.boxHeight;
+        let distance = controlsOpts.distance;
 
         if (mode === 'perspective') {
             this._camera = new PerspectiveCamera(this.fov, this.aspect, this.near, this.far);
             //默认绘制的物体是贴近近裁面的,根据近裁面呈现高度为frustumSize的物体需要相机位置
             //let centerPosition = new Vector3(0, 0, (this.far - this.near)/2);
 
-           
 
-            let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+            // let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
 
-            var dist = frustumSize / (2 * Math.tan(vFOV / 2));
-            this._camera.position.set(0, 0, dist);
+            // var dist = frustumSize / (2 * Math.tan(vFOV / 2));
+            this._camera.position.set(0, 0, distance);
+
 
 
         } else {
             //给定一个大的投影空间,方便数据的计算
-            this._camera = new OrthographicCamera(frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
-            this._camera.position.set(0, 0, 20);
+            this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
+            this._camera.position.set(0, 0, distance);
         }
 
-        // this._camera.rotateX(_Math.degToRad(10));
-        // this._camera.rotateY(_Math.degToRad(15));
-
-        console.info("getVisableSize", this.getVisableSize());
+        // console.info("getVisableSize", this.getVisableSize());
 
     }
 
-    getVisableSize(z) {
-        z = z || this.near;
+
+
+    getVisableSize(currPosition = new Vector3()) {
 
         let result = { width: 0, height: 0, ratio: 0 };
 
@@ -129,7 +149,7 @@ class View {
         }
 
         if (this.mode == "perspective") {
-            let currPosition = new Vector3(0, 0, z);
+
             let cameraPosition = this._camera.position.clone();
             let dist = cameraPosition.distanceTo(currPosition);
             let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
@@ -168,6 +188,7 @@ class View {
         //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
         geometry.vertices.forEach(vertice => {
             vertice.addScalar(0.5);
+            vertice.z *= -1;
         });
 
         //更加给定的得数据变换box
@@ -182,6 +203,83 @@ class View {
 
 
     }
+    //创建一个面
+    createPlane(width = 1, height = 1, materials = undefined, showInfo = {}, group = undefined, faceStyle = {}) {
+
+        if (!materials) {
+            materials = new MeshBasicMaterial({
+                color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                side: FrontSide,
+                transparent: true,
+                opacity: faceStyle.alpha || 1,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 0.3
+
+            });
+        }
+
+        let planetGeometry = new PlaneGeometry(width, height);
+        let planeMesh = new Mesh(planetGeometry, materials);
+
+
+
+        if (showInfo.dir.equals(new Vector3(1, 0, 0))) {
+            planeMesh.rotateY(_Math.degToRad(90));
+        }
+        if (showInfo.dir.equals(new Vector3(-1, 0, 0))) {
+            planeMesh.rotateY(_Math.degToRad(-90));
+        }
+
+
+        if (showInfo.dir.equals(new Vector3(0, 1, 0))) {
+            planeMesh.rotateX(_Math.degToRad(-90));
+        }
+
+        if (showInfo.dir.equals(new Vector3(0, -1, 0))) {
+            planeMesh.rotateX(_Math.degToRad(90));
+        }
+        if (showInfo.dir.equals(new Vector3(0, 0, -1))) {
+            planeMesh.rotateY(_Math.degToRad(180));
+        }
+
+        if (showInfo.center) {
+            planeMesh.position.copy(showInfo.center)
+
+        }
+        if (group) {
+            group.visible = showInfo.visible;
+            group.add(planeMesh);
+        }
+
+        return planeMesh;
+
+    }
+    //绘制普通线条
+    createCommonLine(points = [], lineStyle) {
+        let group = this.addGroup({ name: 'commonLines' });
+
+        let material = new LineBasicMaterial({
+            color: lineStyle.strokeStyle
+        });
+        if (lineStyle.lineType == 'dashed') {
+            material = new LineDashedMaterial({
+                color: lineStyle.strokeStyle,
+            })
+        }
+
+
+        let geometry = new Geometry();
+        points.forEach(item => {
+            geometry.vertices.push(item);
+        })
+        let line = new Line(geometry, material);
+        group.add(line);
+
+        return group;
+
+    }
+
     //绘制线条
     createLine(origins, direction, length, lineWidth, lineColor) {
 
@@ -324,7 +422,20 @@ class View {
         const objectWorldScale = new Vector3();
         return object.getWorldScale(objectWorldScale);
     }
+    resize(_width, _height, frustumSize) {
+        this.setSize(_width, _height);
+        if (this.mode == 'perspective') {
+            this._camera.aspect = this.aspect;
+        } else {
 
+            this._camera.left = frustumSize * aspect / -2;
+            this._camera.right = frustumSize * aspect / 2;
+            this._camera.top = frustumSize / 2
+            this._camera.bottom = frustumSize / - 2;
+
+        }
+        this._camera.updateProjectionMatrix();
+    }
 
 
 

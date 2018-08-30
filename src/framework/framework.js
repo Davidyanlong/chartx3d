@@ -1,9 +1,10 @@
 
-import { WebGLRenderer } from "mmgl/src/index"
+import { WebGLRenderer ,Events } from "mmgl/src/index"
 
-class Framework  {
+class Framework extends Events {
     constructor() {
-        
+        super();
+
         this.layers = [];
         this.isUpdate = true;
 
@@ -43,7 +44,7 @@ class Framework  {
 
         var redraw = this.isUpdate;
         //this.isUpdate = false;
-
+        this.fire({ type: 'renderbefor' });
         if (redraw) {
             this.layers.forEach(view => {
               

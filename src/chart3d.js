@@ -1,9 +1,11 @@
 import $ from '../lib/dom';
+import _ from '../lib/underscore';
 import { parse2MatrixData } from "../utils/tools"
 import { Application } from './framework/application';
-import { Coord3d } from './framework/coord/coord3d';
+import { InertialSystem } from './framework/coord/inertial';
 import { Component } from './components/Component';
 import DataFrame from "../utils/dataframe";
+
 
 import { Events } from 'mmgl/src/index';
 
@@ -13,14 +15,16 @@ class Chart3d extends Events {
     constructor(opt) {
         super();
 
-        this.el = null;
-        this.opt = opt;
+        this.domSelector = opt.el;
+        this.opt = opt.opts;
+        this.data = opt.data;
 
+        this.el = null;
         this.view = null;
         this.domView = null;
         this.stageView = null;
-
         this.canvasDom = null;   //画布DOM元素
+
 
         this.width = 0;     //画布的宽
         this.height = 0;    //画布的高 
@@ -33,7 +37,7 @@ class Chart3d extends Events {
 
 
         //初始化画布
-        this._createDomContainer(opt);
+        this._createDomContainer(opt.el);
 
         //初始化数据
         //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
@@ -50,48 +54,53 @@ class Chart3d extends Events {
         //初始化渲染器
         this.renderer = this.app._framework.renderer;
 
-        //初始化相机
-        this.aspect = this.height !== 0 ? this.width / this.height : 1;
+        this.DefaultControls = {
+            boxWidth: 1000,         //空间中X的最大值(最大宽度)  
+            boxHeight: 1000,        //空间中Y的最大值(最大高度)  
+            boxDepth: 1000,         //空间中Z的最大值(最大深度)
 
+            distance: 1100,        //默认相机距离
+            maxDistance: 3000,     //最大相机距离
+            minDistance: 600,      //最小相机距离 
 
-        //投影空间的全高默认值
-        this.frustumSize = 1000;
-
-
-
-
-
-        //初始化物体的惯性坐标(放在具体的坐标系下)
-
+            alpha: 40,    //绕X轴旋转
+            beta: 20,      //绕Y轴旋转
+            gamma: 0      //绕Z轴旋转
+        }
 
 
         //组件管理机制,所有的组件都绘制在这个地方
         this.components = [];
 
         this.inited = false;
-        this.dataFrame = this._initData(this._data,opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
+        this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
         this.init();
 
 
     }
     init() {
-        this._initRenderer();
 
-        //默认正交投影
-        this.renderView.project(this.aspect, this.frustumSize, 'perspective'); //'ortho' | 'perspective',
+        let rendererOpts = _.extend({}, this.DefaultControls);
 
-        this.setCoord(Coord3d);
+        _.extend(rendererOpts, this.opt.controls);
+        _.extend(this.opt, rendererOpts);
+
+        this._initRenderer(rendererOpts);
+
         //启动渲染进程
         this.app.launch();
+
+        window.addEventListener('resize', this.resize.bind(this), false);
     }
-    setCoord(coord) {
-        if (coord === Coord3d || coord.prototype instanceof Coord3d) {
-            this.currCoord = new coord(this);
+    setCoord(_Coord) {
+
+        //初始化物体的惯性坐标(放在具体的坐标系下)
+        if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
+            this.currCoord = new _Coord(this);
             this.rootStage.add(this.currCoord.group);
         }
         this.currCoord.initCoordUI();
-        this.currCoord.draw();
 
     }
     //添加组件
@@ -110,26 +119,29 @@ class Chart3d extends Events {
     }
 
     drawComponent() {
+        //先绘制坐标系
+        this.currCoord.draw();
 
         this.components.forEach(cmp => {
             this.currCoord.group.add(cmp.group);
+            cmp.draw();
         })
-        this.draw();
     }
 
     draw() {
+        this.drawComponent();
         this.app._framework.isUpdate = true;
     }
 
 
 
-    _createDomContainer(opt) {
+    _createDomContainer(_domSelector) {
 
         let viewObj = null;
 
         this._cid = "chartx3d_" + _cid++;;
 
-        this.el = $.query(opt.el);
+        this.el = $.query(_domSelector);
 
         this.width = this.el.offsetWidth;
         this.height = this.el.offsetHeight;
@@ -149,12 +161,12 @@ class Chart3d extends Events {
         this.el.setAttribute("chartx3d_version", "1.0");
     }
 
-    _initData(data,opt) {
+    _initData(data, opt) {
 
-        return DataFrame.call(this, data,opt);
+        return DataFrame.call(this, data, opt);
     }
 
-    _initRenderer() {
+    _initRenderer(rendererOpts) {
         let app = this.app;
         let renderView = null;
         this.stageView.appendChild(this.renderer.domElement);
@@ -169,10 +181,15 @@ class Chart3d extends Events {
         this.rootStage = renderView.addGroup({ name: 'rootStage' });
         renderView.addObject(this.rootStage);
         renderView.setSize(this.width, this.height);
-       // renderView.setBackground(0xFFFFFF);
+        // renderView.setBackground(0xFFFFFF);
+
+         //默认透视投影
+         this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
     }
     resize() {
-        //todo 窗口大小发生变化
+        this.width = this.el.offsetWidth;
+        this.height = this.el.offsetHeight;
+        this.renderView.resize(this.width, this.height, this.opt.controls.boxHeight);
     }
     //数据变更后调用reset
     reset() {
@@ -182,8 +199,8 @@ class Chart3d extends Events {
     resetData() {
 
     }
-    destroy(){
-        
+    destroy() {
+
     }
 }
 

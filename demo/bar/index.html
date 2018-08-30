@@ -1,89 +1,120 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
-<title>xChart demo -- bar</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1"
+    />
+    <title>xChart demo -- bar</title>
 
-<script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="../../dist/chartx.js"></script>
-<!-- codemirror -->
-<script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
-<link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
-<link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
-<link rel="stylesheet" href="../../lib/codemirror/docs.css">
-<!-- codemirror end -->
-<!--bootstrap-->
-<script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
-<link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
-<link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
-<link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
-<!--bootstrap end-->
-<script type="text/javascript" src="../../lib/demo.js"></script>
-<link rel="stylesheet" href="../../lib/demo.css">
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <!-- codemirror -->
+    <script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
+    <link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
+    <link rel="stylesheet" href="../../lib/codemirror/docs.css">
+    <!-- codemirror end -->
+    <!--bootstrap-->
+    <script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
+    <!--bootstrap end-->
+    <script type="text/javascript" src="../../lib/demo.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
 </head>
-<body >
 
-<table>
-    <tr>
-        <td id="td-vl">
-            <form><textarea id="code" name="code">
+<body>
+
+    <table>
+        <tr>
+            <td id="td-vl">
+                <form><textarea id="code" name="code">
 
                 //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
                 //第一行是表头。
                 var data= [
                     ["xfield","uv" ,"pv" ,"click", "ppc"],
-                    [ "天猫淘宝、天猫淘宝直通车"      , 101 , 20  , 33    , 53],
-                    [ 2      , 67  , 51  , 26    , 62],
-                    [ 3      , 130 , 50  , 50    , 23],
-                    [ 4      , 101 , 60  , 33    , 64],
-                    [ 5      , 67  , 91  , 126   , 34 ],
-                    [ 6      , 30  , 50 , 90     , 21],
-                    [ 7      , 51  , 120 , 33    , 112],
-                    [ 8      , 67  , 51  , 86    , 231],
-                    [ 9      , 120 , 90  , 150   , 23 ]
+                    [ 1      , 101 , 20  , 33    , '项目一'],
+                    [ 2      , 67  , 51  , 26    , '项目二'],
+                    [ 3      , 130 , 50  , 50    , '项目三'],
+                    [ 4      , 101 , 60  , 33    , '项目四'],
+                    [ 5      , 67  , 91  , 126   , '项目五' ],
+                    [ 6      , 30  , 50 , 90     , '项目六'],
+                    [ 7      , 51  , 120 , 33    , '项目七'],
+                    [ 8      , 67  , 51  , 86    , '项目八'],
+                    [ 9      , 120 , 90  , 150   , '项目九' ]
                 
                 ];
                 var options = {
                     //theme : [],
+                    controls:{
+
+                       boxWidth:800,         //空间中X的最大值(最大宽度)  
+                       boxHeight:1000,        //空间中Y的最大值(最大高度)  
+                       boxDepth:500,         //空间中Z的最大值(最大深度)
+
+                       distance:300,        //默认相机距离
+                       maxDistance:3000,     //最大相机距离
+                       minDistance:300,      //最小相机距离 
+                       
+                       alpha:20,    //绕X轴旋转
+                       beta:20,      //绕Y轴旋转
+                    },
                     coord : {
-                        type : "decare3d",
+                        type : "cartesian3d",
                         xAxis : {
                             field : "xfield",
-                            ruler : {
-                                text : {
-                                    textAlign : "right",
-                                    format: function(){
-                                        return "x\nodfdfdfdfsdfo"
-                                    }
+                            title : {
+                                content : "xAxis"
+                            },
+                            label : {
+                                textAlign : "center",
+                                format: function(val){
+                                    return val;
+                                    //return "x\nodfdfdfdfsdfo"
                                 }
                             }
+                            
+                            //dataSection : [1,3,5,7,9]
+                        },
+                        zAxis : {
+                            field : "ppc",
+                            title : {
+                                content : "zAxis"
+                            },
+                            label : {
+                                textAlign : "left",
+                                format: function(val){
+                                    return val;
+                                    //return "x\nodfdfdfdfsdfo"
+                                }
+                            }
+                            
                             //dataSection : [1,3,5,7,9]
                         },
                         yAxis : [
                             {
-                                label : "left",
+                                title : {
+                                    content : "left"
+                                },
                                 //dataSection : [1,2,3,4,5,6,7,8],
-                                ruler : {
-                                    text : {
-                                        format : function(val){
-                                            
-                                           val
-                                        }
+                                label : {
+                                    format : function(val){
+                                        
+                                        return   val
                                     }
                                 }
-                            },
-                            {
-                                label : "right"
                             }
                         ]
                     },
-                    legend : {},
+                    
                     tips : {
-                        pointer : "shadow"
+                        pointer : "region"
                     },
                     graphs : [
                     
@@ -91,7 +122,7 @@
                             type : "bar",
                             field : "click",
                             yAxisAlign : "left",
-                            text : {
+                            label : {
                                 enabled : true
                             }
                         },
@@ -99,35 +130,18 @@
                             type : "bar",
                             field : [ [ "uv","pv" ],"ppc" ],
                             yAxisAlign : "right",
-                            text : {
+                            label : {
                                 enabled : true,
                                 verticalAlign: "middle",
                                 position : "center",
                                 fontColor : "#fff",
-                                lineWidth : 2
+                                lineWidth : 2,
+                                rotation : -90
                             }
                         }
                         
-                    ],
-                    dataZoom: {},
-                    markLine :  [{
-                        markTo: 'uv',
-                        text : {
-                            enabled : true,
-                            value : function( yVal ){
-                                return 'UV 均值 ：' + parseInt( yVal )
-                            },
-                            fontSize : 14
-                        }
-                        //y : 30 //不设置y，就会自动设置为均线
-                    },{
-                        markTo: 'pv',
-                        text : {
-                            enabled : true,
-                            fontSize : 14
-                        },
-                        y : 180
-                    }]
+                    ]
+                   
                 };
                 
                 window.bar = Chartx.create("canvasTest" , data , options)
@@ -135,28 +149,27 @@
                             
 
             </textarea></form>
-        </td>
-        <td style="padding:0 10px;" id="td-vr">
-            <div id="chartdemo-r">
-            <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
-                <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
+            </td>
+            <td style="padding:0 10px;" id="td-vr">
+                <div id="chartdemo-r">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
+                        <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
 
-                <h4>柱状图（bar chart）</h4>
-                <p>
-                    联系人：@释剑
-                </p>
-            </div>
-            <div  class="test-c">
-                <div id="canvasTest" style='width:100%;height:300px;position:relative;'></div>
-            </div>
+                        <h4>柱状图（bar chart）</h4>
+                        <p>
+                            联系人：@释剑
+                        </p>
+                    </div>
+                    <div class="test-c">
+                        <div id="canvasTest" style='width:100%;height:400px;position:relative;'></div>
+                    </div>
 
-            </div>
-        </td>
-    </tr>
-</table>
+                </div>
+            </td>
+        </tr>
+    </table>
 
-    
-</body> 
+
+</body>
+
 </html>
-
-

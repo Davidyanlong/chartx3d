@@ -8,14 +8,12 @@ import _ from '../../../../lib/underscore';
 import { numAddSymbol } from '../../../../utils/tools';
 
 class YAxis extends Component {
-    constructor(_coord) {
-        super(_coord);
-
-        let opt = this._coord;
-        this._opt = opt;
+    constructor(_cartesionUI) {
+        super(_cartesionUI._coordSystem);
+        let opt = this._opt = _cartesionUI;
 
         //this._coord = _coord || {};
-
+        this._cartesionUI = _cartesionUI;
 
         this.width = null; //第一次计算后就会有值
         this.yMaxHeight = 0; //y轴最大高
@@ -40,7 +38,7 @@ class YAxis extends Component {
         this.enabled = true;
         this.tickLine = {//刻度线
             enabled: 1,
-            lineWidth: 2, //线宽
+            lineWidth: 1, //线宽
             lineLength: 4, //线长
             strokeStyle: '#cccccc',
             // distance: 2,
@@ -48,7 +46,7 @@ class YAxis extends Component {
         };
         this.axisLine = {//轴线
             enabled: 1,
-            lineWidth: 1,
+            lineWidth: 2,
             strokeStyle: '#cccccc'
         };
         this.label = {
@@ -59,7 +57,7 @@ class YAxis extends Component {
             rotation: 0,
             textAlign: "right",
             lineHeight: 1,
-            offset: 2     //和刻度线的距离
+            offset: 2    //和刻度线的距离
         };
 
         if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
@@ -107,17 +105,15 @@ class YAxis extends Component {
 
         this.layoutType = "proportion"; // rule , peak, proportion
 
-        _.extend(true, this, opt);
+        _.extend(true, this, opt.yAxis);
 
-        this.init(opt, this._coord.yAxisAttribute);
+        this.init(opt, this._coordSystem.yAxisAttribute);
 
         this._getName();
 
     }
 
     init(opt, data) {
-
-
 
         //extend会设置好this.field
         //先要矫正子啊field确保一定是个array
@@ -131,17 +127,42 @@ class YAxis extends Component {
         // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesGroup' });
         // this.group.add(this.rulesGroup);
 
-       
+
     }
     _initModules() {
         //初始化轴线
         const _axisDir = new Vector3(0, 1, 0);
-        const _coord = this._coord;
-        let coordBoundBox = _coord.getBoundbox();
+        const _coordSystem = this._coordSystem;
+        let coordBoundBox = _coordSystem.getBoundbox();
+        let _size = new Vector3(); //空间盒子的大小
+        coordBoundBox.getSize(_size);
+        let {
+            x: width,
+            y: height,
+            z: depth
+        } = _size;
+        let origin = _coordSystem.getOrigin();
+        let _faceInfo = this._cartesionUI.getFaceInfo();
 
-        this._axisLine = new AxisLine(_coord, this.axisLine);
+        if (_faceInfo.left.visible) {
+            if (_faceInfo.back.visible) {
+                origin = _coordSystem.getOrigin();
+            } else {
+                origin = new Vector3(0, 0, -depth);
+            }
+        } else {
+            if (_faceInfo.back.visible) {
+                origin = new Vector3(width, 0, 0);
+            } else {
+                origin = new Vector3(width, 0, -depth);
+            }
+        }
+
+
+
+        this._axisLine = new AxisLine(_coordSystem, this.axisLine);
         this._axisLine.setDir(_axisDir);
-        this._axisLine.setOrigin(coordBoundBox.min);
+        this._axisLine.setOrigin(origin);
         this._axisLine.setLength(coordBoundBox.max.y);
         this._axisLine.setGroupName('yAxisLine')
         this._axisLine.drawStart();
@@ -150,21 +171,23 @@ class YAxis extends Component {
 
 
         //初始化tickLine
-        const _tickLineDir = new Vector3(-1, 0, 0);
-        this._tickLine = new TickLines(_coord, this.tickLine);
+        const _tickLineDir = new Vector3(0, 0, 1);
+        this._tickLine = new TickLines(_coordSystem, this.tickLine);
         this._tickLine.setDir(_tickLineDir);
-        this._tickLine.initData(this._axisLine, _coord.yAxisAttribute);
+        this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
         this._tickLine.drawStart();
 
-         this.group.add(this._tickLine.group);
+        this.group.add(this._tickLine.group);
 
+        初始化tickText
+        this._tickText = new TickTexts(_coordSystem, this.label);
+        this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
 
-        //初始化tickText
-        this._tickText = new TickTexts(_coord, this.label);
-        this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset+this._maxTextWidth/2;
-       
         this._tickText.setDir(_tickLineDir);
-        this._tickText.initData(this._axisLine, _coord.yAxisAttribute);
+        this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+
+        //this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute);
+
         this._tickText.drawStart(this._formatTextSection);
         this.group.add(this._tickText.group);
 
@@ -268,10 +291,12 @@ class YAxis extends Component {
     }
 
     draw() {
-        
+        this._initModules();
+
         this._axisLine.draw();
         this._tickLine.draw();
         this._tickText.draw();
+        console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
     }
 
     getBoundbox() {
@@ -294,13 +319,9 @@ class YAxis extends Component {
         return result;
 
     }
-
-    getAxisYWidth() {
-        let boundbox = this.getBoundbox();
-        return Math.round(boundbox.max.x - boundbox.min.x);
-    }
     _setYAxisWidth() { //检测下文字的宽度
         var me = this;
+        const _coordSystem = me._coordSystem;
         if (!me.enabled) {
             me.width = 0;
         } else {
@@ -309,8 +330,8 @@ class YAxis extends Component {
             if (this.label.enabled) {
 
                 //me._formatTextSection.forEach((val)=>{
-                    let width = TextTexture.getTextWidth(me._formatTextSection,['normal','normal',this.label.fontColor,this.label.fontSize].join(' '))
-                    _maxTextWidth = Math.max(_maxTextWidth, width);
+                let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '))
+                _maxTextWidth = Math.max(_maxTextWidth, width);
                 //})
                 // _.each(me.dataSection, function (val, i) {
 
@@ -341,8 +362,10 @@ class YAxis extends Component {
                 //     console.log('width',width);
                 // });
             };
+
+            //这里的计算宽度流出需要考虑一下
             this._maxTextWidth = _maxTextWidth;
-            let ratio = me._root.renderView.getVisableSize().ratio;  
+            let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
             this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
             //this.width+=10;
             // if (this._title) {

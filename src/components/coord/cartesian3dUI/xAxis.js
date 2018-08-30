@@ -1,0 +1,282 @@
+
+import { AxisLine } from './axisLine';
+import { Vector3, TextTexture } from 'mmgl/src/index';
+import { TickLines } from './tickLines';
+import { Component } from '../../Component';
+import { TickTexts } from './tickTexts';
+import _ from '../../../../lib/underscore';
+import { numAddSymbol } from '../../../../utils/tools';
+
+class XAxis extends Component {
+    constructor(_cartesionUI) {
+        super(_cartesionUI._coordSystem);
+        let opt = this._opt = _cartesionUI;
+
+        this._cartesionUI = _cartesionUI;
+        this.width = 0;
+        this.height = 0;
+
+        this.title = {
+            content: "",
+            shapeType: "text",
+            fontColor: '#999',
+            fontSize: 12,
+            offset: 2,
+            textAlign: "center",
+            textBaseline: "middle",
+            strokeStyle: null,
+            lineHeight: 0
+        };
+        this._title = null; //this.title对应的文本对象
+
+        this.enabled = true;
+        this.axisLine = {
+            enabled: 1, //是否有轴线
+            lineWidth: 2,
+            strokeStyle: '#cccccc'
+        };
+
+        this.tickLine = {
+            enabled: 1, //是否有刻度线
+            lineWidth: 1, //线宽
+            lineLength: 4, //线长
+            offset: 2,
+            strokeStyle: '#cccccc'
+        };
+
+        this.label = {
+            enabled: 1,
+            fontColor: '#999',
+            fontSize: 12,
+            rotation: 0,
+            format: null,
+            offset: 2,
+            textAlign: "center",
+            lineHeight: 1,
+            evade: true  //是否开启逃避检测，目前的逃避只是隐藏
+        };
+        if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+            //如果是横向直角坐标系图
+            this.label.rotation = 90;
+        };
+
+        this.maxTxtH = 0;
+
+        this.pos = {
+            x: 0,
+            y: 0
+        };
+
+        this.dataOrg = []; //源数据
+        this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
+
+        this.layoutData = []; //{x:100, value:'1000',visible:true}
+
+        this.sprite = null;
+
+        //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+        //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+        this.filter = null; //function(params){}; 
+
+        this.isH = false; //是否为横向转向的x轴
+
+        this.animation = false;
+
+        //layoutType == "proportion"的时候才有效
+        this.maxVal = null;
+        this.minVal = null;
+
+        this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
+
+        this.layoutType = "rule"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+
+        //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
+        //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
+        //function
+        this.trimLayout = null;
+
+        this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+
+        _.extend(true, this, opt.xAxis);
+
+        this.init(opt, this._coordSystem.xAxisAttribute);
+        //xAxis的field只有一个值,
+        //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
+
+
+    }
+    init(opt, data) {
+        this.group = this._root.renderView.addGroup({ name: 'xAxis' });
+
+        // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+
+        // this.group.add(this.rulesGroup);
+
+        this._initHandle(data);
+    }
+    _initHandle(data) {
+        var me = this;
+
+        if (data && data.field) {
+            this.field = data.field;
+        }
+
+        if (data && data.data) {
+            this.dataOrg = _.flatten(data.data);
+        };
+        if (!this._opt.dataSection && this.dataOrg) {
+            //如果没有传入指定的dataSection，才需要计算dataSection
+            this.dataSection = data.section;// this._initDataSection(this.dataOrg);
+        };
+
+        me._formatTextSection = [];
+        me._textElements = [];
+        _.each(me.dataSection, function (val, i) {
+            me._formatTextSection[i] = me._getFormatText(val, i);
+            //从_formatTextSection中取出对应的格式化后的文本
+
+            // var txt = me._root.renderView.createTextSprite(""+me._formatTextSection[i],me.label.fontSize)
+
+            // // var txt = new Canvax.Display.Text(me._formatTextSection[i], {
+            // //     context: {
+            // //         fontSize: me.label.fontSize
+            // //     }
+            // // });
+
+            // me._textElements[i] = txt;
+        });
+
+        if (this.label.rotation != 0) {
+            //如果是旋转的文本，那么以右边为旋转中心点
+            this.label.textAlign = "right";
+        };
+
+        //取第一个数据来判断xaxis的刻度值类型是否为 number
+        !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+        if (isNaN(this.minVal) || this.minVal == Infinity) {
+            this.minVal = 0;
+        };
+        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+        if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+            this.maxVal = 1;
+        };
+
+        this._getName();
+
+        this._setXAxisHeight();
+    }
+    _getFormatText(val, i) {
+        var res;
+        if (_.isFunction(this.label.format)) {
+            res = this.label.format.apply(this, arguments);
+        } else {
+            res = val
+        }
+
+        if (_.isArray(res)) {
+            res = numAddSymbol(res);
+        }
+        if (!res) {
+            res = val;
+        };
+        return res;
+    }
+    _initModules() {
+        //初始化轴线
+        const _axisDir = new Vector3(1, 0, 0);
+        const _coordSystem = this._coordSystem;
+        let coordBoundBox = _coordSystem.getBoundbox();
+        
+       
+        
+
+        this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+        this._axisLine.setDir(_axisDir);
+        this._axisLine.setOrigin(_coordSystem.getOrigin());
+        this._axisLine.setLength(coordBoundBox.max.x);
+        this._axisLine.setGroupName('xAxisLine')
+        this._axisLine.drawStart();
+
+        this.group.add(this._axisLine.group);
+
+        //初始化tickLine
+        const _tickLineDir = new Vector3(0, 0, 1);
+        this._tickLine = new TickLines(_coordSystem, this.tickLine);
+        this._tickLine.setDir(_tickLineDir);
+        this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+        this._tickLine.drawStart();
+
+        this.group.add(this._tickLine.group);
+
+
+        //初始化tickText
+        this._tickText = new TickTexts(_coordSystem, this.label);
+        this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+
+        this._tickText.setDir(_tickLineDir);
+        this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+
+        //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
+        this._tickText.drawStart(this._formatTextSection);
+        this.group.add(this._tickText.group);
+    }
+    _getName() {
+        // if ( this.title.content ) {
+        //     if( !this._title ){
+        //         this._title = new Canvax.Display.Text(this.title.content, {
+        //             context: {
+        //                 fontSize: this.title.fontSize,
+        //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+        //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+        //                 fillStyle: this.title.fontColor,
+        //                 strokeStyle: this.title.strokeStyle,
+        //                 lineWidth : this.title.lineWidth,
+        //                 rotation: this.isH ? -180 : 0
+        //             }
+        //         });
+        //     } else {
+        //         this._title.resetText( this.title.content );
+        //     }
+        // }
+    }
+
+    _setXAxisHeight() { //检测下文字的高等
+        var me = this;
+        const _coordSystem = me._coordSystem;
+        if (!me.enabled) {
+            me.height = 0;
+        } else {
+            var _maxTextHeight = 0;
+
+            if (this.label.enabled) {
+                let height = this.label.fontSize * 1.2;
+                _maxTextHeight = Math.max(_maxTextHeight, height);
+
+            };
+
+            let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
+            this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+            this._maxTextHeight = _maxTextHeight;
+            // if (this._title) {
+            //     this.height += this._title.getTextHeight()
+            // };
+
+        }
+    }
+    //设置布局
+    setLayout(opt) {
+
+    }
+    draw() {
+        this._initModules();
+        this._axisLine.draw();
+        this._tickLine.draw();
+        this._tickText.draw();
+
+        //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
+
+
+    }
+}
+
+export { XAxis };

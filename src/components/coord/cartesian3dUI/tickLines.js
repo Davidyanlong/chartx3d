@@ -12,8 +12,8 @@ import { Vector3, Box3, Mesh } from 'mmgl/src/index';
 
 
 class TickLines extends Component {
-    constructor(coord,opts) {
-        super(coord);
+    constructor(_coordSystem,opts) {
+        super(_coordSystem);
 
         //点的起点位置集合
         this.origins = [];
@@ -38,27 +38,23 @@ class TickLines extends Component {
        
         this.group.visible = !!opts.enabled;
     }
-    initData(axis, attribute) {
+    initData(axis,attribute,fn) {
         let me = this;
         let _dir = new Vector3();
-        let axisSectionLength = axis.length / (attribute.section.length - 1);
         let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-    
+       
         attribute.section.forEach((num, index) => {
             //起点
-            let startPoint = new Vector3();
-           
-            startPoint.copy(axis.dir);
-            startPoint.multiplyScalar(axisSectionLength * index);
+            let val = fn.call(this._coordSystem,num)
+            let startPoint = axis.dir.clone().multiplyScalar(val);
+            startPoint.add(axis.origin);
             startPoint.add(_offset);
             me.origins.push(startPoint);
 
         });
-
-
     }
     set length(len){
-        let ratio = this._root.renderView.getVisableSize().ratio;
+        let ratio=this._coordSystem.getRatioPixelToWorldByOrigin();
         this._length = len * ratio;
     }
     get length(){
@@ -66,7 +62,7 @@ class TickLines extends Component {
     }
 
     set offset(_offset){
-        let ratio = this._root.renderView.getVisableSize().ratio;
+        let ratio=this._coordSystem.getRatioPixelToWorldByOrigin();
         this._offset = _offset * ratio;
     }
 

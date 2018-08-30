@@ -1,19 +1,17 @@
 
 import { AxisLine } from './axisLine';
-import { Vector3 ,TextTexture} from 'mmgl/src/index';
+import { Vector3, TextTexture } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
 import { Component } from '../../Component';
 import { TickTexts } from './tickTexts';
 import _ from '../../../../lib/underscore';
 import { numAddSymbol } from '../../../../utils/tools';
 
-class XAxis extends Component {
-    constructor(_coord) {
-        super(_coord);
-
-        let opt = this._coord;
-        this._opt = opt;
-
+class ZAxis extends Component {
+    constructor(_cartesionUI) {
+        super(_cartesionUI._coordSystem);
+        let opt = this._opt = _cartesionUI;
+        this._cartesionUI = _cartesionUI;
         //this._coord = _coord || {};
 
         this.width = 0;
@@ -42,7 +40,7 @@ class XAxis extends Component {
         };
         this.axisLine = {
             enabled: 1, //是否有轴线
-            lineWidth: 1,
+            lineWidth: 2,
             strokeStyle: '#cccccc'
         };
         this.label = {
@@ -51,16 +49,17 @@ class XAxis extends Component {
             fontSize: 12,
             rotation: 0,
             format: null,
-            offset: 2,
-            textAlign: "center",
+            offset: 8,
+            textAlign: "left",
             lineHeight: 1,
-            evade: true  //是否开启逃避检测，目前的逃避只是隐藏
+            //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
         };
         if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
             //如果是横向直角坐标系图
             this.label.rotation = 90;
         };
 
+        // this.depth = 500;
         this.maxTxtH = 0;
 
         this.pos = {
@@ -89,26 +88,27 @@ class XAxis extends Component {
 
         this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
 
-        this.layoutType = "rule"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+        this.layoutType = "peak"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
 
         //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
         //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
         //function
         this.trimLayout = null;
 
+        // if (!opt._coord.zAxisAttribute.section.length) {
+        //     this.depth = 50;
+        // }
+
         this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+        _.extend(true, this, opt.zAxis);
 
-        _.extend(true, this, opt);
+        this.init(opt, this._coordSystem.zAxisAttribute);
 
-        this.init(opt, this._coord.xAxisAttribute);
-
-        //xAxis的field只有一个值,
-        //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
 
 
     }
     init(opt, data) {
-        this.group = this._root.renderView.addGroup({ name: 'xAxis' });
+        this.group = this._root.renderView.addGroup({ name: 'zAxis' });
 
         // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
 
@@ -130,7 +130,7 @@ class XAxis extends Component {
             //如果没有传入指定的dataSection，才需要计算dataSection
             this.dataSection = data.section;// this._initDataSection(this.dataOrg);
         };
-        
+
         me._formatTextSection = [];
         me._textElements = [];
         _.each(me.dataSection, function (val, i) {
@@ -147,7 +147,7 @@ class XAxis extends Component {
 
             // me._textElements[i] = txt;
         });
-        
+
         if (this.label.rotation != 0) {
             //如果是旋转的文本，那么以右边为旋转中心点
             this.label.textAlign = "right";
@@ -162,10 +162,10 @@ class XAxis extends Component {
         if (isNaN(this.maxVal) || this.maxVal == Infinity) {
             this.maxVal = 1;
         };
-        
+
         this._getName();
 
-        this._setXAxisHeight();
+        this._setZAxisWidth();
     }
     _getFormatText(val, i) {
         var res;
@@ -183,44 +183,53 @@ class XAxis extends Component {
         };
         return res;
     }
-    _initModules(){
+    _initModules() {
 
         //初始化轴线
-        const _axisDir = new Vector3(1, 0, 0);
-        const _coord = this._coord;
-        let coordBoundBox = _coord.getBoundbox();
+        const _axisDir = new Vector3(0, 0, -1);
+        const _coordSystem = this._coordSystem;
+        let coordBoundBox = _coordSystem.getBoundbox();
+        let size = new Vector3();
+        coordBoundBox.getSize(size);
 
-        this._axisLine = new AxisLine(_coord, this.axisLine);
+
+        this._axisLine = new AxisLine(_coordSystem, this.axisLine);
         this._axisLine.setDir(_axisDir);
-        this._axisLine.setOrigin(coordBoundBox.min);
-        this._axisLine.setLength(coordBoundBox.max.x);
-        this._axisLine.setGroupName('xAxisLine')
+        let origin = _coordSystem.getOrigin();
+        origin.setX(coordBoundBox.max.x);
+        this._axisLine.setOrigin(origin);
+        this._axisLine.setLength(size.z);
+        this._axisLine.setGroupName('zAxisLine')
         this._axisLine.drawStart();
 
         this.group.add(this._axisLine.group);
 
 
         //初始化tickLine
-        const _tickLineDir = new Vector3(0, -1, 0);
-        this._tickLine = new TickLines(_coord, this.tickLine);
+        const _tickLineDir = new Vector3(1, 0, 0);
+        this._tickLine = new TickLines(_coordSystem, this.tickLine);
         this._tickLine.setDir(_tickLineDir);
-        this._tickLine.initData(this._axisLine, _coord.xAxisAttribute);
+        this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
         this._tickLine.drawStart();
 
-         this.group.add(this._tickLine.group);
+        this.group.add(this._tickLine.group);
 
 
         //初始化tickText
-        this._tickText = new TickTexts(_coord, this.label);
-        this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset+10;
-       
+
+        this._tickText = new TickTexts(_coordSystem, this.label);
+        this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+
         this._tickText.setDir(_tickLineDir);
-        this._tickText.initData(this._axisLine, _coord.xAxisAttribute);
+        this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+
+        //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
         this._tickText.drawStart(this._formatTextSection);
         this.group.add(this._tickText.group);
+        
+
     }
-    _getName()
-    {
+    _getName() {
         // if ( this.title.content ) {
         //     if( !this._title ){
         //         this._title = new Canvax.Display.Text(this.title.content, {
@@ -240,23 +249,53 @@ class XAxis extends Component {
         // }
     }
 
-    _setXAxisHeight()
-    { //检测下文字的高等
+    _setZAxisWidth() { //检测下文字的宽度
         var me = this;
+        const _coordSystem = me._coordSystem;
         if (!me.enabled) {
-            me.height = 0; 
+            me.width = 0;
         } else {
-            var _maxTextHeight = 0;
+            var _maxTextWidth = 0;
 
-            if( this.label.enabled ){
-                let height = this.label.fontSize*1.2;
-                _maxTextHeight = Math.max(_maxTextHeight, height);
-                
+            if (this.label.enabled) {
+
+                //me._formatTextSection.forEach((val)=>{
+                let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '))
+                _maxTextWidth = Math.max(_maxTextWidth, width);
+                //})
+                // _.each(me.dataSection, function (val, i) {
+
+                //     //从_formatTextSection中取出对应的格式化后的文本
+                //     let txt = me._textElements[i];
+                //     let scale = me._root.renderView.getObjectScale(txt);
+
+                //     let textWidth = scale.x;
+                //     let textHeight = scale.y;
+
+                //     let width = textWidth; //文本在外接矩形width
+                //     let height = textHeight;//文本在外接矩形height
+
+                //     if (!!me.label.rotation) {
+                //         //有设置旋转
+                //         if (me.label.rotation == 90) {
+                //             width = textHeight;
+                //             height = textWidth;
+                //         } else {
+                //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
+                //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
+                //             height = parseInt(sinR * textWidth);
+                //             width = parseInt(cosR * textWidth);
+                //         };
+                //     };
+
+                //     _maxTextWidth = Math.max(_maxTextWidth, width);
+                //     console.log('width',width);
+                // });
             };
-            
-            let ratio = me._root.renderView.getVisableSize().ratio;
-            this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset+this.axisLine.lineWidth) * ratio;
-            this._maxTextHeight = _maxTextHeight;
+            this._maxTextWidth = _maxTextWidth;
+            let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
+            this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+            //this.width+=10;
             // if (this._title) {
             //     this.height += this._title.getTextHeight()
             // };
@@ -268,11 +307,13 @@ class XAxis extends Component {
 
     }
     draw() {
-        
+        this._initModules();
         this._axisLine.draw();
         this._tickLine.draw();
         this._tickText.draw();
+
+        // console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
     }
 }
 
-export { XAxis };
+export { ZAxis };

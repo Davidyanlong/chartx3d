@@ -577,7 +577,9 @@ define(function () { 'use strict';
       }
   }
 
-  const REVISION = '0.0.10';
+  var version = "0.0.14";
+
+  const REVISION = version;
 
   //draw Line mode
   const LinesMode = 1;
@@ -3292,7 +3294,6 @@ define(function () { 'use strict';
 
   })();
 
-  var box = new Box3();
   class Sphere {
       constructor(center, radius) {
           this.center = (center !== undefined) ? center : new Vector3$1();
@@ -3311,7 +3312,8 @@ define(function () { 'use strict';
       setFromPoints(points, optionalCenter) {
 
           var center = this.center;
-
+          var box = new Box3();
+          
           if (optionalCenter !== undefined) {
 
               center.copy(optionalCenter);
@@ -13409,6 +13411,123 @@ define(function () { 'use strict';
 
   }());
 
+  class LineBasicMaterial extends Material {
+      constructor(parameters) {
+          super();
+          this.type = 'LineBasicMaterial';
+          this.color = new Color$1(0xffffff);
+          this.linewidth = 1;
+
+          //todo 暂不需要
+          this.lights = false;
+
+
+          this.setValues(parameters);
+          this.isLineBasicMaterial = true;
+      }
+      copy(source) {
+          super.copy(source);
+          this.color.copy(source.color);
+          this.linewidth = source.linewidth;
+
+          return this;
+
+      }
+  }
+
+  /**
+   * @class  线条
+   * @description 线条对象
+   * @author bujue
+   */
+
+  class Line extends Object3D {
+      constructor(geometry, material) {
+          super();
+          this.type = 'Line';
+
+          this.geometry = geometry !== undefined ? geometry : new BufferGeometry();
+          this.material = material !== undefined ? material : new LineBasicMaterial({ color: Math.random() * 0xffffff });
+          this.isLine = true;
+          this.drawMode = LinesMode;
+
+          if (this.material.isLineDashedMaterial) {
+              this.computeLineDistances();
+          }
+
+      }
+
+      setDrawMode(value) {
+          this.drawMode = value;
+      }
+
+      computeLineDistances() {
+          computeLineDistances.call(this);
+      }
+
+      raycast(raycaster, intersects) {
+          raycast$1.call(this, raycaster, intersects);
+      }
+
+  }
+
+  let computeLineDistances = (function () {
+
+      var start = new Vector3$1();
+      var end = new Vector3$1();
+
+      return function computeLineDistances() {
+
+          var geometry = this.geometry;
+
+          if (geometry.isBufferGeometry) {
+
+              // we assume non-indexed geometry
+
+              if (geometry.index === null) {
+
+                  var positionAttribute = geometry.attributes.position;
+                  var lineDistances = [];
+
+                  for (var i = 0, l = positionAttribute.count; i < l; i += 2) {
+
+                      start.fromBufferAttribute(positionAttribute, i);
+                      end.fromBufferAttribute(positionAttribute, i + 1);
+
+                      lineDistances[i] = (i === 0) ? 0 : lineDistances[i - 1];
+                      lineDistances[i + 1] = lineDistances[i] + start.distanceTo(end);
+
+                  }
+
+                  geometry.addAttribute('lineDistance', new Float32BufferAttribute(lineDistances, 1));
+
+              } 
+
+          } else if (geometry.isGeometry) {
+
+              var vertices = geometry.vertices;
+              var lineDistances = geometry.lineDistances;
+
+              for (var i = 0, l = vertices.length; i < l; i += 2) {
+
+                  start.copy(vertices[i]);
+                  end.copy(vertices[i + 1]);
+
+                  lineDistances[i] = (i === 0) ? 0 : lineDistances[i - 1];
+                  lineDistances[i + 1] = lineDistances[i] + start.distanceTo(end);
+
+              }
+
+
+          }
+
+          return this;
+
+      };
+
+  })();
+
+
   let raycast$1 = (function () {
 
       var inverseMatrix = new Matrix4();
@@ -14397,20 +14516,30 @@ define(function () { 'use strict';
       }
       updateScale(renderer, camera) {
 
-              let fontsize = this.fontSize;
-              
-              let screenHeight = renderer.domElement.clientHeight;
-              let dist = camera.position.distanceTo(this.position);
+          let actualFontSize = 1;
+          let fontsize = this.fontSize;
+          let height = 0;
+          let screenHeight = renderer.domElement.clientHeight;
+          if (camera.isOrthographicCamera) {
+              height = camera.top - camera.bottom;
+          } else {
+              let cameraWorldPos = new Vector3$1();
+              camera.updateMatrixWorld(true);
+              cameraWorldPos.applyMatrix4(camera.matrixWorld);
 
+              let pos = new Vector3$1();
+              this.updateMatrixWorld(true);
+              pos.applyMatrix4(this.matrixWorld);
+
+              let dist = cameraWorldPos.distanceTo(pos);
               var vFOV = _Math.degToRad(camera.fov); // convert vertical fov to radians
+               height = 2 * Math.tan(vFOV / 2) * dist; // visible height
+              //投影位置全屏的Height 与 屏幕的高度比乘以字体的高度  
+          }
 
-              var height = 2 * Math.tan(vFOV / 2) * dist; // visible height
+          actualFontSize = height / screenHeight * fontsize;
 
-
-              //投影位置全屏的Height 与 屏幕的高度比乘以字体的高度 
-              let actualFontSize = height / screenHeight * fontsize;
-
-              this.scale.set(this.material.map.imageAspect, 1, 1).multiplyScalar(Math.round(actualFontSize));
+          this.scale.set(this.material.map.imageAspect, 1, 1).multiplyScalar(Math.round(actualFontSize));
 
       }
 
@@ -14434,13 +14563,14 @@ define(function () { 'use strict';
       redrawNow(renderer, camera) {
           this.updateScale(renderer, camera);
           this.material.map.autoRedraw = true;
-          
-          this.material.map.fontSize =_Math.ceilPowerOfTwo(getOptimalFontSize(this, renderer, camera));
+
+          this.material.map.fontSize = _Math.ceilPowerOfTwo(getOptimalFontSize(this, renderer, camera));
 
           this.lastRedraw = Date.now();
       }
 
       dispose() {
+          //todo 更改sprite 的渲染,不然回收有问题
           this.material.map.dispose();
           this.material.dispose();
       }
@@ -14487,6 +14617,7 @@ define(function () { 'use strict';
 
           this.isGeometry = true;
 
+          this.lineDistances = [];     //计算虚线需要
           this.boundingSphere = null;
           this.boundingBox = null;
 
@@ -15028,6 +15159,116 @@ define(function () { 'use strict';
 
   }
 
+  // PlaneGeometry
+
+  class PlaneGeometry extends Geometry {
+      constructor(width, height, widthSegments, heightSegments) {
+
+          super();
+
+          this.type = 'PlaneGeometry';
+
+          this.parameters = {
+              width: width,
+              height: height,
+              widthSegments: widthSegments,
+              heightSegments: heightSegments
+          };
+
+          this.fromBufferGeometry(new PlaneBufferGeometry(width, height, widthSegments, heightSegments));
+          this.mergeVertices();
+
+      }
+  }
+
+  // PlaneBufferGeometry
+
+  class PlaneBufferGeometry extends BufferGeometry {
+      constructor(width, height, widthSegments, heightSegments) {
+
+          super();
+
+          this.type = 'PlaneBufferGeometry';
+
+          this.parameters = {
+              width: width,
+              height: height,
+              widthSegments: widthSegments,
+              heightSegments: heightSegments
+          };
+
+          var width_half = width / 2;
+          var height_half = height / 2;
+
+          var gridX = Math.floor(widthSegments) || 1;
+          var gridY = Math.floor(heightSegments) || 1;
+
+          var gridX1 = gridX + 1;
+          var gridY1 = gridY + 1;
+
+          var segment_width = width / gridX;
+          var segment_height = height / gridY;
+
+          var ix, iy;
+
+          // buffers
+
+          var indices = [];
+          var vertices = [];
+          var normals = [];
+          var uvs = [];
+
+          // generate vertices, normals and uvs
+
+          for (iy = 0; iy < gridY1; iy++) {
+
+              var y = iy * segment_height - height_half;
+
+              for (ix = 0; ix < gridX1; ix++) {
+
+                  var x = ix * segment_width - width_half;
+
+                  vertices.push(x, - y, 0);
+
+                  normals.push(0, 0, 1);
+
+                  uvs.push(ix / gridX);
+                  uvs.push(1 - (iy / gridY));
+
+              }
+
+          }
+
+          // indices
+
+          for (iy = 0; iy < gridY; iy++) {
+
+              for (ix = 0; ix < gridX; ix++) {
+
+                  var a = ix + gridX1 * iy;
+                  var b = ix + gridX1 * (iy + 1);
+                  var c = (ix + 1) + gridX1 * (iy + 1);
+                  var d = (ix + 1) + gridX1 * iy;
+
+                  // faces
+
+                  indices.push(a, b, d);
+                  indices.push(b, c, d);
+
+              }
+
+          }
+
+          // build geometry
+
+          this.setIndex(indices);
+          this.addAttribute('position', new Float32BufferAttribute(vertices, 3));
+          this.addAttribute('normal', new Float32BufferAttribute(normals, 3));
+          this.addAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+      }
+  }
+
   // BoxGeometry
 
   class BoxGeometry extends Geometry {
@@ -15503,6 +15744,35 @@ define(function () { 'use strict';
 
   //所有的预定几何体
 
+  class LineDashedMaterial extends LineBasicMaterial {
+      constructor(parameters) {
+          super();
+
+          this.type = 'LineDashedMaterial';
+
+          //以下三个参数的配置与顶点数据的大小有关 
+
+          this.scale = 1;        //虚线整体的缩放 
+          this.dashSize = 3;     //虚线点的长度  
+          this.gapSize = 1;      //虚线间距的大小
+
+          this.setValues(parameters);
+
+          this.isLineDashedMaterial = true;
+
+      }
+
+      copy(source) {
+
+          super.copy(source);
+          this.scale = source.scale;
+          this.dashSize = source.dashSize;
+          this.gapSize = source.gapSize;
+
+          return this;
+      }
+  }
+
   class LineMeshMaterial extends Material {
       constructor(parameters) {
           super();
@@ -15675,8 +15945,9 @@ define(function () { 'use strict';
 
   }
 
-  class Framework {
+  class Framework extends Events {
       constructor() {
+          super();
 
           this.layers = [];
           this.isUpdate = true;
@@ -15711,7 +15982,7 @@ define(function () { 'use strict';
 
           var redraw = this.isUpdate;
           //this.isUpdate = false;
-
+          this.fire({ type: 'renderbefor' });
           if (redraw) {
               this.layers.forEach(view => {
 
@@ -15972,7 +16243,7 @@ define(function () { 'use strict';
       constructor(_frameWork) {
 
           this._scene = new Scene();
-          this._camera = new Camera();
+          this._camera = null;
 
           this._frameWork = _frameWork;
           this.renderer = _frameWork.renderer;
@@ -15982,9 +16253,11 @@ define(function () { 'use strict';
 
           this.aspect = 1;
           this.fov = 75;
-          this.near = 1;
-          this.far = 1000;
+          this.near = 0.1;
+          this.far = 10000;
           this.mode = null;
+
+          this.controls = null;
 
           //todo:相机变化需要派发事件出来
       }
@@ -15992,7 +16265,7 @@ define(function () { 'use strict';
       setSize(width, height) {
           this.width = width;
           this.height = height;
-
+          this.aspect = this.height ? this.width / this.height : 1;
           this.renderer.setPixelRatio(window.devicePixelRatio || 1);
           this.renderer.setSize(width, height);
       }
@@ -16009,6 +16282,15 @@ define(function () { 'use strict';
 
       addGroup(opt) {
           let _group = new Group();
+          // _group.on('removed', function () {
+          //     debugger
+          //     if (this.geometry) {
+          //         this.geometry.dispose();
+          //     }
+          //     if (this.material) {
+          //         this.material.dispose();
+          //     }
+          // });
           _group.name = opt && opt.name || '';
           return _group;
       }
@@ -16019,10 +16301,13 @@ define(function () { 'use strict';
       }
 
       //mode: "ortho" || "perspective"    
-      project(aspect, frustumSize, mode) {
-
-          this.aspect = aspect;
+      project(controlsOpts, mode) {
           this.mode = mode;
+          this.controls = controlsOpts;
+
+          let aspect = this.aspect;
+          let frustumSize = controlsOpts.boxHeight;
+          let distance = controlsOpts.distance;
 
           if (mode === 'perspective') {
               this._camera = new PerspectiveCamera(this.fov, this.aspect, this.near, this.far);
@@ -16030,24 +16315,20 @@ define(function () { 'use strict';
               //let centerPosition = new Vector3(0, 0, (this.far - this.near)/2);
 
 
-              let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
+              // let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
 
-              var dist = frustumSize / (2 * Math.tan(vFOV / 2));
-              this._camera.position.set(0, 0, dist);
+              // var dist = frustumSize / (2 * Math.tan(vFOV / 2));
+              this._camera.position.set(0, 0, distance);
           } else {
               //给定一个大的投影空间,方便数据的计算
               this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, this.near, this.far);
-              this._camera.position.set(0, 0, 20);
+              this._camera.position.set(0, 0, distance);
           }
 
-          // this._camera.rotateX(_Math.degToRad(10));
-          // this._camera.rotateY(_Math.degToRad(15));
-
-          console.info("getVisableSize", this.getVisableSize());
+          // console.info("getVisableSize", this.getVisableSize());
       }
 
-      getVisableSize(z) {
-          z = z || this.near;
+      getVisableSize(currPosition = new Vector3$1()) {
 
           let result = { width: 0, height: 0, ratio: 0 };
 
@@ -16057,7 +16338,7 @@ define(function () { 'use strict';
           }
 
           if (this.mode == "perspective") {
-              let currPosition = new Vector3$1(0, 0, z);
+
               let cameraPosition = this._camera.position.clone();
               let dist = cameraPosition.distanceTo(currPosition);
               let vFOV = _Math.degToRad(this.fov); // convert vertical fov to radians
@@ -16089,6 +16370,7 @@ define(function () { 'use strict';
           //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
           geometry.vertices.forEach(vertice => {
               vertice.addScalar(0.5);
+              vertice.z *= -1;
           });
 
           //更加给定的得数据变换box
@@ -16100,6 +16382,76 @@ define(function () { 'use strict';
 
           return mesh;
       }
+      //创建一个面
+      createPlane(width = 1, height = 1, materials = undefined, showInfo = {}, group = undefined, faceStyle = {}) {
+
+          if (!materials) {
+              materials = new MeshBasicMaterial$$1({
+                  color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                  side: FrontSide,
+                  transparent: true,
+                  opacity: faceStyle.alpha || 1,
+                  polygonOffset: true,
+                  polygonOffsetFactor: 1,
+                  polygonOffsetUnits: 0.3
+
+              });
+          }
+
+          let planetGeometry = new PlaneGeometry(width, height);
+          let planeMesh = new Mesh(planetGeometry, materials);
+
+          if (showInfo.dir.equals(new Vector3$1(1, 0, 0))) {
+              planeMesh.rotateY(_Math.degToRad(90));
+          }
+          if (showInfo.dir.equals(new Vector3$1(-1, 0, 0))) {
+              planeMesh.rotateY(_Math.degToRad(-90));
+          }
+
+          if (showInfo.dir.equals(new Vector3$1(0, 1, 0))) {
+              planeMesh.rotateX(_Math.degToRad(-90));
+          }
+
+          if (showInfo.dir.equals(new Vector3$1(0, -1, 0))) {
+              planeMesh.rotateX(_Math.degToRad(90));
+          }
+          if (showInfo.dir.equals(new Vector3$1(0, 0, -1))) {
+              planeMesh.rotateY(_Math.degToRad(180));
+          }
+
+          if (showInfo.center) {
+              planeMesh.position.copy(showInfo.center);
+          }
+          if (group) {
+              group.visible = showInfo.visible;
+              group.add(planeMesh);
+          }
+
+          return planeMesh;
+      }
+      //绘制普通线条
+      createCommonLine(points = [], lineStyle) {
+          let group = this.addGroup({ name: 'commonLines' });
+
+          let material = new LineBasicMaterial({
+              color: lineStyle.strokeStyle
+          });
+          if (lineStyle.lineType == 'dashed') {
+              material = new LineDashedMaterial({
+                  color: lineStyle.strokeStyle
+              });
+          }
+
+          let geometry = new Geometry();
+          points.forEach(item => {
+              geometry.vertices.push(item);
+          });
+          let line = new Line(geometry, material);
+          group.add(line);
+
+          return group;
+      }
+
       //绘制线条
       createLine(origins, direction, length, lineWidth, lineColor) {
 
@@ -16232,6 +16584,19 @@ define(function () { 'use strict';
           const objectWorldScale = new Vector3$1();
           return object.getWorldScale(objectWorldScale);
       }
+      resize(_width, _height, frustumSize) {
+          this.setSize(_width, _height);
+          if (this.mode == 'perspective') {
+              this._camera.aspect = this.aspect;
+          } else {
+
+              this._camera.left = frustumSize * aspect / -2;
+              this._camera.right = frustumSize * aspect / 2;
+              this._camera.top = frustumSize / 2;
+              this._camera.bottom = frustumSize / -2;
+          }
+          this._camera.updateProjectionMatrix();
+      }
 
   }
 
@@ -16259,35 +16624,29 @@ define(function () { 'use strict';
   }
 
   //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
-  class Coord3d extends Events {
+  //惯性坐标系
+  class InertialSystem extends Events {
       constructor(root) {
           super();
           this._root = root;
 
-          let opts = _.clone(this._root.opt.opts);
+          let opts = _.clone(this._root.opt);
           this.coord = {};
           //坐标原点
           this.origin = new Vector3$1(0, 0, 0);
           //中心的
           this.center = new Vector3$1(0, 0, 0);
+
           this.padding = {
-              left: 20,
-              top: 20,
-              right: 20,
-              bottom: 20,
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
               front: 0,
               back: 0
           };
 
-          this.group = root.renderView.addGroup({ name: 'Coord3d' });
-
-          //console.log("from Coord3d boundbox",this.getBoundbox());
-
-
-          // this._graphs = [];
-          // if (opts.graphs) {
-          //     opts.graphs = _.flatten([opts.graphs]);
-          // };
+          this.group = root.renderView.addGroup({ name: 'InertialSystem' });
 
           _.extend(true, this, this.setDefaultOpts(opts));
       }
@@ -16297,27 +16656,38 @@ define(function () { 'use strict';
       }
 
       getBoundbox() {
-          let ratio = this._root.renderView.getVisableSize().ratio;
-          let aspect = this._root.aspect;
-          let frustumSize = this._root.frustumSize;
-          let boundbox = new Box3();
 
-          let width = aspect * frustumSize;
+          let _boundbox = new Box3();
 
-          let minX = -width * 0.5 + this.padding.left * ratio;
-          let minY = -frustumSize * 0.5 + this.padding.bottom * ratio;
-          let minZ = 0 + this.padding.front;
+          let _opt = this._root.opt.controls;
+          let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
+          let _width = _opt.boxWidth;
+          let _depth = _opt.boxDepth;
+          //斜边
+          let _hypotenuse = new Vector3$1(_width, 0, _depth).length();
 
-          let maxX = width * 0.5 - this.padding.right * ratio;
-          let maxY = frustumSize * 0.5 - this.padding.top * ratio;
-          let maxZ = 1000 - this.padding.back;
+          let _ratio = this._root.renderView.getVisableSize(new Vector3$1(0, 0, -_hypotenuse)).ratio;
 
-          boundbox.min.set(minX, minY, minZ);
-          boundbox.max.set(maxX, maxY, maxZ);
-          return boundbox;
+          let minX = -_width * 0.5 + this.padding.left * _ratio;
+          let minY = -_frustumSize * 0.5 + this.padding.bottom * _ratio;
+          let minZ = this.padding.front - _hypotenuse * 0.5 - _depth;
+
+          let maxX = _width * 0.5 - this.padding.right * _ratio;
+          let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+          let maxZ = -_hypotenuse * 0.5 + this.padding.back;
+
+          _boundbox.min.set(minX, minY, minZ);
+          _boundbox.max.set(maxX, maxY, maxZ);
+          return _boundbox;
       }
 
-      _getPos(pos) {}
+      _getWorldPos(pos) {
+          let posWorld = pos.clone();
+
+          this.group.updateMatrixWorld();
+          posWorld.applyMatrix4(this.group.matrixWorld);
+          return posWorld;
+      }
 
       dataToPoint(data, dir) {}
 
@@ -16333,11 +16703,11 @@ define(function () { 'use strict';
 
   //组件的标准
   class Component extends Events {
-      constructor(_coord) {
+      constructor(_coordSystem) {
           super();
 
-          this._coord = _coord;
-          this._root = _coord._root;
+          this._coordSystem = _coordSystem;
+          this._root = _coordSystem._root;
 
           // //每一个组件存放在一个Group中
           // this.group = new Group();
@@ -16490,14 +16860,16 @@ define(function () { 'use strict';
       constructor(opt) {
           super();
 
-          this.el = null;
-          this.opt = opt;
+          this.domSelector = opt.el;
+          this.opt = opt.opts;
+          this.data = opt.data;
 
+          this.el = null;
           this.view = null;
           this.domView = null;
           this.stageView = null;
-
           this.canvasDom = null; //画布DOM元素
+
 
           this.width = 0; //画布的宽
           this.height = 0; //画布的高 
@@ -16508,7 +16880,7 @@ define(function () { 'use strict';
           this.currCoord = null;
 
           //初始化画布
-          this._createDomContainer(opt);
+          this._createDomContainer(opt.el);
 
           //初始化数据
           //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
@@ -16524,17 +16896,22 @@ define(function () { 'use strict';
           //初始化渲染器
           this.renderer = this.app._framework.renderer;
 
-          //初始化相机
-          this.aspect = this.height !== 0 ? this.width / this.height : 1;
+          this.DefaultControls = {
+              boxWidth: 1000, //空间中X的最大值(最大宽度)  
+              boxHeight: 1000, //空间中Y的最大值(最大高度)  
+              boxDepth: 1000, //空间中Z的最大值(最大深度)
 
-          //投影空间的全高默认值
-          this.frustumSize = 1000;
+              distance: 1100, //默认相机距离
+              maxDistance: 3000, //最大相机距离
+              minDistance: 600, //最小相机距离 
 
-          //初始化物体的惯性坐标(放在具体的坐标系下)
+              alpha: 40, //绕X轴旋转
+              beta: 20, //绕Y轴旋转
+              gamma: 0 //绕Z轴旋转
 
 
-          //组件管理机制,所有的组件都绘制在这个地方
-          this.components = [];
+              //组件管理机制,所有的组件都绘制在这个地方
+          };this.components = [];
 
           this.inited = false;
           this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
@@ -16542,22 +16919,27 @@ define(function () { 'use strict';
           this.init();
       }
       init() {
-          this._initRenderer();
 
-          //默认正交投影
-          this.renderView.project(this.aspect, this.frustumSize, 'perspective'); //'ortho' | 'perspective',
+          let rendererOpts = _.extend({}, this.DefaultControls);
 
-          this.setCoord(Coord3d);
+          _.extend(rendererOpts, this.opt.controls);
+          _.extend(this.opt, rendererOpts);
+
+          this._initRenderer(rendererOpts);
+
           //启动渲染进程
           this.app.launch();
+
+          window.addEventListener('resize', this.resize.bind(this), false);
       }
-      setCoord(coord) {
-          if (coord === Coord3d || coord.prototype instanceof Coord3d) {
-              this.currCoord = new coord(this);
+      setCoord(_Coord) {
+
+          //初始化物体的惯性坐标(放在具体的坐标系下)
+          if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
+              this.currCoord = new _Coord(this);
               this.rootStage.add(this.currCoord.group);
           }
           this.currCoord.initCoordUI();
-          this.currCoord.draw();
       }
       //添加组件
       addComponent(cmp) {
@@ -16574,23 +16956,26 @@ define(function () { 'use strict';
       }
 
       drawComponent() {
+          //先绘制坐标系
+          this.currCoord.draw();
 
           this.components.forEach(cmp => {
               this.currCoord.group.add(cmp.group);
+              cmp.draw();
           });
-          this.draw();
       }
 
       draw() {
+          this.drawComponent();
           this.app._framework.isUpdate = true;
       }
 
-      _createDomContainer(opt) {
+      _createDomContainer(_domSelector) {
 
           let viewObj = null;
 
           this._cid = "chartx3d_" + _cid++;
-          this.el = $.query(opt.el);
+          this.el = $.query(_domSelector);
 
           this.width = this.el.offsetWidth;
           this.height = this.el.offsetHeight;
@@ -16614,7 +16999,7 @@ define(function () { 'use strict';
           return DataFrame.call(this, data, opt);
       }
 
-      _initRenderer() {
+      _initRenderer(rendererOpts) {
           let app = this.app;
           let renderView = null;
           this.stageView.appendChild(this.renderer.domElement);
@@ -16630,10 +17015,15 @@ define(function () { 'use strict';
           renderView.addObject(this.rootStage);
           renderView.setSize(this.width, this.height);
           // renderView.setBackground(0xFFFFFF);
-      }
-      resize() {}
-      //todo 窗口大小发生变化
 
+          //默认透视投影
+          this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
+      }
+      resize() {
+          this.width = this.el.offsetWidth;
+          this.height = this.el.offsetHeight;
+          this.renderView.resize(this.width, this.height, this.opt.controls.boxHeight);
+      }
       //数据变更后调用reset
       reset() {}
 
@@ -16642,8 +17032,8 @@ define(function () { 'use strict';
   }
 
   class AxisLine extends Component {
-      constructor(coord, opts) {
-          super(coord);
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
 
           // enabled: 1,
           // lineWidth: 1,
@@ -16707,38 +17097,37 @@ define(function () { 'use strict';
           this.group.add(this.axis);
       }
 
-      getBoundBox() {
-          let result = new Box3();
+      // getBoundBox() {
+      //     let result = new Box3();
 
-          this.axis.traverse(function (mesh) {
-              if (mesh instanceof Mesh) {
-                  mesh.geometry.computeBoundingBox();
-                  result = mesh.geometry.boundingBox;
-              }
-          });
+      //     this.axis.traverse(function (mesh) {
+      //         if (mesh instanceof Mesh) {
+      //             mesh.geometry.computeBoundingBox();
+      //             result = mesh.geometry.boundingBox;
+      //         }
+      //     });
 
-          //根据绘制的线宽计算三维空间的宽带
+      //     //根据绘制的线宽计算三维空间的宽带
 
-          let visableSize = this._root.renderView.getVisableSize();
-          let width = 0,
-              height = 0;
-          //如果是y轴或者z轴计算轴的宽度
-          if (this.dir.equals(new Vector3$1(0, 1, 0)) || this.dir.equals(new Vector3$1(0, 0, -1))) {
-              width = visableSize.width / this._root.width;
-          }
-          //如果x轴计算轴的高度
-          if (this.dir.equals(new Vector3$1(1, 0, 0))) {
-              height = visableSize.height / this._root.height;
-          }
+      //     let visableSize = this._root.renderView.getVisableSize();
+      //     let width = 0, height = 0;
+      //     //如果是y轴或者z轴计算轴的宽度
+      //     if (this.dir.equals(new Vector3(0, 1, 0)) || this.dir.equals(new Vector3(0, 0, -1))) {
+      //         width = visableSize.width / this._root.width
+      //     }
+      //     //如果x轴计算轴的高度
+      //     if (this.dir.equals(new Vector3(1, 0, 0))) {
+      //         height = visableSize.height / this._root.height;
+      //     }
 
-          result.min.x = result.min.x - width * 0.5;
-          result.max.x = result.max.x + width * 0.5;
+      //     result.min.x = result.min.x - width * 0.5;
+      //     result.max.x = result.max.x + width * 0.5;
 
-          result.min.y = result.min.y - height * 0.5;
-          result.max.y = result.max.y + height * 0.5;
+      //     result.min.y = result.min.y - height * 0.5;
+      //     result.max.y = result.max.y + height * 0.5;
 
-          return result;
-      }
+      //     return result;
+      // }
 
   }
 
@@ -16753,8 +17142,8 @@ define(function () { 'use strict';
 
 
   class TickLines extends Component {
-      constructor(coord, opts) {
-          super(coord);
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
 
           //点的起点位置集合
           this.origins = [];
@@ -16779,24 +17168,22 @@ define(function () { 'use strict';
 
           this.group.visible = !!opts.enabled;
       }
-      initData(axis, attribute) {
+      initData(axis, attribute, fn) {
           let me = this;
           let _dir = new Vector3$1();
-          let axisSectionLength = axis.length / (attribute.section.length - 1);
           let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
 
           attribute.section.forEach((num, index) => {
               //起点
-              let startPoint = new Vector3$1();
-
-              startPoint.copy(axis.dir);
-              startPoint.multiplyScalar(axisSectionLength * index);
+              let val = fn.call(this._coordSystem, num);
+              let startPoint = axis.dir.clone().multiplyScalar(val);
+              startPoint.add(axis.origin);
               startPoint.add(_offset);
               me.origins.push(startPoint);
           });
       }
       set length(len) {
-          let ratio = this._root.renderView.getVisableSize().ratio;
+          let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
           this._length = len * ratio;
       }
       get length() {
@@ -16804,7 +17191,7 @@ define(function () { 'use strict';
       }
 
       set offset(_offset) {
-          let ratio = this._root.renderView.getVisableSize().ratio;
+          let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
           this._offset = _offset * ratio;
       }
 
@@ -16849,14 +17236,16 @@ define(function () { 'use strict';
   //     offset: 2     //和刻度线的距离
   // }
   class TickTexts extends Component {
-      constructor(coord, opts) {
-          super(coord);
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
 
           //起点位置集合
           this.origins = [];
           this.texts = [];
 
           this.fontColor = opts.fontColor || '#333';
+
+          this.fontSize = opts.fontSize || 12;
 
           this.rotation = 0;
 
@@ -16870,27 +17259,49 @@ define(function () { 'use strict';
 
           this.group = this._root.renderView.addGroup({ name: 'tickText' });
 
+          this._tickTextGroup = this._root.renderView.addGroup({ name: 'tickTexts' });
+
           this.group.visible = !!opts.enabled;
+          this.group.add(this._tickTextGroup);
       }
 
-      initData(axis, attribute) {
+      // initData(axis, attribute) {
+      //     let me = this;
+      //     let _dir = new Vector3();
+      //     let axisSectionLength = axis.length / (attribute.section.length - 1);
+      //     let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
+
+      //     attribute.section.forEach((num, index) => {
+      //         //起点
+      //         let startPoint = new Vector3();
+      //         startPoint.copy(axis.dir);
+      //         startPoint.multiplyScalar(axisSectionLength * index);
+      //         startPoint.add(axis.origin);
+      //         startPoint.add(_offset);
+      //         me.origins.push(startPoint);
+      //     });
+
+
+      // }
+
+
+      initData(axis, attribute, fn) {
           let me = this;
           let _dir = new Vector3$1();
-          let axisSectionLength = axis.length / (attribute.section.length - 1);
           let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
 
           attribute.section.forEach((num, index) => {
               //起点
-              let startPoint = new Vector3$1();
-              startPoint.copy(axis.dir);
-              startPoint.multiplyScalar(axisSectionLength * index);
+              let val = fn.call(this._coordSystem, num);
+              let startPoint = axis.dir.clone().multiplyScalar(val);
+              startPoint.add(axis.origin);
               startPoint.add(_offset);
               me.origins.push(startPoint);
           });
       }
 
       set offset(_offset) {
-          let ratio = this._root.renderView.getVisableSize().ratio;
+          let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
           this._offset = _offset * ratio;
       }
 
@@ -16902,10 +17313,10 @@ define(function () { 'use strict';
       }
       drawStart(texts) {
           let me = this;
-          this._tickTextGroup = this._root.renderView.addGroup({ name: 'tickTexts' });
-          // this._tickTextGroup.removeAll();
 
-          let ratio = this._root.renderView.getVisableSize().ratio;
+          // this._tickTextGroup.removeAll();
+          //文本对齐计算
+          let ratio = this._root.renderView.getVisableSize(me.origins[0]).ratio;
           let maxWidth = TextTexture.getTextWidth(texts, ['normal', 'normal', this.fontColor, this.fontSize].join(' '));
 
           (texts || []).forEach((text, index) => {
@@ -16955,14 +17366,12 @@ define(function () { 'use strict';
   }
 
   class YAxis extends Component {
-      constructor(_coord) {
-          super(_coord);
-
-          let opt = this._coord;
-          this._opt = opt;
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+          let opt = this._opt = _cartesionUI;
 
           //this._coord = _coord || {};
-
+          this._cartesionUI = _cartesionUI;
 
           this.width = null; //第一次计算后就会有值
           this.yMaxHeight = 0; //y轴最大高
@@ -16987,7 +17396,7 @@ define(function () { 'use strict';
           this.enabled = true;
           this.tickLine = { //刻度线
               enabled: 1,
-              lineWidth: 2, //线宽
+              lineWidth: 1, //线宽
               lineLength: 4, //线长
               strokeStyle: '#cccccc',
               // distance: 2,
@@ -16995,7 +17404,7 @@ define(function () { 'use strict';
           };
           this.axisLine = { //轴线
               enabled: 1,
-              lineWidth: 1,
+              lineWidth: 2,
               strokeStyle: '#cccccc'
           };
           this.label = {
@@ -17053,9 +17462,9 @@ define(function () { 'use strict';
 
           this.layoutType = "proportion"; // rule , peak, proportion
 
-          _.extend(true, this, opt);
+          _.extend(true, this, opt.yAxis);
 
-          this.init(opt, this._coord.yAxisAttribute);
+          this.init(opt, this._coordSystem.yAxisAttribute);
 
           this._getName();
       }
@@ -17077,12 +17486,35 @@ define(function () { 'use strict';
       _initModules() {
           //初始化轴线
           const _axisDir = new Vector3$1(0, 1, 0);
-          const _coord = this._coord;
-          let coordBoundBox = _coord.getBoundbox();
+          const _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3$1(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+          let origin = _coordSystem.getOrigin();
+          let _faceInfo = this._cartesionUI.getFaceInfo();
 
-          this._axisLine = new AxisLine(_coord, this.axisLine);
+          if (_faceInfo.left.visible) {
+              if (_faceInfo.back.visible) {
+                  origin = _coordSystem.getOrigin();
+              } else {
+                  origin = new Vector3$1(0, 0, -depth);
+              }
+          } else {
+              if (_faceInfo.back.visible) {
+                  origin = new Vector3$1(width, 0, 0);
+              } else {
+                  origin = new Vector3$1(width, 0, -depth);
+              }
+          }
+
+          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
           this._axisLine.setDir(_axisDir);
-          this._axisLine.setOrigin(coordBoundBox.min);
+          this._axisLine.setOrigin(origin);
           this._axisLine.setLength(coordBoundBox.max.y);
           this._axisLine.setGroupName('yAxisLine');
           this._axisLine.drawStart();
@@ -17090,20 +17522,21 @@ define(function () { 'use strict';
           this.group.add(this._axisLine.group);
 
           //初始化tickLine
-          const _tickLineDir = new Vector3$1(-1, 0, 0);
-          this._tickLine = new TickLines(_coord, this.tickLine);
+          const _tickLineDir = new Vector3$1(0, 0, 1);
+          this._tickLine = new TickLines(_coordSystem, this.tickLine);
           this._tickLine.setDir(_tickLineDir);
-          this._tickLine.initData(this._axisLine, _coord.yAxisAttribute);
+          this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
           this._tickLine.drawStart();
 
           this.group.add(this._tickLine.group);
-
-          //初始化tickText
-          this._tickText = new TickTexts(_coord, this.label);
-          this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+          this._tickText = new TickTexts(_coordSystem, this.label);
+          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
 
           this._tickText.setDir(_tickLineDir);
-          this._tickText.initData(this._axisLine, _coord.yAxisAttribute);
+          this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+
+          //this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute);
+
           this._tickText.drawStart(this._formatTextSection);
           this.group.add(this._tickText.group);
       }
@@ -17192,10 +17625,12 @@ define(function () { 'use strict';
       setLayout(opt) {}
 
       draw() {
+          this._initModules();
 
           this._axisLine.draw();
           this._tickLine.draw();
           this._tickText.draw();
+          console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
       }
 
       getBoundbox() {
@@ -17216,14 +17651,10 @@ define(function () { 'use strict';
 
           return result;
       }
-
-      getAxisYWidth() {
-          let boundbox = this.getBoundbox();
-          return Math.round(boundbox.max.x - boundbox.min.x);
-      }
       _setYAxisWidth() {
           //检测下文字的宽度
           var me = this;
+          const _coordSystem = me._coordSystem;
           if (!me.enabled) {
               me.width = 0;
           } else {
@@ -17263,8 +17694,10 @@ define(function () { 'use strict';
                   //     _maxTextWidth = Math.max(_maxTextWidth, width);
                   //     console.log('width',width);
                   // });
-              }            this._maxTextWidth = _maxTextWidth;
-              let ratio = me._root.renderView.getVisableSize().ratio;
+              }
+              //这里的计算宽度流出需要考虑一下
+              this._maxTextWidth = _maxTextWidth;
+              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
               this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
               //this.width+=10;
               // if (this._title) {
@@ -17276,14 +17709,11 @@ define(function () { 'use strict';
   }
 
   class XAxis extends Component {
-      constructor(_coord) {
-          super(_coord);
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+          let opt = this._opt = _cartesionUI;
 
-          let opt = this._coord;
-          this._opt = opt;
-
-          //this._coord = _coord || {};
-
+          this._cartesionUI = _cartesionUI;
           this.width = 0;
           this.height = 0;
 
@@ -17301,6 +17731,12 @@ define(function () { 'use strict';
           this._title = null; //this.title对应的文本对象
 
           this.enabled = true;
+          this.axisLine = {
+              enabled: 1, //是否有轴线
+              lineWidth: 2,
+              strokeStyle: '#cccccc'
+          };
+
           this.tickLine = {
               enabled: 1, //是否有刻度线
               lineWidth: 1, //线宽
@@ -17308,11 +17744,7 @@ define(function () { 'use strict';
               offset: 2,
               strokeStyle: '#cccccc'
           };
-          this.axisLine = {
-              enabled: 1, //是否有轴线
-              lineWidth: 1,
-              strokeStyle: '#cccccc'
-          };
+
           this.label = {
               enabled: 1,
               fontColor: '#999',
@@ -17365,10 +17797,9 @@ define(function () { 'use strict';
 
           this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-          _.extend(true, this, opt);
+          _.extend(true, this, opt.xAxis);
 
-          this.init(opt, this._coord.xAxisAttribute);
-
+          this.init(opt, this._coordSystem.xAxisAttribute);
           //xAxis的field只有一个值,
           //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
 
@@ -17444,15 +17875,14 @@ define(function () { 'use strict';
           }        return res;
       }
       _initModules() {
-
           //初始化轴线
           const _axisDir = new Vector3$1(1, 0, 0);
-          const _coord = this._coord;
-          let coordBoundBox = _coord.getBoundbox();
+          const _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
 
-          this._axisLine = new AxisLine(_coord, this.axisLine);
+          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
           this._axisLine.setDir(_axisDir);
-          this._axisLine.setOrigin(coordBoundBox.min);
+          this._axisLine.setOrigin(_coordSystem.getOrigin());
           this._axisLine.setLength(coordBoundBox.max.x);
           this._axisLine.setGroupName('xAxisLine');
           this._axisLine.drawStart();
@@ -17460,20 +17890,22 @@ define(function () { 'use strict';
           this.group.add(this._axisLine.group);
 
           //初始化tickLine
-          const _tickLineDir = new Vector3$1(0, -1, 0);
-          this._tickLine = new TickLines(_coord, this.tickLine);
+          const _tickLineDir = new Vector3$1(0, 0, 1);
+          this._tickLine = new TickLines(_coordSystem, this.tickLine);
           this._tickLine.setDir(_tickLineDir);
-          this._tickLine.initData(this._axisLine, _coord.xAxisAttribute);
+          this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
           this._tickLine.drawStart();
 
           this.group.add(this._tickLine.group);
 
           //初始化tickText
-          this._tickText = new TickTexts(_coord, this.label);
-          this._tickText.offset += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+          this._tickText = new TickTexts(_coordSystem, this.label);
+          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
 
           this._tickText.setDir(_tickLineDir);
-          this._tickText.initData(this._axisLine, _coord.xAxisAttribute);
+          this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+
+          //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
           this._tickText.drawStart(this._formatTextSection);
           this.group.add(this._tickText.group);
       }
@@ -17500,6 +17932,7 @@ define(function () { 'use strict';
       _setXAxisHeight() {
           //检测下文字的高等
           var me = this;
+          const _coordSystem = me._coordSystem;
           if (!me.enabled) {
               me.height = 0;
           } else {
@@ -17509,7 +17942,7 @@ define(function () { 'use strict';
                   let height = this.label.fontSize * 1.2;
                   _maxTextHeight = Math.max(_maxTextHeight, height);
               }
-              let ratio = me._root.renderView.getVisableSize().ratio;
+              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
               this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
               this._maxTextHeight = _maxTextHeight;
               // if (this._title) {
@@ -17520,50 +17953,538 @@ define(function () { 'use strict';
       //设置布局
       setLayout(opt) {}
       draw() {
-
+          this._initModules();
           this._axisLine.draw();
           this._tickLine.draw();
           this._tickText.draw();
+
+          //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
+
+      }
+  }
+
+  class ZAxis extends Component {
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+          let opt = this._opt = _cartesionUI;
+          this._cartesionUI = _cartesionUI;
+          //this._coord = _coord || {};
+
+          this.width = 0;
+          this.height = 0;
+
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.title对应的文本对象
+
+          this.enabled = true;
+          this.tickLine = {
+              enabled: 1, //是否有刻度线
+              lineWidth: 1, //线宽
+              lineLength: 4, //线长
+              offset: 2,
+              strokeStyle: '#cccccc'
+          };
+          this.axisLine = {
+              enabled: 1, //是否有轴线
+              lineWidth: 2,
+              strokeStyle: '#cccccc'
+          };
+          this.label = {
+              enabled: 1,
+              fontColor: '#999',
+              fontSize: 12,
+              rotation: 0,
+              format: null,
+              offset: 8,
+              textAlign: "left",
+              lineHeight: 1
+              //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
+          };
+          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+              //如果是横向直角坐标系图
+              this.label.rotation = 90;
+          }
+          // this.depth = 500;
+          this.maxTxtH = 0;
+
+          this.pos = {
+              x: 0,
+              y: 0
+          };
+
+          this.dataOrg = []; //源数据
+          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
+
+          this.layoutData = []; //{x:100, value:'1000',visible:true}
+
+          this.sprite = null;
+
+          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+          this.filter = null; //function(params){}; 
+
+          this.isH = false; //是否为横向转向的x轴
+
+          this.animation = false;
+
+          //layoutType == "proportion"的时候才有效
+          this.maxVal = null;
+          this.minVal = null;
+
+          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
+
+          this.layoutType = "peak"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+
+          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
+          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
+          //function
+          this.trimLayout = null;
+
+          // if (!opt._coord.zAxisAttribute.section.length) {
+          //     this.depth = 50;
+          // }
+
+          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+          _.extend(true, this, opt.zAxis);
+
+          this.init(opt, this._coordSystem.zAxisAttribute);
+      }
+      init(opt, data) {
+          this.group = this._root.renderView.addGroup({ name: 'zAxis' });
+
+          // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+
+          // this.group.add(this.rulesGroup);
+
+          this._initHandle(data);
+      }
+      _initHandle(data) {
+          var me = this;
+
+          if (data && data.field) {
+              this.field = data.field;
+          }
+
+          if (data && data.data) {
+              this.dataOrg = _.flatten(data.data);
+          }        if (!this._opt.dataSection && this.dataOrg) {
+              //如果没有传入指定的dataSection，才需要计算dataSection
+              this.dataSection = data.section; // this._initDataSection(this.dataOrg);
+          }
+          me._formatTextSection = [];
+          me._textElements = [];
+          _.each(me.dataSection, function (val, i) {
+              me._formatTextSection[i] = me._getFormatText(val, i);
+              //从_formatTextSection中取出对应的格式化后的文本
+
+              // var txt = me._root.renderView.createTextSprite(""+me._formatTextSection[i],me.label.fontSize)
+
+              // // var txt = new Canvax.Display.Text(me._formatTextSection[i], {
+              // //     context: {
+              // //         fontSize: me.label.fontSize
+              // //     }
+              // // });
+
+              // me._textElements[i] = txt;
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+
+          this._setZAxisWidth();
+      }
+      _getFormatText(val, i) {
+          var res;
+          if (_.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+      _initModules() {
+
+          //初始化轴线
+          const _axisDir = new Vector3$1(0, 0, -1);
+          const _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let size = new Vector3$1();
+          coordBoundBox.getSize(size);
+
+          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+          this._axisLine.setDir(_axisDir);
+          let origin = _coordSystem.getOrigin();
+          origin.setX(coordBoundBox.max.x);
+          this._axisLine.setOrigin(origin);
+          this._axisLine.setLength(size.z);
+          this._axisLine.setGroupName('zAxisLine');
+          this._axisLine.drawStart();
+
+          this.group.add(this._axisLine.group);
+
+          //初始化tickLine
+          const _tickLineDir = new Vector3$1(1, 0, 0);
+          this._tickLine = new TickLines(_coordSystem, this.tickLine);
+          this._tickLine.setDir(_tickLineDir);
+          this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+          this._tickLine.drawStart();
+
+          this.group.add(this._tickLine.group);
+
+          //初始化tickText
+
+          this._tickText = new TickTexts(_coordSystem, this.label);
+          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+
+          this._tickText.setDir(_tickLineDir);
+          this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+
+          //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
+          this._tickText.drawStart(this._formatTextSection);
+          this.group.add(this._tickText.group);
+      }
+      _getName() {
+          // if ( this.title.content ) {
+          //     if( !this._title ){
+          //         this._title = new Canvax.Display.Text(this.title.content, {
+          //             context: {
+          //                 fontSize: this.title.fontSize,
+          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+          //                 fillStyle: this.title.fontColor,
+          //                 strokeStyle: this.title.strokeStyle,
+          //                 lineWidth : this.title.lineWidth,
+          //                 rotation: this.isH ? -180 : 0
+          //             }
+          //         });
+          //     } else {
+          //         this._title.resetText( this.title.content );
+          //     }
+          // }
+      }
+
+      _setZAxisWidth() {
+          //检测下文字的宽度
+          var me = this;
+          const _coordSystem = me._coordSystem;
+          if (!me.enabled) {
+              me.width = 0;
+          } else {
+              var _maxTextWidth = 0;
+
+              if (this.label.enabled) {
+
+                  //me._formatTextSection.forEach((val)=>{
+                  let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '));
+                  _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //})
+                  // _.each(me.dataSection, function (val, i) {
+
+                  //     //从_formatTextSection中取出对应的格式化后的文本
+                  //     let txt = me._textElements[i];
+                  //     let scale = me._root.renderView.getObjectScale(txt);
+
+                  //     let textWidth = scale.x;
+                  //     let textHeight = scale.y;
+
+                  //     let width = textWidth; //文本在外接矩形width
+                  //     let height = textHeight;//文本在外接矩形height
+
+                  //     if (!!me.label.rotation) {
+                  //         //有设置旋转
+                  //         if (me.label.rotation == 90) {
+                  //             width = textHeight;
+                  //             height = textWidth;
+                  //         } else {
+                  //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             height = parseInt(sinR * textWidth);
+                  //             width = parseInt(cosR * textWidth);
+                  //         };
+                  //     };
+
+                  //     _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //     console.log('width',width);
+                  // });
+              }            this._maxTextWidth = _maxTextWidth;
+              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
+              this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+              //this.width+=10;
+              // if (this._title) {
+              //     this.height += this._title.getTextHeight()
+              // };
+          }
+      }
+      //设置布局
+      setLayout(opt) {}
+      draw() {
+          this._initModules();
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+
+          // console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
       }
   }
 
   class Grid extends Component {
-      constructor(_coord) {
-          super(_coord);
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+
+          let opt = this._opt = _cartesionUI;
+
+          // this.width = 0;
+          // this.height = 0;
+
+          // this.pos = {
+          //     x: 0,
+          //     y: 0
+          // };
+
+          this._cartesionUI = _cartesionUI;
+
+          this.enabled = 1;
+
+          this.line = { //x方向上的线
+              enabled: 1,
+              lineType: 'solid', //线条类型(dashed = 虚线 | solid = 实线)
+              strokeStyle: '#f0f0f0' //'#e5e5e5',
+          };
+
+          this.fill = {
+              enabled: true,
+              fillStyle: '#ccc',
+              alpha: 0.9
+          };
+
+          _.extend(true, this, opt.grid);
+
           this.init();
       }
       init() {
+
           this.group = this._root.renderView.addGroup({ name: 'grid' });
+
+          this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' }); //x轴上的线集合
+          this.rightGroup = this._root.renderView.addGroup({ name: 'rightGroup' });
+          this.topGroup = this._root.renderView.addGroup({ name: 'topGroup' });
+          this.bottomGroup = this._root.renderView.addGroup({ name: 'bottomGroup' });
+          this.frontGroup = this._root.renderView.addGroup({ name: 'frontGroup' });
+          this.backGroup = this._root.renderView.addGroup({ name: 'backGroup' });
+
+          this.group.add(this.leftGroup);
+          this.group.add(this.rightGroup);
+          this.group.add(this.topGroup);
+          this.group.add(this.bottomGroup);
+          this.group.add(this.frontGroup);
+          this.group.add(this.backGroup);
       }
+
+      drawFace() {
+          let me = this;
+          const _coordSystem = this._coordSystem;
+          let _faceInfo = this._cartesionUI.getFaceInfo();
+
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3$1(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+          if (me.fill.enabled) {
+
+              //todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
+              //todo view中构建 materail 通过fill 使用同一份material
+              this.leftFace = me._root.renderView.createPlane(depth, height, undefined, _faceInfo.left, me.leftGroup, this.fill);
+              this.rightFace = me._root.renderView.createPlane(depth, height, undefined, _faceInfo.right, me.rightGroup, this.fill);
+              this.topFace = me._root.renderView.createPlane(width, depth, undefined, _faceInfo.top, me.topGroup, this.fill);
+              this.bottomFace = me._root.renderView.createPlane(width, depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
+              this.frontFace = me._root.renderView.createPlane(width, height, undefined, _faceInfo.front, me.frontGroup, this.fill);
+              this.backFace = me._root.renderView.createPlane(width, height, undefined, _faceInfo.back, me.backGroup, this.fill);
+          }
+      }
+      drawLine() {
+          let me = this;
+          const _coordSystem = this._coordSystem;
+
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3$1(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+
+          if (!me.line.enabled) {
+              return;
+          }
+          //绘制左面的线条
+          let LinesVectors = [];
+          me._coordSystem.yAxisAttribute.section.forEach(num => {
+              let posY = me._coordSystem.getYAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, posY, 0));
+              LinesVectors.push(new Vector3$1(0, posY, -depth));
+          });
+
+          me._coordSystem.zAxisAttribute.section.forEach(num => {
+              let posZ = me._coordSystem.getZAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, 0, -posZ));
+              LinesVectors.push(new Vector3$1(0, height, -posZ));
+          });
+          let lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.leftGroup.add(lines);
+
+          //绘制右面的线条
+          LinesVectors = [];
+          me._coordSystem.yAxisAttribute.section.forEach(num => {
+              let posY = me._coordSystem.getYAxisPosition(num);
+              LinesVectors.push(new Vector3$1(width, posY, 0));
+              LinesVectors.push(new Vector3$1(width, posY, -depth));
+          });
+
+          me._coordSystem.zAxisAttribute.section.forEach(num => {
+              let posZ = me._coordSystem.getZAxisPosition(num);
+              LinesVectors.push(new Vector3$1(width, 0, -posZ));
+              LinesVectors.push(new Vector3$1(width, height, -posZ));
+          });
+          lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.rightGroup.add(lines);
+
+          //绘制上面的线条
+          LinesVectors = [];
+          me._coordSystem.xAxisAttribute.section.forEach(num => {
+              let posX = me._coordSystem.getXAxisPosition(num);
+              LinesVectors.push(new Vector3$1(posX, height, 0));
+              LinesVectors.push(new Vector3$1(posX, height, -depth));
+          });
+
+          me._coordSystem.zAxisAttribute.section.forEach(num => {
+              let posZ = me._coordSystem.getZAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, height, -posZ));
+              LinesVectors.push(new Vector3$1(width, height, -posZ));
+          });
+          lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.topGroup.add(lines);
+
+          //绘制下面的线条
+          LinesVectors = [];
+          me._coordSystem.xAxisAttribute.section.forEach(num => {
+              let posX = me._coordSystem.getXAxisPosition(num);
+              LinesVectors.push(new Vector3$1(posX, 0, 0));
+              LinesVectors.push(new Vector3$1(posX, 0, -depth));
+          });
+
+          me._coordSystem.zAxisAttribute.section.forEach(num => {
+              let posZ = me._coordSystem.getZAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, 0, -posZ));
+              LinesVectors.push(new Vector3$1(width, 0, -posZ));
+          });
+          lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.bottomGroup.add(lines);
+
+          //绘制前面的线条
+          LinesVectors = [];
+          me._coordSystem.xAxisAttribute.section.forEach(num => {
+              let posX = me._coordSystem.getXAxisPosition(num);
+              LinesVectors.push(new Vector3$1(posX, 0, 0));
+              LinesVectors.push(new Vector3$1(posX, height, 0));
+          });
+
+          me._coordSystem.yAxisAttribute.section.forEach(num => {
+              let posY = me._coordSystem.getYAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, posY, 0));
+              LinesVectors.push(new Vector3$1(width, posY, 0));
+          });
+
+          lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.frontGroup.add(lines);
+
+          //绘制后面的线条
+          LinesVectors = [];
+          me._coordSystem.xAxisAttribute.section.forEach(num => {
+              let posX = me._coordSystem.getXAxisPosition(num);
+              LinesVectors.push(new Vector3$1(posX, 0, -depth));
+              LinesVectors.push(new Vector3$1(posX, height, -depth));
+          });
+
+          me._coordSystem.yAxisAttribute.section.forEach(num => {
+              let posY = me._coordSystem.getYAxisPosition(num);
+              LinesVectors.push(new Vector3$1(0, posY, -depth));
+              LinesVectors.push(new Vector3$1(width, posY, -depth));
+          });
+          lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+          me.backGroup.add(lines);
+      }
+
+      draw() {
+          this.drawFace();
+          this.drawLine();
+      }
+
   }
 
-  class Decare3dUI extends Component {
-      constructor(_coord) {
-          super(_coord);
+  class Cartesian3DUI extends Component {
+      constructor(_coordSystem) {
+          super(_coordSystem);
 
+          //坐标轴实例
           this._xAxis = null;
           this._yAxis = [];
 
           this._yAxisLeft = null;
+          //暂时忽略_yAxisRight
           this._yAxisRight = null;
 
           this._zAxis = null;
           this._grid = null;
 
-          let opt = _coord.coord;
+          let opt = _coordSystem.coord;
 
-          this.type = "decare3d";
+          this.type = "cartesian3d";
 
           this.horizontal = false;
 
+          //配置信息
           this.xAxis = opt.xAxis || {};
           this.yAxis = opt.yAxis || [];
+          this.zAxis = opt.zAxis || {};
           this.grid = opt.grid || {};
 
           _.extend(true, this, opt);
 
           if (opt.horizontal) {
               this.xAxis.isH = true;
+              this.zAxis.isH = true;
               _.each(this.yAxis, function (yAxis) {
                   yAxis.isH = true;
               });
@@ -17579,13 +18500,6 @@ define(function () { 'use strict';
                   });
               });
 
-              /*
-              this.xAxis.enabled = opt.enabled;
-              _.each( this.yAxis , function( yAxis ){
-                  yAxis.enabled = opt.enabled;
-              });
-              */
-
               this.grid.enabled = opt.enabled;
           }
           this.init(opt);
@@ -17593,54 +18507,26 @@ define(function () { 'use strict';
 
       init(opt) {
 
-          this.group = this._root.renderView.addGroup({ name: 'Decare3dUI' });
+          this.group = this._root.renderView.addGroup({ name: 'cartesian3dUI_root' });
 
           this._initModules();
 
-          let offset = new Vector3$1(this._yAxisLeft.width, this._xAxis.height, 0);
-          this._coord.updateOrigin(offset);
-
-          //需要更新坐标系后绘制
-          this._yAxisLeft._initModules();
-
-          this._xAxis._initModules();
-
-          //创建好了坐标系统后，设置 _fieldsDisplayMap 的值，
-          // _fieldsDisplayMap 的结构里包含每个字段是否在显示状态的enabled 和 这个字段属于哪个yAxis
-          //this.fieldsMap = this._setFieldsMap();
-
-
-          //先绘制Y轴
-          // this.axisY = new YAxis(this._coord);
-          // let width = this.axisY.getAxisYWidth();
-
-
-          //this.axisX = new XAxis(this._coord);
-
-
-          //test
-          //let pos = this._coord._getPos(new Vector3(0, 0, 0));
-          //console.log("原点位置", pos);
-
-          //let box = this._root.renderView.createBox(100, 100, 100);
-
-
-          //this.group.add(this.axisY.group);
-          // this.group.add(this.axisX.group);
-
-          //this.group.add(box);
+          //todo z轴的宽度没有计算在内
+          //todo  是否要计算offset值去更改最终原点的位置
+          // let offset = new Vector3(this._yAxisLeft.width, this._xAxis.height, 0);
+          //todo 三维空间中不需要考虑原点的移动 
+          this._coordSystem.updateOrigin(new Vector3$1(0, 0, 0));
       }
       _initModules() {
           this._grid = new Grid(this);
           this.group.add(this._grid.group);
 
-          //var _xAxisDataFrame = this._getAxisDataFrame(this.xAxis.field);
           this._xAxis = new XAxis(this);
           this.group.add(this._xAxis.group);
 
           //这里定义的是配置
-          var yAxis = this.yAxis;
-          var yAxisLeft;
+          let yAxis = this.yAxis;
+          let yAxisLeft;
 
           // yAxis 肯定是个数组
           if (!_.isArray(yAxis)) {
@@ -17652,7 +18538,6 @@ define(function () { 'use strict';
           });
 
           if (yAxisLeft) {
-              //yAxisLeftDataFrame = this._getAxisDataFrame( yAxisLeft.field );
               this._yAxisLeft = new YAxis(this);
               this._yAxisLeft.axis = yAxisLeft;
               this.group.add(this._yAxisLeft.group);
@@ -17672,12 +18557,89 @@ define(function () { 'use strict';
           //     this._yAxis.push( this._yAxisRight );
           // };
 
-          //todo 更新坐标系
+          this._zAxis = new ZAxis(this);
+          this.group.add(this._zAxis.group);
       }
+
       draw() {
+
           this._yAxisLeft.draw();
           this._xAxis.draw();
+          this._zAxis.draw();
+          this._grid.draw();
       }
+
+      getFaceInfo() {
+          let _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3$1(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+
+          let lfb = new Vector3$1(0, 0, 0),
+              //左前下
+          lft = new Vector3$1(0, height, 0),
+              //左前上  
+          lbb = new Vector3$1(0, 0, -depth),
+              //左后下 
+          lbt = new Vector3$1(0, height, -depth),
+              //左后上
+
+          rfb = new Vector3$1(width, 0, 0),
+              //左前下
+          rft = new Vector3$1(width, height, 0),
+              //左前上  
+          rbb = new Vector3$1(width, 0, -depth),
+              //左后下 
+          rbt = new Vector3$1(width, height, -depth); //左后上
+
+          let cameraPos = this._root.renderView._camera.getWorldPosition();
+
+          let zDir = new Vector3$1(0, 0, 1);
+          let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
+          let v = cameraPos.clone().sub(coordCenter).normalize();
+
+          let result = {
+              left: {
+                  dir: new Vector3$1(1, 0, 0), //法线方向
+                  center: new Box3().setFromPoints([lft, lft, lbb, lbt]).getCenter(),
+                  visible: v.clone().cross(zDir).y <= 0
+              },
+              right: {
+                  dir: new Vector3$1(-1, 0, 0), //法线方向
+                  center: new Box3().setFromPoints([rft, rft, rbb, rbt]).getCenter(),
+                  visible: v.clone().cross(zDir).y > 0
+              },
+              top: {
+                  dir: new Vector3$1(0, -1, 0), //法线方向
+                  center: new Box3().setFromPoints([lft, rft, lbt, rbt]).getCenter(),
+                  visible: v.clone().cross(zDir).x < 0
+              },
+              bottom: {
+                  dir: new Vector3$1(0, 1, 0), //法线方向
+                  center: new Box3().setFromPoints([lfb, rfb, lbb, rbb]).getCenter(),
+                  visible: v.clone().cross(zDir).x >= 0
+              },
+              front: {
+                  dir: new Vector3$1(0, 0, -1),
+                  center: new Box3().setFromPoints([lfb, rfb, rft, lft]).getCenter(),
+                  visible: v.dot(zDir) < 0
+              },
+              back: {
+                  dir: new Vector3$1(0, 0, 1),
+                  center: new Box3().setFromPoints([lbb, rbb, rbt, lbt]).getCenter(),
+                  visible: v.dot(zDir) >= 0
+              }
+
+          };
+
+          return result;
+      }
+
   }
 
   function normalizeTickInterval(interval, magnitude) {
@@ -17809,16 +18771,18 @@ define(function () { 'use strict';
    * 
    * ***/
 
-  class Decare3d extends Coord3d {
+  class Cartesian3D extends InertialSystem {
       constructor(root) {
           super(root);
-          this._root = root;
-          let baseBoundbox = super.getBoundbox();
 
           //相对与世界坐标的原点位置
-          this.origin = baseBoundbox.min;
-          // this.center = new Vector3(0, 0, 0);
 
+          this.origin = new Vector3$1(0, 0, 0);
+          this.center = new Vector3$1(0, 0, 0);
+
+          this.offset = new Vector3$1(0, 0, 0);
+
+          this.boundbox = new Box3();
 
           this.xAxisAttribute = new AxisAttribute();
           this.yAxisAttribute = new AxisAttribute();
@@ -17926,7 +18890,7 @@ define(function () { 'use strict';
           if (!opts.coord.zAxis) {
               this.coord.zAxis = {
                   field: '',
-                  depth: 100 //最大深度是1000
+                  depth: 500 //最大深度是1000
               };
           }
 
@@ -17935,21 +18899,28 @@ define(function () { 'use strict';
 
       getBoundbox() {
           //笛卡尔坐标的原点默认为左下方
-          let boundbox = new Box3();
+
           let baseBoundbox = super.getBoundbox();
-
-          boundbox.min.set(0, 0, 0);
-          boundbox.max.set(baseBoundbox.max.x - this.origin.x, baseBoundbox.max.y - this.origin.y, baseBoundbox.max.z - this.origin.z);
-
-          return boundbox;
+          let offset = this.offset.clone();
+          this.baseBoundbox = baseBoundbox;
+          this.boundbox.min.set(0, 0, 0);
+          this.boundbox.max.set(baseBoundbox.max.x - baseBoundbox.min.x - offset.x, baseBoundbox.max.y - baseBoundbox.min.y - offset.y, baseBoundbox.max.z - baseBoundbox.min.z - offset.z);
+          this.center = this.boundbox.getCenter();
+          this.center.setZ(-this.center.z);
+          return this.boundbox;
       }
-
+      //粗略计算在原点位置的世界线段的长度与屏幕像素的长度比
+      getRatioPixelToWorldByOrigin() {
+          let baseBoundbox = super.getBoundbox();
+          let _origin = baseBoundbox.min.clone();
+          _origin.setZ(baseBoundbox.max.z);
+          let ratio = this._root.renderView.getVisableSize(_origin).ratio;
+          return ratio;
+      }
       init() {
 
-          this.group = this._root.renderView.addGroup({ name: 'Decare3d' });
-          // let view = this._root.renderView;
-          // let camera = view._camera;
-          let opt = _.clone(this._root.opt.opts);
+          this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
+          let opt = _.clone(this._root.opt);
 
           //这个判断不安全
           if (_.isSafeObject(opt, 'coord.xAxis.field')) {
@@ -18021,8 +18992,28 @@ define(function () { 'use strict';
               this.yAxisAttribute.computeDataSection(joinArr);
           }
 
-          //变换渲染图层的原点位置
-          this.setOrigin(this.origin);
+          if (_.isSafeObject(opt, 'coord.zAxis.field')) {
+              this.zAxisAttribute.setField(opt.coord.zAxis.field);
+              this.zAxisAttribute.setData(this._getAxisDataFrame(opt.coord.zAxis.field));
+
+              if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+                  var arr = _.flatten(this.zAxisAttribute.data);
+
+                  if (this.coord.zAxis.layoutType == "proportion") {
+                      if (arr.length == 1) {
+                          arr.push(0);
+                          arr.push(arr[0] * 2);
+                      }                    arr = arr.sort(function (a, b) {
+                          return a - b;
+                      });
+                      arr = DataSection.section(arr);
+                  }
+                  this.zAxisAttribute.setDataSection(arr);
+              }
+          }
+
+          //先计算一次空间范围供计算坐标轴宽高使用
+          this.getBoundbox();
       }
 
       _setDataSection(yFields) {
@@ -18116,38 +19107,213 @@ define(function () { 'use strict';
       //更新坐标原点
       updateOrigin(offset) {
 
-          offset.add(this.origin);
-          this.setOrigin(offset);
+          this.offset = offset.clone();
+
           this.boundbox = this.getBoundbox();
+
+          this.setWorldOrigin();
+
+          this.updatePosition();
       }
-      setOrigin(pos) {
-          this.origin.copy(pos);
+
+      updatePosition() {
+
+          //更新相机姿态
+          let center = this.center.clone();
+          center = this._getWorldPos(center);
+          let _renderView = this._root.renderView;
+          let _camera = _renderView._camera;
+
+          //相机默认的旋转角度
+          let dist = _camera.position.distanceTo(center);
+          let phi = _Math.degToRad(_renderView.controls.alpha); //(90-lat)*(Math.PI/180),
+          let theta = _Math.degToRad(_renderView.controls.beta); // (lng+180)*(Math.PI/180),
+
+          let y = dist * Math.sin(phi);
+          let temp = dist * Math.cos(phi);
+          let x = temp * Math.sin(theta);
+          let z = temp * Math.cos(theta);
+          //平移实现以中心点为圆心的旋转结果
+          let newPos = new Vector3$1(x, y, z);
+          newPos.add(center);
+          _camera.position.copy(newPos);
+          //相机朝向中心点 
+          _camera.lookAt(center);
+          //测试中心点的位置
+          let helpLine = this._root.renderView.createLine([center.clone()], new Vector3$1(1, 0, 0), 123, 1, 'red');
+          let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3$1(-1, 0, 0), 500, 1, 'red');
+          this._root.renderView._scene.add(helpLine);
+          this._root.renderView._scene.add(helpLine2);
+      }
+
+      addLights() {
+          //加入灯光
+
+
+      }
+
+      setWorldOrigin() {
+          let baseBoundbox = super.getBoundbox();
+          let offset = this.offset.clone();
+          let pos = baseBoundbox.min.clone();
+          pos.setZ(baseBoundbox.max.z);
+          pos.add(offset);
           this.group.position.copy(pos);
       }
-
-      //根据世界坐标返回惯性坐标
-      _getPos(pos) {
-
-          let transMatrix = new Matrix4();
-
-          transMatrix.makeTranslation(...this.origin.toArray());
-
-          return pos.applyMatrix4(transMatrix);
+      getOrigin() {
+          return this.origin.clone();
       }
 
       initCoordUI() {
 
-          this._coordUI = new Decare3dUI(this);
+          this._coordUI = new Cartesian3DUI(this);
           this.group.add(this._coordUI.group);
       }
 
       draw() {
           this._coordUI.draw();
+
+          //测试
+          // let ceil = this.getCeilSize();
+          // let pos = new Vector3();
+          // pos.setX(this.getXAxisPosition(2));
+          // pos.setY(this.getYAxisPosition(100));
+          // pos.setZ(this.getZAxisPosition('项目三'));
+          // let boxWidth = ceil.x * 0.8;
+          // let boxDepth = ceil.z * 0.8;
+          // let boxHeight = Math.max(Math.abs(pos.y), 1);
+          // let metaril = new MeshBasicMaterial({
+          //     color: 'blue',
+          //     // polygonOffset:true,
+          //     // polygonOffsetFactor:2,
+          //     // polygonOffsetUnits:2
+          // })
+          // let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
+          // box.position.set(pos.x - boxWidth * 0.5, 0, -pos.z + boxDepth * 0.5);
+
+          // this.group.add(box);
       }
 
-      dataToPoint() {}
+      getXAxisPosition(data) {
+          let _val = 0;
+          let _range = this.boundbox.max.x - this.boundbox.min.x;
+          let dataLen = this.xAxisAttribute.section.length;
+          let ind = _.indexOf(this.xAxisAttribute.section, data); //先不考虑不存在的值
+          var layoutType = this._coordUI._xAxis.layoutType;
 
-      boundbox() {}
+          if (dataLen == 1) {
+              _val = _range / 2;
+          } else {
+              if (layoutType == "rule") {
+                  //折线图的xyaxis就是 rule
+                  _val = ind / (dataLen - 1) * _range;
+              }            if (layoutType == "proportion") {
+                  //按照数据真实的值在minVal - maxVal 区间中的比例值
+                  // if (val == undefined) {
+                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
+                  // };
+                  // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
+                  _val = _range * (data / (maxVal - minVal));
+              }            if (layoutType == "peak") {
+                  //柱状图的就是peak
+                  var _ceilWidth = _range / dataLen;
+                  // if (this.posParseToInt) {
+                  //     _ceilWidth = parseInt(_ceilWidth);
+                  // };
+
+                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
+              }        }
+          if (isNaN(_val)) {
+              _val = 0;
+          }
+          return _val;
+      }
+      getYAxisPosition(data) {
+          let _val = 0;
+          let _range = this.boundbox.max.y - this.boundbox.min.y;
+          let dataLen = this.yAxisAttribute.section.length;
+          let ind = _.indexOf(this.yAxisAttribute.section, data); //先不考虑不存在的值
+          let layoutType = this._coordUI._yAxisLeft.layoutType;
+
+          let maxVal = Math.max.apply(null, this.yAxisAttribute.section);
+          let minVal = Math.min.apply(null, this.yAxisAttribute.section);
+
+          if (dataLen == 1) {
+              _val = _range / 2;
+          } else {
+              if (layoutType == "rule") {
+                  //折线图的xyaxis就是 rule
+                  _val = ind / (dataLen - 1) * _range;
+              }            if (layoutType == "proportion") {
+                  //按照数据真实的值在minVal - maxVal 区间中的比例值
+                  // if (val == undefined) {
+                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
+                  // };
+                  _val = _range * (data / (maxVal - minVal));
+              }            if (layoutType == "peak") {
+                  //柱状图的就是peak
+                  var _ceilWidth = _range / dataLen;
+                  // if (this.posParseToInt) {
+                  //     _ceilWidth = parseInt(_ceilWidth);
+                  // };
+
+                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
+              }        }
+          if (isNaN(_val)) {
+              _val = 0;
+          }
+          return _val;
+      }
+      getZAxisPosition(data) {
+          let _val = 0;
+          let _range = this.boundbox.max.z - this.boundbox.min.z;
+          let dataLen = this.zAxisAttribute.section.length;
+          let ind = _.indexOf(this.zAxisAttribute.section, data); //先不考虑不存在的值
+          var layoutType = this._coordUI._zAxis.layoutType;
+
+          if (dataLen == 1) {
+              _val = _range / 2;
+          } else {
+              if (layoutType == "rule") {
+                  //折线图的xyaxis就是 rule
+                  _val = ind / (dataLen - 1) * _range;
+              }            if (layoutType == "proportion") {
+                  //按照数据真实的值在minVal - maxVal 区间中的比例值
+                  // if (val == undefined) {
+                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
+                  // };
+                  // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
+                  _val = _range * (data / (maxVal - minVal));
+              }            if (layoutType == "peak") {
+                  //柱状图的就是peak
+                  var _ceilWidth = _range / dataLen;
+                  // if (this.posParseToInt) {
+                  //     _ceilWidth = parseInt(_ceilWidth);
+                  // };
+
+                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
+              }        }
+          if (isNaN(_val)) {
+              _val = 0;
+          }
+          return _val;
+      }
+
+      getCeilSize() {
+
+          let ceil = new Vector3$1();
+          let size = this.boundbox.getSize();
+          let dataLenX = this.xAxisAttribute.section.length;
+          let dataLenY = this.yAxisAttribute.section.length;
+          let dataLenZ = this.zAxisAttribute.section.length;
+
+          ceil.setX(size.x / (dataLenX - 1));
+          ceil.setY(size.y / (dataLenY - 1));
+          ceil.setZ(size.z / (dataLenZ - 1));
+
+          return ceil;
+      }
+
   }
 
   class AxisAttribute {
@@ -18182,7 +19348,8 @@ define(function () { 'use strict';
   var coord = {
       // rect : Rect,
       // polar : Polar
-      decare3d: Decare3d
+      cartesian3d: Cartesian3D,
+      coord3d: InertialSystem
   };
 
   var components = {}
@@ -18220,7 +19387,9 @@ define(function () { 'use strict';
               if (_chart) {
                   _chart.destroy();
               }            delete me.instances[chart_id];
-          }        let Coord = Coord3d;
+          }
+          //默认为惯性坐标系
+          let Coord = InertialSystem;
 
           if (opts.coord && opts.coord.type) {
               Coord = coord[opts.coord.type];

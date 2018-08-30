@@ -39,13 +39,14 @@ import dom from '../lib/dom';
 
 
 import { Chart3d } from './chart3d';
-import { Coord3d } from './framework/coord/coord3d';
-import { Decare3d as decare3d } from './framework/coord/decare3d';
+import { InertialSystem as coord3d } from './framework/coord/inertial';
+import { Cartesian3D as cartesian3d } from './framework/coord/cartesian3d';
 
 var coord = {
     // rect : Rect,
     // polar : Polar
-    decare3d
+    cartesian3d,
+    coord3d
 }
 
 var graphs = {
@@ -104,7 +105,9 @@ var Chartx3d = {
             };
             delete me.instances[chart_id];
         };
-        let Coord = Coord3d;
+
+        //默认为惯性坐标系
+        let Coord = coord3d;
 
         if (opts.coord && opts.coord.type) {
             Coord = coord[opts.coord.type];

@@ -3,7 +3,8 @@ var babel = require('rollup-plugin-babel');
 var commonjs = require('rollup-plugin-commonjs');
 var resolve = require('rollup-plugin-node-resolve');
 var uglify = require('rollup-plugin-uglify');
-
+var json = require('rollup-plugin-json');
+debugger
 function glsl() {
 
     return {
@@ -33,20 +34,21 @@ rollup.rollup({
     input: 'src/index.js',
     plugins: [
         glsl(),
-      babel({
-        exclude: 'node_modules/**'
-      }),
-      resolve({ 
-          jsnext: true,
-          main: true, 
-          browser: true,
-          }), 
-       commonjs()
-      //uglify()
+        json(),
+        babel({
+            exclude: 'node_modules/**'
+        }),
+        resolve({
+            jsnext: true,
+            main: true,
+            browser: true,
+        }),
+        commonjs()
+        //uglify()
     ]
-}).then(function(bundle) {
+}).then(function (bundle) {
 
-	// output format - 'amd', 'cjs', 'es6', 'iife', 'umd'
+    // output format - 'amd', 'cjs', 'es6', 'iife', 'umd'
     // amd – 使用像requirejs一样的银木块定义
     // cjs – CommonJS，适用于node和browserify / Webpack
     // es6 (default) – 保持ES6的格式
