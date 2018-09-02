@@ -62,14 +62,15 @@ class TickTexts extends Component {
     // }
 
 
-    initData(axis,attribute,fn) {
+    initData(axis, attribute, fn) {
         let me = this;
         let _dir = new Vector3();
         let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-       
+        this.origins = [];
+
         attribute.section.forEach((num, index) => {
             //起点
-            let val = fn.call(this._coordSystem,num)
+            let val = fn.call(this._coordSystem, num)
             let startPoint = axis.dir.clone().multiplyScalar(val);
             startPoint.add(axis.origin);
             startPoint.add(_offset);
@@ -118,31 +119,54 @@ class TickTexts extends Component {
 
         this.group.add(this._tickTextGroup);
     }
-    getBoundBox() {
-        //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
-        //没有计算文本旋转后的长度
-        let result = new Box3();
-        result.makeEmpty();
-        this._tickTexts.traverse(function (sprite) {
-            if (sprite instanceof Sprite) {
-                let min = new Vector3();
-                let max = new Vector3();
-                let halfScale = new Vector3();
-                halfScale.copy(sprite.scale);
-                halfScale.multiplyScalar(0.5);
-                min.copy(sprite.position);
-                max.copy(sprite.position);
+    // getBoundBox() {
+    //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
+    //     //没有计算文本旋转后的长度
+    //     let result = new Box3();
+    //     result.makeEmpty();
+    //     this._tickTexts.traverse(function (sprite) {
+    //         if (sprite instanceof Sprite) {
+    //             let min = new Vector3();
+    //             let max = new Vector3();
+    //             let halfScale = new Vector3();
+    //             halfScale.copy(sprite.scale);
+    //             halfScale.multiplyScalar(0.5);
+    //             min.copy(sprite.position);
+    //             max.copy(sprite.position);
 
-                min.sub(halfScale);
-                max.add(halfScale);
+    //             min.sub(halfScale);
+    //             max.add(halfScale);
 
-                result.expandByPoint(min);
-                result.expandByPoint(max);
+    //             result.expandByPoint(min);
+    //             result.expandByPoint(max);
+    //         }
+    //     });
+    //     return result;
+    // }
+    dispose() {
+        //todo sprite重构
+        let remove = [];
+        this.group.traverse((obj) => {
+            if (obj.isTextSprite) {
+                if (obj.geometry) {
+                    obj.geometry.dispose();
+                }
+                if (obj.material) {
+                    obj.material.dispose();
+                    if (obj.material.map) {
+                        obj.material.map.dispose();
+                    }
+                }
+                remove.push(obj);
+
             }
         });
-        return result;
-    }
+        while (remove.length) {
+            let obj = remove.pop();
+            obj.parent.remove(obj);
+        }
 
+    }
 
 
 }

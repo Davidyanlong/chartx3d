@@ -46,6 +46,9 @@ class AxisLine extends Component {
     setOrigin(pos) {
         this.origin.copy(pos);
     }
+    getOrigin() {
+        return this.origin.clone();
+    }
 
     setDir(dir) {
         this.dir.copy(dir);
@@ -68,6 +71,25 @@ class AxisLine extends Component {
 
         this.group.add(this.axis);
 
+    }
+    dispose() {
+        let remove = [];
+        this.group.traverse((obj) => {
+            if (obj.isLine2) {
+                if (obj.geometry) {
+                    obj.geometry.dispose();
+                }
+                if (obj.material) {
+                    obj.material.dispose();
+                }
+                remove.push(obj);
+
+            }
+        })
+        while (remove.length) {
+            let obj = remove.pop();
+            obj.parent.remove(obj);
+        }
     }
 
     // getBoundBox() {

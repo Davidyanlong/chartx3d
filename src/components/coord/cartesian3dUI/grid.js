@@ -43,7 +43,7 @@ class Grid extends Component {
         this.init();
     }
     init() {
-
+        let me = this;
         this.group = this._root.renderView.addGroup({ name: 'grid' });
 
         this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
@@ -60,10 +60,19 @@ class Grid extends Component {
         this.group.add(this.frontGroup);
         this.group.add(this.backGroup);
 
+        this._root.orbitControls.on('change', () => {
+            if (!me.enabled) return;
+            let _faceInfo = me._cartesionUI.getFaceInfo();
+            _.each(_faceInfo, (value, key) => {
+                me[key + 'Group'].visible = value.visible;
+            })
+
+        })
+
 
     }
-    
-    
+
+
 
     drawFace() {
         let me = this;

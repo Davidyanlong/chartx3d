@@ -581,7 +581,7 @@
       }
   }
 
-  var version = "0.0.14";
+  var version = "0.0.20";
 
   const REVISION = version;
 
@@ -6680,6 +6680,16 @@
   		scale: { value: 1 },
   		dashSize: { value: 1 },
   		totalSize: { value: 2 }
+  	},
+  	sprite: {
+
+  		diffuse: { value: new Color$1(0xeeeeee) },
+  		opacity: { value: 1.0 },
+  		center: { value: new Vector2(0.5, 0.5) },
+  		rotation: { value: 0.0 },
+  		map: { value: null },
+  		uvTransform: { value: new Matrix3() }
+
   	}
   };
 
@@ -6768,6 +6778,10 @@
 
   var linemesh_vert = "uniform float linewidth;\nuniform vec2 resolution;\nattribute vec3 instanceStart;\nattribute vec3 instanceEnd;\nattribute vec3 instanceColorStart;\nattribute vec3 instanceColorEnd;\nvarying vec2 vUv;\n#ifdef USE_COLOR\n\tvarying vec3 vColor;\n#endif\n#ifdef USE_DASH\n    uniform float scale;\n    attribute float instanceDistanceStart;\n    attribute float instanceDistanceEnd;\n    varying float vLineDistance;\n    \n#endif\nvoid trimSegment( const in vec4 start, inout vec4 end ) {\n    float a = projectionMatrix[ 2 ][ 2 ];    float b = projectionMatrix[ 3 ][ 2 ];    float nearEstimate = - 0.5 * b / a;\n    float alpha = ( nearEstimate - start.z ) / ( end.z - start.z );\n    end.xyz = mix( start.xyz, end.xyz, alpha );\n}\nvoid main() {\n#ifdef USE_COLOR\n        vColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;\n#endif\n#ifdef USE_DASH\n    vLineDistance = ( position.y < 0.5 ) ? scale * instanceDistanceStart : scale * instanceDistanceEnd;\n#endif\n    float aspect = resolution.x / resolution.y;\n    vUv = uv;\n    vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );\n    vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );\n    bool perspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 );    if ( perspective ) {\n        if ( start.z < 0.0 && end.z >= 0.0 ) {\n            trimSegment( start, end );\n        } else if ( end.z < 0.0 && start.z >= 0.0 ) {\n            trimSegment( end, start );\n        }\n    }\n    vec4 clipStart = projectionMatrix * start;\n    vec4 clipEnd = projectionMatrix * end;\n    vec2 ndcStart = clipStart.xy / clipStart.w;\n    vec2 ndcEnd = clipEnd.xy / clipEnd.w;\n    vec2 dir = ndcEnd - ndcStart;\n    dir.x *= aspect;\n    dir = normalize( dir );\n    vec2 offset = vec2( dir.y, - dir.x );\n    dir.x /= aspect;\n    offset.x /= aspect;\n    if ( position.x < 0.0 ) offset *= - 1.0;\n    if ( position.y < 0.0 ) {\n        offset += - dir;\n    } else if ( position.y > 1.0 ) {\n        offset += dir;\n    }\n    offset *= linewidth;\n    offset /= resolution.y;\n    vec4 clip = ( position.y < 0.5 ) ? clipStart : clipEnd;\n    offset *= clip.w;\n    clip.xy += offset;\n    gl_Position =clip;\n    vec4 mvPosition = ( position.y < 0.5 ) ? start : end;}";
 
+  var sprite_frag = "uniform vec3 diffuse;\nuniform float opacity;\n#ifdef USE_MAP\n\tvarying vec2 vUv;\n#endif\n#ifdef USE_MAP\n\tuniform sampler2D map;\n#endif\nvoid main() {\n\tvec3 outgoingLight = vec3( 0.0 );\n\tvec4 diffuseColor = vec4( diffuse, opacity );\n#ifdef USE_MAP\n\tvec4 texelColor = texture2D( map, vUv );\n\tdiffuseColor *= texelColor;\n#endif\n#ifdef ALPHATEST\n\tif ( diffuseColor.a < ALPHATEST ) discard;\n#endif\n\toutgoingLight = diffuseColor.rgb;\n\tgl_FragColor = vec4( outgoingLight, diffuseColor.a );\n}";
+
+  var sprite_vert = "uniform float rotation;\nuniform vec2 center;\n#ifdef USE_MAP\n\tvarying vec2 vUv;\n\tuniform mat3 uvTransform;\n#endif\nvoid main() {\n#ifdef USE_MAP\n\tvUv = ( uvTransform * vec3( uv, 1 ) ).xy;\n#endif\n\tvec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );\n\tvec2 scale;\n\tscale.x = length( vec3( modelMatrix[ 0 ].x, modelMatrix[ 0 ].y, modelMatrix[ 0 ].z ) );\n\tscale.y = length( vec3( modelMatrix[ 1 ].x, modelMatrix[ 1 ].y, modelMatrix[ 1 ].z ) );\n\t#ifndef USE_SIZEATTENUATION\n\t\tbool isPerspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 );\n\t\tif ( isPerspective ) scale *= - mvPosition.z;\n\t#endif\n\tvec2 alignedPosition = ( position.xy - ( center - vec2( 0.5 ) ) ) * scale;\n\tvec2 rotatedPosition;\n\trotatedPosition.x = cos( rotation ) * alignedPosition.x - sin( rotation ) * alignedPosition.y;\n\trotatedPosition.y = sin( rotation ) * alignedPosition.x + cos( rotation ) * alignedPosition.y;\n\tmvPosition.xy += rotatedPosition;\n\tgl_Position = projectionMatrix * mvPosition;\n}";
+
   const ShaderChunk = {
 
   	meshbasic_frag,
@@ -6786,7 +6800,10 @@
   	meshphong_frag,
 
   	linemesh_vert,
-  	linemesh_frag
+  	linemesh_frag,
+
+  	sprite_vert,
+  	sprite_frag
 
   };
 
@@ -6866,6 +6883,17 @@
   		fragmentShader: ShaderChunk.points_frag
 
   	},
+  	sprite: {
+
+  		uniforms: UniformsUtils$1.merge( [
+  			UniformsLib.sprite,
+  			//UniformsLib.fog
+  		] ),
+
+  		vertexShader: ShaderChunk.sprite_vert,
+  		fragmentShader: ShaderChunk.sprite_frag
+
+  	}
 
   };
 
@@ -8100,7 +8128,8 @@
               PointsMaterial: 'points',
               MeshLambertMaterial: 'lambert',
               MeshPhongMaterial: 'phong',
-              LineMeshMaterial: 'linemesh'
+              LineMeshMaterial: 'linemesh',
+              SpriteMaterial: 'sprite'
           };
 
       }
@@ -8121,6 +8150,7 @@
               }
 
           }
+          //shader Define值从这里取
           let parameters = {
               shaderID,
               precision,
@@ -8130,6 +8160,8 @@
               doubleSided: material.side === DoubleSide,
               flipSided: material.side === BackSide,
               dashed: !!material.dashed,
+              sizeAttenuation:!!material.sizeAttenuation,
+              premultipliedAlpha:!!material.premultipliedAlpha,
 
               numDirLights: lights.directional.length,
               numPointLights: lights.point.length,
@@ -8562,7 +8594,7 @@
 
               textureProperties.__webglInit = true;
 
-              texture.on('dispose', onTextureDispose);
+              texture.on('dispose', onTextureDispose.bind(this));
 
               textureProperties.__webglTexture = _gl.createTexture();
 
@@ -8741,8 +8773,8 @@
 
           }
 
-          _gl.texParameteri(textureType, _gl.TEXTURE_MAG_FILTER, filterFallback.call(this,texture.magFilter));
-          _gl.texParameteri(textureType, _gl.TEXTURE_MIN_FILTER, filterFallback.call(this,texture.minFilter));
+          _gl.texParameteri(textureType, _gl.TEXTURE_MAG_FILTER, filterFallback.call(this, texture.magFilter));
+          _gl.texParameteri(textureType, _gl.TEXTURE_MIN_FILTER, filterFallback.call(this, texture.minFilter));
 
           if (texture.minFilter !== NearestFilter && texture.minFilter !== LinearFilter) {
 
@@ -8773,8 +8805,8 @@
   }
 
   function deallocateTexture(texture) {
-
-      var textureProperties = this._properties.get(texture);
+      let _gl = this.gl;
+      let textureProperties = this._properties.get(texture);
 
       if (texture.image && textureProperties.__image__webglTextureCube) {
 
@@ -8807,12 +8839,1425 @@
   function generateMipmap(target, texture, width, height) {
 
       //生成多级纹理图
-     this.gl.generateMipmap(target);
+      this.gl.generateMipmap(target);
 
       var textureProperties = this._properties.get(texture);
 
       // Note: Math.log( x ) * Math.LOG2E used instead of Math.log2( x ) which is not supported by IE11
       textureProperties.__maxMipLevel = Math.log(Math.max(width, height)) * Math.LOG2E;
+
+  }
+
+  let webglLightsCount = 0;
+  let _webGLLightsVector3 = new Vector3$1();
+  class WebGLLights {
+      constructor() {
+          this.cache = new UniformsCache();
+          this.state = {
+              id: webglLightsCount++,
+              hash: '',
+              ambient: [0, 0, 0],
+              directional: [],
+              spot: [],
+              point: []
+          };
+      }
+
+      setup(lights, shadows, camera) {
+          let r = 0, g = 0, b = 0;
+
+          let directionalLength = 0;
+          let pointLength = 0;
+          let spotLength = 0;
+
+          let state = this.state;
+          let cache = this.cache;
+
+          let viewMatrix = camera.matrixWorldInverse;
+
+          for (let i = 0, l = lights.length; i < l; i++) {
+
+              let light = lights[i];
+
+              let color = light.color;
+              let intensity = light.intensity;
+              let distance = light.distance;
+
+
+
+
+              if (light.isAmbientLight) {
+
+                  r += color.r * intensity;
+                  g += color.g * intensity;
+                  b += color.b * intensity;
+
+              } else if (light.isDirectionalLight) {
+
+                  let uniforms = cache.get(light);
+
+                  uniforms.color.copy(light.color).multiplyScalar(light.intensity);
+                  uniforms.direction.setFromMatrixPosition(light.matrixWorld);
+                  _webGLLightsVector3.setFromMatrixPosition(light.target.matrixWorld);
+                  uniforms.direction.sub(_webGLLightsVector3);
+                  uniforms.direction.transformDirection(viewMatrix);
+
+
+                  state.directional[directionalLength] = uniforms;
+
+                  directionalLength++;
+
+              } else if (light.isSpotLight) {
+
+                  var uniforms = cache.get(light);
+
+                  uniforms.position.setFromMatrixPosition(light.matrixWorld);
+                  uniforms.position.applyMatrix4(viewMatrix);
+
+                  uniforms.color.copy(color).multiplyScalar(intensity);
+                  uniforms.distance = distance;
+
+                  uniforms.direction.setFromMatrixPosition(light.matrixWorld);
+                  _webGLLightsVector3.setFromMatrixPosition(light.target.matrixWorld);
+                  uniforms.direction.sub(_webGLLightsVector3);
+                  uniforms.direction.transformDirection(viewMatrix);
+
+                  uniforms.coneCos = Math.cos(light.angle);
+                  uniforms.penumbraCos = Math.cos(light.angle * (1 - light.penumbra));
+                  uniforms.decay = (light.distance === 0) ? 0.0 : light.decay;
+
+                  state.spot[spotLength] = uniforms;
+
+                  spotLength++;
+
+              } else if (light.isPointLight) {
+
+                  var uniforms = cache.get(light);
+
+                  uniforms.position.setFromMatrixPosition(light.matrixWorld);
+                  uniforms.position.applyMatrix4(viewMatrix);
+
+                  uniforms.color.copy(light.color).multiplyScalar(light.intensity);
+                  uniforms.distance = light.distance;
+                  uniforms.decay = (light.distance === 0) ? 0.0 : light.decay;
+
+                  state.point[pointLength] = uniforms;
+
+                  pointLength++;
+
+              }
+
+          }
+
+          state.ambient[0] = r;
+          state.ambient[1] = g;
+          state.ambient[2] = b;
+
+          state.directional.length = directionalLength;
+          state.spot.length = spotLength;
+          state.point.length = pointLength;
+
+          state.hash = state.id + ',' + directionalLength + ',' + pointLength + ',' + spotLength;
+
+      }
+      dispose() {
+          this.cache.dispose();
+          this.cache = null;
+          this.state = null;
+      }
+
+  }
+
+  class UniformsCache {
+      constructor() {
+          this._lights = {};
+      }
+
+      get(light) {
+
+          let lights = this._lights;
+
+          if (lights[light.id] !== undefined) {
+
+              return lights[light.id];
+          }
+
+          let uniforms;
+
+          switch (light.type) {
+
+              case 'DirectionalLight':
+                  uniforms = {
+                      direction: new Vector3$1(),
+                      color: new Color$1()
+                  };
+                  break;
+
+              case 'SpotLight':
+                  uniforms = {
+                      position: new Vector3$1(),
+                      direction: new Vector3$1(),
+                      color: new Color$1(),
+                      distance: 0,
+                      coneCos: 0,
+                      penumbraCos: 0,
+                      decay: 0
+                  };
+                  break;
+
+              case 'PointLight':
+                  uniforms = {
+                      position: new Vector3$1(),
+                      color: new Color$1(),
+                      distance: 0,
+                      decay: 0
+                  };
+                  break;
+
+              case 'HemisphereLight':
+              case 'RectAreaLight':
+                  console.error('没有实现 HemisphereLight 和 RectAreaLight 灯光');
+          }
+
+          lights[light.id] = uniforms;
+
+          return uniforms;
+
+      }
+      dispose() {
+          this._lights = null;
+      }
+
+  }
+
+  class WebGLRenderState {
+      constructor() {
+
+          this.state = {
+              lights: new WebGLLights(),
+              lightsArray: [],
+              spritesArray: []
+          };
+
+      }
+      init() {
+          this.state.spritesArray.length = 0;
+          this.state.lightsArray.length = 0;
+      }
+
+      pushLight(light) {
+
+          this.state.lightsArray.push(light);
+
+      }
+
+      pushSprite(sprite) {
+
+          this.state.spritesArray.push(sprite);
+      }
+
+      setupLights(camera) {
+
+          //todo 阴影为空
+          let shadowsArray = [];
+
+          this.state.lights.setup(this.state.lightsArray, shadowsArray, camera);
+
+      }
+      dispose() {
+          this.state.lights.dispose();
+          this.state = null;
+      }
+
+  }
+
+
+  class WebGLRenderStates {
+      constructor() {
+          this._renderStates = {};
+      }
+
+      get(scene, camera) {
+
+          let hash = scene.id + ',' + camera.id;
+
+          let renderState = this._renderStates[hash];
+
+          if (renderState === undefined) {
+
+              renderState = new WebGLRenderState();
+              this._renderStates[hash] = renderState;
+
+          }
+
+          return renderState;
+
+      }
+
+      dispose() {
+
+          for (let key in this._renderStates) {
+              this._renderStates[key] && this._renderStates[key].dispose();
+          }
+
+          this._renderStates = {};
+
+      }
+
+  }
+
+  /**
+   * @class WebGL渲染对象
+   * @author bujue
+   */
+  class WebGLRenderer extends Events {
+      constructor(params) {
+          super();
+
+          params = params || {};
+          //canvas context 渲染对象的上下文
+          this.gl = null;
+
+          //canvasDOM 对象
+          this.domElement = null;
+
+          //私有变量
+          this._width = 0;
+          this._height = 0;
+          this._isContextLost = false;                //是否丢失上下文
+
+          this._pixelRatio = 1;                        //屏幕的pixelRatio,
+          this._currentViewport = new Vector4();       //当前的渲染视口大小
+          this._currentRenderList = null;
+          this._currentRenderState = null;
+
+          this._currentMaterialId = -1;                //初始化materialId
+          this._currentCamera = null;                  //当前的相机
+          this._currClearColor = new Color$1(0x000000);
+
+          this._capabilities = null;                          //GPU渲染能力 
+          this._state = null;                                 //GPU的状态管理 
+
+
+
+          this._sortObjects = true;   // scene graph
+
+          this._projScreenMatrix = new Matrix4();
+          this._vector3 = new Vector3$1();
+          this._frustum = new Frustum();
+
+          this._init(params);
+          this._initGLContext(params);
+      }
+
+      _init(parameters) {  //创建webGL对象上下文
+          let me = this;
+          parameters = parameters || {};
+
+          console.log('WebGLRenderer', REVISION);
+
+          /*
+          * `alpha`：值为true，表示为上下文创建一个Alpha通道缓冲区；默认值为true；
+          * `depth`：值为true，表示可以使用16位深缓冲区；默认值为true；
+          * `stencil`：值为true，表示可以使用8位模板缓冲区；默认值为false；
+          * `antialias`：值为true，表示将使用默认机制执行抗锯齿操作；默认值为true。
+          * `premultipliedAlpha`：值为true，表示绘图缓冲区有预乘Alpha值；默认为true;
+          * `preserveDrawingBuffer`：值为true；表示在绘图完成后保留绘图缓冲区；默认值为false。
+          */
+          let _canvas = parameters.canvas !== undefined ? parameters.canvas : document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas'),
+              _context = parameters.context !== undefined ? parameters.context : null,
+
+              _alpha = parameters.alpha !== undefined ? parameters.alpha : false,
+              _depth = parameters.depth !== undefined ? parameters.depth : true,
+              _stencil = parameters.stencil !== undefined ? parameters.stencil : true,
+              _antialias = parameters.antialias !== undefined ? parameters.antialias : false,
+              _premultipliedAlpha = parameters.premultipliedAlpha !== undefined ? parameters.premultipliedAlpha : true,
+              _preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false;
+
+
+          me.domElement = _canvas;
+          me.gl = _context;
+          me._width = _canvas.width;
+          me._height = _canvas.height;
+          me._premultipliedAlpha = _premultipliedAlpha;
+
+          try {
+
+              let contextAttributes = {
+                  alpha: _alpha,
+                  depth: _depth,
+                  stencil: _stencil,
+                  antialias: _antialias,
+                  premultipliedAlpha: _premultipliedAlpha,
+                  preserveDrawingBuffer: _preserveDrawingBuffer
+              };
+
+              let _gl = _context || _canvas.getContext('webgl', contextAttributes) || _canvas.getContext('experimental-webgl', contextAttributes);
+
+              if (_gl === null) {
+
+                  if (_canvas.getContext('webgl') !== null) {
+
+                      throw 'Error creating WebGL context with your selected attributes.';
+
+                  } else {
+
+                      throw 'Error creating WebGL context.';
+
+                  }
+
+              }
+
+              me.gl = _gl;
+
+              _canvas.addEventListener('webglcontextlost', onContextLost.bind(me), false);
+              _canvas.addEventListener('webglcontextrestored', onContextRestore.bind(me), false);
+
+          } catch (error) {
+
+              console.error('WebGLRenderer: ' + error);
+
+          }
+
+          /**
+              * @private
+              * @description 上下文丢失
+              * @param {*} event 
+              */
+          function onContextLost(event) {
+
+              event.preventDefault();
+              console.log('WebGLRenderer: Context Lost.');
+              this._isContextLost = true;
+              this.fire({ type: 'contextlost' });
+          }
+          /**
+          * @private
+          * @description 上下文恢复
+          */
+          function onContextRestore() {
+
+              console.log('WebGLRenderer: Context Restored.');
+              this._isContextLost = true;
+              this._initGLContext(parametersÎ);
+              this.fire({ type: 'contextrestore' });
+          }
+
+      }
+      _initGLContext(parameters) {
+          let me = this;
+          let _gl = this.gl;
+          let _width = this._width;
+          let _height = this._height;
+          let _viewport = new Vector4(0, 0, _width, _height);
+
+          /**  
+          *  
+          *  WebGLUtils              gl常量管理
+          *  WebGLCapabilities       gl能力数据
+          *  WebGLState              gl状态管理
+          *  WebGLInfo               保存渲染的基本数据
+          *  WebGLProperties         可以有效的将上层Material传过来的对象与底层渲染的对象做关联但有不改变原对象,利用WeapMap实现
+          *  WebGLAttributes         根据上层的顶点属性Geometry数据,利用WeapMap绑定buffer相关数据,提供get update remove 方法
+          *  WebGLGeometries         将上层的顶点属性分解后保存到WebGLAttribute对象中 update更新 WebGLAttribute的update 
+          *  WebGLObjects            通过更新帧来控制更新WebGLGemetries update
+          *  WebGLMorphtargets       顶点动画,图表动画可以参考使用
+          *  WebGLPrograms           programs的管理 
+          *  WebGLTextures           纹理的预处理与参数设置与上传
+          *  WebGLRenderLists        通过hash 构建一个Map WebGLRenderList 是真正的渲染列表 opaque transparent 
+          *  WebGLRenderStates       灯光阴影的管理   WebGLLights.setup 将上次的灯光参数转换为shader格式的参数
+          *  WebGLBackground         背景的绘制与更新, scene.background 可以是颜色 纹理 cube纹理
+          *  WebGLBufferRenderer     drawArrays的提取及利用扩展 同一几何体多次绘制的实现
+          *  WebGLIndexedBufferRenderer  drawElements 的提取,同上
+          */
+
+          this._extensions = new WebGLExtensions(_gl);
+          this._extensions.get('ANGLE_instanced_arrays');
+
+          this._utils = new WebGLUtils(_gl);
+          this._info = new WebGLInfo(_gl);
+          this._properties = new WebGLProperties();
+          this._state = new WebGLState(_gl, this._extensions);
+          this._renderStates = new WebGLRenderStates();
+          this._capabilities = new WebGLCapabilities(_gl, parameters);
+          this._textures = new WebGLTextures(_gl, null, this._state, this._properties, this._capabilities, this._utils, this._info);
+          this._attributes = new WebGLAttributes(_gl);
+          this._geometries = new WebGLGeometries(_gl, this._attributes, this._info);
+          this._objects = new WebGLObjects(this._geometries, this._info);
+          this._programCache = new WebGLPrograms(_gl, this._extensions, this._capabilities);
+          this._renderLists = new WebGLRenderLists();
+          this._bufferRenderer = new WebGLBufferRenderer(_gl, this._extensions, this._info);
+          this._indexedBufferRenderer = new WebGLIndexedBufferRenderer(_gl, this._extensions, this._info);
+          this._state.viewport(this._currentViewport.copy(_viewport).multiplyScalar(this._pixelRatio));
+
+
+          //console.dir(this._capabilities);
+          this._info.programs = this._programCache.programs;
+
+          me.setSize(_width, _height, true);
+
+      }
+
+      getContext() {
+          return this.gl;
+      }
+
+      getPixelRatio() {
+          return this._pixelRatio;
+      }
+
+      getCurrentViewport() {
+          return this._currentViewport;
+      }
+
+      getClearColor() {
+          return this._currClearColor;
+      }
+
+
+
+      //设置设备像素比,默认是 1    
+      setPixelRatio(value) {
+          let _width = this._width;
+          let _height = this._height;
+
+          this._pixelRatio = value;
+          this.setSize(_width, _height, false);
+      }
+
+      //设置可视区域大小
+      setSize(width, height, updateStyle) {
+          let me = this;
+          let _pixelRatio = this._pixelRatio;
+          let _canvas = me.domElement;
+
+
+          _canvas.width = width * _pixelRatio;
+          _canvas.height = height * _pixelRatio;
+
+          //注意:updateStyle 只有完全等于false才不更新style
+          if (updateStyle !== false) {
+
+              _canvas.style.width = width + 'px';
+              _canvas.style.height = height + 'px';
+
+          }
+
+          me.setViewport(0, 0, width, height);
+
+      }
+
+      //设置视口大小
+      setViewport(x, y, width, height) {
+          let gl = this.gl;
+          let viewport = new Vector4(x, y, width, height);
+
+          if (this._currentViewport.equals(viewport) === false) {
+
+              this._currentViewport.copy(viewport).multiplyScalar(this._pixelRatio);
+
+              this._state.viewport(this._currentViewport);
+          }
+
+      }
+      //设置清除色
+      setClearColor() {
+          let _gl = this.gl;
+          let [r, g, b, a] = arguments;
+          let _color = this._currClearColor.set(r, g, b, a);
+          this._state.buffers.color.setClear(_color.r, _color.g, _color.b, _color.a, this._premultipliedAlpha);
+      }
+
+      getClearAlpha() {
+          return this._currClearColor.a;
+      }
+
+      setClearAlpha(alpha) {
+          let _gl = this.gl;
+          this._currClearColor.a = alpha;
+          let _color = this._currClearColor;
+          this._state.buffers.color.setClear(_color.r, _color.g, _color.b, _color.a, this._premultipliedAlpha);
+      };
+
+      //清除缓冲
+      clear(color, depth, stencil) {
+          let _gl = this.gl;
+          let bits = 0;
+
+          if (color === undefined || color) bits |= _gl.COLOR_BUFFER_BIT;
+          if (depth === undefined || depth) bits |= _gl.DEPTH_BUFFER_BIT;
+          if (stencil === undefined || stencil) bits |= _gl.STENCIL_BUFFER_BIT;
+
+          _gl.clear(bits);
+
+      }
+      //清除颜色缓冲
+      clearColor() {
+          this.clear(true, false, false);
+      }
+      //清除深度缓冲
+      clearDepth() {
+          this.clear(false, true, false);
+      }
+      //清除模版缓冲
+      clearStencil() {
+          this.clear(false, false, true);
+      }
+
+      render(scene, camera) {
+
+          if (!(camera && camera.isCamera)) {
+
+              console.error('WebGLRenderer.render: camera is not an instance of Camera.');
+              return;
+
+          }
+          _currentGeometryProgram = '';
+          this._currentMaterialId = - 1;
+          this._currentCamera = null;
+
+          if (this._isContextLost) return;
+
+          // 更新场景
+          if (scene.autoUpdate === true) scene.updateMatrixWorld();
+
+          //更新相机矩阵
+          if (camera.parent === null) camera.updateMatrixWorld();
+
+          this._projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+          this._frustum.setFromMatrix(this._projScreenMatrix);
+
+          //初始化渲染队列
+
+          this._currentRenderState = this._renderStates.get(scene, camera);
+          this._currentRenderState.init();
+
+          this._currentRenderList = this._renderLists.get(scene, camera);
+
+          this._currentRenderList.init();
+
+          //将渲染的几何对象和材质存放到渲染队列中
+          projectObject.call(this, scene, camera, this._sortObjects);
+
+          if (this._sortObjects === true) {
+              this._currentRenderList.sort();
+          }
+
+          this._currentRenderState.setupLights(camera);
+
+          if (this._info.autoReset) this._info.reset();
+
+          scene.background === null ? this.setClearColor(this._currClearColor) : this.setClearColor(scene.background);
+          this.clearColor(true);
+
+          let opaqueObjects = this._currentRenderList.opaque;
+          let transparentObjects = this._currentRenderList.transparent;
+
+          // opaque pass (front-to-back order)
+
+          if (opaqueObjects.length) renderObjects.call(this, opaqueObjects, scene, camera);
+
+          // transparent pass (back-to-front order)
+
+          if (transparentObjects.length) renderObjects.call(this, transparentObjects, scene, camera);
+
+
+
+
+
+          this._state.buffers.depth.setTest(true);
+          this._state.buffers.depth.setMask(true);
+          this._state.buffers.color.setMask(true);
+
+          this._state.setPolygonOffset(false);
+
+
+          this._currentRenderList = null;
+          this._currentRenderState = null;
+
+
+      }
+      renderBufferDirect(camera, fog, geometry, material, object, group) {
+
+          let me = this;
+          let _gl = this.gl;
+
+
+          let frontFaceCW = (object.isMesh && object.matrixWorld.determinant() < 0);
+
+          //通过Materail设置 CULL_FACE  Blend clearColor ClearDepth
+          this._state.setMaterial(material, frontFaceCW);
+
+          let program = setProgram.call(me, camera, fog, material, object);
+
+          let updateBuffers = isUpdateBuffers(geometry, program, material);
+
+
+          let index = geometry.index;
+          let position = geometry.attributes.position;
+          let rangeFactor = 1;
+
+          if (material.wireframe === true) {
+
+              index = this._geometries.getWireframeAttribute(geometry);
+              rangeFactor = 2;
+
+          }
+
+          let attribute;
+          let renderer = this._bufferRenderer;
+
+          if (index !== null) {
+
+              attribute = this._attributes.get(index);
+
+              renderer = this._indexedBufferRenderer;
+              renderer.setIndex(attribute);
+
+          }
+
+          if (updateBuffers) {
+
+              setupVertexAttributes.call(this, material, program, geometry);
+
+              if (index !== null) {
+
+                  _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, attribute.buffer);
+
+              }
+
+          }
+
+
+
+          let dataCount = Infinity;
+
+          if (index !== null) {
+
+              dataCount = index.count;
+
+          } else if (position !== undefined) {
+
+              dataCount = position.count;
+
+          }
+
+          let rangeStart = geometry.drawRange.start * rangeFactor;
+          let rangeCount = geometry.drawRange.count * rangeFactor;
+
+          let groupStart = group !== null ? group.start * rangeFactor : 0;
+          let groupCount = group !== null ? group.count * rangeFactor : Infinity;
+
+          let drawStart = Math.max(rangeStart, groupStart);
+          let drawEnd = Math.min(dataCount, rangeStart + rangeCount, groupStart + groupCount) - 1;
+
+          let drawCount = Math.max(0, drawEnd - drawStart + 1);
+
+          if (drawCount === 0) return;
+
+          if (object.isMesh) {
+
+              if (material.wireframe === true) {
+
+                  this._state.setLineWidth(material.wireframeLinewidth * this._pixelRatio);
+                  renderer.setMode(_gl.LINES);
+
+              } else {
+
+                  switch (object.drawMode) {
+
+                      case TrianglesDrawMode:
+                          renderer.setMode(_gl.TRIANGLES);
+                          break;
+
+                      case TriangleStripDrawMode:
+                          renderer.setMode(_gl.TRIANGLE_STRIP);
+                          break;
+
+                      case TriangleFanDrawMode:
+                          renderer.setMode(_gl.TRIANGLE_FAN);
+                          break;
+
+                  }
+              }
+          } else if (object.isLine) {
+              let lineWidth = material.linewidth;
+
+              if (lineWidth === undefined) lineWidth = 1; // Not using Line*Material
+
+              this._state.setLineWidth(lineWidth * this._pixelRatio);
+
+
+              switch (object.drawMode) {
+
+                  case LinesMode:
+                      renderer.setMode(_gl.LINES);
+                      break;
+
+                  case LineLoopMode:
+                      renderer.setMode(_gl.LINE_LOOP);
+                      break;
+
+                  case LineStripMode:
+                      renderer.setMode(_gl.LINE_STRIP);
+                      break;
+
+              }
+
+          } else if (object.isPoints) {
+
+              renderer.setMode(_gl.POINTS);
+
+          } else if (object.isSprite) {
+
+              renderer.setMode(_gl.TRIANGLES);
+
+          }
+
+          if (geometry && geometry.isInstancedBufferGeometry) {
+
+              if (geometry.maxInstancedCount > 0) {
+
+                  renderer.renderInstances(geometry, drawStart, drawCount);
+
+              }
+
+          } else {
+
+              renderer.render(drawStart, drawCount);
+
+          }
+
+      }
+
+      allocTextureUnit() {
+          var textureUnit = _usedTextureUnits;
+
+          if (textureUnit >= this._capabilities.maxTextures) {
+
+              console.warn('WebGLRenderer: Trying to use ' + textureUnit + ' texture units while this GPU supports only ' + capabilities.maxTextures);
+
+          }
+
+          _usedTextureUnits += 1;
+
+          return textureUnit;
+      }
+
+      setTexture2D(texture, slot) {
+          //todo Use in WebGLUniforms
+          this._textures.setTexture2D(texture, slot);
+      }
+
+      setTextureCube() {
+          //todo Use in WebGLUniforms
+      }
+
+      dispose() {
+
+          this._canvas.removeEventListener('webglcontextlost', onContextLost, false);
+          this._canvas.removeEventListener('webglcontextrestored', onContextRestore, false);
+
+          this._renderLists.dispose();
+          this._renderStates.dispose();
+          this._properties.dispose();
+          this._objects.dispose();
+
+          //vr.dispose();
+
+          //stopAnimation();
+
+      };
+  }
+
+  //判断是否更新了Buffer
+  let _currentGeometryProgram = '';
+  function isUpdateBuffers(geometry, program, material) {
+
+      let geometryProgram = geometry.id + '_' + program.id + '_' + (material.wireframe === true);
+
+      let updateBuffers = false;
+
+      if (geometryProgram !== _currentGeometryProgram) {
+
+
+          updateBuffers = true;
+          _currentGeometryProgram = geometryProgram;
+
+      }
+
+      return updateBuffers;
+  }
+
+  //将渲染的几何对象和材质存放到渲染队列中
+  function projectObject(object, camera, sortObjects) {
+
+      if (object.visible === false) return;
+
+
+
+      if (object.isLight) {
+
+          this._currentRenderState.pushLight(object);
+
+      } else if (object.isSprite) {
+
+          if (!object.frustumCulled || this._frustum.intersectsSprite(object)) {
+
+              if (sortObjects) {
+
+                  this._vector3.setFromMatrixPosition(object.matrixWorld)
+                      .applyMatrix4(this._projScreenMatrix);
+
+              }
+
+              var geometry = this._objects.update(object);
+              var material = object.material;
+
+              this._currentRenderList.push(object, geometry, material, this._vector3.z, null);
+
+          }
+
+      } else if (object.isMesh || object.isLine || object.isPoints) {
+
+          if (!object.frustumCulled || this._frustum.intersectsObject(object)) {
+
+              if (sortObjects) {
+
+                  this._vector3.setFromMatrixPosition(object.matrixWorld)
+                      .applyMatrix4(this._projScreenMatrix);
+
+              }
+              //创建好了attribute buffer
+              let geometry = this._objects.update(object);
+              let material = object.material;
+
+              //如果是数组,表示geometry根据groups的分组进行分别绘制
+              if (Array.isArray(material)) {
+
+                  let groups = geometry.groups;
+
+                  for (let i = 0, l = groups.length; i < l; i++) {
+
+                      let group = groups[i];
+                      let groupMaterial = material[group.materialIndex];
+
+                      if (groupMaterial && groupMaterial.visible) {
+
+                          this._currentRenderList.push(object, geometry, groupMaterial, this._vector3.z, group);
+
+                      }
+
+                  }
+
+              } else if (material.visible) {
+
+                  this._currentRenderList.push(object, geometry, material, this._vector3.z, null);
+
+              }
+
+          }
+
+
+
+      }
+
+      let children = object.children;
+
+      for (let i = 0, l = children.length; i < l; i++) {
+
+          projectObject.call(this, children[i], camera, sortObjects);
+
+      }
+
+  }
+
+  function renderObjects(renderList, scene, camera) {
+      for (let i = 0, l = renderList.length; i < l; i++) {
+
+          let renderItem = renderList[i];
+
+          let object = renderItem.object;
+          let geometry = renderItem.geometry;
+          let material = renderItem.material;
+          let group = renderItem.group;
+
+          renderObject.call(this, object, scene, camera, geometry, material, group);
+
+      }
+  }
+
+  function renderObject(object, scene, camera, geometry, material, group) {
+
+      object.onBeforeRender(this, scene, camera, geometry, material, group);
+      this._currentRenderState = this._renderStates.get(scene, camera);
+
+      object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
+      object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
+
+      this.renderBufferDirect(camera, scene.fog, geometry, material, object, group);
+
+      object.onAfterRender(this, scene, camera, geometry, material, group);
+      // this._currentRenderState = renderStates.get( scene,  camera );
+  }
+
+
+  let _usedTextureUnits = 0;                  //当前纹理单元
+  function setProgram(camera, fog, material, object) {
+      _usedTextureUnits = 0;
+
+      let materialProperties = this._properties.get(material);
+      let lights = this._currentRenderState.state.lights;
+
+
+      if (material.needsUpdate === false) {
+
+          if (materialProperties.program === undefined) {
+
+              material.needsUpdate = true;
+
+          } else if (material.lights && materialProperties.lightsHash !== lights.state.hash) {
+
+              material.needsUpdate = true;
+
+          }
+
+      }
+
+
+      if (material.needsUpdate) {
+
+          initMaterial.call(this, material, fog, object);
+          material.needsUpdate = false;
+
+      }
+
+      let refreshProgram = false;
+      let refreshMaterial = false;
+      let refreshLights = false;
+
+      let program = materialProperties.program,
+          p_uniforms = program.getUniforms(),
+          m_uniforms = materialProperties.shader.uniforms;
+
+      if (this._state.useProgram(program.program)) {
+
+          refreshProgram = true;
+          refreshMaterial = true;
+          refreshLights = true;
+
+      }
+
+      if (material.id !== this._currentMaterialId) {
+
+          this._currentMaterialId = material.id;
+
+          refreshMaterial = true;
+
+      }
+
+      if (refreshProgram || camera !== this._currentCamera) {
+
+          p_uniforms.setValue('projectionMatrix', camera.projectionMatrix);
+
+          if (camera !== this._currentCamera) {
+
+              this._currentCamera = camera;
+              refreshMaterial = true;
+              refreshLights = true;
+
+          }
+      }
+
+
+      if (refreshMaterial) {
+
+
+          if (material.lights) {
+
+              // the current material requires lighting info
+
+              // note: all lighting uniforms are always set correctly
+              // they simply reference the renderer's state for their
+              // values
+              //
+              // use the current material's .needsUpdate flags to set
+              // the GL state when required
+
+              markUniformsLightsNeedsUpdate(m_uniforms, refreshLights);
+
+          }
+
+          if (material.isMeshBasicMaterial
+              || material.isLineBasicMaterial
+              || material.isMeshLambertMaterial
+              || material.isMeshPhongMaterial
+              || material.isPointsMaterial
+              || material.isLineMeshMaterial
+              || material.isSpriteMaterial) {
+              if (material.color) {
+                  m_uniforms.diffuse.value = material.color;
+              }
+
+              if (material.map) {
+                  m_uniforms.map.value = material.map;
+              }
+
+              m_uniforms.opacity.value = material.opacity;
+
+              if (material.emissive) {
+
+                  m_uniforms.emissive.value.copy(material.emissive).multiplyScalar(material.emissiveIntensity);
+
+              }
+
+              if (material.map) {
+
+                  if (material.map.matrixAutoUpdate === true) {
+                      //更新纹理映射矩阵
+                      material.map.updateMatrix();
+
+                  }
+
+                  m_uniforms.uvTransform.value.copy(material.map.matrix);
+              }
+
+          }
+
+          function updateLineMaterial() {
+              m_uniforms.dashSize.value = material.dashSize;
+              m_uniforms.totalSize.value = material.dashSize + material.gapSize;
+              m_uniforms.scale.value = material.scale;
+          }
+
+          if (material.isLineBasicMaterial) {
+
+              if (material.isLineDashedMaterial) {
+                  updateLineMaterial();
+              }
+
+          } else if (material.isMeshPhongMaterial) {
+
+              m_uniforms.specular.value = material.specular;
+              m_uniforms.shininess.value = Math.max(material.shininess, 1e-4); // to prevent pow( 0.0, 0.0 )
+
+          }
+
+          else if (material.isPointsMaterial) {
+
+              m_uniforms.size.value = material.size * this._pixelRatio;
+              m_uniforms.scale.value = this._height * 0.5;
+
+          } else if (material.isSpriteMaterial) {
+
+              m_uniforms.rotation.value = material.rotation;
+
+
+          } else if (material.isLineMeshMaterial) {
+
+              updateLineMaterial();
+              m_uniforms.linewidth.value = material.linewidth;
+              m_uniforms.resolution.value.copy(material.resolution);
+
+          }
+
+
+
+          WebGLUniforms.upload(this.gl, materialProperties.uniformsList, m_uniforms, this);
+
+      }
+      if (material.isShaderMaterial && material.uniformsNeedUpdate === true) {
+
+          WebGLUniforms.upload(this.gl, materialProperties.uniformsList, m_uniforms, this);
+          material.uniformsNeedUpdate = false;
+
+      }
+
+      if (material.isSpriteMaterial) {
+
+          p_uniforms.setValue('center', object.center);
+
+      }
+
+
+      // common matrices
+
+      p_uniforms.setValue('modelViewMatrix', object.modelViewMatrix);
+      p_uniforms.setValue('normalMatrix', object.normalMatrix);
+      p_uniforms.setValue('modelMatrix', object.matrixWorld);
+
+      return program;
+
+  }
+
+  function initMaterial(material, fog, object) {
+
+      let materialProperties = this._properties.get(material);
+      let lights = this._currentRenderState.state.lights;
+      let parameters = this._programCache.getParameters(material, lights.state);
+
+      let code = this._programCache.getProgramCode(material, parameters);
+
+      let program = materialProperties.program;
+      let programChange = true;
+
+      if (program === undefined) {
+
+          // new material
+          material.on('dispose', onMaterialDispose.bind(this));
+
+      } else if (program.code !== code) {
+
+          // changed glsl or parameters
+          releaseMaterialProgramReference.call(this, material);
+
+      } else if (materialProperties.lightsHash !== lights.state.hash) {
+
+          properties.update(material, 'lightsHash', lights.state.hash);
+          programChange = false;
+
+      } else if (parameters.shaderID !== undefined) {
+
+          // same glsl and uniform list
+          return;
+
+      } else {
+
+          // only rebuild uniform list
+          programChange = false;
+
+      }
+
+      if (programChange) {
+
+          if (parameters.shaderID) {
+
+              var shader = ShaderLib[parameters.shaderID];
+
+              materialProperties.shader = {
+                  name: material.type,
+                  uniforms: UniformsUtils$1.clone(shader.uniforms),
+                  vertexShader: shader.vertexShader,
+                  fragmentShader: shader.fragmentShader
+              };
+
+          } else {
+              //自定义shader
+              materialProperties.shader = {
+                  name: material.type,
+                  uniforms: material.uniforms,
+                  vertexShader: material.vertexShader,
+                  fragmentShader: material.fragmentShader
+              };
+
+          }
+
+
+          material.onBeforeCompile(materialProperties.shader, this);
+
+          //WebGLProgram 对象
+          program = this._programCache.acquireProgram(material, materialProperties.shader, parameters, code);
+
+          materialProperties.program = program;
+          material.program = program;
+
+      }
+
+      let programAttributes = program.getAttributes();
+
+
+      let uniforms = materialProperties.shader.uniforms;
+
+
+      // store the light setup it was created for
+
+      materialProperties.lightsHash = lights.state.hash;
+
+      if (material.lights) {
+
+          // wire up the material to this renderer's lighting state
+
+          uniforms.ambientLightColor.value = lights.state.ambient;
+          uniforms.directionalLights.value = lights.state.directional;
+          uniforms.spotLights.value = lights.state.spot;
+          uniforms.pointLights.value = lights.state.point;
+
+      }
+
+      let progUniforms = materialProperties.program.getUniforms();
+      let uniformsList = WebGLUniforms.seqWithValue(progUniforms.seq, uniforms);
+
+      materialProperties.uniformsList = uniformsList;
+
+  }
+
+  function onMaterialDispose(event) {
+      let me = this;
+      let material = event.target;
+
+      material.off('dispose', onMaterialDispose.bind(me));
+
+      deallocateMaterial.call(this, material);
+  }
+
+  // Buffer deallocation
+
+  function deallocateMaterial(material) {
+
+      releaseMaterialProgramReference.call(this, material);
+
+      this._properties.remove(material);
+
+  }
+
+  function releaseMaterialProgramReference(material) {
+      var programInfo = this._properties.get(material).program;
+
+      material.program = undefined;
+
+      if (programInfo !== undefined) {
+
+          this._programCache.releaseProgram(programInfo);
+
+      }
+  }
+
+  function setupVertexAttributes(material, program, geometry) {
+
+      if (geometry && geometry.isInstancedBufferGeometry) {
+
+          if (this._extensions.get('ANGLE_instanced_arrays') === null) {
+
+              console.error('WebGLRenderer.setupVertexAttributes: using InstancedBufferGeometry but hardware does not support extension ANGLE_instanced_arrays.');
+              return;
+
+          }
+
+      }
+
+
+      this._state.initAttributes();
+      let _gl = this.gl;
+      let geometryAttributes = geometry.attributes;
+
+      let programAttributes = program.getAttributes();
+      let materialDefaultAttributeValues = material.defaultAttributeValues;
+
+      for (let name in programAttributes) {
+
+          let programAttribute = programAttributes[name];
+
+          if (programAttribute >= 0) {
+
+              let geometryAttribute = geometryAttributes[name];
+
+              if (geometryAttribute !== undefined) {
+
+                  let normalized = geometryAttribute.normalized;
+                  let size = geometryAttribute.itemSize;
+
+                  let attribute = this._attributes.get(geometryAttribute);
+
+                  // TODO Attribute may not be available on context restore
+
+                  if (attribute === undefined) continue;
+
+                  let buffer = attribute.buffer;
+                  let type = attribute.type;
+                  let bytesPerElement = attribute.bytesPerElement;
+
+                  if (geometryAttribute.isInterleavedBufferAttribute) {
+
+                      var data = geometryAttribute.data;
+                      var stride = data.stride;
+                      var offset = geometryAttribute.offset;
+
+                      if (data && data.isInstancedInterleavedBuffer) {
+
+                          this._state.enableAttributeAndDivisor(programAttribute, data.meshPerAttribute);
+
+                          if (geometry.maxInstancedCount === undefined) {
+
+                              geometry.maxInstancedCount = data.meshPerAttribute * data.count;
+
+                          }
+
+                      } else {
+
+                          this._state.enableAttribute(programAttribute);
+
+                      }
+
+                      _gl.bindBuffer(_gl.ARRAY_BUFFER, buffer);
+                      _gl.vertexAttribPointer(programAttribute, size, type, normalized, stride * bytesPerElement, offset * bytesPerElement);
+
+                  } else {
+
+                      if (geometryAttribute.isInstancedBufferAttribute) {
+
+                          this._state.enableAttributeAndDivisor(programAttribute, geometryAttribute.meshPerAttribute);
+
+                          if (geometry.maxInstancedCount === undefined) {
+
+                              geometry.maxInstancedCount = geometryAttribute.meshPerAttribute * geometryAttribute.count;
+
+                          }
+
+                      } else {
+
+                          this._state.enableAttribute(programAttribute);
+                      }
+
+
+                      _gl.bindBuffer(_gl.ARRAY_BUFFER, buffer);
+                      _gl.vertexAttribPointer(programAttribute, size, type, normalized, 0, 0);
+
+                  }
+
+              } else if (materialDefaultAttributeValues !== undefined) {
+                  var value = materialDefaultAttributeValues[name];
+
+                  if (value !== undefined) {
+
+                      switch (value.length) {
+
+                          case 2:
+                              _gl.vertexAttrib2fv(programAttribute, value);
+                              break;
+
+                          case 3:
+                              _gl.vertexAttrib3fv(programAttribute, value);
+                              break;
+
+                          case 4:
+                              _gl.vertexAttrib4fv(programAttribute, value);
+                              break;
+
+                          default:
+                              _gl.vertexAttrib1fv(programAttribute, value);
+
+                      }
+
+                  }
+              }
+
+          }
+
+      }
+
+      this._state.disableUnusedAttributes();
+
+  }
+
+  // If uniforms are marked as clean, they don't need to be loaded to the GPU.
+
+  function markUniformsLightsNeedsUpdate(uniforms, value) {
+
+      uniforms.ambientLightColor.needsUpdate = value;
+
+      uniforms.directionalLights.needsUpdate = value;
+      uniforms.pointLights.needsUpdate = value;
+      uniforms.spotLights.needsUpdate = value;
 
   }
 
@@ -9374,1702 +10819,6 @@
 
   }
 
-  class WebGLSpriteRenderer {
-      constructor(renderer, gl, state, textures, capabilities) {
-          this._gl = gl;
-          this._state = state;
-          this._textures = textures;
-          this._renderer = renderer;
-          this._capabilities = capabilities;
-
-          this._vertexBuffer = null;
-          this._elementBuffer = null;
-          this._program = null;
-          this._attributes = null;
-
-          this.spritePosition = new Vector3$1();
-          this.spriteRotation = new Quaternion();
-          this.spriteScale = new Vector3$1();
-
-      }
-      _init() {
-
-          let gl = this._gl;
-
-          let vertices = new Float32Array([
-              //  x     y     u  v 
-              - 0.5, - 0.5, 0, 0,
-              0.5, - 0.5, 1, 0,
-              0.5, 0.5, 1, 1,
-              - 0.5, 0.5, 0, 1
-          ]);
-
-          let faces = new Uint16Array([
-              0, 1, 2,
-              0, 2, 3
-          ]);
-
-          this._vertexBuffer = gl.createBuffer();
-          this._elementBuffer = gl.createBuffer();
-
-          gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-          gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._elementBuffer);
-          gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, faces, gl.STATIC_DRAW);
-
-          let program = this._program = createProgram.call(this);
-
-          this._attributes = {
-              position: gl.getAttribLocation(program, 'position'),
-              uv: gl.getAttribLocation(program, 'uv')
-          };
-
-          this._uniforms = {
-              uvOffset: gl.getUniformLocation(program, 'uvOffset'),
-              uvScale: gl.getUniformLocation(program, 'uvScale'),
-
-              rotation: gl.getUniformLocation(program, 'rotation'),
-              center: gl.getUniformLocation(program, 'center'),
-              scale: gl.getUniformLocation(program, 'scale'),
-
-              color: gl.getUniformLocation(program, 'color'),
-              map: gl.getUniformLocation(program, 'map'),
-              opacity: gl.getUniformLocation(program, 'opacity'),
-
-              modelViewMatrix: gl.getUniformLocation(program, 'modelViewMatrix'),
-              projectionMatrix: gl.getUniformLocation(program, 'projectionMatrix'),
-          };
-
-          let canvas = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
-          canvas.width = 8;
-          canvas.height = 8;
-
-          var context = canvas.getContext('2d');
-          context.fillStyle = 'white';
-          context.fillRect(0, 0, 8, 8);
-
-          this._emptyTexture = new Texture(canvas);
-          this._emptyTexture.needsUpdate = true;
-      }
-
-      render(sprites, scene, camera) {
-
-          let state = this._state;
-          let gl = this._gl;
-          let uniforms;
-
-          if (sprites.length === 0) return;
-
-          // setup gl
-
-          if (this._program === null) {
-
-              this._init();
-
-          }
-
-          uniforms = this._uniforms;
-
-          state.useProgram(this._program);
-
-          state.initAttributes();
-          state.enableAttribute(this._attributes.position);
-          state.enableAttribute(this._attributes.uv);
-          state.disableUnusedAttributes();
-          //关闭背面裁截
-          state.disable(gl.CULL_FACE);
-          state.enable(gl.BLEND);
-
-          gl.bindBuffer(gl.ARRAY_BUFFER, this._vertexBuffer);
-          gl.vertexAttribPointer(this._attributes.position, 2, gl.FLOAT, false, 2 * 8, 0);
-          gl.vertexAttribPointer(this._attributes.uv, 2, gl.FLOAT, false, 2 * 8, 8);
-
-          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this._elementBuffer);
-
-          gl.uniformMatrix4fv(uniforms.projectionMatrix, false, camera.projectionMatrix.elements);
-
-          state.activeTexture(gl.TEXTURE0);
-          gl.uniform1i(uniforms.map, 0);
-
-          // update positions and sort
-
-          for (let i = 0, l = sprites.length; i < l; i++) {
-
-              let sprite = sprites[i];
-
-              sprite.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, sprite.matrixWorld);
-              //12:x  13:y  14:z
-              sprite.z = - sprite.modelViewMatrix.elements[14];
-
-          }
-
-          sprites.sort(painterSortStable$1);
-
-          // render all sprites
-
-          let scale = [];
-          let center = [];
-
-          for (let i = 0, l = sprites.length; i < l; i++) {
-
-              let sprite = sprites[i];
-              let material = sprite.material;
-
-              if (material.visible === false) continue;
-
-              sprite.onBeforeRender(this._renderer, scene, camera, undefined, material, undefined);
-
-              //gl.uniform1f(uniforms.alphaTest, material.alphaTest);
-              gl.uniformMatrix4fv(uniforms.modelViewMatrix, false, sprite.modelViewMatrix.elements);
-
-              sprite.matrixWorld.decompose(this.spritePosition, this.spriteRotation, this.spriteScale);
-
-              scale[0] = this.spriteScale.x;
-              scale[1] = this.spriteScale.y;
-
-              center[0] = sprite.center.x - 0.5;
-              center[1] = sprite.center.y - 0.5;
-
-
-
-              if (material.map !== null) {
-
-                  gl.uniform2f(uniforms.uvOffset, material.map.offset.x, material.map.offset.y);
-                  gl.uniform2f(uniforms.uvScale, material.map.repeat.x, material.map.repeat.y);
-
-              } else {
-
-                  gl.uniform2f(uniforms.uvOffset, 0, 0);
-                  gl.uniform2f(uniforms.uvScale, 1, 1);
-
-              }
-
-              gl.uniform1f(uniforms.opacity, material.opacity);
-              gl.uniform3f(uniforms.color, material.color.r, material.color.g, material.color.b);
-
-              gl.uniform1f(uniforms.rotation, material.rotation);
-              gl.uniform2fv(uniforms.center, center);
-              gl.uniform2fv(uniforms.scale, scale);
-
-              state.setBlending(material.blending, material.blendEquation, material.blendSrc, material.blendDst, material.blendEquationAlpha, material.blendSrcAlpha, material.blendDstAlpha, material.premultipliedAlpha);
-
-              state.buffers.depth.setTest(material.depthTest);
-              state.buffers.depth.setMask(material.depthWrite);
-              state.buffers.color.setMask(material.colorWrite);
-
-              this._textures.setTexture2D(material.map || this._emptyTexture, 0);
-
-              gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-              sprite.onAfterRender(this._renderer, scene, camera, undefined, material, undefined);
-
-          }
-
-          // restore gl
-
-          state.enable(gl.CULL_FACE);
-
-          state.reset();
-
-      }
-
-  }
-
-
-  function createProgram() {
-
-      let gl = this._gl;
-      let program = gl.createProgram();
-
-      var vertexShader = gl.createShader(gl.VERTEX_SHADER);
-      var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-
-      //todo 考虑雾,删除相关代码
-      gl.shaderSource(vertexShader, [
-
-          'precision ' + this._capabilities.precision + ' float;',
-
-          '#define SHADER_NAME ' + 'SpriteMaterial',
-
-          'uniform mat4 modelViewMatrix;',
-          'uniform mat4 projectionMatrix;',
-          'uniform float rotation;',
-          'uniform vec2 center;',
-          'uniform vec2 scale;',
-          'uniform vec2 uvOffset;',
-          'uniform vec2 uvScale;',
-
-          'attribute vec2 position;',
-          'attribute vec2 uv;',
-
-          'varying vec2 vUV;',
-
-          'void main() {',
-
-          '	vUV = uvOffset + uv * uvScale;',
-
-          '	vec2 alignedPosition = ( position - center ) * scale;',
-          //绕精灵的中心旋转,精灵的中心默认(0,0) 
-          '	vec2 rotatedPosition;',
-          '	rotatedPosition.x = cos( rotation ) * alignedPosition.x - sin( rotation ) * alignedPosition.y;',
-          '	rotatedPosition.y = sin( rotation ) * alignedPosition.x + cos( rotation ) * alignedPosition.y;',
-
-          '	vec4 mvPosition;',
-          //物体的模型矩阵和视图矩阵都不改变顶点的x,y坐标,顶点是vec4(0.0, 0.0, 0.0 ,1.0) 
-          '	mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );',
-          '	mvPosition.xy += rotatedPosition;',
-
-          '	gl_Position = projectionMatrix * mvPosition;',
-
-
-          '}'
-
-      ].join('\n'));
-
-      gl.shaderSource(fragmentShader, [
-
-          'precision ' + this._capabilities.precision + ' float;',
-
-          '#define SHADER_NAME ' + 'SpriteMaterial',
-
-          'uniform vec3 color;',
-          'uniform sampler2D map;',
-          'uniform float opacity;',
-
-          'varying vec2 vUV;',
-
-          'void main() {',
-
-          '	vec4 texture = texture2D( map, vUV );',
-
-
-          '	gl_FragColor = vec4( color * texture.rgb, texture.a * opacity );',
-
-
-          '}'
-
-      ].join('\n'));
-
-      gl.compileShader(vertexShader);
-      gl.compileShader(fragmentShader);
-
-      gl.attachShader(program, vertexShader);
-      gl.attachShader(program, fragmentShader);
-
-      gl.linkProgram(program);
-
-      return program;
-
-  }
-
-
-  function painterSortStable$1(a, b) {
-
-      if (a.renderOrder !== b.renderOrder) {
-
-          return a.renderOrder - b.renderOrder;
-
-      } else if (a.z !== b.z) {
-
-          return b.z - a.z;
-
-      } else {
-
-          return b.id - a.id;
-
-      }
-
-  }
-
-  let webglLightsCount = 0;
-  let _webGLLightsVector3 = new Vector3$1();
-  class WebGLLights {
-      constructor() {
-          this.cache = new UniformsCache();
-          this.state = {
-              id: webglLightsCount++,
-              hash: '',
-              ambient: [0, 0, 0],
-              directional: [],
-              spot: [],
-              point: []
-          };
-      }
-
-      setup(lights, shadows, camera) {
-          let r = 0, g = 0, b = 0;
-
-          let directionalLength = 0;
-          let pointLength = 0;
-          let spotLength = 0;
-
-          let state = this.state;
-          let cache = this.cache;
-
-          let viewMatrix = camera.matrixWorldInverse;
-
-          for (let i = 0, l = lights.length; i < l; i++) {
-
-              let light = lights[i];
-
-              let color = light.color;
-              let intensity = light.intensity;
-              let distance = light.distance;
-
-
-
-
-              if (light.isAmbientLight) {
-
-                  r += color.r * intensity;
-                  g += color.g * intensity;
-                  b += color.b * intensity;
-
-              } else if (light.isDirectionalLight) {
-
-                  let uniforms = cache.get(light);
-
-                  uniforms.color.copy(light.color).multiplyScalar(light.intensity);
-                  uniforms.direction.setFromMatrixPosition(light.matrixWorld);
-                  _webGLLightsVector3.setFromMatrixPosition(light.target.matrixWorld);
-                  uniforms.direction.sub(_webGLLightsVector3);
-                  uniforms.direction.transformDirection(viewMatrix);
-
-
-                  state.directional[directionalLength] = uniforms;
-
-                  directionalLength++;
-
-              } else if (light.isSpotLight) {
-
-                  var uniforms = cache.get(light);
-
-                  uniforms.position.setFromMatrixPosition(light.matrixWorld);
-                  uniforms.position.applyMatrix4(viewMatrix);
-
-                  uniforms.color.copy(color).multiplyScalar(intensity);
-                  uniforms.distance = distance;
-
-                  uniforms.direction.setFromMatrixPosition(light.matrixWorld);
-                  _webGLLightsVector3.setFromMatrixPosition(light.target.matrixWorld);
-                  uniforms.direction.sub(_webGLLightsVector3);
-                  uniforms.direction.transformDirection(viewMatrix);
-
-                  uniforms.coneCos = Math.cos(light.angle);
-                  uniforms.penumbraCos = Math.cos(light.angle * (1 - light.penumbra));
-                  uniforms.decay = (light.distance === 0) ? 0.0 : light.decay;
-
-                  state.spot[spotLength] = uniforms;
-
-                  spotLength++;
-
-              } else if (light.isPointLight) {
-
-                  var uniforms = cache.get(light);
-
-                  uniforms.position.setFromMatrixPosition(light.matrixWorld);
-                  uniforms.position.applyMatrix4(viewMatrix);
-
-                  uniforms.color.copy(light.color).multiplyScalar(light.intensity);
-                  uniforms.distance = light.distance;
-                  uniforms.decay = (light.distance === 0) ? 0.0 : light.decay;
-
-                  state.point[pointLength] = uniforms;
-
-                  pointLength++;
-
-              }
-
-          }
-
-          state.ambient[0] = r;
-          state.ambient[1] = g;
-          state.ambient[2] = b;
-
-          state.directional.length = directionalLength;
-          state.spot.length = spotLength;
-          state.point.length = pointLength;
-
-          state.hash = state.id + ',' + directionalLength + ',' + pointLength + ',' + spotLength;
-
-      }
-      dispose() {
-          this.cache.dispose();
-          this.cache = null;
-          this.state = null;
-      }
-
-  }
-
-  class UniformsCache {
-      constructor() {
-          this._lights = {};
-      }
-
-      get(light) {
-
-          let lights = this._lights;
-
-          if (lights[light.id] !== undefined) {
-
-              return lights[light.id];
-          }
-
-          let uniforms;
-
-          switch (light.type) {
-
-              case 'DirectionalLight':
-                  uniforms = {
-                      direction: new Vector3$1(),
-                      color: new Color$1()
-                  };
-                  break;
-
-              case 'SpotLight':
-                  uniforms = {
-                      position: new Vector3$1(),
-                      direction: new Vector3$1(),
-                      color: new Color$1(),
-                      distance: 0,
-                      coneCos: 0,
-                      penumbraCos: 0,
-                      decay: 0
-                  };
-                  break;
-
-              case 'PointLight':
-                  uniforms = {
-                      position: new Vector3$1(),
-                      color: new Color$1(),
-                      distance: 0,
-                      decay: 0
-                  };
-                  break;
-
-              case 'HemisphereLight':
-              case 'RectAreaLight':
-                  console.error('没有实现 HemisphereLight 和 RectAreaLight 灯光');
-          }
-
-          lights[light.id] = uniforms;
-
-          return uniforms;
-
-      }
-      dispose() {
-          this._lights = null;
-      }
-
-  }
-
-  class WebGLRenderState {
-      constructor() {
-
-          this.state = {
-              lights: new WebGLLights(),
-              lightsArray: [],
-              spritesArray: []
-          };
-
-      }
-      init() {
-          this.state.spritesArray.length = 0;
-          this.state.lightsArray.length = 0;
-      }
-
-      pushLight(light) {
-
-          this.state.lightsArray.push(light);
-
-      }
-
-      pushSprite(sprite) {
-
-          this.state.spritesArray.push(sprite);
-      }
-
-      setupLights(camera) {
-
-          //todo 阴影为空
-          let shadowsArray = [];
-
-          this.state.lights.setup(this.state.lightsArray, shadowsArray, camera);
-
-      }
-      dispose() {
-          this.state.lights.dispose();
-          this.state = null;
-      }
-
-  }
-
-
-  class WebGLRenderStates {
-      constructor() {
-          this._renderStates = {};
-      }
-
-      get(scene, camera) {
-
-          let hash = scene.id + ',' + camera.id;
-
-          let renderState = this._renderStates[hash];
-
-          if (renderState === undefined) {
-
-              renderState = new WebGLRenderState();
-              this._renderStates[hash] = renderState;
-
-          }
-
-          return renderState;
-
-      }
-
-      dispose() {
-
-          for (let key in this._renderStates) {
-              this._renderStates[key] && this._renderStates[key].dispose();
-          }
-
-          this._renderStates = {};
-
-      }
-
-  }
-
-  /**
-   * @class WebGL渲染对象
-   * @author bujue
-   */
-  class WebGLRenderer extends Events {
-      constructor(params) {
-          super();
-
-          params = params || {};
-          //canvas context 渲染对象的上下文
-          this.gl = null;
-
-          //canvasDOM 对象
-          this.domElement = null;
-
-          //私有变量
-          this._width = 0;
-          this._height = 0;
-          this._isContextLost = false;                //是否丢失上下文
-
-          this._pixelRatio = 1;                        //屏幕的pixelRatio,
-          this._currentViewport = new Vector4();       //当前的渲染视口大小
-          this._currentRenderList = null;
-          this._currentRenderState = null;
-
-          this._currentMaterialId = -1;                //初始化materialId
-          this._currentCamera = null;                  //当前的相机
-          this._currClearColor = new Color$1(0x000000);
-
-          this._capabilities = null;                          //GPU渲染能力 
-          this._state = null;                                 //GPU的状态管理 
-
-
-
-          this._sortObjects = true;   // scene graph
-
-          this._projScreenMatrix = new Matrix4();
-          this._vector3 = new Vector3$1();
-          this._frustum = new Frustum();
-
-          this._init(params);
-          this._initGLContext(params);
-      }
-
-      _init(parameters) {  //创建webGL对象上下文
-          let me = this;
-          parameters = parameters || {};
-
-          console.log('WebGLRenderer', REVISION);
-
-          /*
-          * `alpha`：值为true，表示为上下文创建一个Alpha通道缓冲区；默认值为true；
-          * `depth`：值为true，表示可以使用16位深缓冲区；默认值为true；
-          * `stencil`：值为true，表示可以使用8位模板缓冲区；默认值为false；
-          * `antialias`：值为true，表示将使用默认机制执行抗锯齿操作；默认值为true。
-          * `premultipliedAlpha`：值为true，表示绘图缓冲区有预乘Alpha值；默认为true;
-          * `preserveDrawingBuffer`：值为true；表示在绘图完成后保留绘图缓冲区；默认值为false。
-          */
-          let _canvas = parameters.canvas !== undefined ? parameters.canvas : document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas'),
-              _context = parameters.context !== undefined ? parameters.context : null,
-
-              _alpha = parameters.alpha !== undefined ? parameters.alpha : false,
-              _depth = parameters.depth !== undefined ? parameters.depth : true,
-              _stencil = parameters.stencil !== undefined ? parameters.stencil : true,
-              _antialias = parameters.antialias !== undefined ? parameters.antialias : false,
-              _premultipliedAlpha = parameters.premultipliedAlpha !== undefined ? parameters.premultipliedAlpha : true,
-              _preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false;
-
-
-          me.domElement = _canvas;
-          me.gl = _context;
-          me._width = _canvas.width;
-          me._height = _canvas.height;
-          me._premultipliedAlpha = _premultipliedAlpha;
-
-          try {
-
-              let contextAttributes = {
-                  alpha: _alpha,
-                  depth: _depth,
-                  stencil: _stencil,
-                  antialias: _antialias,
-                  premultipliedAlpha: _premultipliedAlpha,
-                  preserveDrawingBuffer: _preserveDrawingBuffer
-              };
-
-              let _gl = _context || _canvas.getContext('webgl', contextAttributes) || _canvas.getContext('experimental-webgl', contextAttributes);
-
-              if (_gl === null) {
-
-                  if (_canvas.getContext('webgl') !== null) {
-
-                      throw 'Error creating WebGL context with your selected attributes.';
-
-                  } else {
-
-                      throw 'Error creating WebGL context.';
-
-                  }
-
-              }
-
-              me.gl = _gl;
-
-              _canvas.addEventListener('webglcontextlost', onContextLost.bind(me), false);
-              _canvas.addEventListener('webglcontextrestored', onContextRestore.bind(me), false);
-
-          } catch (error) {
-
-              console.error('WebGLRenderer: ' + error);
-
-          }
-
-          /**
-              * @private
-              * @description 上下文丢失
-              * @param {*} event 
-              */
-          function onContextLost(event) {
-
-              event.preventDefault();
-              console.log('WebGLRenderer: Context Lost.');
-              this._isContextLost = true;
-              this.fire({ type: 'contextlost' });
-          }
-          /**
-          * @private
-          * @description 上下文恢复
-          */
-          function onContextRestore() {
-
-              console.log('WebGLRenderer: Context Restored.');
-              this._isContextLost = true;
-              this._initGLContext(parametersÎ);
-              this.fire({ type: 'contextrestore' });
-          }
-
-      }
-      _initGLContext(parameters) {
-          let me = this;
-          let _gl = this.gl;
-          let _width = this._width;
-          let _height = this._height;
-          let _viewport = new Vector4(0, 0, _width, _height);
-
-          /**  
-          *  
-          *  WebGLUtils              gl常量管理
-          *  WebGLCapabilities       gl能力数据
-          *  WebGLState              gl状态管理
-          *  WebGLInfo               保存渲染的基本数据
-          *  WebGLProperties         可以有效的将上层Material传过来的对象与底层渲染的对象做关联但有不改变原对象,利用WeapMap实现
-          *  WebGLAttributes         根据上层的顶点属性Geometry数据,利用WeapMap绑定buffer相关数据,提供get update remove 方法
-          *  WebGLGeometries         将上层的顶点属性分解后保存到WebGLAttribute对象中 update更新 WebGLAttribute的update 
-          *  WebGLObjects            通过更新帧来控制更新WebGLGemetries update
-          *  WebGLMorphtargets       顶点动画,图表动画可以参考使用
-          *  WebGLPrograms           programs的管理 
-          *  WebGLTextures           纹理的预处理与参数设置与上传
-          *  WebGLRenderLists        通过hash 构建一个Map WebGLRenderList 是真正的渲染列表 opaque transparent 
-          *  WebGLRenderStates       灯光阴影的管理   WebGLLights.setup 将上次的灯光参数转换为shader格式的参数
-          *  WebGLBackground         背景的绘制与更新, scene.background 可以是颜色 纹理 cube纹理
-          *  WebGLBufferRenderer     drawArrays的提取及利用扩展 同一几何体多次绘制的实现
-          *  WebGLIndexedBufferRenderer  drawElements 的提取,同上
-          *  WebGLSpriteRenderer       sprite 绘制 走单独的绘制流程  
-          */
-
-          this._extensions = new WebGLExtensions(_gl);
-          this._extensions.get('ANGLE_instanced_arrays');
-
-          this._utils = new WebGLUtils(_gl);
-          this._info = new WebGLInfo(_gl);
-          this._properties = new WebGLProperties();
-          this._state = new WebGLState(_gl, this._extensions);
-          this._renderStates = new WebGLRenderStates();
-          this._capabilities = new WebGLCapabilities(_gl, parameters);
-          this._textures = new WebGLTextures(_gl, null, this._state, this._properties, this._capabilities, this._utils, this._info);
-          this._attributes = new WebGLAttributes(_gl);
-          this._geometries = new WebGLGeometries(_gl, this._attributes, this._info);
-          this._objects = new WebGLObjects(this._geometries, this._info);
-          this._programCache = new WebGLPrograms(_gl, this._extensions, this._capabilities);
-          this._renderLists = new WebGLRenderLists();
-          this._bufferRenderer = new WebGLBufferRenderer(_gl, this._extensions, this._info);
-          this._indexedBufferRenderer = new WebGLIndexedBufferRenderer(_gl, this._extensions, this._info);
-          this._spriteRenderer = new WebGLSpriteRenderer(this, _gl, this._state, this._textures, this._capabilities);
-          this._state.viewport(this._currentViewport.copy(_viewport).multiplyScalar(this._pixelRatio));
-
-
-          //console.dir(this._capabilities);
-          this._info.programs = this._programCache.programs;
-
-          me.setSize(_width, _height, true);
-
-      }
-
-      getContext() {
-          return this.gl;
-      }
-
-      getPixelRatio() {
-          return this._pixelRatio;
-      }
-
-      getCurrentViewport() {
-          return this._currentViewport;
-      }
-
-      getClearColor() {
-          return this._currClearColor;
-      }
-
-
-
-      //设置设备像素比,默认是 1    
-      setPixelRatio(value) {
-          let _width = this._width;
-          let _height = this._height;
-
-          this._pixelRatio = value;
-          this.setSize(_width, _height, false);
-      }
-
-      //设置可视区域大小
-      setSize(width, height, updateStyle) {
-          let me = this;
-          let _pixelRatio = this._pixelRatio;
-          let _canvas = me.domElement;
-
-
-          _canvas.width = width * _pixelRatio;
-          _canvas.height = height * _pixelRatio;
-
-          //注意:updateStyle 只有完全等于false才不更新style
-          if (updateStyle !== false) {
-
-              _canvas.style.width = width + 'px';
-              _canvas.style.height = height + 'px';
-
-          }
-
-          me.setViewport(0, 0, width, height);
-
-      }
-
-      //设置视口大小
-      setViewport(x, y, width, height) {
-          let gl = this.gl;
-          let viewport = new Vector4(x, y, width, height);
-
-          if (this._currentViewport.equals(viewport) === false) {
-
-              this._currentViewport.copy(viewport).multiplyScalar(this._pixelRatio);
-
-              this._state.viewport(this._currentViewport);
-          }
-
-      }
-      //设置清除色
-      setClearColor() {
-          let _gl = this.gl;
-          let [r, g, b, a] = arguments;
-          let _color = this._currClearColor.set(r, g, b, a);
-          this._state.buffers.color.setClear(_color.r, _color.g, _color.b, _color.a, this._premultipliedAlpha);
-      }
-
-      getClearAlpha() {
-          return this._currClearColor.a;
-      }
-
-      setClearAlpha(alpha) {
-          let _gl = this.gl;
-          this._currClearColor.a = alpha;
-          let _color = this._currClearColor;
-          this._state.buffers.color.setClear(_color.r, _color.g, _color.b, _color.a, this._premultipliedAlpha);
-      };
-
-      //清除缓冲
-      clear(color, depth, stencil) {
-          let _gl = this.gl;
-          let bits = 0;
-
-          if (color === undefined || color) bits |= _gl.COLOR_BUFFER_BIT;
-          if (depth === undefined || depth) bits |= _gl.DEPTH_BUFFER_BIT;
-          if (stencil === undefined || stencil) bits |= _gl.STENCIL_BUFFER_BIT;
-
-          _gl.clear(bits);
-
-      }
-      //清除颜色缓冲
-      clearColor() {
-          this.clear(true, false, false);
-      }
-      //清除深度缓冲
-      clearDepth() {
-          this.clear(false, true, false);
-      }
-      //清除模版缓冲
-      clearStencil() {
-          this.clear(false, false, true);
-      }
-
-      render(scene, camera) {
-
-          if (!(camera && camera.isCamera)) {
-
-              console.error('WebGLRenderer.render: camera is not an instance of Camera.');
-              return;
-
-          }
-          _currentGeometryProgram = '';
-          this._currentMaterialId = - 1;
-          this._currentCamera = null;
-
-          if (this._isContextLost) ;
-
-          // 更新场景
-          if (scene.autoUpdate === true) scene.updateMatrixWorld();
-
-          //更新相机矩阵
-          if (camera.parent === null) camera.updateMatrixWorld();
-
-          this._projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
-          this._frustum.setFromMatrix(this._projScreenMatrix);
-
-          //初始化渲染队列
-
-          this._currentRenderState = this._renderStates.get(scene, camera);
-          this._currentRenderState.init();
-
-          this._currentRenderList = this._renderLists.get(scene, camera);
-
-          this._currentRenderList.init();
-
-          //将渲染的几何对象和材质存放到渲染队列中
-          projectObject.call(this, scene, camera, this._sortObjects);
-
-          if (this._sortObjects === true) {
-              this._currentRenderList.sort();
-          }
-
-          this._currentRenderState.setupLights(camera);
-
-          if (this._info.autoReset) this._info.reset();
-
-          scene.background === null ? this.setClearColor(this._currClearColor) : this.setClearColor(scene.background);
-          this.clearColor(true);
-
-          let opaqueObjects = this._currentRenderList.opaque;
-          let transparentObjects = this._currentRenderList.transparent;
-
-          // opaque pass (front-to-back order)
-
-          if (opaqueObjects.length) renderObjects.call(this, opaqueObjects, scene, camera);
-
-          // transparent pass (back-to-front order)
-
-          if (transparentObjects.length) renderObjects.call(this, transparentObjects, scene, camera);
-
-
-          // custom renderers
-
-          let spritesArray = this._currentRenderState.state.spritesArray;
-
-          this._spriteRenderer.render(spritesArray, scene, camera);
-
-          this._state.buffers.depth.setTest(true);
-          this._state.buffers.depth.setMask(true);
-          this._state.buffers.color.setMask(true);
-
-          this._state.setPolygonOffset(false);
-
-
-          this._currentRenderList = null;
-          this._currentRenderState = null;
-
-
-      }
-      renderBufferDirect(camera, fog, geometry, material, object, group) {
-
-          let me = this;
-          let _gl = this.gl;
-
-
-          let frontFaceCW = (object.isMesh && object.matrixWorld.determinant() < 0);
-
-          //通过Materail设置 CULL_FACE  Blend clearColor ClearDepth
-          this._state.setMaterial(material, frontFaceCW);
-
-          let program = setProgram.call(me, camera, fog, material, object);
-
-          let updateBuffers = isUpdateBuffers(geometry, program, material);
-
-
-          let index = geometry.index;
-          let position = geometry.attributes.position;
-          let rangeFactor = 1;
-
-          if (material.wireframe === true) {
-
-              index = this._geometries.getWireframeAttribute(geometry);
-              rangeFactor = 2;
-
-          }
-
-          let attribute;
-          let renderer = this._bufferRenderer;
-
-          if (index !== null) {
-
-              attribute = this._attributes.get(index);
-
-              renderer = this._indexedBufferRenderer;
-              renderer.setIndex(attribute);
-
-          }
-
-          if (updateBuffers) {
-
-              setupVertexAttributes.call(this, material, program, geometry);
-
-              if (index !== null) {
-
-                  _gl.bindBuffer(_gl.ELEMENT_ARRAY_BUFFER, attribute.buffer);
-
-              }
-
-          }
-
-
-
-          let dataCount = Infinity;
-
-          if (index !== null) {
-
-              dataCount = index.count;
-
-          } else if (position !== undefined) {
-
-              dataCount = position.count;
-
-          }
-
-          let rangeStart = geometry.drawRange.start * rangeFactor;
-          let rangeCount = geometry.drawRange.count * rangeFactor;
-
-          let groupStart = group !== null ? group.start * rangeFactor : 0;
-          let groupCount = group !== null ? group.count * rangeFactor : Infinity;
-
-          let drawStart = Math.max(rangeStart, groupStart);
-          let drawEnd = Math.min(dataCount, rangeStart + rangeCount, groupStart + groupCount) - 1;
-
-          let drawCount = Math.max(0, drawEnd - drawStart + 1);
-
-          if (drawCount === 0) return;
-
-          if (object.isMesh) {
-
-              if (material.wireframe === true) {
-
-                  this._state.setLineWidth(material.wireframeLinewidth * this._pixelRatio);
-                  renderer.setMode(_gl.LINES);
-
-              } else {
-
-                  switch (object.drawMode) {
-
-                      case TrianglesDrawMode:
-                          renderer.setMode(_gl.TRIANGLES);
-                          break;
-
-                      case TriangleStripDrawMode:
-                          renderer.setMode(_gl.TRIANGLE_STRIP);
-                          break;
-
-                      case TriangleFanDrawMode:
-                          renderer.setMode(_gl.TRIANGLE_FAN);
-                          break;
-
-                  }
-              }
-          } else if (object.isLine) {
-              let lineWidth = material.linewidth;
-
-              if (lineWidth === undefined) lineWidth = 1; // Not using Line*Material
-
-              this._state.setLineWidth(lineWidth * this._pixelRatio);
-
-
-              switch (object.drawMode) {
-
-                  case LinesMode:
-                      renderer.setMode(_gl.LINES);
-                      break;
-
-                  case LineLoopMode:
-                      renderer.setMode(_gl.LINE_LOOP);
-                      break;
-
-                  case LineStripMode:
-                      renderer.setMode(_gl.LINE_STRIP);
-                      break;
-
-              }
-
-          } else if (object.isPoints) {
-              renderer.setMode(_gl.POINTS);
-          }
-
-          if (geometry && geometry.isInstancedBufferGeometry) {
-
-              if (geometry.maxInstancedCount > 0) {
-
-                  renderer.renderInstances(geometry, drawStart, drawCount);
-
-              }
-
-          } else {
-
-              renderer.render(drawStart, drawCount);
-
-          }
-
-      }
-
-      allocTextureUnit() {
-          var textureUnit = _usedTextureUnits;
-
-          if (textureUnit >= this._capabilities.maxTextures) {
-
-              console.warn('WebGLRenderer: Trying to use ' + textureUnit + ' texture units while this GPU supports only ' + capabilities.maxTextures);
-
-          }
-
-          _usedTextureUnits += 1;
-
-          return textureUnit;
-      }
-
-      setTexture2D(texture, slot) {
-          //todo Use in WebGLUniforms
-          this._textures.setTexture2D(texture, slot);
-      }
-
-      setTextureCube() {
-          //todo Use in WebGLUniforms
-      }
-
-      dispose() {
-
-          this._canvas.removeEventListener('webglcontextlost', onContextLost, false);
-          this._canvas.removeEventListener('webglcontextrestored', onContextRestore, false);
-
-          this._renderLists.dispose();
-          this._renderStates.dispose();
-          this._properties.dispose();
-          this._objects.dispose();
-
-          //vr.dispose();
-
-          //stopAnimation();
-
-      };
-  }
-
-  //判断是否更新了Buffer
-  let _currentGeometryProgram = '';
-  function isUpdateBuffers(geometry, program, material) {
-
-      let geometryProgram = geometry.id + '_' + program.id + '_' + (material.wireframe === true);
-
-      let updateBuffers = false;
-
-      if (geometryProgram !== _currentGeometryProgram) {
-
-
-          updateBuffers = true;
-          _currentGeometryProgram = geometryProgram;
-
-      }
-
-      return updateBuffers;
-  }
-
-  //将渲染的几何对象和材质存放到渲染队列中
-  function projectObject(object, camera, sortObjects) {
-
-      if (object.visible === false) return;
-
-
-
-      if (object.isLight) {
-
-          this._currentRenderState.pushLight(object);
-
-      } else if (object.isSprite) {
-
-          if (!object.frustumCulled || this._frustum.intersectsSprite(object)) {
-
-              this._currentRenderState.pushSprite(object);
-
-          }
-
-      } else if (object.isMesh || object.isLine || object.isPoints) {
-
-          if (!object.frustumCulled || this._frustum.intersectsObject(object)) {
-
-              if (sortObjects) {
-
-                  this._vector3.setFromMatrixPosition(object.matrixWorld)
-                      .applyMatrix4(this._projScreenMatrix);
-
-              }
-              //创建好了attribute buffer
-              let geometry = this._objects.update(object);
-              let material = object.material;
-
-              //如果是数组,表示geometry根据groups的分组进行分别绘制
-              if (Array.isArray(material)) {
-
-                  let groups = geometry.groups;
-
-                  for (let i = 0, l = groups.length; i < l; i++) {
-
-                      let group = groups[i];
-                      let groupMaterial = material[group.materialIndex];
-
-                      if (groupMaterial && groupMaterial.visible) {
-
-                          this._currentRenderList.push(object, geometry, groupMaterial, this._vector3.z, group);
-
-                      }
-
-                  }
-
-              } else if (material.visible) {
-
-                  this._currentRenderList.push(object, geometry, material, this._vector3.z, null);
-
-              }
-
-          }
-
-
-
-      }
-
-      let children = object.children;
-
-      for (let i = 0, l = children.length; i < l; i++) {
-
-          projectObject.call(this, children[i], camera, sortObjects);
-
-      }
-
-  }
-
-  function renderObjects(renderList, scene, camera) {
-      for (let i = 0, l = renderList.length; i < l; i++) {
-
-          let renderItem = renderList[i];
-
-          let object = renderItem.object;
-          let geometry = renderItem.geometry;
-          let material = renderItem.material;
-          let group = renderItem.group;
-
-          renderObject.call(this, object, scene, camera, geometry, material, group);
-
-      }
-  }
-
-  function renderObject(object, scene, camera, geometry, material, group) {
-
-      object.onBeforeRender(this, scene, camera, geometry, material, group);
-      this._currentRenderState = this._renderStates.get(scene, camera);
-
-      object.modelViewMatrix.multiplyMatrices(camera.matrixWorldInverse, object.matrixWorld);
-      object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
-
-      this.renderBufferDirect(camera, scene.fog, geometry, material, object, group);
-
-      object.onAfterRender(this, scene, camera, geometry, material, group);
-      // this._currentRenderState = renderStates.get( scene,  camera );
-  }
-
-
-  let _usedTextureUnits = 0;                  //当前纹理单元
-  function setProgram(camera, fog, material, object) {
-      _usedTextureUnits = 0;
-
-      let materialProperties = this._properties.get(material);
-      let lights = this._currentRenderState.state.lights;
-
-
-      if (material.needsUpdate === false) {
-
-          if (materialProperties.program === undefined) {
-
-              material.needsUpdate = true;
-
-          } else if (material.lights && materialProperties.lightsHash !== lights.state.hash) {
-
-              material.needsUpdate = true;
-
-          }
-
-      }
-
-
-      if (material.needsUpdate) {
-
-          initMaterial.call(this, material, fog, object);
-          material.needsUpdate = false;
-
-      }
-
-      let refreshProgram = false;
-      let refreshMaterial = false;
-      let refreshLights = false;
-
-      let program = materialProperties.program,
-          p_uniforms = program.getUniforms(),
-          m_uniforms = materialProperties.shader.uniforms;
-
-      if (this._state.useProgram(program.program)) {
-
-          refreshProgram = true;
-          refreshMaterial = true;
-          refreshLights = true;
-
-      }
-
-      if (material.id !== this._currentMaterialId) {
-
-          this._currentMaterialId = material.id;
-
-          refreshMaterial = true;
-
-      }
-
-      if (refreshProgram || camera !== this._currentCamera) {
-
-          p_uniforms.setValue('projectionMatrix', camera.projectionMatrix);
-
-          if (camera !== this._currentCamera) {
-
-              this._currentCamera = camera;
-              refreshMaterial = true;
-              refreshLights = true;
-
-          }
-      }
-
-
-      if (refreshMaterial) {
-
-
-          if (material.lights) {
-
-              // the current material requires lighting info
-
-              // note: all lighting uniforms are always set correctly
-              // they simply reference the renderer's state for their
-              // values
-              //
-              // use the current material's .needsUpdate flags to set
-              // the GL state when required
-
-              markUniformsLightsNeedsUpdate(m_uniforms, refreshLights);
-
-          }
-
-          if (material.isMeshBasicMaterial
-              || material.isLineBasicMaterial
-              || material.isMeshLambertMaterial
-              || material.isMeshPhongMaterial
-              || material.isPointsMaterial
-              || material.isLineMeshMaterial) {
-              if (material.color) {
-                  m_uniforms.diffuse.value = material.color;
-              }
-
-              if (material.map) {
-                  m_uniforms.map.value = material.map;
-              }
-
-              m_uniforms.opacity.value = material.opacity;
-              if (material.emissive) {
-
-                  m_uniforms.emissive.value.copy(material.emissive).multiplyScalar(material.emissiveIntensity);
-
-              }
-
-              if (material.map) {
-
-                  if (material.map.matrixAutoUpdate === true) {
-                      //更新纹理映射矩阵
-                      material.map.updateMatrix();
-
-                  }
-
-                  m_uniforms.uvTransform.value.copy(material.map.matrix);
-              }
-
-          }
-
-          function updateLineMaterial() {
-              m_uniforms.dashSize.value = material.dashSize;
-              m_uniforms.totalSize.value = material.dashSize + material.gapSize;
-              m_uniforms.scale.value = material.scale;
-          }
-
-          if (material.isLineBasicMaterial) {
-
-              if (material.isLineDashedMaterial) {
-                  updateLineMaterial();
-              }
-
-          } else if (material.isMeshPhongMaterial) {
-
-              m_uniforms.specular.value = material.specular;
-              m_uniforms.shininess.value = Math.max(material.shininess, 1e-4); // to prevent pow( 0.0, 0.0 )
-
-          }
-
-          else if (material.isPointsMaterial) {
-
-              m_uniforms.size.value = material.size * this._pixelRatio;
-              m_uniforms.scale.value = this._height * 0.5;
-          } else if (material.isLineMeshMaterial) {
-
-              updateLineMaterial();
-              m_uniforms.linewidth.value = material.linewidth;
-              m_uniforms.resolution.value.copy(material.resolution);
-
-          }
-
-
-
-          WebGLUniforms.upload(this.gl, materialProperties.uniformsList, m_uniforms, this);
-
-      }
-      if (material.isShaderMaterial && material.uniformsNeedUpdate === true) {
-
-          WebGLUniforms.upload(this.gl, materialProperties.uniformsList, m_uniforms, this);
-          material.uniformsNeedUpdate = false;
-
-      }
-
-
-      // common matrices
-
-      p_uniforms.setValue('modelViewMatrix', object.modelViewMatrix);
-      p_uniforms.setValue('normalMatrix', object.normalMatrix);
-      p_uniforms.setValue('modelMatrix', object.matrixWorld);
-
-      return program;
-
-  }
-
-  function initMaterial(material, fog, object) {
-
-      let materialProperties = this._properties.get(material);
-      let lights = this._currentRenderState.state.lights;
-      let parameters = this._programCache.getParameters(material, lights.state);
-
-      let code = this._programCache.getProgramCode(material, parameters);
-
-      let program = materialProperties.program;
-      let programChange = true;
-
-      if (program === undefined) {
-
-          // new material
-          material.on('dispose', onMaterialDispose.bind(this));
-
-      } else if (program.code !== code) {
-
-          // changed glsl or parameters
-          releaseMaterialProgramReference.call(this, material);
-
-      } else if (materialProperties.lightsHash !== lights.state.hash) {
-
-          properties.update(material, 'lightsHash', lights.state.hash);
-          programChange = false;
-
-      } else if (parameters.shaderID !== undefined) {
-
-          // same glsl and uniform list
-          return;
-
-      } else {
-
-          // only rebuild uniform list
-          programChange = false;
-
-      }
-
-      if (programChange) {
-
-          if (parameters.shaderID) {
-
-              var shader = ShaderLib[parameters.shaderID];
-
-              materialProperties.shader = {
-                  name: material.type,
-                  uniforms: UniformsUtils$1.clone(shader.uniforms),
-                  vertexShader: shader.vertexShader,
-                  fragmentShader: shader.fragmentShader
-              };
-
-          } else {
-              //自定义shader
-              materialProperties.shader = {
-                  name: material.type,
-                  uniforms: material.uniforms,
-                  vertexShader: material.vertexShader,
-                  fragmentShader: material.fragmentShader
-              };
-
-          }
-
-
-          material.onBeforeCompile(materialProperties.shader, this);
-
-          //WebGLProgram 对象
-          program = this._programCache.acquireProgram(material, materialProperties.shader, parameters, code);
-
-          materialProperties.program = program;
-          material.program = program;
-
-      }
-
-      let programAttributes = program.getAttributes();
-
-
-      let uniforms = materialProperties.shader.uniforms;
-
-
-      // store the light setup it was created for
-
-      materialProperties.lightsHash = lights.state.hash;
-
-      if (material.lights) {
-
-          // wire up the material to this renderer's lighting state
-
-          uniforms.ambientLightColor.value = lights.state.ambient;
-          uniforms.directionalLights.value = lights.state.directional;
-          uniforms.spotLights.value = lights.state.spot;
-          uniforms.pointLights.value = lights.state.point;
-
-      }
-
-      let progUniforms = materialProperties.program.getUniforms();
-      let uniformsList = WebGLUniforms.seqWithValue(progUniforms.seq, uniforms);
-
-      materialProperties.uniformsList = uniformsList;
-
-  }
-
-  function onMaterialDispose(event) {
-      let me = this;
-      let material = event.target;
-
-      material.off('dispose', onMaterialDispose.bind(me));
-
-      deallocateMaterial.call(this, material);
-  }
-
-  // Buffer deallocation
-
-  function deallocateMaterial(material) {
-
-      releaseMaterialProgramReference.call(this, material);
-
-      this._properties.remove(material);
-
-  }
-
-  function releaseMaterialProgramReference(material) {
-      var programInfo = this._properties.get(material).program;
-
-      material.program = undefined;
-
-      if (programInfo !== undefined) {
-
-          this._programCache.releaseProgram(programInfo);
-
-      }
-  }
-
-  function setupVertexAttributes(material, program, geometry) {
-
-      if (geometry && geometry.isInstancedBufferGeometry) {
-
-          if (this._extensions.get('ANGLE_instanced_arrays') === null) {
-
-              console.error('WebGLRenderer.setupVertexAttributes: using InstancedBufferGeometry but hardware does not support extension ANGLE_instanced_arrays.');
-              return;
-
-          }
-
-      }
-
-
-      this._state.initAttributes();
-      let _gl = this.gl;
-      let geometryAttributes = geometry.attributes;
-
-      let programAttributes = program.getAttributes();
-      let materialDefaultAttributeValues = material.defaultAttributeValues;
-
-      for (let name in programAttributes) {
-
-          let programAttribute = programAttributes[name];
-
-          if (programAttribute >= 0) {
-
-              let geometryAttribute = geometryAttributes[name];
-
-              if (geometryAttribute !== undefined) {
-
-                  let normalized = geometryAttribute.normalized;
-                  let size = geometryAttribute.itemSize;
-
-                  let attribute = this._attributes.get(geometryAttribute);
-
-                  // TODO Attribute may not be available on context restore
-
-                  if (attribute === undefined) continue;
-
-                  let buffer = attribute.buffer;
-                  let type = attribute.type;
-                  let bytesPerElement = attribute.bytesPerElement;
-
-                  if (geometryAttribute.isInterleavedBufferAttribute) {
-
-                      var data = geometryAttribute.data;
-                      var stride = data.stride;
-                      var offset = geometryAttribute.offset;
-
-                      if (data && data.isInstancedInterleavedBuffer) {
-
-                          this._state.enableAttributeAndDivisor(programAttribute, data.meshPerAttribute);
-
-                          if (geometry.maxInstancedCount === undefined) {
-
-                              geometry.maxInstancedCount = data.meshPerAttribute * data.count;
-
-                          }
-
-                      } else {
-
-                          this._state.enableAttribute(programAttribute);
-
-                      }
-
-                      _gl.bindBuffer(_gl.ARRAY_BUFFER, buffer);
-                      _gl.vertexAttribPointer(programAttribute, size, type, normalized, stride * bytesPerElement, offset * bytesPerElement);
-
-                  } else {
-
-                      if (geometryAttribute.isInstancedBufferAttribute) {
-
-                          this._state.enableAttributeAndDivisor(programAttribute, geometryAttribute.meshPerAttribute);
-
-                          if (geometry.maxInstancedCount === undefined) {
-
-                              geometry.maxInstancedCount = geometryAttribute.meshPerAttribute * geometryAttribute.count;
-
-                          }
-
-                      } else {
-
-                          this._state.enableAttribute(programAttribute);
-                      }
-
-
-                      _gl.bindBuffer(_gl.ARRAY_BUFFER, buffer);
-                      _gl.vertexAttribPointer(programAttribute, size, type, normalized, 0, 0);
-
-                  }
-
-              } else if (materialDefaultAttributeValues !== undefined) {
-                  var value = materialDefaultAttributeValues[name];
-
-                  if (value !== undefined) {
-
-                      switch (value.length) {
-
-                          case 2:
-                              _gl.vertexAttrib2fv(programAttribute, value);
-                              break;
-
-                          case 3:
-                              _gl.vertexAttrib3fv(programAttribute, value);
-                              break;
-
-                          case 4:
-                              _gl.vertexAttrib4fv(programAttribute, value);
-                              break;
-
-                          default:
-                              _gl.vertexAttrib1fv(programAttribute, value);
-
-                      }
-
-                  }
-              }
-
-          }
-
-      }
-
-      this._state.disableUnusedAttributes();
-
-  }
-
-  // If uniforms are marked as clean, they don't need to be loaded to the GPU.
-
-  function markUniformsLightsNeedsUpdate(uniforms, value) {
-
-      uniforms.ambientLightColor.needsUpdate = value;
-
-      uniforms.directionalLights.needsUpdate = value;
-      uniforms.pointLights.needsUpdate = value;
-      uniforms.spotLights.needsUpdate = value;
-
-  }
-
   var matrix = new Matrix4();
   var q = new Quaternion();
   class Euler {
@@ -11399,7 +11148,7 @@
 
           this.parent = null;
           this.children = [];
-          this.isObject3D = true;
+
 
           this.up = Object3D.DefaultUp.clone();
 
@@ -11463,7 +11212,14 @@
           this.frustumCulled = true;
           this.renderOrder = 0;
 
+          this.userData = {};
+
       }
+
+      get isObject3D() {
+          return true;
+      }
+
       onBeforeRender(renderer, scene, camera, geometry, material, group) {
           //继承实现 渲染前调用
       }
@@ -11958,7 +11714,10 @@
       constructor() {
           super();
           this.type = 'Group';
-          this.isGroup = true;
+      }
+      
+      get isGroup(){
+          return true;
       }
   }
 
@@ -12971,6 +12730,8 @@
 
           this.premultipliedAlpha = false;
 
+          this.userData = {};
+
           this.onBeforeCompile = function () { };
       }
 
@@ -13080,6 +12841,9 @@
           return this;
 
       }
+      get isMaterial() {
+          return true;
+      }
 
       dispose() {
 
@@ -13097,12 +12861,15 @@
           this.type = 'MeshBasicMaterial';
           this.wireframe = false;
           this.wireframeLinewidth = 1;
-          this.isMeshBasicMaterial = true;
 
           //不接受灯光
           this.lights = false;
 
           this.setValues(parameters);
+      }
+
+      get isMeshBasicMaterial() {
+          return true;
       }
 
       copy(source) {
@@ -13130,8 +12897,11 @@
           this.material = material;
 
           this.drawMode = TrianglesDrawMode;
-          this.isMesh = true;
 
+      }
+
+      get isMesh(){
+          return true;
       }
 
       setDrawMode(value) {
@@ -13427,8 +13197,12 @@
 
 
           this.setValues(parameters);
-          this.isLineBasicMaterial = true;
       }
+      
+      get isLineBasicMaterial() {
+          return true;
+      }
+
       copy(source) {
           super.copy(source);
           this.color.copy(source.color);
@@ -13452,13 +13226,16 @@
 
           this.geometry = geometry !== undefined ? geometry : new BufferGeometry();
           this.material = material !== undefined ? material : new LineBasicMaterial({ color: Math.random() * 0xffffff });
-          this.isLine = true;
           this.drawMode = LinesMode;
 
           if (this.material.isLineDashedMaterial) {
               this.computeLineDistances();
           }
 
+      }
+
+      get isLine(){
+          return true;
       }
 
       setDrawMode(value) {
@@ -13915,6 +13692,10 @@
           this.geometry = geometry !== undefined ? geometry : new THREE.LineGeometry();
           this.material = material !== undefined ? material : new THREE.LineMaterial({ color: Math.random() * 0xffffff });
       }
+      
+      get isLine2() {
+          return true;
+      }
 
       computeLineDistances() {
           computeLineDistances$1.call(this);
@@ -14073,14 +13854,19 @@
           this.color = new Color$1(0xffffff);
           this.map = null;
 
-          //纹理旋转角度
           this.rotation = 0;
-          //不接受灯光
+
+          this.sizeAttenuation = true;
+
           this.lights = false;
+          this.transparent = true;
 
           this.setValues(parameters);
-          this.isSpriteMaterial = true;
 
+      }
+
+      get isSpriteMaterial() {
+          return true
       }
 
       copy(source) {
@@ -14091,10 +13877,14 @@
 
           this.rotation = source.rotation;
 
+          this.sizeAttenuation = source.sizeAttenuation;
+
           return this;
       }
 
   }
+
+  var geometry;
 
   class Sprite extends Object3D {
 
@@ -14102,14 +13892,53 @@
           super();
           this.type = 'Sprite';
 
+          if (geometry === undefined) {
+
+              geometry = new BufferGeometry();
+
+              var float32Array = new Float32Array([
+                  - 0.5, - 0.5, 0, 0, 0,
+                  0.5, - 0.5, 0, 1, 0,
+                  0.5, 0.5, 0, 1, 1,
+                  - 0.5, 0.5, 0, 0, 1
+              ]);
+
+              var interleavedBuffer = new InterleavedBuffer(float32Array, 5);
+
+              geometry.setIndex([0, 1, 2, 0, 2, 3]);
+              geometry.addAttribute('position', new InterleavedBufferAttribute(interleavedBuffer, 3, 0, false));
+              geometry.addAttribute('uv', new InterleavedBufferAttribute(interleavedBuffer, 2, 3, false));
+
+          }
+
+          this.geometry = geometry;
+
           this.material = (material !== undefined) ? material : new SpriteMaterial$$1();
 
           this.center = new Vector2(0.5, 0.5);
-          this.isSprite = true;
+      }
+
+      get isSprite() {
+          return true;
       }
 
       raycast(raycaster, intersects) {
           raycast$3.call(this, raycaster, intersects);
+      }
+      clone() {
+
+          return new this.constructor(this.material).copy(this);
+
+      }
+
+      copy(source) {
+
+          Object3D.prototype.copy.call(this, source);
+
+          if (source.center !== undefined) this.center.copy(source.center);
+
+          return this;
+
       }
 
   }
@@ -14117,18 +13946,90 @@
   let raycast$3 = (function () {
 
       var intersectPoint = new Vector3$1();
-      var worldPosition = new Vector3$1();
       var worldScale = new Vector3$1();
+      var mvPosition = new Vector3$1();
+
+      var alignedPosition = new Vector2();
+      var rotatedPosition = new Vector2();
+      var viewWorldMatrix = new Matrix4();
+
+      var vA = new Vector3$1();
+      var vB = new Vector3$1();
+      var vC = new Vector3$1();
+
+      var uvA = new Vector2();
+      var uvB = new Vector2();
+      var uvC = new Vector2();
+
+      function transformVertex(vertexPosition, mvPosition, center, scale, sin, cos) {
+
+          // compute position in camera space
+          alignedPosition.subVectors(vertexPosition, center).addScalar(0.5).multiply(scale);
+
+          // to check if rotation is not zero
+          if (sin !== undefined) {
+
+              rotatedPosition.x = (cos * alignedPosition.x) - (sin * alignedPosition.y);
+              rotatedPosition.y = (sin * alignedPosition.x) + (cos * alignedPosition.y);
+
+          } else {
+
+              rotatedPosition.copy(alignedPosition);
+
+          }
+
+
+          vertexPosition.copy(mvPosition);
+          vertexPosition.x += rotatedPosition.x;
+          vertexPosition.y += rotatedPosition.y;
+
+          // transform to world space
+          vertexPosition.applyMatrix4(viewWorldMatrix);
+
+      }
 
       return function raycast(raycaster, intersects) {
 
-          worldPosition.setFromMatrixPosition(this.matrixWorld);
-          raycaster.ray.closestPointToPoint(worldPosition, intersectPoint);
-
           worldScale.setFromMatrixScale(this.matrixWorld);
-          var guessSizeSq = worldScale.x * worldScale.y / 4;
+          viewWorldMatrix.getInverse(this.modelViewMatrix).premultiply(this.matrixWorld);
+          mvPosition.setFromMatrixPosition(this.modelViewMatrix);
 
-          if (worldPosition.distanceToSquared(intersectPoint) > guessSizeSq) return;
+          var rotation = this.material.rotation;
+          var sin, cos;
+          if (rotation !== 0) {
+
+              cos = Math.cos(rotation);
+              sin = Math.sin(rotation);
+
+          }
+
+          var center = this.center;
+
+          transformVertex(vA.set(- 0.5, - 0.5, 0), mvPosition, center, worldScale, sin, cos);
+          transformVertex(vB.set(0.5, - 0.5, 0), mvPosition, center, worldScale, sin, cos);
+          transformVertex(vC.set(0.5, 0.5, 0), mvPosition, center, worldScale, sin, cos);
+
+          uvA.set(0, 0);
+          uvB.set(1, 0);
+          uvC.set(1, 1);
+
+          // check first triangle
+          var intersect = raycaster.ray.intersectTriangle(vA, vB, vC, false, intersectPoint);
+
+          if (intersect === null) {
+
+              // check second triangle
+              transformVertex(vB.set(- 0.5, 0.5, 0), mvPosition, center, worldScale, sin, cos);
+              uvB.set(0, 1);
+
+              intersect = raycaster.ray.intersectTriangle(vA, vC, vB, false, intersectPoint);
+              if (intersect === null) {
+
+                  return;
+
+              }
+
+          }
 
           var distance = raycaster.ray.origin.distanceTo(intersectPoint);
 
@@ -14138,6 +14039,7 @@
 
               distance: distance,
               point: intersectPoint.clone(),
+              uv: Triangle.getUV(intersectPoint, vA, vB, vC, uvA, uvB, uvC, new Vector2()),
               face: null,
               object: this
 
@@ -14145,7 +14047,7 @@
 
       };
 
-  }());
+  });
 
   class TextTexture extends Texture {
       constructor(
@@ -14543,7 +14445,7 @@
 
           actualFontSize = height / screenHeight * fontsize;
 
-          this.scale.set(this.material.map.imageAspect, 1, 1).multiplyScalar(Math.round(actualFontSize));
+          this.scale.set(this.material.map.imageAspect, 1, 1).multiplyScalar(actualFontSize);
 
       }
 
@@ -15762,8 +15664,10 @@
 
           this.setValues(parameters);
 
-          this.isLineDashedMaterial = true;
+      }
 
+      get isLineDashedMaterial() {
+          return true;
       }
 
       copy(source) {
@@ -15796,8 +15700,12 @@
 
 
           this.setValues(parameters);
-          this.isLineMeshMaterial = true;
       }
+
+      get isLineMeshMaterial() {
+          return true;
+      }
+
       copy(source) {
           super.copy(source);
           this.color.copy(source.color);
@@ -15949,13 +15857,89 @@
 
   }
 
+  /**
+   * @author bhouston / http://clara.io
+   * @author WestLangley / http://github.com/WestLangley
+   *
+   * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+   *
+   * The poles (phi) are at the positive and negative y axis.
+   * The equator starts at positive z.
+   */
+
+  class Spherical {
+      constructor(radius, phi, theta) {
+
+          this.radius = (radius !== undefined) ? radius : 1.0;
+          this.phi = (phi !== undefined) ? phi : 0; // up / down towards top and bottom pole
+          this.theta = (theta !== undefined) ? theta : 0; // around the equator of the sphere
+
+          return this;
+
+      }
+
+      set(radius, phi, theta) {
+
+          this.radius = radius;
+          this.phi = phi;
+          this.theta = theta;
+
+          return this;
+
+      }
+      clone() {
+
+          return new this.constructor().copy(this);
+
+      }
+      copy(other) {
+
+          this.radius = other.radius;
+          this.phi = other.phi;
+          this.theta = other.theta;
+
+          return this;
+
+      }
+      // restrict phi to be betwee EPS and PI-EPS
+      makeSafe() {
+
+          let EPS = 0.000001;
+          this.phi = Math.max(EPS, Math.min(Math.PI - EPS, this.phi));
+
+          return this;
+
+      }
+
+      setFromVector3(vec3) {
+
+          this.radius = vec3.length();
+
+          if (this.radius === 0) {
+
+              this.theta = 0;
+              this.phi = 0;
+
+          } else {
+
+              this.theta = Math.atan2(vec3.x, vec3.z); // equator angle around y-up axis
+              this.phi = Math.acos(_Math.clamp(vec3.y / this.radius, - 1, 1)); // polar angle
+
+          }
+
+          return this;
+
+      }
+  }
+
   class Framework extends Events {
       constructor() {
           super();
 
           this.layers = [];
           this.isUpdate = true;
-
+          this.currTick = new Date();
+          this.lastTick = null;
           this.renderer = null;
       }
 
@@ -15984,9 +15968,9 @@
 
       render() {
 
-          var redraw = this.isUpdate;
-          //this.isUpdate = false;
-          this.fire({ type: 'renderbefor' });
+          let redraw = this.isUpdate;
+          this.isUpdate = false;
+          this.fire({ type: 'renderbefore' });
           if (redraw) {
               this.layers.forEach(view => {
 
@@ -16476,10 +16460,10 @@
           let triangleVertices = [];
           origins.forEach(origin => {
               triangleVertices = [];
-              triangleVertices.push(origin.toArray());
+              triangleVertices.push([0, 0, 0]);
 
               let endPoint = new Vector3$1();
-              endPoint.copy(origin);
+              //endPoint.copy([0,0,0]);
               let delta = new Vector3$1();
               delta.copy(direction);
               delta.multiplyScalar(length);
@@ -16494,6 +16478,7 @@
               line.drawMode = TrianglesDrawMode;
               line.computeLineDistances();
               line.scale.set(1, 1, 1);
+              line.position.copy(origin);
               group.add(line);
           });
 
@@ -16859,6 +16844,858 @@
       return dataFrame;
   }
 
+  // This set of controls performs orbiting, dollying (zooming), and panning.
+  // Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+  //
+  //    Orbit - left mouse / touch: one-finger move
+  //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
+  //    Pan - right mouse, or arrow keys / touch: two-finger move
+
+  const EPS$1 = 0.000001;
+  const changeEvent = { type: 'change' };
+  const startEvent = { type: 'start' };
+  const endEvent = { type: 'end' };
+  const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2 };
+
+  const STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_DOLLY_PAN: 4 };
+
+  class OrbitControls extends Events {
+      constructor(object, domElement) {
+          super();
+          let scope = this;
+
+          this.object = object;
+
+          this.domElement = domElement !== undefined ? domElement : document;
+
+          // Set to false to disable this control
+          this.enabled = true;
+
+          // "target" sets the location of focus, where the object orbits around
+          this.target = new Vector3$1();
+
+          // How far you can dolly in and out ( PerspectiveCamera only )
+          this.minDistance = 0;
+          this.maxDistance = Infinity;
+
+          // How far you can zoom in and out ( OrthographicCamera only )
+          this.minZoom = 0;
+          this.maxZoom = Infinity;
+
+          // How far you can orbit vertically, upper and lower limits.
+          // Range is 0 to Math.PI radians.
+          this.minPolarAngle = 0; // radians
+          this.maxPolarAngle = Math.PI; // radians
+
+          // How far you can orbit horizontally, upper and lower limits.
+          // If set, must be a sub-interval of the interval [ - Math.PI, Math.PI ].
+          this.minAzimuthAngle = -Infinity; // radians
+          this.maxAzimuthAngle = Infinity; // radians
+
+          // Set to true to enable damping (inertia)
+          // If damping is enabled, you must call controls.update() in your animation loop
+          this.enableDamping = false;
+          this.dampingFactor = 0.25;
+
+          // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
+          // Set to false to disable zooming
+          this.enableZoom = true;
+          this.zoomSpeed = 1.0;
+
+          // Set to false to disable rotating
+          this.enableRotate = true;
+          this.rotateSpeed = 1.0;
+
+          // Set to false to disable panning
+          this.enablePan = true;
+          this.panSpeed = 1.0;
+          this.screenSpacePanning = false; // if true, pan in screen-space
+          this.keyPanSpeed = 7.0; // pixels moved per arrow key push
+
+          // Set to true to automatically rotate around the target
+          // If auto-rotate is enabled, you must call controls.update() in your animation loop
+          this.autoRotate = false;
+          this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
+
+          // Set to false to disable use of the keys
+          this.enableKeys = true;
+
+          // The four arrow keys
+          this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+
+          // Mouse buttons
+          this.mouseButtons = { ORBIT: MOUSE.LEFT, ZOOM: MOUSE.MIDDLE, PAN: MOUSE.RIGHT };
+
+          // for reset
+          this.target0 = this.target.clone();
+          this.position0 = this.object.position.clone();
+          this.zoom0 = this.object.zoom;
+
+          //
+          // internals
+          //
+
+          this._state = STATE.NONE;
+          // current position in spherical coordinates
+          this._spherical = new Spherical();
+          this._sphericalDelta = new Spherical();
+
+          this._scale = 1;
+          this._panOffset = new Vector3$1();
+          this._zoomChanged = false;
+
+          this._rotateStart = new Vector2();
+          this._rotateEnd = new Vector2();
+          this._rotateDelta = new Vector2();
+
+          this._panStart = new Vector2();
+          this._panEnd = new Vector2();
+          this._panDelta = new Vector2();
+
+          this._dollyStart = new Vector2();
+          this._dollyEnd = new Vector2();
+          this._dollyDelta = new Vector2();
+
+          //
+
+          scope.domElement.addEventListener('contextmenu', onContextMenu.bind(scope), false);
+
+          scope.domElement.addEventListener('mousedown', onMouseDown.bind(scope), false);
+          scope.domElement.addEventListener('wheel', onMouseWheel.bind(scope), false);
+
+          scope.domElement.addEventListener('touchstart', onTouchStart.bind(scope), false);
+          scope.domElement.addEventListener('touchend', onTouchEnd.bind(scope), false);
+          scope.domElement.addEventListener('touchmove', onTouchMove.bind(scope), false);
+
+          window.addEventListener('keydown', onKeyDown.bind(scope), false);
+
+          this.update = function () {
+
+              let offset = new Vector3$1();
+
+              // so camera.up is the orbit axis
+              let quat = new Quaternion().setFromUnitVectors(object.up, new Vector3$1(0, 1, 0));
+              let quatInverse = quat.clone().inverse();
+
+              let lastPosition = new Vector3$1();
+              let lastQuaternion = new Quaternion();
+
+              return function update() {
+
+                  let position = scope.object.position;
+
+                  offset.copy(position).sub(scope.target);
+
+                  // rotate offset to "y-axis-is-up" space
+                  offset.applyQuaternion(quat);
+
+                  // angle from z-axis around y-axis
+                  scope._spherical.setFromVector3(offset);
+
+                  if (scope.autoRotate && this._state === STATE.NONE) {
+
+                      rotateLeft.call(scope, getAutoRotationAngle.call(scope));
+                  }
+
+                  scope._spherical.theta += scope._sphericalDelta.theta;
+                  scope._spherical.phi += scope._sphericalDelta.phi;
+
+                  // restrict theta to be between desired limits
+                  scope._spherical.theta = Math.max(scope.minAzimuthAngle, Math.min(scope.maxAzimuthAngle, scope._spherical.theta));
+
+                  // restrict phi to be between desired limits
+                  scope._spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, scope._spherical.phi));
+
+                  scope._spherical.makeSafe();
+
+                  scope._spherical.radius *= scope._scale;
+
+                  // restrict radius to be between desired limits
+                  scope._spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, scope._spherical.radius));
+
+                  // move target to panned location
+                  scope.target.add(scope._panOffset);
+
+                  offset.setFromSpherical(scope._spherical);
+
+                  // rotate offset back to "camera-up-vector-is-up" space
+                  offset.applyQuaternion(quatInverse);
+
+                  position.copy(scope.target).add(offset);
+
+                  scope.object.lookAt(scope.target);
+
+                  if (scope.enableDamping === true) {
+
+                      scope._sphericalDelta.theta *= 1 - scope.dampingFactor;
+                      scope._sphericalDelta.phi *= 1 - scope.dampingFactor;
+
+                      scope._panOffset.multiplyScalar(1 - scope.dampingFactor);
+                  } else {
+
+                      scope._sphericalDelta.set(0, 0, 0);
+
+                      scope._panOffset.set(0, 0, 0);
+                  }
+
+                  scope._scale = 1;
+
+                  // update condition is:
+                  // min(camera displacement, camera rotation in radians)^2 > EPS
+                  // using small-angle approximation cos(x/2) = 1 - x^2 / 8
+
+                  if (this._zoomChanged || lastPosition.distanceToSquared(scope.object.position) > EPS$1 || 8 * (1 - lastQuaternion.dot(scope.object.quaternion)) > EPS$1) {
+
+                      scope.fire(changeEvent);
+
+                      lastPosition.copy(scope.object.position);
+                      lastQuaternion.copy(scope.object.quaternion);
+                      this._zoomChanged = false;
+
+                      return true;
+                  }
+
+                  return false;
+              };
+          }();
+
+          // force an update at start
+          this.update();
+      }
+
+      //
+      // public methods
+      //
+
+      getPolarAngle() {
+
+          return _spherical.phi;
+      }
+
+      getAzimuthalAngle() {
+
+          return _spherical.theta;
+      }
+
+      saveState() {
+          let scope = this;
+          scope.target0.copy(scope.target);
+          scope.position0.copy(scope.object.position);
+          scope.zoom0 = scope.object.zoom;
+      }
+
+      reset() {
+          let scope = this;
+          scope.target.copy(scope.target0);
+          scope.object.position.copy(scope.position0);
+          scope.object.zoom = scope.zoom0;
+
+          scope.object.updateProjectionMatrix();
+          scope.fire(changeEvent);
+
+          scope.update();
+
+          scope._state = STATE.NONE;
+      }
+
+      // this method is exposed, but perhaps it would be better if we can make it private...
+      // update() {
+      //     update.call(this);
+      // }
+
+      dispose() {
+          let scope = this;
+          scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
+          scope.domElement.removeEventListener('mousedown', onMouseDown, false);
+          scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+
+          scope.domElement.removeEventListener('touchstart', onTouchStart, false);
+          scope.domElement.removeEventListener('touchend', onTouchEnd, false);
+          scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+
+          document.removeEventListener('mousemove', onMouseMove, false);
+          document.removeEventListener('mouseup', onMouseUp, false);
+
+          window.removeEventListener('keydown', onKeyDown, false);
+
+          //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
+      }
+
+  }
+
+  function getAutoRotationAngle() {
+
+      return 2 * Math.PI / 60 / 60 * this.autoRotateSpeed;
+  }
+
+  function getZoomScale() {
+
+      return Math.pow(0.95, this.zoomSpeed);
+  }
+
+  function rotateLeft(angle) {
+
+      this._sphericalDelta.theta -= angle;
+  }
+
+  function rotateUp(angle) {
+
+      this._sphericalDelta.phi -= angle;
+  }
+
+  var panLeft = function () {
+
+      var v = new Vector3$1();
+
+      return function panLeft(distance, objectMatrix) {
+
+          v.setFromMatrixColumn(objectMatrix, 0); // get X column of objectMatrix
+          v.multiplyScalar(-distance);
+
+          this._panOffset.add(v);
+      };
+  }();
+
+  let panUp = function () {
+      let v = new Vector3$1();
+
+      return function panUp(distance, objectMatrix) {
+
+          if (this.screenSpacePanning === true) {
+
+              v.setFromMatrixColumn(objectMatrix, 1);
+          } else {
+
+              v.setFromMatrixColumn(objectMatrix, 0);
+              v.crossVectors(this.object.up, v);
+          }
+
+          v.multiplyScalar(distance);
+
+          this._panOffset.add(v);
+      };
+  }();
+
+  // deltaX and deltaY are in pixels; right and down are positive
+  var pan = function () {
+
+      var offset = new Vector3$1();
+
+      return function pan(deltaX, deltaY) {
+          let scope = this;
+          var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+          if (scope.object.isPerspectiveCamera) {
+
+              // perspective
+              var position = scope.object.position;
+              offset.copy(position).sub(scope.target);
+              var targetDistance = offset.length();
+
+              // half of the fov is center to top of screen
+              targetDistance *= Math.tan(scope.object.fov / 2 * Math.PI / 180.0);
+
+              // we use only clientHeight here so aspect ratio does not distort speed
+              panLeft.call(scope, 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix);
+              panUp.call(scope, 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix);
+          } else if (scope.object.isOrthographicCamera) {
+
+              // orthographic
+              panLeft.call(scope, deltaX * (scope.object.right - scope.object.left) / scope.object.zoom / element.clientWidth, scope.object.matrix);
+              panUp.call(scope, deltaY * (scope.object.top - scope.object.bottom) / scope.object.zoom / element.clientHeight, scope.object.matrix);
+          } else {
+
+              // camera neither orthographic nor perspective
+              console.warn('WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.');
+              scope.enablePan = false;
+          }
+      };
+  }();
+
+  function dollyIn(dollyScale) {
+      let scope = this;
+      if (scope.object.isPerspectiveCamera) {
+
+          scope._scale /= dollyScale;
+      } else if (scope.object.isOrthographicCamera) {
+
+          scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom * dollyScale));
+          scope.object.updateProjectionMatrix();
+          scope._zoomChanged = true;
+      } else {
+
+          console.warn('WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.');
+          scope.enableZoom = false;
+      }
+  }
+
+  function dollyOut(dollyScale) {
+      let scope = this;
+      if (scope.object.isPerspectiveCamera) {
+
+          scope._scale *= dollyScale;
+      } else if (scope.object.isOrthographicCamera) {
+
+          scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom / dollyScale));
+          scope.object.updateProjectionMatrix();
+          scope._zoomChanged = true;
+      } else {
+
+          console.warn('WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.');
+          scope.enableZoom = false;
+      }
+  }
+
+  //
+  // event callbacks - update the object state
+  //
+
+  function handleMouseDownRotate(event) {
+
+      //console.log( 'handleMouseDownRotate' );
+
+      this._rotateStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseDownDolly(event) {
+
+      //console.log( 'handleMouseDownDolly' );
+
+      this._dollyStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseDownPan(event) {
+
+      //console.log( 'handleMouseDownPan' );
+
+      this._panStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseMoveRotate(event) {
+      let scope = this;
+      //console.log( 'handleMouseMoveRotate' );
+
+      scope._rotateEnd.set(event.clientX, event.clientY);
+
+      scope._rotateDelta.subVectors(scope._rotateEnd, scope._rotateStart).multiplyScalar(scope.rotateSpeed);
+
+      var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+      rotateLeft.call(scope, 2 * Math.PI * scope._rotateDelta.x / element.clientHeight); // yes, height
+
+      rotateUp.call(scope, 2 * Math.PI * scope._rotateDelta.y / element.clientHeight);
+
+      scope._rotateStart.copy(scope._rotateEnd);
+
+      scope.update();
+  }
+
+  function handleMouseMoveDolly(event) {
+      let scope = this;
+      //console.log( 'handleMouseMoveDolly' );
+
+      scope._dollyEnd.set(event.clientX, event.clientY);
+
+      scope._dollyDelta.subVectors(scope._dollyEnd, scope._dollyStart);
+
+      if (scope._dollyDelta.y > 0) {
+
+          dollyIn.call(scope, getZoomScale.call(scope));
+      } else if (scope._dollyDelta.y < 0) {
+
+          dollyOut.call(scope, getZoomScale.call(scope));
+      }
+
+      scope._dollyStart.copy(scope._dollyEnd);
+
+      scope.update();
+  }
+
+  function handleMouseMovePan(event) {
+      let scope = this;
+      //console.log( 'handleMouseMovePan' );
+
+      scope._panEnd.set(event.clientX, event.clientY);
+
+      scope._panDelta.subVectors(scope._panEnd, scope._panStart).multiplyScalar(scope.panSpeed);
+
+      pan.call(scope, scope._panDelta.x, scope._panDelta.y);
+
+      scope._panStart.copy(scope._panEnd);
+
+      scope.update();
+  }
+
+  function handleMouseUp(event) {
+
+      // console.log( 'handleMouseUp' );
+
+  }
+
+  function handleMouseWheel(event) {
+      let scope = this;
+      // console.log( 'handleMouseWheel' );
+
+      if (event.deltaY < 0) {
+
+          dollyOut.call(scope, getZoomScale.call(scope));
+      } else if (event.deltaY > 0) {
+
+          dollyIn.call(scope, getZoomScale.call(scope));
+      }
+
+      scope.update();
+  }
+
+  function handleKeyDown(event) {
+      let scope = this;
+      //console.log( 'handleKeyDown' );
+
+      switch (event.keyCode) {
+
+          case scope.keys.UP:
+              pan.call(scope, 0, scope.keyPanSpeed);
+              scope.update();
+              break;
+
+          case scope.keys.BOTTOM:
+              pan.call(scope, 0, -scope.keyPanSpeed);
+              scope.update();
+              break;
+
+          case scope.keys.LEFT:
+              pan.call(scope, scope.keyPanSpeed, 0);
+              scope.update();
+              break;
+
+          case scope.keys.RIGHT:
+              pan.call(scope, -scope.keyPanSpeed, 0);
+              scope.update();
+              break;
+
+      }
+  }
+
+  function handleTouchStartRotate(event) {
+
+      //console.log( 'handleTouchStartRotate' );
+
+      this._rotateStart.set(event.touches[0].pageX, event.touches[0].pageY);
+  }
+
+  function handleTouchStartDollyPan(event) {
+      let scope = this;
+      //console.log( 'handleTouchStartDollyPan' );
+
+      if (scope.enableZoom) {
+
+          var dx = event.touches[0].pageX - event.touches[1].pageX;
+          var dy = event.touches[0].pageY - event.touches[1].pageY;
+
+          var distance = Math.sqrt(dx * dx + dy * dy);
+
+          scope._dollyStart.set(0, distance);
+      }
+
+      if (scope.enablePan) {
+
+          var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+          var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+
+          scope._panStart.set(x, y);
+      }
+  }
+
+  function handleTouchMoveRotate(event) {
+      let scope = this;
+      //console.log( 'handleTouchMoveRotate' );
+
+      scope._rotateEnd.set(event.touches[0].pageX, event.touches[0].pageY);
+
+      scope._rotateDelta.subVectors(scope._rotateEnd, scope._rotateStart).multiplyScalar(scope.rotateSpeed);
+
+      var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+      rotateLeft.call(scope, 2 * Math.PI * scope._rotateDelta.x / element.clientHeight); // yes, height
+
+      rotateUp.call(scope, 2 * Math.PI * scope._rotateDelta.y / element.clientHeight);
+
+      scope._rotateStart.copy(scope._rotateEnd);
+
+      scope.update();
+  }
+
+  function handleTouchMoveDollyPan(event) {
+      let scope = this;
+      //console.log( 'handleTouchMoveDollyPan' );
+
+      if (scope.enableZoom) {
+
+          var dx = event.touches[0].pageX - event.touches[1].pageX;
+          var dy = event.touches[0].pageY - event.touches[1].pageY;
+
+          var distance = Math.sqrt(dx * dx + dy * dy);
+
+          scope._dollyEnd.set(0, distance);
+
+          scope._dollyDelta.set(0, Math.pow(scope._dollyEnd.y / scope._dollyStart.y, scope.zoomSpeed));
+
+          dollyIn.call(scope, scope._dollyDelta.y);
+
+          scope._dollyStart.copy(scope._dollyEnd);
+      }
+
+      if (scope.enablePan) {
+
+          var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+          var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+
+          scope._panEnd.set(x, y);
+
+          scope._panDelta.subVectors(scope._panEnd, scope._panStart).multiplyScalar(scope.panSpeed);
+
+          pan.call(scope, scope._panDelta.x, panDelta.y);
+
+          scope._panStart.copy(scope._panEnd);
+      }
+
+      scope.update();
+  }
+
+  function handleTouchEnd(event) {}
+
+  //console.log( 'handleTouchEnd' );
+
+  //
+  // event handlers - FSM: listen for events and reset state
+  //
+
+  function onMouseDown(event) {
+      let scope = this;
+
+      if (scope.enabled === false) return;
+
+      event.preventDefault();
+
+      switch (event.button) {
+
+          case scope.mouseButtons.ORBIT:
+
+              if (scope.enableRotate === false) return;
+
+              handleMouseDownRotate.call(scope, event);
+
+              scope._state = STATE.ROTATE;
+
+              break;
+
+          case scope.mouseButtons.ZOOM:
+
+              if (scope.enableZoom === false) return;
+
+              handleMouseDownDolly.call(scope, event);
+
+              scope._state = STATE.DOLLY;
+
+              break;
+
+          case scope.mouseButtons.PAN:
+
+              if (scope.enablePan === false) return;
+
+              handleMouseDownPan.call(scope, event);
+
+              scope._state = STATE.PAN;
+
+              break;
+
+      }
+
+      if (scope._state !== STATE.NONE) {
+
+          document.addEventListener('mousemove', onMouseMove.bind(scope), false);
+          document.addEventListener('mouseup', onMouseUp.bind(scope), false);
+
+          scope.fire(startEvent);
+      }
+  }
+
+  function onMouseMove(event) {
+
+      let scope = this;
+
+      if (scope.enabled === false) return;
+
+      event.preventDefault();
+
+      switch (scope._state) {
+
+          case STATE.ROTATE:
+
+              if (scope.enableRotate === false) return;
+
+              handleMouseMoveRotate.call(scope, event);
+
+              break;
+
+          case STATE.DOLLY:
+
+              if (scope.enableZoom === false) return;
+
+              handleMouseMoveDolly.call(scope, event);
+
+              break;
+
+          case STATE.PAN:
+
+              if (scope.enablePan === false) return;
+
+              handleMouseMovePan.call(scope, event);
+
+              break;
+
+      }
+  }
+
+  function onMouseUp(event) {
+
+      let scope = this;
+
+      if (scope.enabled === false) return;
+
+      handleMouseUp.call(scope, event);
+
+      document.removeEventListener('mousemove', onMouseMove.bind(scope), false);
+      document.removeEventListener('mouseup', onMouseUp.bind(scope), false);
+
+      scope.fire(endEvent);
+
+      scope._state = STATE.NONE;
+  }
+
+  function onMouseWheel(event) {
+
+      let scope = this;
+
+      if (scope.enabled === false || scope.enableZoom === false || scope._state !== STATE.NONE && scope._state !== STATE.ROTATE) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      scope.fire(startEvent);
+
+      handleMouseWheel.call(scope, event);
+
+      scope.fire(endEvent);
+  }
+
+  function onKeyDown(event) {
+      let scope = this;
+
+      if (scope.enabled === false || scope.enableKeys === false || scope.enablePan === false) return;
+
+      handleKeyDown.call(scope, event);
+  }
+
+  function onTouchStart(event) {
+
+      let scope = this;
+      if (scope.enabled === false) return;
+
+      event.preventDefault();
+
+      switch (event.touches.length) {
+
+          case 1:
+              // one-fingered touch: rotate
+
+              if (scope.enableRotate === false) return;
+
+              handleTouchStartRotate.call(scope, event);
+
+              scope._state = STATE.TOUCH_ROTATE;
+
+              break;
+
+          case 2:
+              // two-fingered touch: dolly-pan
+
+              if (scope.enableZoom === false && scope.enablePan === false) return;
+
+              handleTouchStartDollyPan.call(scope, event);
+
+              scope._state = STATE.TOUCH_DOLLY_PAN;
+
+              break;
+
+          default:
+
+              scope._state = STATE.NONE;
+
+      }
+
+      if (scope._state !== STATE.NONE) {
+
+          scope.fire(startEvent);
+      }
+  }
+
+  function onTouchMove(event) {
+
+      let scope = this;
+
+      if (scope.enabled === false) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      switch (event.touches.length) {
+
+          case 1:
+              // one-fingered touch: rotate
+
+              if (scope.enableRotate === false) return;
+              if (scope._state !== STATE.TOUCH_ROTATE) return; // is this needed?
+
+              handleTouchMoveRotate.call(scope, event);
+
+              break;
+
+          case 2:
+              // two-fingered touch: dolly-pan
+
+              if (scope.enableZoom === false && scope.enablePan === false) return;
+              if (scope._state !== STATE.TOUCH_DOLLY_PAN) return; // is this needed?
+
+              handleTouchMoveDollyPan.call(scope, event);
+
+              break;
+
+          default:
+
+              scope._state = STATE.NONE;
+
+      }
+  }
+
+  function onTouchEnd(event) {
+      let scope = this;
+      if (scope.enabled === false) return;
+
+      handleTouchEnd.call(scope, event);
+
+      scope.fire(endEvent);
+
+      scope._state = STATE.NONE;
+  }
+
+  function onContextMenu(event) {
+      let scope = this;
+      if (scope.enabled === false) return;
+
+      event.preventDefault();
+  }
+
   let _cid = 0;
   class Chart3d extends Events {
       constructor(opt) {
@@ -16908,6 +17745,8 @@
               distance: 1100, //默认相机距离
               maxDistance: 3000, //最大相机距离
               minDistance: 600, //最小相机距离 
+              minZoom: 0.2, //正交投影缩小的最小值
+              maxZoom: 1.5, //正交投影放大的最大值
 
               alpha: 40, //绕X轴旋转
               beta: 20, //绕Y轴旋转
@@ -16920,20 +17759,54 @@
           this.inited = false;
           this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
+
           this.init();
       }
       init() {
-
+          let me = this;
           let rendererOpts = _.extend({}, this.DefaultControls);
-
-          _.extend(rendererOpts, this.opt.controls);
-          _.extend(this.opt, rendererOpts);
+          this.opt.controls = this.opt.controls || {};
+          let controlOpts = this.opt.controls = _.extend(rendererOpts, this.opt.controls);
 
           this._initRenderer(rendererOpts);
 
+          let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
+
+          controls.minDistance = controlOpts.minDistance;
+          controls.maxDistance = controlOpts.maxDistance;
+
+          controls.minZoom = controlOpts.minZoom;
+          controls.maxZoom = controlOpts.maxZoom;
+          controls.enableDamping = true;
+          controls.enablePan = false;
+          controls.enableKeys = false;
+          controls.autoRotate = true;
+          controls.autoRotateSpeed = 1.0;
+
+          //自动旋转时间
+          window.setTimeout(() => {
+              controls.autoRotate = false;
+          }, 15000);
+
+          //如果发生交互停止自动旋转
+          controls.on('start', () => {
+              controls.autoRotate = false;
+          });
+          //有交互开始渲染
+          controls.on('change', () => {
+              me.app._framework.isUpdate = true;
+          });
+
+          this.app._framework.on('renderbefore', () => {
+              if (controls.position0.equals(controls.object.position) && controls.zoom0 === controls.object.zoom) {
+                  return;
+              }
+              controls.saveState();
+              controls.update();
+          });
+
           //启动渲染进程
           this.app.launch();
-
           window.addEventListener('resize', this.resize.bind(this), false);
       }
       setCoord(_Coord) {
@@ -17078,6 +17951,9 @@
       setOrigin(pos) {
           this.origin.copy(pos);
       }
+      getOrigin() {
+          return this.origin.clone();
+      }
 
       setDir(dir) {
           this.dir.copy(dir);
@@ -17099,6 +17975,24 @@
       draw() {
 
           this.group.add(this.axis);
+      }
+      dispose() {
+          let remove = [];
+          this.group.traverse(obj => {
+              if (obj.isLine2) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                  }
+                  remove.push(obj);
+              }
+          });
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
       }
 
       // getBoundBox() {
@@ -17176,7 +18070,7 @@
           let me = this;
           let _dir = new Vector3$1();
           let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-
+          this.origins = [];
           attribute.section.forEach((num, index) => {
               //起点
               let val = fn.call(this._coordSystem, num);
@@ -17214,18 +18108,36 @@
           this.group.add(this._tickLine);
       }
 
-      getBoundBox() {
-          let result = new Box3();
-          result.makeEmpty();
-          this._tickLine.traverse(function (mesh) {
-              if (mesh instanceof Mesh) {
-                  mesh.geometry.computeBoundingBox();
-                  result.expandByPoint(mesh.geometry.boundingBox.min);
-                  result.expandByPoint(mesh.geometry.boundingBox.max);
+      // getBoundBox() {
+      //     let result = new Box3();
+      //     result.makeEmpty();
+      //     this._tickLine.traverse(function (mesh) {
+      //         if (mesh instanceof Mesh) {
+      //             mesh.geometry.computeBoundingBox();
+      //             result.expandByPoint(mesh.geometry.boundingBox.min);
+      //             result.expandByPoint(mesh.geometry.boundingBox.max);
+      //         }
+      //     });
+
+      //     return result;
+      // }
+      dispose() {
+          let remove = [];
+          this.group.traverse(obj => {
+              if (obj.isLine2) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                  }
+                  remove.push(obj);
               }
           });
-
-          return result;
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
       }
   }
 
@@ -17293,6 +18205,7 @@
           let me = this;
           let _dir = new Vector3$1();
           let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
+          this.origins = [];
 
           attribute.section.forEach((num, index) => {
               //起点
@@ -17342,29 +18255,51 @@
 
           this.group.add(this._tickTextGroup);
       }
-      getBoundBox() {
-          //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
-          //没有计算文本旋转后的长度
-          let result = new Box3();
-          result.makeEmpty();
-          this._tickTexts.traverse(function (sprite) {
-              if (sprite instanceof Sprite) {
-                  let min = new Vector3$1();
-                  let max = new Vector3$1();
-                  let halfScale = new Vector3$1();
-                  halfScale.copy(sprite.scale);
-                  halfScale.multiplyScalar(0.5);
-                  min.copy(sprite.position);
-                  max.copy(sprite.position);
+      // getBoundBox() {
+      //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
+      //     //没有计算文本旋转后的长度
+      //     let result = new Box3();
+      //     result.makeEmpty();
+      //     this._tickTexts.traverse(function (sprite) {
+      //         if (sprite instanceof Sprite) {
+      //             let min = new Vector3();
+      //             let max = new Vector3();
+      //             let halfScale = new Vector3();
+      //             halfScale.copy(sprite.scale);
+      //             halfScale.multiplyScalar(0.5);
+      //             min.copy(sprite.position);
+      //             max.copy(sprite.position);
 
-                  min.sub(halfScale);
-                  max.add(halfScale);
+      //             min.sub(halfScale);
+      //             max.add(halfScale);
 
-                  result.expandByPoint(min);
-                  result.expandByPoint(max);
+      //             result.expandByPoint(min);
+      //             result.expandByPoint(max);
+      //         }
+      //     });
+      //     return result;
+      // }
+      dispose() {
+          //todo sprite重构
+          let remove = [];
+          this.group.traverse(obj => {
+              if (obj.isTextSprite) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                      if (obj.material.map) {
+                          obj.material.map.dispose();
+                      }
+                  }
+                  remove.push(obj);
               }
           });
-          return result;
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
       }
 
   }
@@ -17474,7 +18409,7 @@
       }
 
       init(opt, data) {
-
+          let me = this;
           //extend会设置好this.field
           //先要矫正子啊field确保一定是个array
           if (!_.isArray(this.field)) {
@@ -17483,12 +18418,15 @@
           this._initData(data);
 
           this.group = this._root.renderView.addGroup({ name: 'yAxisLeft' });
-          // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesGroup' });
-          // this.group.add(this.rulesGroup);
 
+          this._root.orbitControls.on('change', () => {
+
+              me._initModules();
+          });
+          me._initModules();
       }
       _initModules() {
-          //初始化轴线
+          if (!this.enabled) return;
           const _axisDir = new Vector3$1(0, 1, 0);
           const _coordSystem = this._coordSystem;
           let coordBoundBox = _coordSystem.getBoundbox();
@@ -17500,49 +18438,83 @@
               z: depth
           } = _size;
           let origin = _coordSystem.getOrigin();
+          let _tickLineDir = new Vector3$1(0, 0, 1);
           let _faceInfo = this._cartesionUI.getFaceInfo();
 
           if (_faceInfo.left.visible) {
               if (_faceInfo.back.visible) {
                   origin = _coordSystem.getOrigin();
+                  _tickLineDir = new Vector3$1(0, 0, 1);
               } else {
                   origin = new Vector3$1(0, 0, -depth);
+                  _tickLineDir = new Vector3$1(0, 0, -1);
               }
           } else {
               if (_faceInfo.back.visible) {
                   origin = new Vector3$1(width, 0, 0);
+                  _tickLineDir = new Vector3$1(0, 0, 1);
               } else {
                   origin = new Vector3$1(width, 0, -depth);
+                  _tickLineDir = new Vector3$1(0, 0, -1);
               }
           }
 
-          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-          this._axisLine.setDir(_axisDir);
-          this._axisLine.setOrigin(origin);
-          this._axisLine.setLength(coordBoundBox.max.y);
-          this._axisLine.setGroupName('yAxisLine');
-          this._axisLine.drawStart();
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+              this._axisLine.dispose();
+              this._axisLine.setOrigin(origin);
+              this._axisLine.drawStart();
+              this._axisLine.draw();
 
-          this.group.add(this._axisLine.group);
+              //二次绘制
+              this._tickLine.dispose();
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+              this._tickLine.drawStart();
+              this._tickLine.draw();
 
-          //初始化tickLine
-          const _tickLineDir = new Vector3$1(0, 0, 1);
-          this._tickLine = new TickLines(_coordSystem, this.tickLine);
-          this._tickLine.setDir(_tickLineDir);
-          this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
-          this._tickLine.drawStart();
+              this._tickText.dispose();
 
-          this.group.add(this._tickLine.group);
-          this._tickText = new TickTexts(_coordSystem, this.label);
-          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
 
-          this._tickText.setDir(_tickLineDir);
-          this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+              this._tickText.drawStart(this._formatTextSection);
+              this._tickText.draw();
+          } else {
+              //初始化轴线
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(coordBoundBox.max.y);
+              this._axisLine.setGroupName('yAxisLine');
+              this._axisLine.drawStart();
 
-          //this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute);
+              this.group.add(this._axisLine.group);
 
-          this._tickText.drawStart(this._formatTextSection);
-          this.group.add(this._tickText.group);
+              //初始化tickLine
+
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+              this._tickLine.drawStart();
+              this.group.add(this._tickLine.group);
+
+              // 初始化tickText
+              this._tickText = new TickTexts(_coordSystem, this.label);
+              this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+
+              this._tickText.drawStart(this._formatTextSection);
+              this.group.add(this._tickText.group);
+          }
+      }
+      updateAxis() {
+          //这里可能需要重构
+          //todo 根据相机移动计算tickLine & tickText的位置 
       }
       _getName() {}
       _initData(data) {
@@ -17629,8 +18601,8 @@
       setLayout(opt) {}
 
       draw() {
-          this._initModules();
-
+          //this._initModules();
+          if (!this.enabled) return;
           this._axisLine.draw();
           this._tickLine.draw();
           this._tickText.draw();
@@ -17809,6 +18781,7 @@
 
       }
       init(opt, data) {
+          let me = this;
           this.group = this._root.renderView.addGroup({ name: 'xAxis' });
 
           // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
@@ -17816,6 +18789,11 @@
           // this.group.add(this.rulesGroup);
 
           this._initHandle(data);
+
+          this._root.orbitControls.on('change', () => {
+              me._initModules();
+          });
+          me._initModules();
       }
       _initHandle(data) {
           var me = this;
@@ -17884,34 +18862,89 @@
           const _coordSystem = this._coordSystem;
           let coordBoundBox = _coordSystem.getBoundbox();
 
-          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-          this._axisLine.setDir(_axisDir);
-          this._axisLine.setOrigin(_coordSystem.getOrigin());
-          this._axisLine.setLength(coordBoundBox.max.x);
-          this._axisLine.setGroupName('xAxisLine');
-          this._axisLine.drawStart();
+          let _size = new Vector3$1(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+          let origin = _coordSystem.getOrigin();
+          let _tickLineDir = new Vector3$1(0, 0, 1);
+          let _faceInfo = this._cartesionUI.getFaceInfo();
 
-          this.group.add(this._axisLine.group);
+          if (_faceInfo.bottom.visible) {
+              if (_faceInfo.back.visible) {
+                  origin = _coordSystem.getOrigin();
+                  _tickLineDir = new Vector3$1(0, 0, 1);
+              } else {
+                  origin = new Vector3$1(0, 0, -depth);
+                  _tickLineDir = new Vector3$1(0, 0, -1);
+              }
+          } else {
+              //top 可见
+              if (_faceInfo.back.visible) {
+                  origin = new Vector3$1(0, height, 0);
+                  _tickLineDir = new Vector3$1(0, 0, 1);
+              } else {
+                  origin = new Vector3$1(0, height, -depth);
+                  _tickLineDir = new Vector3$1(0, 0, -1);
+              }
+          }
 
-          //初始化tickLine
-          const _tickLineDir = new Vector3$1(0, 0, 1);
-          this._tickLine = new TickLines(_coordSystem, this.tickLine);
-          this._tickLine.setDir(_tickLineDir);
-          this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-          this._tickLine.drawStart();
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+              this._axisLine.dispose();
+              this._axisLine.setOrigin(origin);
+              this._axisLine.drawStart();
+              this._axisLine.draw();
 
-          this.group.add(this._tickLine.group);
+              //二次绘制
+              this._tickLine.dispose();
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+              this._tickLine.drawStart();
+              this._tickLine.draw();
 
-          //初始化tickText
-          this._tickText = new TickTexts(_coordSystem, this.label);
-          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+              this._tickText.dispose();
 
-          this._tickText.setDir(_tickLineDir);
-          this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
 
-          //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
-          this._tickText.drawStart(this._formatTextSection);
-          this.group.add(this._tickText.group);
+              this._tickText.drawStart(this._formatTextSection);
+              this._tickText.draw();
+          } else {
+
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(coordBoundBox.max.x);
+              this._axisLine.setGroupName('xAxisLine');
+              this._axisLine.drawStart();
+
+              this.group.add(this._axisLine.group);
+
+              //初始化tickLine
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+              this._tickLine.drawStart();
+
+              this.group.add(this._tickLine.group);
+
+              //初始化tickText
+              this._tickText = new TickTexts(_coordSystem, this.label);
+              this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+
+              //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
+              this._tickText.drawStart(this._formatTextSection);
+              this.group.add(this._tickText.group);
+          }
       }
       _getName() {
           // if ( this.title.content ) {
@@ -17931,6 +18964,11 @@
           //         this._title.resetText( this.title.content );
           //     }
           // }
+      }
+
+      updateAxis() {
+          //这里可能需要重构
+          //todo 根据相机移动计算tickLine & tickText的位置 
       }
 
       _setXAxisHeight() {
@@ -17957,7 +18995,7 @@
       //设置布局
       setLayout(opt) {}
       draw() {
-          this._initModules();
+
           this._axisLine.draw();
           this._tickLine.draw();
           this._tickText.draw();
@@ -18064,6 +19102,7 @@
           this.init(opt, this._coordSystem.zAxisAttribute);
       }
       init(opt, data) {
+          let me = this;
           this.group = this._root.renderView.addGroup({ name: 'zAxis' });
 
           // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
@@ -18071,6 +19110,11 @@
           // this.group.add(this.rulesGroup);
 
           this._initHandle(data);
+          this._root.orbitControls.on('change', () => {
+
+              me._initModules();
+          });
+          me._initModules();
       }
       _initHandle(data) {
           var me = this;
@@ -18139,40 +19183,93 @@
           const _axisDir = new Vector3$1(0, 0, -1);
           const _coordSystem = this._coordSystem;
           let coordBoundBox = _coordSystem.getBoundbox();
-          let size = new Vector3$1();
-          coordBoundBox.getSize(size);
+          let _size = new Vector3$1();
+          coordBoundBox.getSize(_size);
 
-          this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-          this._axisLine.setDir(_axisDir);
-          let origin = _coordSystem.getOrigin();
-          origin.setX(coordBoundBox.max.x);
-          this._axisLine.setOrigin(origin);
-          this._axisLine.setLength(size.z);
-          this._axisLine.setGroupName('zAxisLine');
-          this._axisLine.drawStart();
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
 
-          this.group.add(this._axisLine.group);
+          let origin = new Vector3$1(width, 0, 0);
+          let _tickLineDir = new Vector3$1(1, 0, 0);
+          let _faceInfo = this._cartesionUI.getFaceInfo();
 
-          //初始化tickLine
-          const _tickLineDir = new Vector3$1(1, 0, 0);
-          this._tickLine = new TickLines(_coordSystem, this.tickLine);
-          this._tickLine.setDir(_tickLineDir);
-          this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-          this._tickLine.drawStart();
+          if (_faceInfo.bottom.visible) {
+              if (_faceInfo.left.visible) {
+                  origin = new Vector3$1(width, 0, 0);
+                  _tickLineDir = new Vector3$1(1, 0, 0);
+              } else {
+                  origin = new Vector3$1(0, 0, 0);
+                  _tickLineDir = new Vector3$1(-1, 0, 0);
+              }
+          } else {
+              //top 可见
+              if (_faceInfo.left.visible) {
+                  origin = new Vector3$1(width, height, 0);
+                  _tickLineDir = new Vector3$1(1, 0, 0);
+              } else {
+                  origin = new Vector3$1(0, height, 0);
+                  _tickLineDir = new Vector3$1(-1, 0, 0);
+              }
+          }
 
-          this.group.add(this._tickLine.group);
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+              this._axisLine.dispose();
+              this._axisLine.setOrigin(origin);
+              this._axisLine.drawStart();
+              this._axisLine.draw();
 
-          //初始化tickText
+              //二次绘制
+              this._tickLine.dispose();
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+              this._tickLine.drawStart();
+              this._tickLine.draw();
 
-          this._tickText = new TickTexts(_coordSystem, this.label);
-          this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+              this._tickText.dispose();
 
-          this._tickText.setDir(_tickLineDir);
-          this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
 
-          //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
-          this._tickText.drawStart(this._formatTextSection);
-          this.group.add(this._tickText.group);
+              this._tickText.drawStart(this._formatTextSection);
+              this._tickText.draw();
+          } else {
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(depth);
+              this._axisLine.setGroupName('zAxisLine');
+              this._axisLine.drawStart();
+
+              this.group.add(this._axisLine.group);
+
+              //初始化tickLine
+
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+              this._tickLine.drawStart();
+
+              this.group.add(this._tickLine.group);
+
+              //初始化tickText
+
+              this._tickText = new TickTexts(_coordSystem, this.label);
+              this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 20;
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+
+              //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
+              this._tickText.drawStart(this._formatTextSection);
+              this.group.add(this._tickText.group);
+          }
       }
       _getName() {
           // if ( this.title.content ) {
@@ -18249,7 +19346,7 @@
       //设置布局
       setLayout(opt) {}
       draw() {
-          this._initModules();
+
           this._axisLine.draw();
           this._tickLine.draw();
           this._tickText.draw();
@@ -18293,7 +19390,7 @@
           this.init();
       }
       init() {
-
+          let me = this;
           this.group = this._root.renderView.addGroup({ name: 'grid' });
 
           this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' }); //x轴上的线集合
@@ -18309,6 +19406,14 @@
           this.group.add(this.bottomGroup);
           this.group.add(this.frontGroup);
           this.group.add(this.backGroup);
+
+          this._root.orbitControls.on('change', () => {
+              if (!me.enabled) return;
+              let _faceInfo = me._cartesionUI.getFaceInfo();
+              _.each(_faceInfo, (value, key) => {
+                  me[key + 'Group'].visible = value.visible;
+              });
+          });
       }
 
       drawFace() {
@@ -18574,6 +19679,7 @@
       }
 
       getFaceInfo() {
+          //todo 待优化
           let _coordSystem = this._coordSystem;
           let coordBoundBox = _coordSystem.getBoundbox();
           let _size = new Vector3$1(); //空间盒子的大小
@@ -18601,7 +19707,8 @@
               //左后下 
           rbt = new Vector3$1(width, height, -depth); //左后上
 
-          let cameraPos = this._root.renderView._camera.getWorldPosition();
+          let cameraPos = new Vector3$1();
+          this._root.renderView._camera.getWorldPosition(cameraPos);
 
           let zDir = new Vector3$1(0, 0, 1);
           let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
@@ -18807,6 +19914,11 @@
                   //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
                   //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
                   posParseToInt: false
+              },
+              zAxis: {
+                  field: '',
+                  layoutType: "peak",
+                  depth: 50 //最大深度是1000
               }
           };
 
@@ -18886,17 +19998,11 @@
               } else {
                   _rys.push(yAxis);
               }
+              if (!yAxis.layoutType) {
+                  yAxis.layoutType = 'proportion'; //默认布局
+              }
           });
           opts.coord.yAxis = _lys.concat(_rys);
-
-          //todo Z坐标初始化
-
-          if (!opts.coord.zAxis) {
-              this.coord.zAxis = {
-                  field: '',
-                  depth: 500 //最大深度是1000
-              };
-          }
 
           return opts;
       }
@@ -19143,6 +20249,10 @@
           _camera.position.copy(newPos);
           //相机朝向中心点 
           _camera.lookAt(center);
+
+          //orbite target position
+          this._root.orbitControls.target.copy(center);
+
           //测试中心点的位置
           let helpLine = this._root.renderView.createLine([center.clone()], new Vector3$1(1, 0, 0), 123, 1, 'red');
           let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3$1(-1, 0, 0), 500, 1, 'red');
@@ -19203,8 +20313,7 @@
           let _range = this.boundbox.max.x - this.boundbox.min.x;
           let dataLen = this.xAxisAttribute.section.length;
           let ind = _.indexOf(this.xAxisAttribute.section, data); //先不考虑不存在的值
-          var layoutType = this._coordUI._xAxis.layoutType;
-
+          var layoutType = this.coord.xAxis.layoutType;
           if (dataLen == 1) {
               _val = _range / 2;
           } else {
@@ -19237,7 +20346,10 @@
           let _range = this.boundbox.max.y - this.boundbox.min.y;
           let dataLen = this.yAxisAttribute.section.length;
           let ind = _.indexOf(this.yAxisAttribute.section, data); //先不考虑不存在的值
-          let layoutType = this._coordUI._yAxisLeft.layoutType;
+          let _yAxisLeft = _.find(this.coord.yAxis, yaxis => {
+              return yaxis.align == 'left';
+          });
+          let layoutType = _yAxisLeft.layoutType;
 
           let maxVal = Math.max.apply(null, this.yAxisAttribute.section);
           let minVal = Math.min.apply(null, this.yAxisAttribute.section);
@@ -19273,7 +20385,7 @@
           let _range = this.boundbox.max.z - this.boundbox.min.z;
           let dataLen = this.zAxisAttribute.section.length;
           let ind = _.indexOf(this.zAxisAttribute.section, data); //先不考虑不存在的值
-          var layoutType = this._coordUI._zAxis.layoutType;
+          var layoutType = this.coord.zAxis.layoutType;
 
           if (dataLen == 1) {
               _val = _range / 2;

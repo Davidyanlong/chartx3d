@@ -8,12 +8,14 @@ import DataFrame from "../utils/dataframe";
 
 
 import { Events } from 'mmgl/src/index';
+import { OrbitControls } from './framework/OrbitControls';
 
 
 let _cid = 0;
 class Chart3d extends Events {
     constructor(opt) {
         super();
+
 
         this.domSelector = opt.el;
         this.opt = opt.opts;
@@ -62,6 +64,8 @@ class Chart3d extends Events {
             distance: 1100,        //默认相机距离
             maxDistance: 3000,     //最大相机距离
             minDistance: 600,      //最小相机距离 
+            minZoom: 0.2,           //正交投影缩小的最小值
+            maxZoom: 1.5,           //正交投影放大的最大值
 
             alpha: 40,    //绕X轴旋转
             beta: 20,      //绕Y轴旋转
@@ -75,22 +79,61 @@ class Chart3d extends Events {
         this.inited = false;
         this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
+
         this.init();
 
 
     }
     init() {
-
+        let me = this;
         let rendererOpts = _.extend({}, this.DefaultControls);
-
-        _.extend(rendererOpts, this.opt.controls);
-        _.extend(this.opt, rendererOpts);
+        this.opt.controls = this.opt.controls || {};
+        let controlOpts = this.opt.controls = _.extend(rendererOpts, this.opt.controls);
 
         this._initRenderer(rendererOpts);
 
+
+
+
+        let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
+
+
+        controls.minDistance = controlOpts.minDistance;
+        controls.maxDistance = controlOpts.maxDistance;
+
+        controls.minZoom = controlOpts.minZoom;
+        controls.maxZoom = controlOpts.maxZoom;
+        controls.enableDamping = true;
+        controls.enablePan = false;
+        controls.enableKeys = false;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 1.0
+
+        //自动旋转时间
+        window.setTimeout(() => {
+            controls.autoRotate = false;
+        }, 15000);
+
+        //如果发生交互停止自动旋转
+        controls.on('start', () => {
+            controls.autoRotate = false
+        });
+        //有交互开始渲染
+        controls.on('change', () => {
+            me.app._framework.isUpdate = true;
+        });
+
+        this.app._framework.on('renderbefore', () => {
+            if (controls.position0.equals(controls.object.position) && controls.zoom0 === controls.object.zoom) {
+                return;
+            }
+            controls.saveState();
+            controls.update();
+
+        });
+
         //启动渲染进程
         this.app.launch();
-
         window.addEventListener('resize', this.resize.bind(this), false);
     }
     setCoord(_Coord) {
@@ -183,8 +226,8 @@ class Chart3d extends Events {
         renderView.setSize(this.width, this.height);
         // renderView.setBackground(0xFFFFFF);
 
-         //默认透视投影
-         this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
+        //默认透视投影
+        this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
     }
     resize() {
         this.width = this.el.offsetWidth;
@@ -205,3 +248,4 @@ class Chart3d extends Events {
 }
 
 export { Chart3d };
+

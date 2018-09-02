@@ -134,6 +134,7 @@ class Cartesian3DUI extends Component {
     }
 
     getFaceInfo() {
+        //todo 待优化
         let _coordSystem = this._coordSystem;
         let coordBoundBox = _coordSystem.getBoundbox();
         let _size = new Vector3(); //空间盒子的大小
@@ -154,7 +155,8 @@ class Cartesian3DUI extends Component {
             rbb = new Vector3(width, 0, -depth),       //左后下 
             rbt = new Vector3(width, height, -depth);  //左后上
 
-        let cameraPos = this._root.renderView._camera.getWorldPosition();
+        let cameraPos = new Vector3(); 
+        this._root.renderView._camera.getWorldPosition(cameraPos);
 
         let zDir = new Vector3(0, 0, 1);
         let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);

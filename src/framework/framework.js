@@ -1,5 +1,5 @@
 
-import { WebGLRenderer ,Events } from "mmgl/src/index"
+import { WebGLRenderer, Events } from "mmgl/src/index"
 
 class Framework extends Events {
     constructor() {
@@ -7,7 +7,8 @@ class Framework extends Events {
 
         this.layers = [];
         this.isUpdate = true;
-
+        this.currTick = new Date();
+        this.lastTick = null;
         this.renderer = null;
 
     }
@@ -34,7 +35,7 @@ class Framework extends Events {
             this.view.innerHTML = '很抱歉,您的浏览器不能展示3D图表!'
             console.error(e);
             return;
-       }
+        }
 
     }
 
@@ -42,16 +43,17 @@ class Framework extends Events {
 
     render() {
 
-        var redraw = this.isUpdate;
-        //this.isUpdate = false;
-        this.fire({ type: 'renderbefor' });
+        let redraw = this.isUpdate;
+        this.isUpdate = false;
+        this.fire({ type: 'renderbefore' });
         if (redraw) {
             this.layers.forEach(view => {
-              
-                    this.renderer.render(view._scene, view._camera)
-                
+
+                this.renderer.render(view._scene, view._camera)
+
             });
         }
+       
     }
 
     renderFrame() {

@@ -55,6 +55,11 @@ class Cartesian3D extends InertialSystem {
                 //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
                 //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
                 posParseToInt: false
+            },
+            zAxis: {
+                field: '',
+                layoutType: "peak",
+                depth: 50     //最大深度是1000
             }
         };
 
@@ -70,6 +75,7 @@ class Cartesian3D extends InertialSystem {
         } else {
             opts.coord.yAxis = [];
         }
+
 
         //根据opt中得Graphs配置，来设置 coord.yAxis
         if (opts.graphs) {
@@ -101,6 +107,7 @@ class Cartesian3D extends InertialSystem {
                     } else {
                         if (!optsYaxisObj.align) {
                             optsYaxisObj.align = align;
+
                         }
                     }
 
@@ -139,18 +146,12 @@ class Cartesian3D extends InertialSystem {
             } else {
                 _rys.push(yAxis);
             }
+            if (!yAxis.layoutType) {
+                yAxis.layoutType = 'proportion'; //默认布局
+            }
+
         });
         opts.coord.yAxis = _lys.concat(_rys);
-
-
-        //todo Z坐标初始化
-
-        if (!opts.coord.zAxis) {
-            this.coord.zAxis = {
-                field: '',
-                depth: 500     //最大深度是1000
-            }
-        }
 
         return opts;
     }
@@ -418,6 +419,12 @@ class Cartesian3D extends InertialSystem {
         _camera.position.copy(newPos);
         //相机朝向中心点 
         _camera.lookAt(center);
+
+
+        //orbite target position
+        this._root.orbitControls.target.copy(center);
+
+
         //测试中心点的位置
         let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
         let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
@@ -481,8 +488,7 @@ class Cartesian3D extends InertialSystem {
         let _range = this.boundbox.max.x - this.boundbox.min.x;
         let dataLen = this.xAxisAttribute.section.length;
         let ind = _.indexOf(this.xAxisAttribute.section, data);//先不考虑不存在的值
-        var layoutType = this._coordUI._xAxis.layoutType;
-
+        var layoutType = this.coord.xAxis.layoutType;
         if (dataLen == 1) {
             _val = _range / 2;
 
@@ -523,7 +529,10 @@ class Cartesian3D extends InertialSystem {
         let _range = this.boundbox.max.y - this.boundbox.min.y;
         let dataLen = this.yAxisAttribute.section.length;
         let ind = _.indexOf(this.yAxisAttribute.section, data);//先不考虑不存在的值
-        let layoutType = this._coordUI._yAxisLeft.layoutType;
+        let _yAxisLeft = _.find(this.coord.yAxis, yaxis => {
+            return yaxis.align == 'left'
+        })
+        let layoutType = _yAxisLeft.layoutType;
 
         let maxVal = Math.max.apply(null, this.yAxisAttribute.section);
         let minVal = Math.min.apply(null, this.yAxisAttribute.section);
@@ -566,8 +575,7 @@ class Cartesian3D extends InertialSystem {
         let _range = this.boundbox.max.z - this.boundbox.min.z;
         let dataLen = this.zAxisAttribute.section.length;
         let ind = _.indexOf(this.zAxisAttribute.section, data);//先不考虑不存在的值
-        var layoutType = this._coordUI._zAxis.layoutType;
-
+        var layoutType = this.coord.zAxis.layoutType;
 
         if (dataLen == 1) {
             _val = _range / 2;

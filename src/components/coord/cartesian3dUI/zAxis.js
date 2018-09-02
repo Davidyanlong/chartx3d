@@ -108,6 +108,7 @@ class ZAxis extends Component {
 
     }
     init(opt, data) {
+        let me = this;
         this.group = this._root.renderView.addGroup({ name: 'zAxis' });
 
         // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
@@ -115,6 +116,11 @@ class ZAxis extends Component {
         // this.group.add(this.rulesGroup);
 
         this._initHandle(data);
+        this._root.orbitControls.on('change', () => {
+
+            me._initModules();
+        })
+        me._initModules();
     }
     _initHandle(data) {
         var me = this;
@@ -189,45 +195,98 @@ class ZAxis extends Component {
         const _axisDir = new Vector3(0, 0, -1);
         const _coordSystem = this._coordSystem;
         let coordBoundBox = _coordSystem.getBoundbox();
-        let size = new Vector3();
-        coordBoundBox.getSize(size);
+        let _size = new Vector3();
+        coordBoundBox.getSize(_size);
+
+        let {
+            x: width,
+            y: height,
+            z: depth
+        } = _size;
+
+        let origin = new Vector3(width, 0, 0);
+        let _tickLineDir = new Vector3(1, 0, 0);
+        let _faceInfo = this._cartesionUI.getFaceInfo();
+
+        if (_faceInfo.bottom.visible) {
+            if (_faceInfo.left.visible) {
+                origin = new Vector3(width, 0, 0);
+                _tickLineDir = new Vector3(1, 0, 0);
+            } else {
+                origin = new Vector3(0, 0, 0);
+                _tickLineDir = new Vector3(-1, 0, 0);
+            }
+        } else {
+            //top 可见
+            if (_faceInfo.left.visible) {
+                origin = new Vector3(width, height, 0);
+                _tickLineDir = new Vector3(1, 0, 0);
+            } else {
+                origin = new Vector3(0, height, 0)
+                _tickLineDir = new Vector3(-1, 0, 0);
+            }
+        }
+
+        if (this._axisLine) {
+            if (this._axisLine.getOrigin().equals(origin)) {
+                return;
+            }
+            this._axisLine.dispose();
+            this._axisLine.setOrigin(origin);
+            this._axisLine.drawStart();
+            this._axisLine.draw();
+
+            //二次绘制
+            this._tickLine.dispose();
+            this._tickLine.setDir(_tickLineDir);
+            this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickLine.drawStart();
+            this._tickLine.draw();
+
+            this._tickText.dispose();
+
+            this._tickText.setDir(_tickLineDir);
+            this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+
+            this._tickText.drawStart(this._formatTextSection);
+            this._tickText.draw();
 
 
-        this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-        this._axisLine.setDir(_axisDir);
-        let origin = _coordSystem.getOrigin();
-        origin.setX(coordBoundBox.max.x);
-        this._axisLine.setOrigin(origin);
-        this._axisLine.setLength(size.z);
-        this._axisLine.setGroupName('zAxisLine')
-        this._axisLine.drawStart();
+        } else {
+            this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+            this._axisLine.setDir(_axisDir);
 
-        this.group.add(this._axisLine.group);
+            this._axisLine.setOrigin(origin);
+            this._axisLine.setLength(depth);
+            this._axisLine.setGroupName('zAxisLine')
+            this._axisLine.drawStart();
 
-
-        //初始化tickLine
-        const _tickLineDir = new Vector3(1, 0, 0);
-        this._tickLine = new TickLines(_coordSystem, this.tickLine);
-        this._tickLine.setDir(_tickLineDir);
-        this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-        this._tickLine.drawStart();
-
-        this.group.add(this._tickLine.group);
+            this.group.add(this._axisLine.group);
 
 
-        //初始化tickText
+            //初始化tickLine
 
-        this._tickText = new TickTexts(_coordSystem, this.label);
-        this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
+            this._tickLine = new TickLines(_coordSystem, this.tickLine);
+            this._tickLine.setDir(_tickLineDir);
+            this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickLine.drawStart();
 
-        this._tickText.setDir(_tickLineDir);
-        this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this.group.add(this._tickLine.group);
 
-        //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
-        this._tickText.drawStart(this._formatTextSection);
-        this.group.add(this._tickText.group);
-        
 
+            //初始化tickText
+
+            this._tickText = new TickTexts(_coordSystem, this.label);
+            this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 20;
+
+            this._tickText.setDir(_tickLineDir);
+            this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+
+            //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
+            this._tickText.drawStart(this._formatTextSection);
+            this.group.add(this._tickText.group);
+
+        }
     }
     _getName() {
         // if ( this.title.content ) {
@@ -307,7 +366,7 @@ class ZAxis extends Component {
 
     }
     draw() {
-        this._initModules();
+
         this._axisLine.draw();
         this._tickLine.draw();
         this._tickText.draw();

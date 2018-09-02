@@ -300,10 +300,10 @@ class View {
         let triangleVertices = [];
         origins.forEach(origin => {
             triangleVertices = [];
-            triangleVertices.push(origin.toArray());
+            triangleVertices.push([0,0,0]);
 
             let endPoint = new Vector3();
-            endPoint.copy(origin);
+            //endPoint.copy([0,0,0]);
             let delta = new Vector3();
             delta.copy(direction);
             delta.multiplyScalar(length);
@@ -318,6 +318,7 @@ class View {
             line.drawMode = TrianglesDrawMode;
             line.computeLineDistances();
             line.scale.set(1, 1, 1);
+            line.position.copy(origin);
             group.add(line);
 
         })

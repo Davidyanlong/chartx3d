@@ -12,7 +12,7 @@ import { Vector3, Box3, Mesh } from 'mmgl/src/index';
 
 
 class TickLines extends Component {
-    constructor(_coordSystem,opts) {
+    constructor(_coordSystem, opts) {
         super(_coordSystem);
 
         //点的起点位置集合
@@ -35,17 +35,17 @@ class TickLines extends Component {
         this._tickLine = null;
 
         this.group = this._root.renderView.addGroup({ name: 'tickLine' });
-       
+
         this.group.visible = !!opts.enabled;
     }
-    initData(axis,attribute,fn) {
+    initData(axis, attribute, fn) {
         let me = this;
         let _dir = new Vector3();
         let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-       
+        this.origins = [];
         attribute.section.forEach((num, index) => {
             //起点
-            let val = fn.call(this._coordSystem,num)
+            let val = fn.call(this._coordSystem, num)
             let startPoint = axis.dir.clone().multiplyScalar(val);
             startPoint.add(axis.origin);
             startPoint.add(_offset);
@@ -53,20 +53,20 @@ class TickLines extends Component {
 
         });
     }
-    set length(len){
-        let ratio=this._coordSystem.getRatioPixelToWorldByOrigin();
+    set length(len) {
+        let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
         this._length = len * ratio;
     }
-    get length(){
+    get length() {
         return this._length;
     }
 
-    set offset(_offset){
-        let ratio=this._coordSystem.getRatioPixelToWorldByOrigin();
+    set offset(_offset) {
+        let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
         this._offset = _offset * ratio;
     }
 
-    get offset(){
+    get offset() {
         return this._offset;
     }
 
@@ -81,18 +81,40 @@ class TickLines extends Component {
         this.group.add(this._tickLine);
     }
 
-    getBoundBox() {
-        let result = new Box3();
-        result.makeEmpty();
-        this._tickLine.traverse(function (mesh) {
-            if (mesh instanceof Mesh) {
-                mesh.geometry.computeBoundingBox();
-                result.expandByPoint(mesh.geometry.boundingBox.min);
-                result.expandByPoint(mesh.geometry.boundingBox.max);
+
+
+    // getBoundBox() {
+    //     let result = new Box3();
+    //     result.makeEmpty();
+    //     this._tickLine.traverse(function (mesh) {
+    //         if (mesh instanceof Mesh) {
+    //             mesh.geometry.computeBoundingBox();
+    //             result.expandByPoint(mesh.geometry.boundingBox.min);
+    //             result.expandByPoint(mesh.geometry.boundingBox.max);
+    //         }
+    //     });
+
+    //     return result;
+    // }
+    dispose() {
+        let remove = [];
+        this.group.traverse((obj) => {
+            if (obj.isLine2) {
+                if (obj.geometry) {
+                    obj.geometry.dispose();
+                }
+                if (obj.material) {
+                    obj.material.dispose();
+                }
+                remove.push(obj);
+
             }
         });
+        while (remove.length) {
+            let obj = remove.pop();
+            obj.parent.remove(obj);
+        }
 
-        return result;
     }
 }
 

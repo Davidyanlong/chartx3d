@@ -34,7 +34,7 @@
     "rollup-plugin-uglify": "^3.0.0"
   },
   "dependencies": {
-    "mmgl": "0.0.14"
+    "mmgl": "0.0.20"
   },
   "scripts": {
     "rollup": "node rollup.config.js",
