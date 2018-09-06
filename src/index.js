@@ -12,8 +12,8 @@
 // import Rect from "./components/coord/rect"
 // import Polar from "./components/coord/polar"
 
-// //graphs
-// import Bar from "./components/graphs/bar/index"
+//graphs
+import { Bar } from "./components/graphs/bar/index";
 // import Line from "./components/graphs/line/index"
 // import Scat from "./components/graphs/scat/index"
 // import Pie from "./components/graphs/pie/index"
@@ -50,7 +50,7 @@ var coord = {
 }
 
 var graphs = {
-    // bar   : Bar,
+
     // line  : Line,
     // scat  : Scat,
     // pie   : Pie,
@@ -62,6 +62,8 @@ var graphs = {
 }
 
 var components = {
+    bar: Bar,
+
     // theme : Theme,
     // legend : Legend,
     // dataZoom : DataZoom,
@@ -117,8 +119,21 @@ var Chartx3d = {
 
         chart.setCoord(Coord);
 
-        for (var p in components) {
-            chart.addComponent(components[p]);
+
+        for (var p in opts) {
+            if (p == 'coord') continue;
+            if (p == 'graphs') {
+                for (var t = 0; t < opts.graphs.length; t++) {
+                    let key = opts.graphs[t].type;
+                    if (components[key]) {
+                        chart.addComponent(components[key], opts.graphs[t]);
+                    }
+                }
+            }
+            if (components[p]) {
+                chart.addComponent(components[p], opts[p]);
+            }
+
         }
 
 

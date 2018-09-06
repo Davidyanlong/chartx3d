@@ -1,10 +1,9 @@
-import { Component } from "../../Component";
+import { Component,_ } from "../Component";
 import { Vector3, Box3 } from "mmgl/src/index";
 import { YAxis } from './yAxis';
 import { XAxis } from './xAxis';
 import { ZAxis } from './zAxis';
 import { Grid } from './grid';
-import _ from '../../../../lib/underscore';
 
 class Cartesian3DUI extends Component {
     constructor(_coordSystem) {
@@ -65,8 +64,6 @@ class Cartesian3DUI extends Component {
 
     init(opt) {
 
-
-        this.group = this._root.renderView.addGroup({ name: 'cartesian3dUI_root' });
 
         this._initModules();
 

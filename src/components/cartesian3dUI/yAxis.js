@@ -1,11 +1,10 @@
 
+import { Component, _ } from '../Component';
 import { AxisLine } from './axisLine';
 import { Vector3, Box3, TextTexture } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
-import { Component } from '../../Component';
 import { TickTexts } from './tickTexts';
-import _ from '../../../../lib/underscore';
-import { numAddSymbol } from '../../../../utils/tools';
+import { numAddSymbol } from '../../../utils/tools';
 
 class YAxis extends Component {
     constructor(_cartesionUI) {
@@ -83,7 +82,6 @@ class YAxis extends Component {
 
         this.dataOrg = data.org || []; //源数据
 
-        this.group = null;
 
         this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
         this.basePoint = null; //value为 baseNumber 的point {x,y}
@@ -123,10 +121,8 @@ class YAxis extends Component {
 
         this._initData(data);
 
-        this.group = this._root.renderView.addGroup({ name: 'yAxisLeft' });
-
         this._root.orbitControls.on('change', () => {
-            
+
             me._initModules();
         })
         me._initModules();
@@ -333,7 +329,7 @@ class YAxis extends Component {
         if (!this.enabled) return;
         this._axisLine.draw();
         this._tickLine.draw();
-         this._tickText.draw();
+        this._tickText.draw();
         console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
     }
 

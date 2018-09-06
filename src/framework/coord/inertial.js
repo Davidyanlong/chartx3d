@@ -46,8 +46,9 @@ class InertialSystem extends Events {
         let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
         let _width = _opt.boxWidth;
         let _depth = _opt.boxDepth;
+        
         //斜边
-        let _hypotenuse = (new Vector3(_width, 0, _depth)).length();
+        let _hypotenuse =_opt.distance || (new Vector3(_width, 0, _depth)).length();
 
         let _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
 

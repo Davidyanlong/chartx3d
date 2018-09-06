@@ -1,8 +1,9 @@
 
 import { InertialSystem } from './inertial';
 import { Vector3, Box3, Matrix3, Matrix4, Object3D, Math as _Math, MeshBasicMaterial } from 'mmgl/src/index'
-import { Cartesian3DUI } from '../../components/coord/cartesian3dUI/index'
+import { Cartesian3DUI } from '../../components/cartesian3dUI/index'
 import _ from '../../../lib/underscore';
+import { AxisAttribute } from './model/axisAttribute';
 import DataSection from '../../../utils/datasection';
 
 
@@ -35,9 +36,9 @@ class Cartesian3D extends InertialSystem {
 
         this.boundbox = new Box3();
 
-        this.xAxisAttribute = new AxisAttribute();
-        this.yAxisAttribute = new AxisAttribute();
-        this.zAxisAttribute = new AxisAttribute();
+        this.xAxisAttribute = new AxisAttribute(root);
+        this.yAxisAttribute = new AxisAttribute(root);
+        this.zAxisAttribute = new AxisAttribute(root);
 
         this._coordUI = null;
 
@@ -188,7 +189,7 @@ class Cartesian3D extends InertialSystem {
         //这个判断不安全
         if (_.isSafeObject(opt, 'coord.xAxis.field')) {
             this.xAxisAttribute.setField(opt.coord.xAxis.field);
-            this.xAxisAttribute.setData(this._getAxisDataFrame(opt.coord.xAxis.field))
+            //this.xAxisAttribute.setData(opt.coord.xAxis.field)
 
             if (!_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
                 var arr = _.flatten(this.xAxisAttribute.data);
@@ -229,11 +230,12 @@ class Cartesian3D extends InertialSystem {
 
         yFields = _.uniq(yFields);
         this.yAxisAttribute.setField(yFields);
-        let dataOrgY = this._getAxisDataFrame(yFields);
-        let _section = this._setDataSection(yFields);
+        //let dataOrgY = this._getAxisDataFrame(yFields);
+        //let _section = this._setDataSection(yFields);
 
 
-        this.yAxisAttribute.setData(dataOrgY)
+        //this.yAxisAttribute.setData(yFields);
+        let dataOrgY = this.yAxisAttribute.data;
         if (!_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
             let joinArr = [];
             if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
@@ -243,32 +245,20 @@ class Cartesian3D extends InertialSystem {
             if (_.isSafeObject(opt, "coord.yAxis.min")) {
                 joinArr.push(opt.coord.yAxis.min);
             };
-            if (dataOrgY.length == 1) {
+            if (dataOrgY.length == 1 && !_.isArray(dataOrgY[0])) {
                 joinArr.push(dataOrgY[0] * 2);
             };
 
-
-            // if( this._opt.baseNumber != undefined ){
-            //     arr.push( this.baseNumber );
-            // }; 
-            // if( this._opt.minNumber != undefined ){
-            //     arr.push( this.minNumber );
-            // }; 
-            // if( this._opt.maxNumber != undefined ){
-            //     arr.push( this.maxNumber );
-            // }; 
-
-
+            //joinArr = joinArr.concat(_section);
             this.yAxisAttribute.computeDataSection(joinArr);
         }
 
         if (_.isSafeObject(opt, 'coord.zAxis.field')) {
             this.zAxisAttribute.setField(opt.coord.zAxis.field);
-            this.zAxisAttribute.setData(this._getAxisDataFrame(opt.coord.zAxis.field))
+            //this.zAxisAttribute.setData(opt.coord.zAxis.field)
 
             if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
                 var arr = _.flatten(this.zAxisAttribute.data);
-
                 if (this.coord.zAxis.layoutType == "proportion") {
                     if (arr.length == 1) {
                         arr.push(0);
@@ -281,108 +271,28 @@ class Cartesian3D extends InertialSystem {
                 this.zAxisAttribute.setDataSection(arr);
             }
         }
+        if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+            //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+            let _section = [];
+
+            let yAxisObj = _.find(this.coord.yAxis, item => {
+                return !item.align || item.align == 'left';
+            })
+            yAxisObj.field.forEach(item => {
+                _section.push(item.toString());
+            });
+
+            this.zAxisAttribute.setDataSection(_section);
+
+        } else {
+            this.zAxisAttribute.setDataSection(opt.coord.zAxis.dataSection);
+        }
 
         //先计算一次空间范围供计算坐标轴宽高使用
         this.getBoundbox();
     }
 
 
-    _setDataSection(yFields) {
-        //如果有堆叠，比如[ ["uv","pv"], "click" ]
-        //那么这个 this.dataOrg， 也是个对应的结构
-        //vLen就会等于2
-        var vLen = 1;
-
-        _.each(yFields, function (f) {
-            // vLen = Math.max( vLen, 1 );
-            if (_.isArray(f) && f.length > 1) {
-                // _.each( f, function( _f ){
-                //     vLen = Math.max( vLen, 2 );
-                // } );
-                vLen = 2;
-            }
-        });
-
-        if (vLen == 1) {
-            return this._oneDimensional(yFields);
-        };
-        if (vLen == 2) {
-            return this._twoDimensional(yFields);
-        };
-
-    }
-
-    _oneDimensional(yFields) {
-        debugger
-        let dataOrg = this._getAxisDataFrame(yFields);
-        var arr = _.flatten(dataOrg); //_.flatten( data.org );
-
-        for (var i = 0, il = arr.length; i < il; i++) {
-            arr[i] = arr[i] || 0;
-        };
-
-        return arr;
-    }
-
-    //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
-    _twoDimensional(yFields) {
-        let d = this._getAxisDataFrame(yFields);
-        var arr = [];
-        var min;
-        _.each(d, function (d, i) {
-            if (!d.length) {
-                return
-            };
-
-            //有数据的情况下 
-            if (!_.isArray(d[0])) {
-                arr.push(d);
-                return;
-            };
-
-            var varr = [];
-            var len = d[0].length;
-            var vLen = d.length;
-
-            for (var i = 0; i < len; i++) {
-                var up_count = 0;
-                var up_i = 0;
-
-                var down_count = 0;
-                var down_i = 0;
-
-                for (var ii = 0; ii < vLen; ii++) {
-                    !min && (min = d[ii][i])
-                    min = Math.min(min, d[ii][i]);
-
-                    if (d[ii][i] >= 0) {
-                        up_count += d[ii][i];
-                        up_i++
-                    } else {
-                        down_count += d[ii][i];
-                        down_i++
-                    }
-                }
-                up_i && varr.push(up_count);
-                down_i && varr.push(down_count);
-            };
-            arr.push(varr);
-        });
-        arr.push(min);
-        return _.flatten(arr);
-    }
-
-    _getAxisDataFrame(fields) {
-        let dataFrame = this._root.dataFrame;
-
-        return dataFrame.getDataOrg(fields, function (val) {
-            if (val === undefined || val === null || val == "") {
-                return val;
-            }
-            return (isNaN(Number(val)) ? val : Number(val))
-        })
-
-    }
     //更新坐标原点
     updateOrigin(offset) {
 
@@ -426,10 +336,10 @@ class Cartesian3D extends InertialSystem {
 
 
         //测试中心点的位置
-        let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
-        let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
-        this._root.renderView._scene.add(helpLine);
-        this._root.renderView._scene.add(helpLine2);
+        // let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
+        // let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
+        // this._root.renderView._scene.add(helpLine);
+        // this._root.renderView._scene.add(helpLine2);
 
     }
 
@@ -466,19 +376,21 @@ class Cartesian3D extends InertialSystem {
         // let pos = new Vector3();
         // pos.setX(this.getXAxisPosition(2));
         // pos.setY(this.getYAxisPosition(100));
-        // pos.setZ(this.getZAxisPosition('项目三'));
+        // pos.setZ(this.getZAxisPosition('页面访问数'));
         // let boxWidth = ceil.x * 0.8;
         // let boxDepth = ceil.z * 0.8;
         // let boxHeight = Math.max(Math.abs(pos.y), 1);
         // let metaril = new MeshBasicMaterial({
         //     color: 'blue',
+        //     transparent:true,
+        //     opacity:1
         //     // polygonOffset:true,
-        //     // polygonOffsetFactor:2,
-        //     // polygonOffsetUnits:2
+        //     // polygonOffsetFactor:1,
+        //     // polygonOffsetUnits:0.1
         // })
         // let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
         // box.position.set(pos.x - boxWidth * 0.5, 0, -pos.z + boxDepth * 0.5);
-
+        // box.renderOrder = 100;
         // this.group.add(box);
 
     }
@@ -530,7 +442,7 @@ class Cartesian3D extends InertialSystem {
         let dataLen = this.yAxisAttribute.section.length;
         let ind = _.indexOf(this.yAxisAttribute.section, data);//先不考虑不存在的值
         let _yAxisLeft = _.find(this.coord.yAxis, yaxis => {
-            return yaxis.align == 'left'
+            return !yaxis.align || yaxis.align == 'left';
         })
         let layoutType = _yAxisLeft.layoutType;
 
@@ -619,9 +531,13 @@ class Cartesian3D extends InertialSystem {
         let dataLenY = this.yAxisAttribute.section.length;
         let dataLenZ = this.zAxisAttribute.section.length;
 
-        ceil.setX(size.x / (dataLenX - 1));
-        ceil.setY(size.y / (dataLenY - 1));
-        ceil.setZ(size.z / (dataLenZ - 1));
+        // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
+        // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
+        // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
+
+        ceil.setX(size.x / (dataLenX + 1));
+        ceil.setY(size.y / (dataLenY + 1));
+        ceil.setZ(size.z / (dataLenZ + 1));
 
         return ceil;
 
@@ -632,36 +548,7 @@ class Cartesian3D extends InertialSystem {
 }
 
 
-class AxisAttribute {
-    constructor() {
-        this.field = '';
-        this.data = null;
-        this.section = [];
-    }
-    setField(val) {
-        this.field = val;
-    }
-    setData(data) {
-        this.data = data;
-    }
-    setDataSection(section) {
-        this.section = section;
-    }
-    computeDataSection(joinArr = []) {
-        joinArr = joinArr.concat(this.data);
-        let arr = _.flatten(joinArr);
-        for (var i = 0, il = arr.length; i < il; i++) {
-            arr[i] = Number(arr[i] || 0);
-            if (isNaN(arr[i])) {
-                arr.splice(i, 1);
-                i--;
-                il--;
-            }
-        };
-        this.section = DataSection.section(arr);
 
-    }
-}
 
 
 

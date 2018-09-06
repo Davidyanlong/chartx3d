@@ -1,10 +1,10 @@
 
+import { Component, _ } from '../Component';
 import { AxisLine } from './axisLine';
 import { Vector3, TextTexture, MeshBasicMaterial, BackSide, FrontSide, Mesh, Math as _Math, PlaneGeometry, DoubleSide, Box3 } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
-import { Component } from '../../Component';
-import _ from '../../../../lib/underscore';
-import { numAddSymbol } from '../../../../utils/tools';
+
+import { numAddSymbol } from '../../../utils/tools';
 
 class Grid extends Component {
     constructor(_cartesionUI) {
@@ -23,10 +23,10 @@ class Grid extends Component {
 
         this._cartesionUI = _cartesionUI;
 
-        this.enabled = 1;
+        this.enabled = false;
 
         this.line = {                                //x方向上的线
-            enabled: 1,
+            enabled: true,
             lineType: 'solid',                //线条类型(dashed = 虚线 | solid = 实线)
             strokeStyle: '#f0f0f0', //'#e5e5e5',
         };
@@ -34,7 +34,7 @@ class Grid extends Component {
         this.fill = {
             enabled: true,
             fillStyle: '#ccc',
-            alpha: 0.9
+            alpha: 0.8
         };
 
 
@@ -44,8 +44,6 @@ class Grid extends Component {
     }
     init() {
         let me = this;
-        this.group = this._root.renderView.addGroup({ name: 'grid' });
-
         this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
         this.rightGroup = this._root.renderView.addGroup({ name: 'rightGroup' });
         this.topGroup = this._root.renderView.addGroup({ name: 'topGroup' });
@@ -75,7 +73,9 @@ class Grid extends Component {
 
 
     drawFace() {
+
         let me = this;
+        if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
         let _faceInfo = this._cartesionUI.getFaceInfo();
 
@@ -101,7 +101,9 @@ class Grid extends Component {
 
     }
     drawLine() {
+        //todo 原生的线条会出现锯齿,需要该用三角面来绘制
         let me = this;
+        if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
 
         let coordBoundBox = _coordSystem.getBoundbox();

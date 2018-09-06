@@ -39,15 +39,15 @@
                 //第一行是表头。
                 var data= [
                     ["xfield","uv" ,"pv" ,"click", "ppc"],
-                    [ 1      , 101 , 20  , 33    , '项目一'],
-                    [ 2      , 67  , 51  , 26    , '项目二'],
-                    [ 3      , 130 , 50  , 50    , '项目三'],
-                    [ 4      , 101 , 60  , 33    , '项目四'],
-                    [ 5      , 67  , 91  , 126   , '项目五' ],
-                    [ 6      , 30  , 50 , 90     , '项目六'],
-                    [ 7      , 51  , 120 , 33    , '项目七'],
-                    [ 8      , 67  , 51  , 86    , '项目八'],
-                    [ 9      , 120 , 90  , 150   , '项目九' ]
+                    [ 1      , 101 , 20  , 33    , 45],
+                    [ 2      , 67  , 51  , 26    , 76],
+                    [ 3      , 130 , 50  , 50    , 45],
+                    [ 4      , 101 , 60  , 33    , 64],
+                    [ 5      , 67  , 91  , 126   , 22 ],
+                    [ 6      , 30  , 50 , 90     , 45],
+                    [ 7      , 51  , 120 , 33    , 78],
+                    [ 8      , 67  , 51  , 86    , 234],
+                    [ 9      , 120 , 90  , 150   , 63 ]
                 
                 ];
                 var options = {
@@ -63,7 +63,7 @@
                        minDistance:300,      //最小相机距离 
                        
                        alpha:20,    //绕X轴旋转
-                       beta:-20,      //绕Y轴旋转
+                       beta:20,      //绕Y轴旋转
                     },
                     coord : {
                         type : "cartesian3d",
@@ -83,7 +83,7 @@
                             //dataSection : [1,3,5,7,9]
                         },
                         zAxis : {
-                            field : "ppc",
+                           // field : "ppc",
                             title : {
                                 content : "zAxis"
                             },
@@ -93,9 +93,9 @@
                                     return val;
                                     //return "x\nodfdfdfdfsdfo"
                                 }
-                            }
+                            },
                             
-                            //dataSection : [1,3,5,7,9]
+                           // dataSection : ['页面访问数','访问次数','PPC']
                         },
                         yAxis : [
                             {
@@ -113,23 +113,23 @@
                         ]
                     },
                     
-                    tips : {
-                        pointer : "region"
-                    },
+                   // tips : {
+                   //     pointer : "region"
+                   // },
                     graphs : [
                     
+                       // {
+                       //     type : "bar",
+                       //     field : "click",
+                       //     yAxisAlign : "left",
+                       //     label : {
+                       //         enabled : true
+                       //     }
+                       // },
                         {
                             type : "bar",
-                            field : "click",
+                            field : [ ["uv","pv" ,"ppc"] ],
                             yAxisAlign : "left",
-                            label : {
-                                enabled : true
-                            }
-                        },
-                        {
-                            type : "bar",
-                            field : [ [ "uv","pv" ],"ppc" ],
-                            yAxisAlign : "right",
                             label : {
                                 enabled : true,
                                 verticalAlign: "middle",

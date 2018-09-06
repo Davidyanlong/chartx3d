@@ -1,6 +1,6 @@
 
-import { Component } from '../../Component';
-import { Vector3, Box3, Sprite, TextTexture } from 'mmgl/src/index';
+import { Component } from '../Component';
+import { Vector3, TextTexture } from 'mmgl/src/index';
 
 // {
 //     enabled: 1,
@@ -33,8 +33,6 @@ class TickTexts extends Component {
         this.offset = opts.offset;
 
         this._tickTextGroup = null;
-
-        this.group = this._root.renderView.addGroup({ name: 'tickText' });
 
         this._tickTextGroup = this._root.renderView.addGroup({ name: 'tickTexts' });
 

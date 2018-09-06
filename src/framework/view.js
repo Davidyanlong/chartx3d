@@ -176,7 +176,10 @@ class View {
 
 
         if (!materials) {
-            materials = new MeshBasicMaterial();
+            materials = new MeshBasicMaterial({
+                // depthTest: true,
+                // depthWrite: true
+            });
         }
 
         // 初期把一个box 看作一个mesh  后期优化在渲染前做顶点合并
@@ -214,7 +217,9 @@ class View {
                 opacity: faceStyle.alpha || 1,
                 polygonOffset: true,
                 polygonOffsetFactor: 1,
-                polygonOffsetUnits: 0.3
+                polygonOffsetUnits: 0.1,
+                depthTest: true,
+                depthWrite: false
 
             });
         }
@@ -251,7 +256,7 @@ class View {
             group.visible = showInfo.visible;
             group.add(planeMesh);
         }
-
+        planeMesh.renderOrder = -100;
         return planeMesh;
 
     }
@@ -260,7 +265,11 @@ class View {
         let group = this.addGroup({ name: 'commonLines' });
 
         let material = new LineBasicMaterial({
-            color: lineStyle.strokeStyle
+            color: lineStyle.strokeStyle,
+            transparent: true,
+            depthTest: true,
+            depthWrite: false
+
         });
         if (lineStyle.lineType == 'dashed') {
             material = new LineDashedMaterial({
@@ -274,6 +283,7 @@ class View {
             geometry.vertices.push(item);
         })
         let line = new Line(geometry, material);
+       // line.renderOrder=-110;
         group.add(line);
 
         return group;
@@ -300,7 +310,7 @@ class View {
         let triangleVertices = [];
         origins.forEach(origin => {
             triangleVertices = [];
-            triangleVertices.push([0,0,0]);
+            triangleVertices.push([0, 0, 0]);
 
             let endPoint = new Vector3();
             //endPoint.copy([0,0,0]);

@@ -1,5 +1,5 @@
-import { Component } from "../../Component";
-import { Vector3, Box3, Mesh } from "mmgl/src/index";
+import { Component } from "../Component";
+import { Vector3 } from "mmgl/src/index";
 
 class AxisLine extends Component {
     constructor(_coordSystem, opts) {
@@ -26,8 +26,6 @@ class AxisLine extends Component {
         this.color = opts.strokeStyle;
 
         this.axis = null;
-
-        this.group = this._root.renderView.addGroup({ name: 'axisLine' });
 
         //不可见    
         this.group.visible = !!opts.enabled;

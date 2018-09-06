@@ -9,6 +9,7 @@ import DataFrame from "../utils/dataframe";
 
 import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
+import { Interaction } from './framework/interaction';
 
 
 let _cid = 0;
@@ -96,6 +97,8 @@ class Chart3d extends Events {
 
 
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
+        let interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
+
 
 
         controls.minDistance = controlOpts.minDistance;
@@ -127,10 +130,21 @@ class Chart3d extends Events {
             if (controls.position0.equals(controls.object.position) && controls.zoom0 === controls.object.zoom) {
                 return;
             }
+            console.log('renderbefore……')
             controls.saveState();
             controls.update();
 
+
         });
+
+        this.app._framework.on('renderafter',()=>{
+            interaction.update();
+        })
+
+        interaction.on('move', () => {
+            this.app._framework.isUpdate = true;
+            console.log('move')
+        })
 
         //启动渲染进程
         this.app.launch();
@@ -147,15 +161,11 @@ class Chart3d extends Events {
 
     }
     //添加组件
-    addComponent(cmp) {
-        let idx = this.components.indexOf(cmp);
-        if (idx !== -1) {
-            this.components.splice(idx, 1);
-        }
-
+    addComponent(cmp, opts) {
+        //todo 图像是否要分开,目前没有分开共用Component一个基类
         if (cmp.prototype instanceof Component) {
 
-            let instance = new cpm(this.currCoord);
+            let instance = new cmp(this, opts);
             this.components.push(instance);
         }
 
@@ -164,7 +174,6 @@ class Chart3d extends Events {
     drawComponent() {
         //先绘制坐标系
         this.currCoord.draw();
-
         this.components.forEach(cmp => {
             this.currCoord.group.add(cmp.group);
             cmp.draw();

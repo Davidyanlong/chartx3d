@@ -4,7 +4,6 @@ var commonjs = require('rollup-plugin-commonjs');
 var resolve = require('rollup-plugin-node-resolve');
 var uglify = require('rollup-plugin-uglify');
 var json = require('rollup-plugin-json');
-debugger
 function glsl() {
 
     return {
@@ -36,7 +35,8 @@ rollup.rollup({
         glsl(),
         json(),
         babel({
-            exclude: 'node_modules/**'
+            exclude: '/node_modules\/((?!mmgl).)*$/',
+            //include: 'node_modules/mmgl/**'
         }),
         resolve({
             jsnext: true,

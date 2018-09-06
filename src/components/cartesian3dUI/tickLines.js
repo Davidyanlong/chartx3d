@@ -1,5 +1,5 @@
-import { Component } from '../../Component';
-import { Vector3, Box3, Mesh } from 'mmgl/src/index';
+import { Component } from '../Component';
+import { Vector3 } from 'mmgl/src/index';
 
 // this.tickLine = {//刻度线
 //     enabled: 1,
@@ -33,8 +33,6 @@ class TickLines extends Component {
         this.offset = opts.offset;
 
         this._tickLine = null;
-
-        this.group = this._root.renderView.addGroup({ name: 'tickLine' });
 
         this.group.visible = !!opts.enabled;
     }

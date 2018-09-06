@@ -24,11 +24,13 @@ class Framework extends Events {
         //创建渲染器
         try {
             this.renderer = new WebGLRenderer({
-                alpha: true,
-                depth: true,
-                antialias: true,
-                premultipliedAlpha: true
+               alpha: true,
+               depth: true,
+               antialias: true,
+               premultipliedAlpha: true
             });
+
+            //this.render._sortObjects=false;
 
         } catch (e) {
             this.view.style.cssText = "display: flex;justify-content: center;align-items:center;font-size:16px;color:#666;width:100%;height:100%;";
@@ -53,7 +55,7 @@ class Framework extends Events {
 
             });
         }
-       
+        this.fire({ type: 'renderafter' });
     }
 
     renderFrame() {

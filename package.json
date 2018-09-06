@@ -24,6 +24,7 @@
   "devDependencies": {
     "babel-core": "^6.13.0",
     "babel-preset-es2015-rollup": "^1.1.1",
+    "babel-preset-stage-1": "^6.24.1",
     "gulp-watch": "^5.0.1",
     "onchange": "^3.0.2",
     "rollup": "^0.58.2",

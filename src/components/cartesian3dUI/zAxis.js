@@ -1,11 +1,11 @@
 
+import { Component, _ } from '../Component';
 import { AxisLine } from './axisLine';
 import { Vector3, TextTexture } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
-import { Component } from '../../Component';
+
 import { TickTexts } from './tickTexts';
-import _ from '../../../../lib/underscore';
-import { numAddSymbol } from '../../../../utils/tools';
+import { numAddSymbol } from '../../../utils/tools';
 
 class ZAxis extends Component {
     constructor(_cartesionUI) {
@@ -109,8 +109,6 @@ class ZAxis extends Component {
     }
     init(opt, data) {
         let me = this;
-        this.group = this._root.renderView.addGroup({ name: 'zAxis' });
-
         // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
 
         // this.group.add(this.rulesGroup);
