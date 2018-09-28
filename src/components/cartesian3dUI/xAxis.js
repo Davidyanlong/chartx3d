@@ -32,25 +32,26 @@ class XAxis extends Component {
         this.axisLine = {
             enabled: 1, //是否有轴线
             lineWidth: 2,
-            strokeStyle: '#cccccc'
+            strokeStyle: '#333'
         };
 
         this.tickLine = {
-            enabled: 1, //是否有刻度线
-            lineWidth: 1, //线宽
-            lineLength: 4, //线长
-            offset: 2,
-            strokeStyle: '#cccccc'
+            enabled: 1,
+            lineWidth: 1, //线宽像素
+            lineLength: 20, //线长(空间单位)
+            strokeStyle: '#333',
+            offset: 0, //空间单位
         };
 
         this.label = {
             enabled: 1,
-            fontColor: '#999',
+            fontColor: '#333',
             fontSize: 12,
             rotation: 0,
             format: null,
-            offset: 2,
-            textAlign: "center",
+            offset: { x: 0, y: 0, z: 40 },
+            textAlign: "center",       //水平方向对齐: left  right center 
+            verticalAlign: 'top',  //垂直方向对齐 top bottom middle
             lineHeight: 1,
             evade: true  //是否开启逃避检测，目前的逃避只是隐藏
         };
@@ -66,7 +67,7 @@ class XAxis extends Component {
             y: 0
         };
 
-        this.dataOrg = []; //源数据
+        // this.dataOrg = []; //源数据
         this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
 
         this.layoutData = []; //{x:100, value:'1000',visible:true}
@@ -98,10 +99,14 @@ class XAxis extends Component {
 
         _.extend(true, this, opt.xAxis);
 
+        // this.label.enabled = this.enabled && this.label.enabled;
+        // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+        // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
+
         this.init(opt, this._coordSystem.xAxisAttribute);
         //xAxis的field只有一个值,
         //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
-
+        this.group.visible = !!this.enabled;
 
     }
     init(opt, data) {
@@ -112,9 +117,10 @@ class XAxis extends Component {
 
         this._initHandle(data);
 
-        this._root.orbitControls.on('change', () => {
+        this._onChangeBind = () => {
             me._initModules();
-        })
+        };
+        this._root.orbitControls.on('change', this._onChangeBind);
         me._initModules();
     }
     _initHandle(data) {
@@ -124,13 +130,14 @@ class XAxis extends Component {
             this.field = data.field;
         }
 
-        if (data && data.data) {
-            this.dataOrg = _.flatten(data.data);
-        };
-        if (!this._opt.dataSection && this.dataOrg) {
-            //如果没有传入指定的dataSection，才需要计算dataSection
-            this.dataSection = data.section;// this._initDataSection(this.dataOrg);
-        };
+        // if (data && data.data) {
+        //     this.dataOrg = _.flatten(data.data);
+        // };
+        // if (!this._opt.dataSection && this.dataOrg) {
+        //     //如果没有传入指定的dataSection，才需要计算dataSection
+        //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
+        // };
+        this.dataSection = data.getSection();
 
         me._formatTextSection = [];
         me._textElements = [];
@@ -200,6 +207,8 @@ class XAxis extends Component {
         let origin = _coordSystem.getOrigin();
         let _tickLineDir = new Vector3(0, 0, 1);
         let _faceInfo = this._cartesionUI.getFaceInfo();
+        let _verticalAlign = this.label.verticalAlign;
+        let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
 
         if (_faceInfo.bottom.visible) {
             if (_faceInfo.back.visible) {
@@ -208,7 +217,9 @@ class XAxis extends Component {
             } else {
                 origin = new Vector3(0, 0, -depth);
                 _tickLineDir = new Vector3(0, 0, -1);
+                _offsetZ *= -1;
             }
+
         } else {
             //top 可见
             if (_faceInfo.back.visible) {
@@ -217,32 +228,38 @@ class XAxis extends Component {
             } else {
                 origin = new Vector3(0, height, -depth)
                 _tickLineDir = new Vector3(0, 0, -1);
+                _offsetZ *= -1;
             }
+            _verticalAlign = 'bottom';
         }
 
         if (this._axisLine) {
             if (this._axisLine.getOrigin().equals(origin)) {
                 return;
             }
-            this._axisLine.dispose();
+            // this._axisLine.dispose();
             this._axisLine.setOrigin(origin);
-            this._axisLine.drawStart();
-            this._axisLine.draw();
+            this._axisLine.update();
+            // this._axisLine.drawStart();
+            // this._axisLine.draw();
 
             //二次绘制
-            this._tickLine.dispose();
+            //this._tickLine.dispose();
             this._tickLine.setDir(_tickLineDir);
             this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-            this._tickLine.drawStart();
-            this._tickLine.draw();
+            this._tickLine.update();
+            // this._tickLine.drawStart();
+            // this._tickLine.draw();
 
-            this._tickText.dispose();
+            //this._tickText.dispose();
 
             this._tickText.setDir(_tickLineDir);
+            this._tickText.offset.setZ(_offsetZ);
             this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+            this._tickText.setVerticalAlign(_verticalAlign);
 
-            this._tickText.drawStart(this._formatTextSection);
-            this._tickText.draw();
+            // this._tickText.drawStart(this._formatTextSection);
+            // this._tickText.draw();
 
 
         } else {
@@ -267,8 +284,10 @@ class XAxis extends Component {
 
             //初始化tickText
             this._tickText = new TickTexts(_coordSystem, this.label);
-            this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
 
+            this._tickText.offset.z += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset;
+
+            this._tickText.setVerticalAlign(_verticalAlign);
             this._tickText.setDir(_tickLineDir);
             this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
 
@@ -338,6 +357,14 @@ class XAxis extends Component {
         //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
 
 
+    }
+    dispose() {
+
+        this._axisLine.dispose();
+        this._tickLine.dispose();
+        this._tickText.dispose();
+        this._root.orbitControls.off('change', this._onChangeBind);
+        this._onChangeBind = null;
     }
 }
 

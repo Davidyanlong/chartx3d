@@ -6,18 +6,67 @@ class AxisAttribute {
         this._root = root;
         this.field = '';
         this.data = null;
-        this.section = [];
+
+        this._section = [];
+        this._userSection = [];
+
+        this.colors = []; //y轴需要颜色
+        this._colorMap = {};
     }
     setField(val) {
         this.field = val;
         this.data = this.getAxisDataFrame(this.field);
     }
+    setColors(colors) {
+
+        this.color = [];
+        this._colorMap = {};
+        let getTheme = this._root.getTheme.bind(this._root);
+
+        if (colors) {
+            this.colors = colors;
+        } else {
+            let fields = _.flatten(this.field);
+            this.colors = [];
+
+            fields.forEach((v, i) => {
+                let color = getTheme(i);
+                this.colors.push(color);
+                this._colorMap[v] = color;
+                //自定义Section
+                if (this._userSection[i]) {
+                    this._colorMap[this._userSection[i]] = color;
+                }
+
+            })
+        }
+
+
+    }
+    getColor(field) {
+        return this._colorMap[field];
+    }
 
     setData(data) {
         this.data = data;
     }
-    setDataSection(section) {
-        this.section = section;
+
+
+    setOrgSection(section) {
+        this._section = section;
+    }
+
+    setCustomSection(section) {
+        this._userSection = section;
+    }
+    getSection() {
+        return this._userSection.length ? this._userSection : this._section;
+    }
+    getOrgSection() {
+        return this._section;
+    }
+    getCustomSection() {
+        return this._userSection;
     }
     computeDataSection(joinArr = []) {
         let scetion = this._setDataSection(this.field);
@@ -31,7 +80,7 @@ class AxisAttribute {
                 il--;
             }
         };
-        this.section = DataSection.section(arr);
+        this._section = DataSection.section(arr);
 
     }
     _setDataSection(yFields) {
@@ -124,6 +173,7 @@ class AxisAttribute {
         })
 
     }
+
 }
 
 export { AxisAttribute }

@@ -46,20 +46,6 @@ var Chartx = (function () {
     return obj;
   };
 
-  var _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
   var get = function get(object, property, receiver) {
     if (object === null) object = Function.prototype;
     var desc = Object.getOwnPropertyDescriptor(object, property);
@@ -107,6 +93,16 @@ var Chartx = (function () {
     }
 
     return call && (typeof call === "object" || typeof call === "function") ? call : self;
+  };
+
+  var toConsumableArray = function (arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+      return arr2;
+    } else {
+      return Array.from(arr);
+    }
   };
 
   /**
@@ -194,7 +190,7 @@ var Chartx = (function () {
       return Events;
   }();
 
-  var version = "0.0.20";
+  var version = "0.0.27";
 
   var REVISION = version;
 
@@ -267,6 +263,7 @@ var Chartx = (function () {
   var IntType = 1013;
   var UnsignedIntType = 1014;
   var FloatType = 1015;
+  var HalfFloatType = 1016;
   var UnsignedShort4444Type = 1017;
   var UnsignedShort5551Type = 1018;
   var UnsignedShort565Type = 1019;
@@ -1426,9 +1423,61 @@ var Chartx = (function () {
               return _color;
           }
       }, {
+          key: 'getHSL',
+          value: function getHSL(target) {
+
+              // h,s,l ranges are in 0.0 - 1.0
+
+              if (target === undefined) {
+
+                  console.warn('Color: .getHSL() target is now required');
+                  target = { h: 0, s: 0, l: 0 };
+              }
+
+              var r = this.r,
+                  g = this.g,
+                  b = this.b;
+
+              var max = Math.max(r, g, b);
+              var min = Math.min(r, g, b);
+
+              var hue, saturation;
+              var lightness = (min + max) / 2.0;
+
+              if (min === max) {
+
+                  hue = 0;
+                  saturation = 0;
+              } else {
+
+                  var delta = max - min;
+
+                  saturation = lightness <= 0.5 ? delta / (max + min) : delta / (2 - max - min);
+
+                  switch (max) {
+
+                      case r:
+                          hue = (g - b) / delta + (g < b ? 6 : 0);break;
+                      case g:
+                          hue = (b - r) / delta + 2;break;
+                      case b:
+                          hue = (r - g) / delta + 4;break;
+
+                  }
+
+                  hue /= 6;
+              }
+
+              target.h = hue;
+              target.s = saturation;
+              target.l = lightness;
+
+              return target;
+          }
+      }, {
           key: 'clone',
           value: function clone() {
-              return new this.constructor(this.r, this.g, this.b);
+              return new this.constructor(this.r, this.g, this.b, this.a);
           }
       }, {
           key: 'copy',
@@ -3907,7 +3956,7 @@ var Chartx = (function () {
           classCallCheck(this, WebGLUtils);
 
           this.gl = gl;
-          this._map = (_map = {}, defineProperty(_map, RepeatWrapping, gl.REPEAT), defineProperty(_map, ClampToEdgeWrapping, gl.MIRRORED_REPEAT), defineProperty(_map, MirroredRepeatWrapping, gl.MIRRORED_REPEAT), defineProperty(_map, NearestFilter, gl.NEAREST), defineProperty(_map, NearestMipMapNearestFilter, gl.NEAREST_MIPMAP_NEAREST), defineProperty(_map, NearestMipMapLinearFilter, gl.NEAREST_MIPMAP_LINEAR), defineProperty(_map, LinearFilter, gl.LINEAR), defineProperty(_map, LinearMipMapNearestFilter, gl.LINEAR_MIPMAP_NEAREST), defineProperty(_map, LinearMipMapLinearFilter, gl.LINEAR_MIPMAP_LINEAR), defineProperty(_map, UnsignedByteType, gl.UNSIGNED_BYTE), defineProperty(_map, UnsignedShort4444Type, gl.UNSIGNED_SHORT_4_4_4_4), defineProperty(_map, UnsignedShort5551Type, gl.UNSIGNED_SHORT_5_5_5_1), defineProperty(_map, UnsignedShort565Type, gl.UNSIGNED_SHORT_5_6_5), defineProperty(_map, ByteType, gl.BYTE), defineProperty(_map, ShortType, gl.SHORT), defineProperty(_map, UnsignedShortType, gl.UNSIGNED_SHORT), defineProperty(_map, IntType, gl.INT), defineProperty(_map, UnsignedIntType, gl.UNSIGNED_INT), defineProperty(_map, FloatType, gl.FLOAT), defineProperty(_map, AlphaFormat, gl.ALPHA), defineProperty(_map, RGBFormat, gl.RGB), defineProperty(_map, RGBAFormat, gl.RGBA), defineProperty(_map, LuminanceFormat, gl.LUMINANCE), defineProperty(_map, LuminanceAlphaFormat, gl.LUMINANCE_ALPHA), defineProperty(_map, DepthFormat, gl.DEPTH_COMPONENT), defineProperty(_map, DepthStencilFormat, gl.DEPTH_STENCIL), defineProperty(_map, AddEquation, gl.FUNC_ADD), defineProperty(_map, SubtractEquation, gl.FUNC_SUBTRACT), defineProperty(_map, ReverseSubtractEquation, gl.FUNC_REVERSE_SUBTRACT), defineProperty(_map, ZeroFactor, gl.ZERO), defineProperty(_map, OneFactor, gl.ONE), defineProperty(_map, SrcColorFactor, gl.SRC_COLOR), defineProperty(_map, OneMinusSrcColorFactor, gl.ONE_MINUS_SRC_COLOR), defineProperty(_map, SrcAlphaFactor, gl.SRC_ALPHA), defineProperty(_map, OneMinusSrcAlphaFactor, gl.ONE_MINUS_SRC_ALPHA), defineProperty(_map, DstAlphaFactor, gl.DST_ALPHA), defineProperty(_map, OneMinusDstAlphaFactor, gl.ONE_MINUS_DST_ALPHA), defineProperty(_map, DstColorFactor, gl.DST_COLOR), defineProperty(_map, OneMinusDstColorFactor, gl.ONE_MINUS_DST_COLOR), defineProperty(_map, SrcAlphaSaturateFactor, gl.SRC_ALPHA_SATURATE), _map);
+          this._map = (_map = {}, defineProperty(_map, RepeatWrapping, gl.REPEAT), defineProperty(_map, ClampToEdgeWrapping, gl.CLAMP_TO_EDGE), defineProperty(_map, MirroredRepeatWrapping, gl.MIRRORED_REPEAT), defineProperty(_map, NearestFilter, gl.NEAREST), defineProperty(_map, NearestMipMapNearestFilter, gl.NEAREST_MIPMAP_NEAREST), defineProperty(_map, NearestMipMapLinearFilter, gl.NEAREST_MIPMAP_LINEAR), defineProperty(_map, LinearFilter, gl.LINEAR), defineProperty(_map, LinearMipMapNearestFilter, gl.LINEAR_MIPMAP_NEAREST), defineProperty(_map, LinearMipMapLinearFilter, gl.LINEAR_MIPMAP_LINEAR), defineProperty(_map, UnsignedByteType, gl.UNSIGNED_BYTE), defineProperty(_map, UnsignedShort4444Type, gl.UNSIGNED_SHORT_4_4_4_4), defineProperty(_map, UnsignedShort5551Type, gl.UNSIGNED_SHORT_5_5_5_1), defineProperty(_map, UnsignedShort565Type, gl.UNSIGNED_SHORT_5_6_5), defineProperty(_map, ByteType, gl.BYTE), defineProperty(_map, ShortType, gl.SHORT), defineProperty(_map, UnsignedShortType, gl.UNSIGNED_SHORT), defineProperty(_map, IntType, gl.INT), defineProperty(_map, UnsignedIntType, gl.UNSIGNED_INT), defineProperty(_map, FloatType, gl.FLOAT), defineProperty(_map, AlphaFormat, gl.ALPHA), defineProperty(_map, RGBFormat, gl.RGB), defineProperty(_map, RGBAFormat, gl.RGBA), defineProperty(_map, LuminanceFormat, gl.LUMINANCE), defineProperty(_map, LuminanceAlphaFormat, gl.LUMINANCE_ALPHA), defineProperty(_map, DepthFormat, gl.DEPTH_COMPONENT), defineProperty(_map, DepthStencilFormat, gl.DEPTH_STENCIL), defineProperty(_map, AddEquation, gl.FUNC_ADD), defineProperty(_map, SubtractEquation, gl.FUNC_SUBTRACT), defineProperty(_map, ReverseSubtractEquation, gl.FUNC_REVERSE_SUBTRACT), defineProperty(_map, ZeroFactor, gl.ZERO), defineProperty(_map, OneFactor, gl.ONE), defineProperty(_map, SrcColorFactor, gl.SRC_COLOR), defineProperty(_map, OneMinusSrcColorFactor, gl.ONE_MINUS_SRC_COLOR), defineProperty(_map, SrcAlphaFactor, gl.SRC_ALPHA), defineProperty(_map, OneMinusSrcAlphaFactor, gl.ONE_MINUS_SRC_ALPHA), defineProperty(_map, DstAlphaFactor, gl.DST_ALPHA), defineProperty(_map, OneMinusDstAlphaFactor, gl.ONE_MINUS_DST_ALPHA), defineProperty(_map, DstColorFactor, gl.DST_COLOR), defineProperty(_map, OneMinusDstColorFactor, gl.ONE_MINUS_DST_COLOR), defineProperty(_map, SrcAlphaSaturateFactor, gl.SRC_ALPHA_SATURATE), _map);
       }
 
       createClass(WebGLUtils, [{
@@ -4170,15 +4219,12 @@ var Chartx = (function () {
   }();
 
   var AttributeSwitch = function () {
-      function AttributeSwitch(gl, extensions) {
+      function AttributeSwitch(gl, extensions, capabilities) {
           classCallCheck(this, AttributeSwitch);
 
           this.gl = gl;
           this._extensions = extensions;
-          var capabilities = new WebGLCapabilities(gl);
           var maxVertexAttributes = capabilities.maxAttributes;
-          //回收
-          capabilities = null;
 
           this._newAttributes = new Uint8Array(maxVertexAttributes);
           this._enabledAttributes = new Uint8Array(maxVertexAttributes);
@@ -4384,11 +4430,11 @@ var Chartx = (function () {
   }();
 
   var TextureState = function () {
-      function TextureState(gl) {
+      function TextureState(gl, capabilities) {
           classCallCheck(this, TextureState);
 
           this.gl = gl;
-
+          this._capabilities = capabilities;
           this._currentTextureSlot = null;
           this._currentBoundTextures = {};
           this._currentTextureSlot = null;
@@ -4421,7 +4467,7 @@ var Chartx = (function () {
           key: "activeTexture",
           value: function activeTexture(webglSlot) {
               var gl = this.gl;
-              var _capabilities = new WebGLCapabilities(gl);
+              var _capabilities = this._capabilities;
               var _maxTextures = _capabilities.maxCombinedTextures;
 
               if (webglSlot === undefined) webglSlot = gl.TEXTURE0 + _maxTextures - 1;
@@ -4431,7 +4477,6 @@ var Chartx = (function () {
                   gl.activeTexture(webglSlot);
                   this._currentTextureSlot = webglSlot;
               }
-              _capabilities = null;
           }
       }, {
           key: "bindTexture",
@@ -4497,7 +4542,7 @@ var Chartx = (function () {
   }
 
   var WebGLState = function () {
-      function WebGLState(gl, extensions) {
+      function WebGLState(gl, extensions, capabilities) {
           classCallCheck(this, WebGLState);
 
           this.gl = gl;
@@ -4508,7 +4553,7 @@ var Chartx = (function () {
               stencil: new StencilBuffer(gl)
           };
 
-          this._attributeSwitch = new AttributeSwitch(gl, extensions);
+          this._attributeSwitch = new AttributeSwitch(gl, extensions, capabilities);
           this._switch = new Switch(gl);
 
           this._currentProgram = null;
@@ -4520,7 +4565,7 @@ var Chartx = (function () {
 
           this._currentLineWidth = null;
 
-          this._textureState = new TextureState(gl);
+          this._textureState = new TextureState(gl, capabilities);
           this._currentViewport = new Vector4();
 
           this._initState(gl);
@@ -6578,7 +6623,7 @@ var Chartx = (function () {
           //
           // Also changing the encoding after already used by a Material will not automatically make the Material
           // update.  You need to explicitly call Material.needsUpdate to trigger it to recompile.
-          // this.encoding = encoding !== undefined ? encoding :  LinearEncoding;
+          //this.encoding = encoding !== undefined ? encoding :  LinearEncoding;
 
           _this.version = 0;
           _this.onUpdate = null;
@@ -7073,6 +7118,17 @@ var Chartx = (function () {
               cache[1] = v.y;
               cache[2] = v.z;
               cache[3] = v.w;
+          }
+      } else if (v.r !== undefined) {
+          //rgba
+          if (cache[0] !== v.r || cache[1] !== v.g || cache[2] !== v.b || cache[3] !== v.a) {
+
+              this._gl.uniform4f(this.addr, v.r, v.g, v.b, v.a);
+
+              cache[0] = v.r;
+              cache[1] = v.g;
+              cache[2] = v.b;
+              cache[2] = v.a;
           }
       } else {
           //arr[4]
@@ -7815,7 +7871,7 @@ var Chartx = (function () {
 
               if (list === undefined) {
 
-                  console.log('WebGLRenderLists:', hash);
+                  //console.log('WebGLRenderLists:', hash);
 
                   list = new WebGLRenderList();
                   this._lists[hash] = list;
@@ -7988,6 +8044,7 @@ var Chartx = (function () {
           this._properties = properties;
           this._info = info;
           this._state = state;
+          this.extensions = extensions;
           this._capabilities = capabilities;
           this._utils = utils;
       }
@@ -8174,7 +8231,10 @@ var Chartx = (function () {
   function setTextureParameters(textureType, texture, isPowerOfTwoImage) {
 
       var _gl = this.gl,
-          utils = this._utils;
+          extensions = this.extensions,
+          utils = this._utils,
+          properties = this._properties,
+          extension = void 0;
 
       if (isPowerOfTwoImage) {
 
@@ -8199,6 +8259,20 @@ var Chartx = (function () {
           if (texture.minFilter !== NearestFilter && texture.minFilter !== LinearFilter) {
 
               console.warn('WebGLRenderer: Texture is not power of two. Texture.minFilter should be set to NearestFilter or LinearFilter.', texture);
+          }
+      }
+
+      extension = extensions.get('EXT_texture_filter_anisotropic');
+
+      if (extension) {
+
+          if (texture.type === FloatType && extensions.get('OES_texture_float_linear') === null) return;
+          if (texture.type === HalfFloatType && extensions.get('OES_texture_half_float_linear') === null) return;
+
+          if (texture.anisotropy > 1 || properties.get(texture).__currentAnisotropy) {
+
+              _gl.texParameterf(textureType, extension.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(texture.anisotropy, capabilities.getMaxAnisotropy()));
+              properties.get(texture).__currentAnisotropy = texture.anisotropy;
           }
       }
   }
@@ -8602,7 +8676,8 @@ var Chartx = (function () {
                   _stencil = parameters.stencil !== undefined ? parameters.stencil : true,
                   _antialias = parameters.antialias !== undefined ? parameters.antialias : false,
                   _premultipliedAlpha = parameters.premultipliedAlpha !== undefined ? parameters.premultipliedAlpha : true,
-                  _preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false;
+                  _preserveDrawingBuffer = parameters.preserveDrawingBuffer !== undefined ? parameters.preserveDrawingBuffer : false,
+                  _powerPreference = parameters.powerPreference !== undefined ? parameters.powerPreference : 'default';
 
               me.domElement = _canvas;
               me.gl = _context;
@@ -8618,7 +8693,8 @@ var Chartx = (function () {
                       stencil: _stencil,
                       antialias: _antialias,
                       premultipliedAlpha: _premultipliedAlpha,
-                      preserveDrawingBuffer: _preserveDrawingBuffer
+                      preserveDrawingBuffer: _preserveDrawingBuffer,
+                      powerPreference: _powerPreference
                   };
 
                   var _gl = _context || _canvas.getContext('webgl', contextAttributes) || _canvas.getContext('experimental-webgl', contextAttributes);
@@ -8638,39 +8714,23 @@ var Chartx = (function () {
 
                   _canvas.addEventListener('webglcontextlost', onContextLost.bind(me), false);
                   _canvas.addEventListener('webglcontextrestored', onContextRestore.bind(me), false);
+
+                  // Some experimental-webgl implementations do not have getShaderPrecisionFormat
+                  if (_gl.getShaderPrecisionFormat === undefined) {
+
+                      _gl.getShaderPrecisionFormat = function () {
+
+                          return { 'rangeMin': 1, 'rangeMax': 1, 'precision': 1 };
+                      };
+                  }
               } catch (error) {
 
                   console.error('WebGLRenderer: ' + error);
-              }
-
-              /**
-                  * @private
-                  * @description 上下文丢失
-                  * @param {*} event 
-                  */
-              function onContextLost(event) {
-
-                  event.preventDefault();
-                  console.log('WebGLRenderer: Context Lost.');
-                  this._isContextLost = true;
-                  this.fire({ type: 'contextlost' });
-              }
-              /**
-              * @private
-              * @description 上下文恢复
-              */
-              function onContextRestore() {
-
-                  console.log('WebGLRenderer: Context Restored.');
-                  this._isContextLost = true;
-                  this._initGLContext(parametersÎ);
-                  this.fire({ type: 'contextrestore' });
               }
           }
       }, {
           key: '_initGLContext',
           value: function _initGLContext(parameters) {
-              var me = this;
               var _gl = this.gl;
               var _width = this._width;
               var _height = this._height;
@@ -8702,10 +8762,10 @@ var Chartx = (function () {
               this._utils = new WebGLUtils(_gl);
               this._info = new WebGLInfo(_gl);
               this._properties = new WebGLProperties();
-              this._state = new WebGLState(_gl, this._extensions);
-              this._renderStates = new WebGLRenderStates();
               this._capabilities = new WebGLCapabilities(_gl, parameters);
-              this._textures = new WebGLTextures(_gl, null, this._state, this._properties, this._capabilities, this._utils, this._info);
+              this._state = new WebGLState(_gl, this._extensions, this._capabilities);
+              this._renderStates = new WebGLRenderStates();
+              this._textures = new WebGLTextures(_gl, this._extensions, this._state, this._properties, this._capabilities, this._utils, this._info);
               this._attributes = new WebGLAttributes(_gl);
               this._geometries = new WebGLGeometries(_gl, this._attributes, this._info);
               this._objects = new WebGLObjects(this._geometries, this._info);
@@ -8718,7 +8778,7 @@ var Chartx = (function () {
               //console.dir(this._capabilities);
               this._info.programs = this._programCache.programs;
 
-              me.setSize(_width, _height, true);
+              //me.setSize(_width, _height, true);
           }
       }, {
           key: 'getContext',
@@ -8761,6 +8821,8 @@ var Chartx = (function () {
               var me = this;
               var _pixelRatio = this._pixelRatio;
               var _canvas = me.domElement;
+              this._width = width;
+              this._height = height;
 
               _canvas.width = width * _pixelRatio;
               _canvas.height = height * _pixelRatio;
@@ -8783,12 +8845,12 @@ var Chartx = (function () {
               var gl = this.gl;
               var viewport = new Vector4(x, y, width, height);
 
-              if (this._currentViewport.equals(viewport) === false) {
+              //if (this._currentViewport.equals(viewport) === false) {
 
-                  this._currentViewport.copy(viewport).multiplyScalar(this._pixelRatio);
+              this._currentViewport.copy(viewport).multiplyScalar(this._pixelRatio);
 
-                  this._state.viewport(this._currentViewport);
-              }
+              this._state.viewport(this._currentViewport);
+              //}
           }
           //设置清除色
 
@@ -9086,8 +9148,8 @@ var Chartx = (function () {
           key: 'dispose',
           value: function dispose() {
 
-              this._canvas.removeEventListener('webglcontextlost', onContextLost, false);
-              this._canvas.removeEventListener('webglcontextrestored', onContextRestore, false);
+              this.domElement.removeEventListener('webglcontextlost', onContextLost, false);
+              this.domElement.removeEventListener('webglcontextrestored', onContextRestore, false);
 
               this._renderLists.dispose();
               this._renderStates.dispose();
@@ -9601,6 +9663,30 @@ var Chartx = (function () {
       uniforms.directionalLights.needsUpdate = value;
       uniforms.pointLights.needsUpdate = value;
       uniforms.spotLights.needsUpdate = value;
+  }
+
+  /**
+  * @private
+  * @description 上下文丢失
+  * @param {*} event 
+  */
+  function onContextLost(event) {
+
+      event.preventDefault();
+      console.log('WebGLRenderer: Context Lost.');
+      this._isContextLost = true;
+      this.fire({ type: 'contextlost' });
+  }
+  /**
+  * @private
+  * @description 上下文恢复
+  */
+  function onContextRestore() {
+
+      console.log('WebGLRenderer: Context Restored.');
+      this._isContextLost = true;
+      this._initGLContext(parametersÎ);
+      this.fire({ type: 'contextrestore' });
   }
 
   var v1$3 = new Vector3$1();
@@ -12033,12 +12119,13 @@ var Chartx = (function () {
                   }
 
                   // for backward compatability if shading is set in the constructor
-                  if (key === 'shading') {
+                  // if (key === 'shading') {
 
-                      console.warn(this.type + ': .shading has been removed. Use the boolean .flatShading instead.');
-                      this.flatShading = newValue === FlatShading ? true : false;
-                      continue;
-                  }
+                  //     console.warn(this.type + ': .shading has been removed. Use the boolean .flatShading instead.');
+                  //     this.flatShading = (newValue === FlatShading) ? true : false;
+                  //     continue;
+
+                  // }
 
                   var currentValue = this[key];
 
@@ -13804,7 +13891,13 @@ var Chartx = (function () {
 
           classCallCheck(this, TextSprite);
 
-          var _this = possibleConstructorReturn(this, (TextSprite.__proto__ || Object.getPrototypeOf(TextSprite)).call(this, new SpriteMaterial$$1(_extends({}, material, { map: new TextTexture(texture) }))));
+          var params = {};
+          for (var key in material) {
+              params[key] = material[key];
+          }
+          params['map'] = new TextTexture(texture);
+
+          var _this = possibleConstructorReturn(this, (TextSprite.__proto__ || Object.getPrototypeOf(TextSprite)).call(this, new SpriteMaterial$$1(params)));
 
           _this.fontSize = fontSize;
           _this.redrawInterval = redrawInterval;
@@ -15919,10 +16012,15 @@ var Chartx = (function () {
           _this.color = new Color$1(color);
           _this.intensity = intensity !== undefined ? intensity : 1;
 
-          _this.isLight = Light;
           return _this;
       }
 
+      createClass(Light, [{
+          key: 'isLight',
+          get: function get$$1() {
+              return true;
+          }
+      }]);
       return Light;
   }(Object3D);
 
@@ -15946,16 +16044,20 @@ var Chartx = (function () {
           _this.penumbra = penumbra !== undefined ? penumbra : 0;
           _this.decay = decay !== undefined ? decay : 1; // for physically correct lights, should be 2.
 
-          _this.isSpotLight = true;
 
           return _this;
       }
 
-      // intensity = power per solid angle.
-      // ref: equation (17) from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-
-
       createClass(SpotLight, [{
+          key: 'isSpotLight',
+          get: function get$$1() {
+              return true;
+          }
+
+          // intensity = power per solid angle.
+          // ref: equation (17) from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+
+      }, {
           key: 'power',
           get: function get$$1() {
               return this.intensity * Math.PI;
@@ -15981,14 +16083,18 @@ var Chartx = (function () {
           _this.distance = distance !== undefined ? distance : 0;
           _this.decay = decay !== undefined ? decay : 1; // for physically correct lights, should be 2.
 
-          _this.isPointLight = true;
           return _this;
       }
-      // intensity = power per solid angle.
-      // ref: equation (15) from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-
 
       createClass(PointLight, [{
+          key: "isPointLight",
+          get: function get$$1() {
+              return true;
+          }
+          // intensity = power per solid angle.
+          // ref: equation (15) from https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
+
+      }, {
           key: "power",
           get: function get$$1() {
               return this.intensity * 4 * Math.PI;
@@ -16016,11 +16122,15 @@ var Chartx = (function () {
 
           _this.target = new Object3D();
 
-          _this.isDirectionalLight = true;
-
           return _this;
       }
 
+      createClass(DirectionalLight, [{
+          key: 'isDirectionalLight',
+          get: function get$$1() {
+              return true;
+          }
+      }]);
       return DirectionalLight;
   }(Light);
 
@@ -16033,10 +16143,15 @@ var Chartx = (function () {
           var _this = possibleConstructorReturn(this, (AmbientLight.__proto__ || Object.getPrototypeOf(AmbientLight)).call(this, color, intensity));
 
           _this.type = 'AmbientLight';
-          _this.isAmbientLight = true;
           return _this;
       }
 
+      createClass(AmbientLight, [{
+          key: "isAmbientLight",
+          get: function get$$1() {
+              return true;
+          }
+      }]);
       return AmbientLight;
   }(Light);
 
@@ -16417,7 +16532,7 @@ var Chartx = (function () {
       return Spherical;
   }();
 
-  var _ = {};
+  var _$1 = {};
   var breaker = {};
   var ArrayProto = Array.prototype,
       ObjProto = Object.prototype,
@@ -16454,8 +16569,8 @@ var Chartx = (function () {
     return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
   };
 
-  _.values = function (obj) {
-    var keys = _.keys(obj);
+  _$1.values = function (obj) {
+    var keys = _$1.keys(obj);
     var length = keys.length;
     var values = new Array(length);
     for (var i = 0; i < length; i++) {
@@ -16464,19 +16579,19 @@ var Chartx = (function () {
     return values;
   };
 
-  _.keys = nativeKeys || function (obj) {
+  _$1.keys = nativeKeys || function (obj) {
     if (obj !== Object(obj)) throw new TypeError('Invalid object');
     var keys = [];
     for (var key in obj) {
-      if (_.has(obj, key)) keys.push(key);
+      if (_$1.has(obj, key)) keys.push(key);
     }return keys;
   };
 
-  _.has = function (obj, key) {
+  _$1.has = function (obj, key) {
     return hasOwnProperty.call(obj, key);
   };
 
-  var each = _.each = _.forEach = function (obj, iterator, context) {
+  var each = _$1.each = _$1.forEach = function (obj, iterator, context) {
     if (obj == null) return;
     if (nativeForEach && obj.forEach === nativeForEach) {
       obj.forEach(iterator, context);
@@ -16485,18 +16600,18 @@ var Chartx = (function () {
         if (iterator.call(context, obj[i], i, obj) === breaker) return;
       }
     } else {
-      var keys = _.keys(obj);
+      var keys = _$1.keys(obj);
       for (var i = 0, length = keys.length; i < length; i++) {
         if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker) return;
       }
     }
   };
 
-  _.compact = function (array) {
-    return _.filter(array, _.identity);
+  _$1.compact = function (array) {
+    return _$1.filter(array, _$1.identity);
   };
 
-  _.filter = _.select = function (obj, iterator, context) {
+  _$1.filter = _$1.select = function (obj, iterator, context) {
     var results = [];
     if (obj == null) return results;
     if (nativeFilter && obj.filter === nativeFilter) return obj.filter(iterator, context);
@@ -16507,63 +16622,63 @@ var Chartx = (function () {
   };
 
   each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function (name) {
-    _['is' + name] = function (obj) {
+    _$1['is' + name] = function (obj) {
       return toString.call(obj) == '[object ' + name + ']';
     };
   });
 
-  if (!_.isArguments(arguments)) {
-    _.isArguments = function (obj) {
-      return !!(obj && _.has(obj, 'callee'));
+  if (!_$1.isArguments(arguments)) {
+    _$1.isArguments = function (obj) {
+      return !!(obj && _$1.has(obj, 'callee'));
     };
   }
 
   {
-    _.isFunction = function (obj) {
+    _$1.isFunction = function (obj) {
       return typeof obj === 'function';
     };
   }
-  _.isFinite = function (obj) {
+  _$1.isFinite = function (obj) {
     return isFinite(obj) && !isNaN(parseFloat(obj));
   };
 
-  _.isNaN = function (obj) {
-    return _.isNumber(obj) && obj != +obj;
+  _$1.isNaN = function (obj) {
+    return _$1.isNumber(obj) && obj != +obj;
   };
 
-  _.isBoolean = function (obj) {
+  _$1.isBoolean = function (obj) {
     return obj === true || obj === false || toString.call(obj) == '[object Boolean]';
   };
 
-  _.isNull = function (obj) {
+  _$1.isNull = function (obj) {
     return obj === null;
   };
 
-  _.isEmpty = function (obj) {
+  _$1.isEmpty = function (obj) {
     if (obj == null) return true;
-    if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
+    if (_$1.isArray(obj) || _$1.isString(obj)) return obj.length === 0;
     for (var key in obj) {
-      if (_.has(obj, key)) return false;
+      if (_$1.has(obj, key)) return false;
     }return true;
   };
 
-  _.isElement = function (obj) {
+  _$1.isElement = function (obj) {
     return !!(obj && obj.nodeType === 1);
   };
 
-  _.isArray = nativeIsArray || function (obj) {
+  _$1.isArray = nativeIsArray || function (obj) {
     return toString.call(obj) == '[object Array]';
   };
 
-  _.isObject = function (obj) {
+  _$1.isObject = function (obj) {
     return obj === Object(obj);
   };
 
-  _.identity = function (value) {
+  _$1.identity = function (value) {
     return value;
   };
 
-  _.indexOf = function (array, item, isSorted) {
+  _$1.indexOf = function (array, item, isSorted) {
     if (array == null) return -1;
     var i = 0,
         length = array.length;
@@ -16571,7 +16686,7 @@ var Chartx = (function () {
       if (typeof isSorted == 'number') {
         i = isSorted < 0 ? Math.max(0, length + isSorted) : isSorted;
       } else {
-        i = _.sortedIndex(array, item);
+        i = _$1.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
@@ -16581,17 +16696,17 @@ var Chartx = (function () {
     }return -1;
   };
 
-  _.isWindow = function (obj) {
+  _$1.isWindow = function (obj) {
     return obj != null && obj == obj.window;
   };
 
   // Internal implementation of a recursive `flatten` function.
   var flatten = function flatten(input, shallow, output) {
-    if (shallow && _.every(input, _.isArray)) {
+    if (shallow && _$1.every(input, _$1.isArray)) {
       return concat.apply(output, input);
     }
     each(input, function (value) {
-      if (_.isArray(value) || _.isArguments(value)) {
+      if (_$1.isArray(value) || _$1.isArguments(value)) {
         shallow ? push.apply(output, value) : flatten(value, shallow, output);
       } else {
         output.push(value);
@@ -16601,12 +16716,12 @@ var Chartx = (function () {
   };
 
   // Flatten out an array, either recursively (by default), or just one level.
-  _.flatten = function (array, shallow) {
+  _$1.flatten = function (array, shallow) {
     return flatten(array, shallow, []);
   };
 
-  _.every = _.all = function (obj, iterator, context) {
-    iterator || (iterator = _.identity);
+  _$1.every = _$1.all = function (obj, iterator, context) {
+    iterator || (iterator = _$1.identity);
     var result = true;
     if (obj == null) return result;
     if (nativeEvery && obj.every === nativeEvery) return obj.every(iterator, context);
@@ -16617,11 +16732,11 @@ var Chartx = (function () {
   };
 
   // Return the minimum element (or element-based computation).
-  _.min = function (obj, iterator, context) {
-    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
+  _$1.min = function (obj, iterator, context) {
+    if (!iterator && _$1.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
       return Math.min.apply(Math, obj);
     }
-    if (!iterator && _.isEmpty(obj)) return Infinity;
+    if (!iterator && _$1.isEmpty(obj)) return Infinity;
     var result = { computed: Infinity, value: Infinity };
     each(obj, function (value, index, list) {
       var computed = iterator ? iterator.call(context, value, index, list) : value;
@@ -16632,11 +16747,11 @@ var Chartx = (function () {
   // Return the maximum element or (element-based computation).
   // Can't optimize arrays of integers longer than 65,535 elements.
   // See [WebKit Bug 80797](https://bugs.webkit.org/show_bug.cgi?id=80797)
-  _.max = function (obj, iterator, context) {
-    if (!iterator && _.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
+  _$1.max = function (obj, iterator, context) {
+    if (!iterator && _$1.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
       return Math.max.apply(Math, obj);
     }
-    if (!iterator && _.isEmpty(obj)) return -Infinity;
+    if (!iterator && _$1.isEmpty(obj)) return -Infinity;
     var result = { computed: -Infinity, value: -Infinity };
     each(obj, function (value, index, list) {
       var computed = iterator ? iterator.call(context, value, index, list) : value;
@@ -16646,7 +16761,7 @@ var Chartx = (function () {
   };
 
   // Return the first value which passes a truth test. Aliased as `detect`.
-  _.find = _.detect = function (obj, iterator, context) {
+  _$1.find = _$1.detect = function (obj, iterator, context) {
     var result;
     any(obj, function (value, index, list) {
       if (iterator.call(context, value, index, list)) {
@@ -16659,8 +16774,8 @@ var Chartx = (function () {
   // Determine if at least one element in the object matches a truth test.
   // Delegates to **ECMAScript 5**'s native `some` if available.
   // Aliased as `any`.
-  var any = _.some = _.any = function (obj, iterator, context) {
-    iterator || (iterator = _.identity);
+  var any = _$1.some = _$1.any = function (obj, iterator, context) {
+    iterator || (iterator = _$1.identity);
     var result = false;
     if (obj == null) return result;
     if (nativeSome && obj.some === nativeSome) return obj.some(iterator, context);
@@ -16670,31 +16785,31 @@ var Chartx = (function () {
     return !!result;
   };
   // Return a version of the array that does not contain the specified value(s).
-  _.without = function (array) {
-    return _.difference(array, slice.call(arguments, 1));
+  _$1.without = function (array) {
+    return _$1.difference(array, slice.call(arguments, 1));
   };
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
-  _.difference = function (array) {
+  _$1.difference = function (array) {
     var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
-    return _.filter(array, function (value) {
-      return !_.contains(rest, value);
+    return _$1.filter(array, function (value) {
+      return !_$1.contains(rest, value);
     });
   };
   // Produce a duplicate-free version of the array. If the array has already
   // been sorted, you have the option of using a faster algorithm.
   // Aliased as `unique`.
-  _.uniq = _.unique = function (array, isSorted, iterator, context) {
-    if (_.isFunction(isSorted)) {
+  _$1.uniq = _$1.unique = function (array, isSorted, iterator, context) {
+    if (_$1.isFunction(isSorted)) {
       context = iterator;
       iterator = isSorted;
       isSorted = false;
     }
-    var initial = iterator ? _.map(array, iterator, context) : array;
+    var initial = iterator ? _$1.map(array, iterator, context) : array;
     var results = [];
     var seen = [];
     each(initial, function (value, index) {
-      if (isSorted ? !index || seen[seen.length - 1] !== value : !_.contains(seen, value)) {
+      if (isSorted ? !index || seen[seen.length - 1] !== value : !_$1.contains(seen, value)) {
         seen.push(value);
         results.push(array[index]);
       }
@@ -16703,7 +16818,7 @@ var Chartx = (function () {
   };
   // Return the results of applying the iterator to each element.
   // Delegates to **ECMAScript 5**'s native `map` if available.
-  _.map = _.collect = function (obj, iterator, context) {
+  _$1.map = _$1.collect = function (obj, iterator, context) {
     var results = [];
     if (obj == null) return results;
     if (nativeMap && obj.map === nativeMap) return obj.map(iterator, context);
@@ -16714,7 +16829,7 @@ var Chartx = (function () {
   };
   // Determine if the array or object contains a given value (using `===`).
   // Aliased as `include`.
-  _.contains = _.include = function (obj, target) {
+  _$1.contains = _$1.include = function (obj, target) {
     if (obj == null) return false;
     if (nativeIndexOf && obj.indexOf === nativeIndexOf) return obj.indexOf(target) != -1;
     return any(obj, function (value) {
@@ -16723,14 +16838,14 @@ var Chartx = (function () {
   };
 
   // Convenience version of a common use case of `map`: fetching a property.
-  _.pluck = function (obj, key) {
-    return _.map(obj, function (value) {
+  _$1.pluck = function (obj, key) {
+    return _$1.map(obj, function (value) {
       return value[key];
     });
   };
 
   // Return a random integer between min and max (inclusive).
-  _.random = function (min, max) {
+  _$1.random = function (min, max) {
     if (max == null) {
       max = min;
       min = 0;
@@ -16739,21 +16854,21 @@ var Chartx = (function () {
   };
 
   // Shuffle a collection.
-  _.shuffle = function (obj) {
-    return _.sample(obj, Infinity);
+  _$1.shuffle = function (obj) {
+    return _$1.sample(obj, Infinity);
   };
 
-  _.sample = function (obj, n, guard) {
+  _$1.sample = function (obj, n, guard) {
     if (n == null || guard) {
-      if (!isArrayLike(obj)) obj = _.values(obj);
-      return obj[_.random(obj.length - 1)];
+      if (!isArrayLike(obj)) obj = _$1.values(obj);
+      return obj[_$1.random(obj.length - 1)];
     }
-    var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);
+    var sample = isArrayLike(obj) ? _$1.clone(obj) : _$1.values(obj);
     var length = getLength(sample);
     n = Math.max(Math.min(n, length), 0);
     var last = length - 1;
     for (var index = 0; index < n; index++) {
-      var rand = _.random(index, last);
+      var rand = _$1.random(index, last);
       var temp = sample[index];
       sample[index] = sample[rand];
       sample[rand] = temp;
@@ -16765,7 +16880,7 @@ var Chartx = (function () {
   *
   *如果是深度extend，第一个参数就设置为true
   */
-  _.extend = function () {
+  _$1.extend = function () {
     var options,
         name,
         src,
@@ -16778,7 +16893,7 @@ var Chartx = (function () {
       deep = target;
       target = arguments[1] || {};
       i = 2;
-    }  if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== "object" && !_.isFunction(target)) {
+    }  if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== "object" && !_$1.isFunction(target)) {
       target = {};
     }  if (length === i) {
       target = this;
@@ -16792,8 +16907,8 @@ var Chartx = (function () {
             continue;
           }
           //if( deep && copy && _.isObject( copy ) &&  && !_.isArray( copy ) && !_.isFunction( copy ) ){
-          if (deep && copy && _.isObject(copy) && copy.constructor === Object) {
-            target[name] = _.extend(deep, src, copy);
+          if (deep && copy && _$1.isObject(copy) && copy.constructor === Object) {
+            target[name] = _$1.extend(deep, src, copy);
           } else {
             target[name] = copy;
           }      }
@@ -16802,14 +16917,14 @@ var Chartx = (function () {
     return target;
   };
 
-  _.clone = function (obj) {
-    if (!_.isObject(obj)) return obj;
-    return _.isArray(obj) ? obj.slice() : _.extend(true, {}, obj);
+  _$1.clone = function (obj) {
+    if (!_$1.isObject(obj)) return obj;
+    return _$1.isArray(obj) ? obj.slice() : _$1.extend(true, {}, obj);
   };
 
-  _.isSafeObject = function (root, path) {
+  _$1.isSafeObject = function (root, path) {
     path = path || '';
-    root = _.clone(root);
+    root = _$1.clone(root);
     var arr = path.split('.');
     var result = true;
     arr.forEach(function (key) {
@@ -16849,6 +16964,30 @@ var Chartx = (function () {
           key: 'setGroupName',
           value: function setGroupName(name) {
               this.group.name = name;
+          }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+              var removes = [];
+              this.group.traverse(function (obj) {
+                  if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isTextSprite) {
+                      if (obj.geometry) {
+                          obj.geometry.dispose();
+                      }
+                      if (obj.material) {
+                          obj.material.dispose();
+                      }
+                      removes.push(obj);
+                  }
+              });
+              while (removes.length) {
+                  var obj = removes.pop();
+                  if (obj.parent) {
+                      obj.parent.remove(obj);
+                  } else {
+                      obj = null;
+                  }
+              }
           }
 
           //后续组件的公共部分可以提取到这里
@@ -16920,7 +17059,7 @@ var Chartx = (function () {
 
           _this.proportion = false; //比例柱状图，比例图首先肯定是个堆叠图
 
-          _.extend(true, _this, opt);
+          _$1.extend(true, _this, opt);
 
           _this.init();
 
@@ -16936,20 +17075,34 @@ var Chartx = (function () {
           key: 'computePos',
           value: function computePos() {
               var me = this;
-              var fields = [];
-              if (!_.isArray(this.field)) {
+              var fields = [],
+                  customField = [];
+              if (!_$1.isArray(this.field)) {
                   fields.push(this.field);
               } else {
                   fields = this.field.slice(0);
               }
+              var zSection = this._coordSystem.zAxisAttribute.getOrgSection();
+              var zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
               this.drawPosData = [];
               var xDatas = this._coordSystem.xAxisAttribute.data;
               var yDatas = this._coordSystem.yAxisAttribute.data;
               //x轴返回的数据是单列
               if (xDatas.length == 1) {
-                  xDatas = _.flatten(xDatas);
+                  xDatas = _$1.flatten(xDatas);
               }
 
+              var yValidData = [];
+              zSection.forEach(function (zs, index) {
+                  fields.forEach(function (fd) {
+                      if (zs == fd.toString()) {
+                          yValidData.push(yDatas[index]);
+                          if (zCustomSection.length > 0) {
+                              customField.push(zCustomSection[index]);
+                          }
+                      }
+                  });
+              });
               //yDatas = _.flatten(yDatas);
               //let dd = false;
               var lastArray = [];
@@ -16960,7 +17113,14 @@ var Chartx = (function () {
                   //this.stack = [];
                   //具体XYZ的值
                   this.value = null;
+                  //堆叠值
                   this.stackValue = null;
+                  //堆叠楼层
+                  this.floor = 0;
+                  //绘制的字段顺序
+                  this.level = 0;
+                  this.field = '';
+
                   //
                   //this.pos = null;
               };
@@ -16969,36 +17129,42 @@ var Chartx = (function () {
 
               xDatas.forEach(function (xd, no) {
                   lastArray = [];
-                  yDatas.forEach(function (yda, index) {
-
-                      var zd = fields[index].toString();
+                  yValidData.forEach(function (yda, index) {
+                      var _fd = fields[index];
+                      var zd = customField[index] ? customField[index] : fields[index].toString();
 
                       if (yda.length > 1) {
                           yda.forEach(function (ydad, num) {
 
-                              var ydadd = _.flatten(ydad).slice(0);
+                              var ydadd = _$1.flatten(ydad).slice(0);
+                              var _fdd = _fd[num];
                               ydadd.forEach(function (yd, i) {
                                   if (i === no) {
                                       var _tmp = new DataOrg();
+                                      _tmp.floor = num;
+                                      _tmp.level = index + num;
+                                      _tmp.field = _fdd;
                                       if (num > 0) {
                                           _tmp.isStack = true;
                                           _tmp.value = new Vector3$1(xd, yd, zd);
                                           _tmp.stackValue = new Vector3$1(xd, lastArray[i], zd);
                                       } else {
-
+                                          _tmp.isStack = true;
+                                          _tmp.stackValue = new Vector3$1(xd, 0, zd);
                                           _tmp.value = new Vector3$1(xd, yd, zd);
                                       }
                                       me.drawPosData.push(_tmp);
                                   }
                               });
-                              _.flatten(ydad).slice(0).forEach(function (t, y) {
+                              _$1.flatten(ydad).slice(0).forEach(function (t, y) {
                                   lastArray[y] = (lastArray[y] || 0) + t;
                               });
                               //lastArray = _.flatten(ydad).slice(0);
                           });
                       } else {
                           var _tmp = new DataOrg();
-                          _.flatten(yda).slice(0).forEach(function (yd, i) {
+                          _tmp.field = _fd;
+                          _$1.flatten(yda).slice(0).forEach(function (yd, i) {
                               if (i === no) {
                                   _tmp.value = new Vector3$1(xd, yd, zd);
                                   me.drawPosData.push(_tmp);
@@ -17018,27 +17184,18 @@ var Chartx = (function () {
               var getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
               var getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
               var getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-              var boxWidth = ceil.x * 0.8;
-              var boxDepth = ceil.z * 0.8;
+              var boxWidth = ceil.x * 0.7;
+              var boxDepth = ceil.z * 0.7;
               var boxHeight = 1;
+              console.log(new Date());
               this.drawPosData.forEach(function (dataOrg) {
-
-                  var metaril = new MeshBasicMaterial$$1({
-                      color: 0xffffff * Math.random(),
-                      transparent: true,
-                      opacity: 1,
-                      depthTest: true,
-                      depthWrite: true
-                      // polygonOffset: true,
-                      // polygonOffsetFactor: 1,
-                      // polygonOffsetUnits: 1.5
-                  });
 
                   var pos = new Vector3$1();
                   var stack = new Vector3$1();
                   pos.setX(getXAxisPosition(dataOrg.value.x));
                   pos.setY(getYAxisPosition(dataOrg.value.y));
                   pos.setZ(getZAxisPosition(dataOrg.value.z));
+
                   if (dataOrg.isStack) {
                       stack.setX(pos.x - boxWidth * 0.5);
                       stack.setY(getYAxisPosition(dataOrg.stackValue.y));
@@ -17050,20 +17207,90 @@ var Chartx = (function () {
                       stack.setZ(-pos.z + boxDepth * 0.5);
                   }
                   boxHeight = Math.max(Math.abs(pos.y), 1);
-                  console.log('boxHeight', boxHeight, dataOrg.value.y);
+                  //console.log('boxHeight', boxHeight, dataOrg.value.y);
+
+                  // MeshLambertMaterial
+                  //MeshPhongMaterial
+                  var metaril = new MeshPhongMaterial({
+                      color: _this2._getColor(_this2.node.fillStyle, dataOrg),
+                      transparent: true,
+                      opacity: 1,
+                      depthTest: true,
+                      depthWrite: true,
+                      side: DoubleSide
+                      // polygonOffset: true,
+                      // polygonOffsetFactor: 1,
+                      // polygonOffsetUnits: 1.5
+                  });
                   var box = _this2._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
                   box.position.copy(stack);
                   box.renderOrder = renderOrder++;
                   _this2.group.add(box);
 
-                  box.on('mouseover', function () {
-                      this.userData.color = this.material.color.clone();
-                      this.material.setValues({ color: 0xf00000 });
-                  });
-                  box.on('mouseout', function () {
-                      this.material.setValues({ color: this.userData.color });
-                  });
+                  box.on('mouseover', _this2.onMouseOver);
+                  box.on('mouseout', _this2.onMouseOut);
+                  box.on('click', _this2.onClick);
               });
+          }
+      }, {
+          key: 'onMouseOver',
+          value: function onMouseOver() {
+              //上下午中的this 是bar 对象
+              this.userData.color = this.material.color.clone();
+              //高亮
+              var tempColor = {};
+              this.material.color.getHSL(tempColor);
+              this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
+          }
+      }, {
+          key: 'onMouseOut',
+          value: function onMouseOut() {
+
+              this.material.setValues({ color: this.userData.color });
+          }
+      }, {
+          key: 'onClick',
+          value: function onClick() {
+
+              console.log(this.id);
+              var dom = document.getElementById('testdiv');
+              // dom.style.left = e.event.clientX+'px';
+              // dom.style.top = e.event.clientY+'px';
+          }
+      }, {
+          key: '_getColor',
+          value: function _getColor(c, dataOrg) {
+
+              var color = this._coordSystem.yAxisAttribute.getColor(dataOrg.field);
+
+              //field对应的索引，， 取颜色这里不要用i
+              if (_$1.isString(c)) {
+                  color = c;
+              }            if (_$1.isArray(c)) {
+                  color = _$1.flatten(c)[_$1.indexOf(_flattenField, field)];
+              }            if (_$1.isFunction(c)) {
+                  color = c.apply(this, [rectData]);
+              }
+              return color;
+          }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+              var _this3 = this;
+
+              this.group.traverse(function (obj) {
+                  if (obj.has('click', _this3.onClick)) {
+                      obj.off('click', _this3.onClick);
+                  }
+                  if (obj.has('mouseover', _this3.onMouseOver)) {
+                      obj.off('mouseover', _this3.onMouseOver);
+                  }
+                  if (obj.has('mouseout', _this3.onMouseOut)) {
+                      obj.off('mouseout', _this3.onMouseOut);
+                  }
+              });
+
+              get(Bar.prototype.__proto__ || Object.getPrototypeOf(Bar.prototype), 'dispose', this).call(this);
           }
       }]);
       return Bar;
@@ -17073,7 +17300,7 @@ var Chartx = (function () {
 
       // dom操作相关代码
       query: function query(el) {
-          if (_.isString(el)) {
+          if (_$1.isString(el)) {
               return document.getElementById(el);
           }
           if (el.nodeType == 1) {
@@ -17113,7 +17340,7 @@ var Chartx = (function () {
       if (list === undefined || list === null) {
           list = [];
       }    //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
-      if (list.length > 0 && !_.isArray(list[0])) {
+      if (list.length > 0 && !_$1.isArray(list[0])) {
           var newArr = [];
           var fields = [];
           var fieldNum = 0;
@@ -17164,7 +17391,7 @@ var Chartx = (function () {
 
           _this.layers = [];
           _this.isUpdate = true;
-          _this.currTick = new Date();
+          _this.currTick = new Date().getTime();
           _this.lastTick = null;
           _this.renderer = null;
 
@@ -17204,13 +17431,18 @@ var Chartx = (function () {
               var _this2 = this;
 
               var redraw = this.isUpdate;
-              this.isUpdate = false;
+
+              if (this.lastTick - this.currTick > 1000 * 5) {
+                  this.isUpdate = false;
+              }
+
               this.fire({ type: 'renderbefore' });
               if (redraw) {
                   this.layers.forEach(function (view) {
 
                       _this2.renderer.render(view._scene, view._camera);
                   });
+                  this.lastTick = new Date().getTime();
               }
               this.fire({ type: 'renderafter' });
           }
@@ -17219,9 +17451,15 @@ var Chartx = (function () {
           value: function renderFrame() {
               var me = this;
               this.render();
-              window.renderFrame(function () {
+              this.frameId = window.requestAnimationFrame(function () {
                   me.renderFrame();
               });
+          }
+      }, {
+          key: "stopRenderFrame",
+          value: function stopRenderFrame() {
+              window.cancelAnimationFrame(this.frameId);
+              this.frameId = null;
           }
       }, {
           key: "addView",
@@ -17241,12 +17479,6 @@ var Chartx = (function () {
       }]);
       return Framework;
   }(Events);
-
-  window.renderFrame = function () {
-      return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (tick, canvas) {
-          window.setTimeout(tick, 1000 / 60);
-      };
-  }();
 
   var RenderFont = function () {
       function RenderFont() {
@@ -17492,7 +17724,7 @@ var Chartx = (function () {
           this.height = 0;
 
           this.aspect = 1;
-          this.fov = 75;
+          this.fov = 45;
           this.near = 0.1;
           this.far = 10000;
           this.mode = null;
@@ -17618,7 +17850,7 @@ var Chartx = (function () {
 
 
               if (!materials) {
-                  materials = new MeshBasicMaterial$$1({
+                  materials = new MeshLambertMaterial({
                       // depthTest: true,
                       // depthWrite: true
                   });
@@ -17659,7 +17891,8 @@ var Chartx = (function () {
 
 
               if (!materials) {
-                  materials = new MeshBasicMaterial$$1({
+
+                  materials = new MeshLambertMaterial({
                       color: faceStyle.fillStyle || 0xffffff * Math.random(),
                       side: FrontSide,
                       transparent: true,
@@ -17755,7 +17988,7 @@ var Chartx = (function () {
                   dashed: false
               });
 
-              if (!_.isArray(origins)) {
+              if (!_$1.isArray(origins)) {
                   origins = [origins];
               }
               var triangleVertices = [];
@@ -17773,7 +18006,7 @@ var Chartx = (function () {
                   triangleVertices.push(endPoint.toArray());
                   var lineMeshGeometry = new LineGeometry();
 
-                  lineMeshGeometry.setPositions(_.flatten(triangleVertices));
+                  lineMeshGeometry.setPositions(_$1.flatten(triangleVertices));
 
                   line = new Line2(lineMeshGeometry, matLine);
                   line.drawMode = TrianglesDrawMode;
@@ -17811,11 +18044,11 @@ var Chartx = (function () {
                   rotation: 0,
                   marginToLine: 3 //和刻度线的距离
               };
-              if (!_.isArray(texts)) {
+              if (!_$1.isArray(texts)) {
                   texts = [texts];
               }
 
-              if (!_.isArray(origins)) {
+              if (!_$1.isArray(origins)) {
                   origins = [origins];
               }
 
@@ -17855,7 +18088,6 @@ var Chartx = (function () {
       }, {
           key: "createTextSprite",
           value: function createTextSprite(text, fontSize, color) {
-              var group = new Group();
               var sprite = new TextSprite({
                   fontSize: fontSize,
                   texture: { //纹理中需要的文字大小不需要指定,TextSprite会自动计算
@@ -17868,8 +18100,7 @@ var Chartx = (function () {
                       transparent: true
                   }
               });
-              group.add(sprite);
-              return group;
+              return sprite;
           }
       }, {
           key: "getObjectScale",
@@ -17891,6 +18122,16 @@ var Chartx = (function () {
                   this._camera.bottom = frustumSize / -2;
               }
               this._camera.updateProjectionMatrix();
+          }
+      }, {
+          key: "dispose",
+          value: function dispose() {
+
+              this._scene = null;
+              this._camera = null;
+
+              this._frameWork = null;
+              this.renderer = null;
           }
       }]);
       return View;
@@ -17920,6 +18161,20 @@ var Chartx = (function () {
           value: function createView() {
               this.view.push(new View(this._framework));
           }
+      }, {
+          key: "dispose",
+          value: function dispose() {
+              var _this = this;
+
+              this.view.forEach(function (vw) {
+                  _this._framework.removeView(vw);
+                  vw.dispose();
+              });
+              this._framework.stopRenderFrame();
+              this._framework.renderer.dispose();
+              this._framework.render = null;
+              this.view = [];
+          }
       }]);
       return Application;
   }();
@@ -17937,7 +18192,7 @@ var Chartx = (function () {
 
           _this._root = root;
 
-          var opts = _.clone(_this._root.opt);
+          var opts = _$1.clone(_this._root.opt);
           _this.coord = {};
           //坐标原点
           _this.origin = new Vector3$1(0, 0, 0);
@@ -17955,7 +18210,7 @@ var Chartx = (function () {
 
           _this.group = root.renderView.addGroup({ name: 'InertialSystem' });
 
-          _.extend(true, _this, _this.setDefaultOpts(opts));
+          _$1.extend(true, _this, _this.setDefaultOpts(opts));
 
           return _this;
       }
@@ -18017,6 +18272,9 @@ var Chartx = (function () {
       }, {
           key: 'draw',
           value: function draw() {}
+      }, {
+          key: 'dispose',
+          value: function dispose() {}
       }]);
       return InertialSystem;
   }(Events);
@@ -18051,7 +18309,7 @@ var Chartx = (function () {
           return dataFrame;
       }
       //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
-      if (data.length > 0 && !_.isArray(data[0])) {
+      if (data.length > 0 && !_$1.isArray(data[0])) {
           data = parse2MatrixData(data);
           dataFrame.length = data.length;
       } else {
@@ -18061,7 +18319,7 @@ var Chartx = (function () {
       dataFrame.range.end = dataFrame.length - 1;
       //然后检查opts中是否有dataZoom.range
       if (opt && opt.dataZoom && opt.dataZoom.range) {
-          _.extend(dataFrame.range, opt.dataZoom.range);
+          _$1.extend(dataFrame.range, opt.dataZoom.range);
       }
       dataFrame.org = data;
       dataFrame.fields = data[0] ? data[0] : []; //所有的字段集合;
@@ -18108,13 +18366,13 @@ var Chartx = (function () {
                   data[i] = format(data[i]);
               }            return data;
           }
-          if (!_.isArray($field)) {
+          if (!_$1.isArray($field)) {
               $field = [$field];
           }
           //这个时候的arr只是totalList的过滤，还没有完全的按照$field 中的排序
           var newData = [];
           for (var i = 0, l = $field.length; i < l; i++) {
-              if (_.isArray($field[i])) {
+              if (_$1.isArray($field[i])) {
                   newData.push(getDataOrg($field[i], format, totalList, lev + 1));
               } else {
 
@@ -18144,7 +18402,7 @@ var Chartx = (function () {
 
       function _getFieldData(field) {
           var data;
-          _.each(dataFrame.data, function (d) {
+          _$1.each(dataFrame.data, function (d) {
               if (d.field == field) {
                   data = d;
               }
@@ -18157,6 +18415,23 @@ var Chartx = (function () {
       }
       return dataFrame;
   }
+
+  var _colors = ["#ff8533", "#73ace6", "#82d982", "#e673ac", "#cd6bed", "#8282d9", "#c0e650", "#e6ac73", "#6bcded", "#73e6ac", "#ed6bcd", "#9966cc"];
+
+  var theme = {
+      colors: _colors,
+      set: function set(colors) {
+          //this.colors = colors;
+          var me = this;
+          _.each(colors, function (color, i) {
+              me.colors[i] = color;
+          });
+          return this.colors;
+      },
+      get: function get() {
+          return this.colors;
+      }
+  };
 
   // This set of controls performs orbiting, dollying (zooming), and panning.
   // Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
@@ -18275,18 +18550,24 @@ var Chartx = (function () {
           _this._dollyEnd = new Vector2();
           _this._dollyDelta = new Vector2();
 
-          //
+          scope._onContextMenubind = onContextMenu.bind(scope);
+          scope._onMouseDownbind = onMouseDown.bind(scope);
+          scope._onMouseWheelbind = onMouseWheel.bind(scope);
+          scope._onTouchStartbind = onTouchStart.bind(scope);
+          scope._onTouchEndbind = onTouchEnd.bind(scope);
+          scope._onTouchMove = onTouchMove.bind(scope);
+          scope._onKeyDownbind = onKeyDown.bind(scope);
 
-          scope.domElement.addEventListener('contextmenu', onContextMenu.bind(scope), false);
+          scope.domElement.addEventListener('contextmenu', _this._onContextMenubind, false);
 
-          scope.domElement.addEventListener('mousedown', onMouseDown.bind(scope), false);
-          scope.domElement.addEventListener('wheel', onMouseWheel.bind(scope), false);
+          scope.domElement.addEventListener('mousedown', _this._onMouseDownbind, false);
+          scope.domElement.addEventListener('wheel', _this._onMouseWheelbind, false);
 
-          scope.domElement.addEventListener('touchstart', onTouchStart.bind(scope), false);
-          scope.domElement.addEventListener('touchend', onTouchEnd.bind(scope), false);
-          scope.domElement.addEventListener('touchmove', onTouchMove.bind(scope), false);
+          scope.domElement.addEventListener('touchstart', _this._onTouchStartbind, false);
+          scope.domElement.addEventListener('touchend', _this._onTouchEndbind, false);
+          scope.domElement.addEventListener('touchmove', _this._onTouchMove, false);
 
-          window.addEventListener('keydown', onKeyDown.bind(scope), false);
+          window.addEventListener('keydown', _this._onKeyDownbind, false);
 
           _this.update = function () {
 
@@ -18433,18 +18714,28 @@ var Chartx = (function () {
           key: 'dispose',
           value: function dispose() {
               var scope = this;
-              scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
-              scope.domElement.removeEventListener('mousedown', onMouseDown, false);
-              scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+              scope.domElement.removeEventListener('contextmenu', scope._onContextMenubind, false);
+              scope.domElement.removeEventListener('mousedown', scope._onMouseDownbind, false);
+              scope.domElement.removeEventListener('wheel', scope._onMouseWheelbind, false);
 
-              scope.domElement.removeEventListener('touchstart', onTouchStart, false);
-              scope.domElement.removeEventListener('touchend', onTouchEnd, false);
-              scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+              scope.domElement.removeEventListener('touchstart', scope.onTouchStart, false);
+              scope.domElement.removeEventListener('touchend', scope._onTouchEndbind, false);
+              scope.domElement.removeEventListener('touchmove', scope._onTouchMove, false);
 
-              document.removeEventListener('mousemove', onMouseMove$1, false);
-              document.removeEventListener('mouseup', onMouseUp, false);
+              document.removeEventListener('mousemove', scope._onMouseMovebind, false);
+              document.removeEventListener('mouseup', scope._onMouseUpbind, false);
 
-              window.removeEventListener('keydown', onKeyDown, false);
+              window.removeEventListener('keydown', scope._onKeyDownbind, false);
+
+              scope._onContextMenubind = null;
+              scope._onMouseDownbind = null;
+              scope._onMouseWheelbind = null;
+              scope.onTouchStart = null;
+              scope._onTouchEndbind = null;
+              scope._onTouchMove = null;
+              scope._onMouseMovebind = null;
+              scope._onMouseUpbind = null;
+              scope._onKeyDownbind = null;
 
               //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
           }
@@ -18842,14 +19133,16 @@ var Chartx = (function () {
 
       if (scope._state !== STATE.NONE) {
 
-          document.addEventListener('mousemove', onMouseMove$1.bind(scope), false);
-          document.addEventListener('mouseup', onMouseUp.bind(scope), false);
+          scope._onMouseMovebind = onMouseMove.bind(scope);
+          scope._onMouseUpbind = onMouseUp.bind(scope);
+          document.addEventListener('mousemove', scope._onMouseMovebind, false);
+          document.addEventListener('mouseup', scope._onMouseUpbind, false);
 
           scope.fire(startEvent);
       }
   }
 
-  function onMouseMove$1(event) {
+  function onMouseMove(event) {
 
       var scope = this;
 
@@ -18894,7 +19187,7 @@ var Chartx = (function () {
 
       handleMouseUp.call(scope, event);
 
-      document.removeEventListener('mousemove', onMouseMove$1.bind(scope), false);
+      document.removeEventListener('mousemove', onMouseMove.bind(scope), false);
       document.removeEventListener('mouseup', onMouseUp.bind(scope), false);
 
       scope.fire(endEvent);
@@ -19025,7 +19318,12 @@ var Chartx = (function () {
       event.preventDefault();
   }
 
+  //避免多次触发
   var isChange = false;
+  var isMouseOver = false;
+  var isMouseOut = false;
+  var isClick = false;
+  var EVENT = null;
 
   var Interaction = function (_Events) {
       inherits(Interaction, _Events);
@@ -19044,7 +19342,13 @@ var Chartx = (function () {
           _this.target = null;
           _this.domElement = domElement !== undefined ? domElement : document;
 
-          _this.domElement.addEventListener('mousemove', scope.onMouseMove.bind(scope), false);
+          _this._onMouseMovebind = scope.onMouseMove.bind(scope);
+          _this._onMousedownbind = scope.onMousedown.bind(scope);
+          _this._onMouseupbind = scope.onMouseup.bind(scope);
+
+          _this.domElement.addEventListener('mousemove', _this._onMouseMovebind, false);
+          _this.domElement.addEventListener('mousedown', _this._onMousedownbind, false);
+          _this.domElement.addEventListener('mouseup', _this._onMouseupbind, false);
 
           return _this;
       }
@@ -19069,35 +19373,77 @@ var Chartx = (function () {
               // }
               if (intersects.length > 0) {
                   if (intersects[0].object == this.target) {
-                      this.target.fire({ type: 'mouseover' });
+                      if (!isMouseOver) {
+                          this.target.fire({ type: 'mouseover', event: EVENT });
+                          isMouseOver = true;
+                          isMouseOut = false;
+                      }
+                      if (isClick) {
+                          this.target.fire({ type: 'click', event: EVENT });
+                          isClick = false;
+                      }
                   } else {
-                      if (this.target !== null) {
-                          this.target.fire({ type: 'mouseout' });
+                      if (this.target !== null && !isMouseOut) {
+                          this.target.fire({ type: 'mouseout', event: EVENT });
+                          isMouseOut = true;
+                          isMouseOver = false;
+                          // console.log({ type: 'mouseout' })
                       }
                       this.target = intersects[0].object;
                   }
               } else {
-                  if (this.target !== null) {
+                  if (this.target !== null && !isMouseOut) {
                       this.target.fire({ type: 'mouseout' });
                       this.target = null;
+                      isMouseOut = true;
+                      isMouseOver = false;
+                      //console.log({ type: 'mouseout' })
                   }
               }
           }
       }, {
           key: 'dispose',
           value: function dispose() {
-              //let scope = this;
+              var scope = this;
               // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
-              // scope.domElement.removeEventListener('mousedown', onMouseDown, false);
+              scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
+              scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false);
               // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
 
               // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
               // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
               // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
 
-              document.removeEventListener('mousemove', onMouseMove, false);
+              scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false);
               // document.removeEventListener('mouseup', onMouseUp, false);
               // window.removeEventListener('keydown', onKeyDown, false);
+
+              scope._onMousedownbind = null;
+              scope._onMouseupbind = null;
+              scope._onMouseMovebind = null;
+
+              isChange = false;
+              isMouseOver = false;
+              isMouseOut = false;
+              isClick = false;
+              EVENT = null;
+          }
+      }, {
+          key: 'onMousedown',
+          value: function onMousedown() {
+              //isClick = true;
+              EVENT = event;
+          }
+      }, {
+          key: 'onMouseup',
+          value: function onMouseup() {
+              isClick = true;
+              isChange = true;
+              this.fire({ type: 'click', event: event });
+              this.fire({ type: 'refresh' });
+
+              EVENT = event;
+              // console.log('click');
           }
       }, {
           key: 'onMouseMove',
@@ -19105,7 +19451,9 @@ var Chartx = (function () {
               event.preventDefault();
               this.currMousePos.x = event.offsetX / this.domElement.clientWidth * 2 - 1;
               this.currMousePos.y = -(event.offsetY / this.domElement.clientHeight) * 2 + 1;
-              this.fire({ type: 'move' });
+              this.fire({ type: 'move', event: event });
+              this.fire({ type: 'refresh' });
+              EVENT = event;
               isChange = true;
           }
       }]);
@@ -19140,6 +19488,8 @@ var Chartx = (function () {
           _this.renderView = null;
           _this.app = null;
           _this.currCoord = null;
+
+          _this._theme = theme.colors.slice(0);
 
           //初始化画布
           _this._createDomContainer(opt.el);
@@ -19189,17 +19539,15 @@ var Chartx = (function () {
       createClass(Chart3d, [{
           key: 'init',
           value: function init() {
-              var _this2 = this;
-
               var me = this;
-              var rendererOpts = _.extend({}, this.DefaultControls);
+              var rendererOpts = _$1.extend({}, this.DefaultControls);
               this.opt.controls = this.opt.controls || {};
-              var controlOpts = this.opt.controls = _.extend(rendererOpts, this.opt.controls);
+              var controlOpts = this.opt.controls = _$1.extend(rendererOpts, this.opt.controls);
 
               this._initRenderer(rendererOpts);
 
               var controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-              var interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
+              var interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
 
               controls.minDistance = controlOpts.minDistance;
               controls.maxDistance = controlOpts.maxDistance;
@@ -19213,40 +19561,28 @@ var Chartx = (function () {
               controls.autoRotateSpeed = 1.0;
 
               //自动旋转时间
-              window.setTimeout(function () {
-                  controls.autoRotate = false;
-              }, 15000);
+              // window.setTimeout(() => {
+              //     controls.autoRotate = false;
+              // }, 15000);
 
               //如果发生交互停止自动旋转
-              controls.on('start', function () {
-                  controls.autoRotate = false;
-              });
+              controls.on('start', onStart);
               //有交互开始渲染
-              controls.on('change', function () {
-                  me.app._framework.isUpdate = true;
-              });
+              this._onChangeBind = onChange.bind(me);
+              controls.on('change', this._onChangeBind);
 
-              this.app._framework.on('renderbefore', function () {
-                  if (controls.position0.equals(controls.object.position) && controls.zoom0 === controls.object.zoom) {
-                      return;
-                  }
-                  console.log('renderbefore……');
-                  controls.saveState();
-                  controls.update();
-              });
+              this._onRenderBeforeBind = onRenderBefore.bind(controls);
+              this.app._framework.on('renderbefore', this._onRenderBeforeBind);
 
-              this.app._framework.on('renderafter', function () {
-                  interaction.update();
-              });
+              this._onRenderAfterBind = onRenderAfter.bind(interaction);
+              this.app._framework.on('renderafter', this._onRenderAfterBind);
 
-              interaction.on('move', function () {
-                  _this2.app._framework.isUpdate = true;
-                  console.log('move');
-              });
+              interaction.on('refresh', this._onChangeBind);
 
               //启动渲染进程
               this.app.launch();
-              window.addEventListener('resize', this.resize.bind(this), false);
+              this._onWindowResizeBind = me.resize.bind(me);
+              window.addEventListener('resize', this._onWindowResizeBind, false);
           }
       }, {
           key: 'setCoord',
@@ -19274,12 +19610,12 @@ var Chartx = (function () {
       }, {
           key: 'drawComponent',
           value: function drawComponent() {
-              var _this3 = this;
+              var _this2 = this;
 
               //先绘制坐标系
               this.currCoord.draw();
               this.components.forEach(function (cmp) {
-                  _this3.currCoord.group.add(cmp.group);
+                  _this2.currCoord.group.add(cmp.group);
                   cmp.draw();
               });
           }
@@ -19337,7 +19673,7 @@ var Chartx = (function () {
               this.rootStage = renderView.addGroup({ name: 'rootStage' });
               renderView.addObject(this.rootStage);
               renderView.setSize(this.width, this.height);
-              // renderView.setBackground(0xFFFFFF);
+              renderView.setBackground(0xFFFFFF);
 
               //默认透视投影
               this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
@@ -19349,6 +19685,18 @@ var Chartx = (function () {
               this.height = this.el.offsetHeight;
               this.renderView.resize(this.width, this.height, this.opt.controls.boxHeight);
           }
+
+          //ind 如果有就获取对应索引的具体颜色值
+
+      }, {
+          key: 'getTheme',
+          value: function getTheme(ind) {
+              var colors = this._theme;
+              if (ind != undefined) {
+                  return colors[ind % colors.length];
+              }            return colors;
+          }
+
           //数据变更后调用reset
 
       }, {
@@ -19358,11 +19706,107 @@ var Chartx = (function () {
           key: 'resetData',
           value: function resetData() {}
       }, {
-          key: 'destroy',
-          value: function destroy() {}
+          key: 'dispose',
+          value: function dispose() {
+
+              // function clearScene(obj) {
+              //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
+              //         if (obj.geometry) {
+              //             obj.geometry.dispose();
+              //             //obj.geometry = null;
+              //         }
+              //         if (obj.material) {
+              //             if (Array.isArray(obj.material)) {
+              //                 obj.material.forEach(ma => {
+              //                     if (ma.map) {
+              //                         ma.map.dispose();
+              //                     }
+              //                     ma.dispose();
+              //                 })
+              //             } else {
+              //                 if (obj.material.map) {
+              //                     obj.material.map.dispose();
+              //                 }
+              //                 obj.material.dispose();
+
+              //             }
+
+              //             //obj.material = null;
+              //         }
+
+              //         obj = null;
+              //     }
+              //     else if (obj.isLight) {
+              //         if (obj.parent) {
+              //             // obj.parent.remove(obj);
+              //         }
+              //     } else {
+              //         if (obj.children !== undefined) {
+              //             while (obj.children.length > 0) {
+              //                 clearScene(obj.children[0]);
+              //                 obj.remove(obj.children[0]);
+              //             }
+              //         }
+              //     }
+              // }
+
+              // clearScene(this.renderView._scene);
+
+              //先销毁坐标系统
+              this.currCoord.dispose();
+              //销毁组件
+              this.components.forEach(function (cmp) {
+                  cmp.dispose();
+              });
+              //初始化渲染状态
+              this.renderer._state.reset();
+
+              //清理渲染数据
+              this.renderer.dispose();
+
+              //清理事件
+              this.orbitControls.off('start', onStart);
+              this.orbitControls.off('change', this._onChangeBind);
+
+              this.app._framework.off('renderbefore', this._onRenderBeforeBind);
+              this._onRenderBeforeBind = null;
+
+              this.app._framework.off('renderafter', this._onRenderAfterBind);
+              this._onRenderAfterBind = null;
+
+              this.interaction.off('refresh', this._onChangeBind);
+              this._onChangeBind = null;
+
+              window.removeEventListener('resize', this._onWindowResizeBind, false);
+              this._onWindowResizeBind = null;
+
+              this.interaction.dispose();
+              this.orbitControls.dispose();
+
+              this.app.dispose();
+          }
       }]);
       return Chart3d;
   }(Events);
+
+  function onStart() {
+      this.autoRotate = false;
+  }
+  function onChange(e) {
+      this.app._framework.isUpdate = true;
+  }
+
+  function onRenderBefore() {
+      if (this.position0.equals(this.object.position) && this.zoom0 === this.object.zoom) {
+          return;
+      }
+      this.saveState();
+      this.update();
+  }
+
+  function onRenderAfter() {
+      this.update();
+  }
 
   var AxisLine = function (_Component) {
       inherits(AxisLine, _Component);
@@ -19440,6 +19884,16 @@ var Chartx = (function () {
           key: "drawStart",
           value: function drawStart() {
               this.axis = this._root.renderView.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color);
+          }
+      }, {
+          key: "update",
+          value: function update() {
+              var pos = this.getOrigin();
+              this.axis.traverse(function (obj) {
+                  if (obj.isLine2) {
+                      obj.position.copy(pos);
+                  }
+              });
           }
       }, {
           key: "draw",
@@ -19554,7 +20008,7 @@ var Chartx = (function () {
               var _dir = new Vector3$1();
               var _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
               this.origins = [];
-              attribute.section.forEach(function (num, index) {
+              attribute.getSection().forEach(function (num, index) {
                   //起点
                   var val = fn.call(_this2._coordSystem, num);
                   var startPoint = axis.dir.clone().multiplyScalar(val);
@@ -19572,6 +20026,33 @@ var Chartx = (function () {
           key: 'drawStart',
           value: function drawStart() {
               this._tickLine = this._root.renderView.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
+          }
+      }, {
+          key: 'update',
+          value: function update() {
+              var origins = this.origins;
+              var triangleVertices = [];
+              var endPoint = null;
+              var direction = this.dir.clone();
+              var length = this._length;
+
+              var i = 0;
+              this._tickLine.traverse(function (obj) {
+                  if (obj.isLine2) {
+                      triangleVertices = [];
+                      triangleVertices.push([0, 0, 0]);
+
+                      endPoint = new Vector3$1();
+                      endPoint.copy(direction);
+                      endPoint.multiplyScalar(length);
+
+                      triangleVertices.push(endPoint.toArray());
+
+                      obj.geometry.setPositions(_$1.flatten(triangleVertices));
+                      obj.position.copy(origins[i]);
+                      i++;
+                  }
+              });
           }
       }, {
           key: 'draw',
@@ -19616,8 +20097,8 @@ var Chartx = (function () {
       }, {
           key: 'length',
           set: function set$$1(len) {
-              var ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-              this._length = len * ratio;
+
+              this._length = len;
           },
           get: function get$$1() {
               return this._length;
@@ -19625,8 +20106,7 @@ var Chartx = (function () {
       }, {
           key: 'offset',
           set: function set$$1(_offset) {
-              var ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-              this._offset = _offset * ratio;
+              this._offset = _offset;
           },
           get: function get$$1() {
               return this._offset;
@@ -19664,11 +20144,15 @@ var Chartx = (function () {
 
           _this.rotation = 0;
 
+          _this.origin = null;
+
           _this.textAlign = opts.textAlign;
+
+          _this.verticalAlign = opts.verticalAlign;
 
           _this.dir = new Vector3$1();
 
-          _this.offset = opts.offset;
+          _this.offset = new (Function.prototype.bind.apply(Vector3$1, [null].concat(toConsumableArray(Object.values(opts.offset)))))() || new Vector3$1();
 
           _this._tickTextGroup = null;
 
@@ -19679,37 +20163,18 @@ var Chartx = (function () {
           return _this;
       }
 
-      // initData(axis, attribute) {
-      //     let me = this;
-      //     let _dir = new Vector3();
-      //     let axisSectionLength = axis.length / (attribute.section.length - 1);
-      //     let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-
-      //     attribute.section.forEach((num, index) => {
-      //         //起点
-      //         let startPoint = new Vector3();
-      //         startPoint.copy(axis.dir);
-      //         startPoint.multiplyScalar(axisSectionLength * index);
-      //         startPoint.add(axis.origin);
-      //         startPoint.add(_offset);
-      //         me.origins.push(startPoint);
-      //     });
-
-
-      // }
-
-
       createClass(TickTexts, [{
           key: 'initData',
           value: function initData(axis, attribute, fn) {
               var _this2 = this;
 
               var me = this;
-              var _dir = new Vector3$1();
-              var _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-              this.origins = [];
+              var _dir = me.dir.clone();
+              //let _offset = _dir.multiplyScalar(this.offset);
+              var _offset = this.offset;
+              me.origins = [];
 
-              attribute.section.forEach(function (num, index) {
+              attribute.getSection().forEach(function (num, index) {
                   //起点
                   var val = fn.call(_this2._coordSystem, num);
                   var startPoint = axis.dir.clone().multiplyScalar(val);
@@ -19717,6 +20182,8 @@ var Chartx = (function () {
                   startPoint.add(_offset);
                   me.origins.push(startPoint);
               });
+
+              me.updataOrigins = this._updataOrigins(axis, attribute, fn);
           }
       }, {
           key: 'setDir',
@@ -19724,29 +20191,63 @@ var Chartx = (function () {
               this.dir = dir;
           }
       }, {
+          key: 'setTextAlign',
+          value: function setTextAlign(align) {
+              this.textAlign = align;
+          }
+      }, {
+          key: 'setVerticalAlign',
+          value: function setVerticalAlign(align) {
+              this.verticalAlign = align;
+          }
+      }, {
+          key: '_updataOrigins',
+          value: function _updataOrigins(axis, attribute, fn) {
+              var _axis = axis;
+              var _attribute = attribute;
+              var _fn = fn;
+              return function () {
+                  this.initData(_axis, _attribute, _fn);
+              };
+          }
+      }, {
           key: 'drawStart',
           value: function drawStart(texts) {
               var me = this;
-
-              // this._tickTextGroup.removeAll();
-              //文本对齐计算
-              var ratio = this._root.renderView.getVisableSize(me.origins[0]).ratio;
-              var maxWidth = TextTexture.getTextWidth(texts, ['normal', 'normal', this.fontColor, this.fontSize].join(' '));
-
               (texts || []).forEach(function (text, index) {
-                  var width = TextTexture.getTextWidth([text], ['normal', 'normal', me.fontColor, me.fontSize].join(' '));
                   var obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor);
-                  obj.position.copy(me.origins[index]);
-                  if (me.textAlign == 'right') {
-                      obj.position.add(new Vector3$1((maxWidth - width) * ratio / 2, 0, 0));
-                  }
-                  if (me.textAlign == 'left') {
-                      obj.position.add(new Vector3$1(-(maxWidth - width) * ratio / 2, 0, 0));
-                  }
+                  obj.userData.lastScale = new Vector3$1();
+                  var oldFn = obj.onBeforeRender;
+                  obj.onBeforeRender = function () {
+                      oldFn.apply(obj, arguments);
+                      if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
+                          this.userData.lastScale.copy(this.scale.clone().floor());
+                          me.updataOrigins();
+                          obj.position.copy(me.origins[index]);
+                          //obj.position.add(me.offset);
+
+                          //todo 默认center 居中对齐
+
+                          if (me.textAlign == 'right') {
+
+                              obj.position.add(new Vector3$1(-this.scale.x * 0.5, 0, 0));
+                          }
+                          if (me.textAlign == 'left') {
+                              obj.position.add(new Vector3$1(this.scale.x * 0.5, 0, 0));
+                          }
+                          if (me.verticalAlign == 'top') {
+                              obj.position.add(new Vector3$1(0, -this.scale.y * 0.5, 0));
+                          }
+                          if (me.verticalAlign == 'bottom') {
+                              obj.position.add(new Vector3$1(0, this.scale.y * 0.5, 0));
+                          }
+
+                          //console.log(`sprite ${this.id}`, maxSize, this.scale)
+                      }
+                  };
+
                   me._tickTextGroup.add(obj);
               });
-              //todo:通过计算最长文本在三维空间中的位置
-              // this._tickTexts = this._root.renderView.creatSpriteText(this.texts, this.origins)
           }
       }, {
           key: 'draw',
@@ -19754,6 +20255,11 @@ var Chartx = (function () {
 
               this.group.add(this._tickTextGroup);
           }
+      }, {
+          key: 'update',
+          value: function update() {}
+          //文字需要实时更新
+
           // getBoundBox() {
           //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
           //     //没有计算文本旋转后的长度
@@ -19782,7 +20288,6 @@ var Chartx = (function () {
       }, {
           key: 'dispose',
           value: function dispose() {
-              //todo sprite重构
               var remove = [];
               this.group.traverse(function (obj) {
                   if (obj.isTextSprite) {
@@ -19803,15 +20308,6 @@ var Chartx = (function () {
                   obj.parent.remove(obj);
               }
           }
-      }, {
-          key: 'offset',
-          set: function set$$1(_offset) {
-              var ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-              this._offset = _offset * ratio;
-          },
-          get: function get$$1() {
-              return this._offset;
-          }
       }]);
       return TickTexts;
   }(Component);
@@ -19820,12 +20316,12 @@ var Chartx = (function () {
       inherits(YAxis, _Component);
 
       function YAxis(_cartesionUI) {
+          var axisType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'left';
           classCallCheck(this, YAxis);
 
           var _this = possibleConstructorReturn(this, (YAxis.__proto__ || Object.getPrototypeOf(YAxis)).call(this, _cartesionUI._coordSystem));
 
           var opt = _this._opt = _cartesionUI;
-
           //this._coord = _coord || {};
           _this._cartesionUI = _cartesionUI;
 
@@ -19852,32 +20348,33 @@ var Chartx = (function () {
           _this.enabled = true;
           _this.tickLine = { //刻度线
               enabled: 1,
-              lineWidth: 1, //线宽
-              lineLength: 4, //线长
-              strokeStyle: '#cccccc',
-              // distance: 2,
-              offset: 0
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0 //空间单位
           };
           _this.axisLine = { //轴线
               enabled: 1,
-              lineWidth: 2,
-              strokeStyle: '#cccccc'
+              lineWidth: 2, //线宽像素
+              strokeStyle: '#333'
           };
           _this.label = {
               enabled: 1,
-              fontColor: '#999',
+              fontColor: '#333',
               fontSize: 12,
               format: null,
               rotation: 0,
-              textAlign: "right",
+              textAlign: "right", //水平方向对齐: left  right center 
+              verticalAlign: 'middle', //垂直方向对齐 top bottom middle
               lineHeight: 1,
-              offset: 2 //和刻度线的距离
-          };
+              offset: { x: 0, y: 0, z: 40 //和刻度线的距离
+              } };
 
-          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
-              //如果是横向直角坐标系图
-              _this.label.rotation = 90;
-          }
+          // if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+          //     //如果是横向直角坐标系图
+          //     this.label.rotation = 90;
+          // };
+
           _this.pos = {
               x: 0,
               y: 0
@@ -19885,16 +20382,16 @@ var Chartx = (function () {
           _this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
 
           _this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
-          _this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
-          _this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
+          // this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
+          // this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
 
           //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
-          _this.dataSectionGroup = [];
+          //this.dataSectionGroup = [];
 
           //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
-          _this.middleweight = null;
+          // this.middleweight = null;
 
-          _this.dataOrg = data.org || []; //源数据
+          //this.dataOrg = data.org || []; //源数据
 
 
           _this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
@@ -19916,11 +20413,17 @@ var Chartx = (function () {
           _this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
 
           _this.layoutType = "proportion"; // rule , peak, proportion
+          if (axisType == 'left') {
+              _$1.extend(true, _this, _this._opt.yAxis[0]);
 
-          _.extend(true, _this, opt.yAxis);
+              // this.label.enabled = this.enabled && this.label.enabled;
+              // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+              // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
-          _this.init(opt, _this._coordSystem.yAxisAttribute);
+              _this.init(opt, _this._coordSystem.yAxisAttribute);
+          }
 
+          _this.group.visible = !!_this.enabled;
           _this._getName();
 
           return _this;
@@ -19932,15 +20435,16 @@ var Chartx = (function () {
               var me = this;
               //extend会设置好this.field
               //先要矫正子啊field确保一定是个array
-              if (!_.isArray(this.field)) {
+              if (!_$1.isArray(this.field)) {
                   this.field = [this.field];
               }
               this._initData(data);
 
-              this._root.orbitControls.on('change', function () {
-
+              this._onChangeBind = function () {
                   me._initModules();
-              });
+              };
+
+              this._root.orbitControls.on('change', this._onChangeBind);
               me._initModules();
           }
       }, {
@@ -19958,22 +20462,30 @@ var Chartx = (function () {
               var origin = _coordSystem.getOrigin();
               var _tickLineDir = new Vector3$1(0, 0, 1);
               var _faceInfo = this._cartesionUI.getFaceInfo();
+              var _textAlign = this.label.textAlign;
+              var _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
 
               if (_faceInfo.left.visible) {
                   if (_faceInfo.back.visible) {
                       origin = _coordSystem.getOrigin();
                       _tickLineDir = new Vector3$1(0, 0, 1);
+                      _textAlign = 'right';
                   } else {
                       origin = new Vector3$1(0, 0, -depth);
                       _tickLineDir = new Vector3$1(0, 0, -1);
+                      _textAlign = 'left';
+                      _offsetZ *= -1;
                   }
               } else {
                   if (_faceInfo.back.visible) {
                       origin = new Vector3$1(width, 0, 0);
                       _tickLineDir = new Vector3$1(0, 0, 1);
+                      _textAlign = 'left';
                   } else {
                       origin = new Vector3$1(width, 0, -depth);
                       _tickLineDir = new Vector3$1(0, 0, -1);
+                      _textAlign = 'right';
+                      _offsetZ *= -1;
                   }
               }
 
@@ -19981,25 +20493,31 @@ var Chartx = (function () {
                   if (this._axisLine.getOrigin().equals(origin)) {
                       return;
                   }
-                  this._axisLine.dispose();
+
+                  // this._axisLine.dispose();
                   this._axisLine.setOrigin(origin);
-                  this._axisLine.drawStart();
-                  this._axisLine.draw();
+                  this._axisLine.update();
+                  // this._axisLine.drawStart();
+                  // this._axisLine.draw();
 
                   //二次绘制
-                  this._tickLine.dispose();
+                  //this._tickLine.dispose();
                   this._tickLine.setDir(_tickLineDir);
                   this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
-                  this._tickLine.drawStart();
-                  this._tickLine.draw();
+                  this._tickLine.update();
+                  // this._tickLine.drawStart();
+                  // this._tickLine.draw();
 
-                  this._tickText.dispose();
+
+                  //this._tickText.dispose();
 
                   this._tickText.setDir(_tickLineDir);
                   this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+                  this._tickText.setTextAlign(_textAlign);
+                  this._tickText.offset.setZ(_offsetZ);
+                  // this._tickText.drawStart(this._formatTextSection);
+                  // this._tickText.draw();
 
-                  this._tickText.drawStart(this._formatTextSection);
-                  this._tickText.draw();
               } else {
                   //初始化轴线
                   this._axisLine = new AxisLine(_coordSystem, this.axisLine);
@@ -20021,8 +20539,9 @@ var Chartx = (function () {
 
                   // 初始化tickText
                   this._tickText = new TickTexts(_coordSystem, this.label);
-                  this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+                  this._tickText.offset.z = _offsetZ;
 
+                  this._tickText.setTextAlign(_textAlign);
                   this._tickText.setDir(_tickLineDir);
                   this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
 
@@ -20044,27 +20563,23 @@ var Chartx = (function () {
           value: function _initData(data) {
               var me = this;
 
-              //如果用户传入了自定义的dataSection， 那么优先级最高
-              if (!this._opt.dataSection) {
+              this.dataSection = data.getSection();
 
-                  this.dataSection = data.section;
-              } else {
-                  this.dataSection = this._opt.dataSection;
-              }
-              //如果还是0
-              if (this.dataSection.length == 0) {
-                  this.dataSection = [0];
-              }
-              // if( _.min(this.dataSection) < this._opt.min ){
-              //     var minDiss = me._opt.min - _.min(me.dataSection);
-              //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
-              //     _.each( this.dataSection, function( num, i ){
-              //         me.dataSection[i] += minDiss;
-              //     } );
+              // //如果还是0
+              // if (this.dataSection.length == 0) {
+              //     this.dataSection = [0]
               // };
 
-              //如果有 middleweight 设置，就会重新设置dataSectionGroup
-              this.dataSectionGroup = [_.clone(this.dataSection)];
+              // // if( _.min(this.dataSection) < this._opt.min ){
+              // //     var minDiss = me._opt.min - _.min(me.dataSection);
+              // //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
+              // //     _.each( this.dataSection, function( num, i ){
+              // //         me.dataSection[i] += minDiss;
+              // //     } );
+              // // };
+
+              // //如果有 middleweight 设置，就会重新设置dataSectionGroup
+              // this.dataSectionGroup = [_.clone(this.dataSection)];
 
               // this._sort();
               // this._setBottomAndBaseNumber();
@@ -20073,7 +20588,7 @@ var Chartx = (function () {
 
               me._formatTextSection = [];
               me._textElements = [];
-              _.each(me.dataSection, function (val, i) {
+              _$1.each(me.dataSection, function (val, i) {
                   me._formatTextSection[i] = me._getFormatText(val, i);
                   //从_formatTextSection中取出对应的格式化后的文本
 
@@ -20093,10 +20608,10 @@ var Chartx = (function () {
                   this.label.textAlign = "right";
               }
               //取第一个数据来判断xaxis的刻度值类型是否为 number
-              !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+              !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
               if (isNaN(this.minVal) || this.minVal == Infinity) {
                   this.minVal = 0;
-              }            !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+              }            !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
               if (isNaN(this.maxVal) || this.maxVal == Infinity) {
                   this.maxVal = 1;
               }
@@ -20108,13 +20623,13 @@ var Chartx = (function () {
           key: '_getFormatText',
           value: function _getFormatText(val, i) {
               var res;
-              if (_.isFunction(this.label.format)) {
+              if (_$1.isFunction(this.label.format)) {
                   res = this.label.format.apply(this, arguments);
               } else {
                   res = val;
               }
 
-              if (_.isArray(res)) {
+              if (_$1.isArray(res)) {
                   res = numAddSymbol(res);
               }
               if (!res) {
@@ -20213,6 +20728,16 @@ var Chartx = (function () {
                   // };
               }
           }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+
+              this._axisLine.dispose();
+              this._tickLine.dispose();
+              this._tickText.dispose();
+              this._root.orbitControls.off('change', this._onChangeBind);
+              this._onChangeBind = null;
+          }
       }]);
       return YAxis;
   }(Component);
@@ -20248,25 +20773,26 @@ var Chartx = (function () {
           _this.axisLine = {
               enabled: 1, //是否有轴线
               lineWidth: 2,
-              strokeStyle: '#cccccc'
+              strokeStyle: '#333'
           };
 
           _this.tickLine = {
-              enabled: 1, //是否有刻度线
-              lineWidth: 1, //线宽
-              lineLength: 4, //线长
-              offset: 2,
-              strokeStyle: '#cccccc'
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0 //空间单位
           };
 
           _this.label = {
               enabled: 1,
-              fontColor: '#999',
+              fontColor: '#333',
               fontSize: 12,
               rotation: 0,
               format: null,
-              offset: 2,
-              textAlign: "center",
+              offset: { x: 0, y: 0, z: 40 },
+              textAlign: "center", //水平方向对齐: left  right center 
+              verticalAlign: 'top', //垂直方向对齐 top bottom middle
               lineHeight: 1,
               evade: true //是否开启逃避检测，目前的逃避只是隐藏
           };
@@ -20281,7 +20807,7 @@ var Chartx = (function () {
               y: 0
           };
 
-          _this.dataOrg = []; //源数据
+          // this.dataOrg = []; //源数据
           _this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
 
           _this.layoutData = []; //{x:100, value:'1000',visible:true}
@@ -20311,12 +20837,16 @@ var Chartx = (function () {
 
           _this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-          _.extend(true, _this, opt.xAxis);
+          _$1.extend(true, _this, opt.xAxis);
+
+          // this.label.enabled = this.enabled && this.label.enabled;
+          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
           _this.init(opt, _this._coordSystem.xAxisAttribute);
           //xAxis的field只有一个值,
           //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
-
+          _this.group.visible = !!_this.enabled;
 
           return _this;
       }
@@ -20331,9 +20861,10 @@ var Chartx = (function () {
 
               this._initHandle(data);
 
-              this._root.orbitControls.on('change', function () {
+              this._onChangeBind = function () {
                   me._initModules();
-              });
+              };
+              this._root.orbitControls.on('change', this._onChangeBind);
               me._initModules();
           }
       }, {
@@ -20345,15 +20876,18 @@ var Chartx = (function () {
                   this.field = data.field;
               }
 
-              if (data && data.data) {
-                  this.dataOrg = _.flatten(data.data);
-              }            if (!this._opt.dataSection && this.dataOrg) {
-                  //如果没有传入指定的dataSection，才需要计算dataSection
-                  this.dataSection = data.section; // this._initDataSection(this.dataOrg);
-              }
+              // if (data && data.data) {
+              //     this.dataOrg = _.flatten(data.data);
+              // };
+              // if (!this._opt.dataSection && this.dataOrg) {
+              //     //如果没有传入指定的dataSection，才需要计算dataSection
+              //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
+              // };
+              this.dataSection = data.getSection();
+
               me._formatTextSection = [];
               me._textElements = [];
-              _.each(me.dataSection, function (val, i) {
+              _$1.each(me.dataSection, function (val, i) {
                   me._formatTextSection[i] = me._getFormatText(val, i);
                   //从_formatTextSection中取出对应的格式化后的文本
 
@@ -20373,10 +20907,10 @@ var Chartx = (function () {
                   this.label.textAlign = "right";
               }
               //取第一个数据来判断xaxis的刻度值类型是否为 number
-              !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+              !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
               if (isNaN(this.minVal) || this.minVal == Infinity) {
                   this.minVal = 0;
-              }            !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+              }            !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
               if (isNaN(this.maxVal) || this.maxVal == Infinity) {
                   this.maxVal = 1;
               }
@@ -20388,13 +20922,13 @@ var Chartx = (function () {
           key: '_getFormatText',
           value: function _getFormatText(val, i) {
               var res;
-              if (_.isFunction(this.label.format)) {
+              if (_$1.isFunction(this.label.format)) {
                   res = this.label.format.apply(this, arguments);
               } else {
                   res = val;
               }
 
-              if (_.isArray(res)) {
+              if (_$1.isArray(res)) {
                   res = numAddSymbol(res);
               }
               if (!res) {
@@ -20417,6 +20951,8 @@ var Chartx = (function () {
               var origin = _coordSystem.getOrigin();
               var _tickLineDir = new Vector3$1(0, 0, 1);
               var _faceInfo = this._cartesionUI.getFaceInfo();
+              var _verticalAlign = this.label.verticalAlign;
+              var _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
 
               if (_faceInfo.bottom.visible) {
                   if (_faceInfo.back.visible) {
@@ -20425,6 +20961,7 @@ var Chartx = (function () {
                   } else {
                       origin = new Vector3$1(0, 0, -depth);
                       _tickLineDir = new Vector3$1(0, 0, -1);
+                      _offsetZ *= -1;
                   }
               } else {
                   //top 可见
@@ -20434,32 +20971,39 @@ var Chartx = (function () {
                   } else {
                       origin = new Vector3$1(0, height, -depth);
                       _tickLineDir = new Vector3$1(0, 0, -1);
+                      _offsetZ *= -1;
                   }
+                  _verticalAlign = 'bottom';
               }
 
               if (this._axisLine) {
                   if (this._axisLine.getOrigin().equals(origin)) {
                       return;
                   }
-                  this._axisLine.dispose();
+                  // this._axisLine.dispose();
                   this._axisLine.setOrigin(origin);
-                  this._axisLine.drawStart();
-                  this._axisLine.draw();
+                  this._axisLine.update();
+                  // this._axisLine.drawStart();
+                  // this._axisLine.draw();
 
                   //二次绘制
-                  this._tickLine.dispose();
+                  //this._tickLine.dispose();
                   this._tickLine.setDir(_tickLineDir);
                   this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-                  this._tickLine.drawStart();
-                  this._tickLine.draw();
+                  this._tickLine.update();
+                  // this._tickLine.drawStart();
+                  // this._tickLine.draw();
 
-                  this._tickText.dispose();
+                  //this._tickText.dispose();
 
                   this._tickText.setDir(_tickLineDir);
+                  this._tickText.offset.setZ(_offsetZ);
                   this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+                  this._tickText.setVerticalAlign(_verticalAlign);
 
-                  this._tickText.drawStart(this._formatTextSection);
-                  this._tickText.draw();
+                  // this._tickText.drawStart(this._formatTextSection);
+                  // this._tickText.draw();
+
               } else {
 
                   this._axisLine = new AxisLine(_coordSystem, this.axisLine);
@@ -20481,8 +21025,10 @@ var Chartx = (function () {
 
                   //初始化tickText
                   this._tickText = new TickTexts(_coordSystem, this.label);
-                  this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 10;
 
+                  this._tickText.offset.z += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset;
+
+                  this._tickText.setVerticalAlign(_verticalAlign);
                   this._tickText.setDir(_tickLineDir);
                   this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
 
@@ -20557,6 +21103,16 @@ var Chartx = (function () {
               //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
 
           }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+
+              this._axisLine.dispose();
+              this._tickLine.dispose();
+              this._tickText.dispose();
+              this._root.orbitControls.off('change', this._onChangeBind);
+              this._onChangeBind = null;
+          }
       }]);
       return XAxis;
   }(Component);
@@ -20591,25 +21147,26 @@ var Chartx = (function () {
 
           _this.enabled = true;
           _this.tickLine = {
-              enabled: 1, //是否有刻度线
-              lineWidth: 1, //线宽
-              lineLength: 4, //线长
-              offset: 2,
-              strokeStyle: '#cccccc'
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0 //空间单位
           };
           _this.axisLine = {
               enabled: 1, //是否有轴线
               lineWidth: 2,
-              strokeStyle: '#cccccc'
+              strokeStyle: '#333'
           };
           _this.label = {
               enabled: 1,
-              fontColor: '#999',
+              fontColor: '#333',
               fontSize: 12,
               rotation: 0,
               format: null,
-              offset: 8,
-              textAlign: "left",
+              offset: { x: 40, y: 0, z: 0 },
+              textAlign: "right", //水平方向对齐: left  right center 
+              verticalAlign: 'middle', //垂直方向对齐 top bottom middle
               lineHeight: 1
               //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
           };
@@ -20625,7 +21182,7 @@ var Chartx = (function () {
               y: 0
           };
 
-          _this.dataOrg = []; //源数据
+          //this.dataOrg = []; //源数据
           _this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
 
           _this.layoutData = []; //{x:100, value:'1000',visible:true}
@@ -20658,9 +21215,15 @@ var Chartx = (function () {
           // }
 
           _this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-          _.extend(true, _this, opt.zAxis);
+          _$1.extend(true, _this, opt.zAxis);
+
+          // this.label.enabled = this.enabled && this.label.enabled;
+          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
           _this.init(opt, _this._coordSystem.zAxisAttribute);
+
+          _this.group.visible = !!_this.enabled;
 
           return _this;
       }
@@ -20674,10 +21237,12 @@ var Chartx = (function () {
               // this.group.add(this.rulesGroup);
 
               this._initHandle(data);
-              this._root.orbitControls.on('change', function () {
 
+              this._onChangeBind = function () {
                   me._initModules();
-              });
+              };
+
+              this._root.orbitControls.on('change', this._onChangeBind);
               me._initModules();
           }
       }, {
@@ -20689,15 +21254,19 @@ var Chartx = (function () {
                   this.field = data.field;
               }
 
-              if (data && data.data) {
-                  this.dataOrg = _.flatten(data.data);
-              }            if (!this._opt.dataSection && this.dataOrg) {
-                  //如果没有传入指定的dataSection，才需要计算dataSection
-                  this.dataSection = data.section; // this._initDataSection(this.dataOrg);
-              }
+              // if (data && data.data) {
+              //     this.dataOrg = _.flatten(data.data);
+              // };
+              // if (!this._opt.dataSection && this.dataOrg) {
+              //     //如果没有传入指定的dataSection，才需要计算dataSection
+              //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
+              // };
+
+              this.dataSection = data.getSection();
+
               me._formatTextSection = [];
               me._textElements = [];
-              _.each(me.dataSection, function (val, i) {
+              _$1.each(me.dataSection, function (val, i) {
                   me._formatTextSection[i] = me._getFormatText(val, i);
                   //从_formatTextSection中取出对应的格式化后的文本
 
@@ -20717,10 +21286,10 @@ var Chartx = (function () {
                   this.label.textAlign = "right";
               }
               //取第一个数据来判断xaxis的刻度值类型是否为 number
-              !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
+              !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
               if (isNaN(this.minVal) || this.minVal == Infinity) {
                   this.minVal = 0;
-              }            !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
+              }            !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
               if (isNaN(this.maxVal) || this.maxVal == Infinity) {
                   this.maxVal = 1;
               }
@@ -20732,13 +21301,13 @@ var Chartx = (function () {
           key: '_getFormatText',
           value: function _getFormatText(val, i) {
               var res;
-              if (_.isFunction(this.label.format)) {
+              if (_$1.isFunction(this.label.format)) {
                   res = this.label.format.apply(this, arguments);
               } else {
                   res = val;
               }
 
-              if (_.isArray(res)) {
+              if (_$1.isArray(res)) {
                   res = numAddSymbol(res);
               }
               if (!res) {
@@ -20765,22 +21334,29 @@ var Chartx = (function () {
               var _tickLineDir = new Vector3$1(1, 0, 0);
               var _faceInfo = this._cartesionUI.getFaceInfo();
 
+              var _textAlign = this.label.textAlign;
+              var _offsetX = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
+
               if (_faceInfo.bottom.visible) {
                   if (_faceInfo.left.visible) {
                       origin = new Vector3$1(width, 0, 0);
                       _tickLineDir = new Vector3$1(1, 0, 0);
+                      _textAlign = 'left';
                   } else {
                       origin = new Vector3$1(0, 0, 0);
                       _tickLineDir = new Vector3$1(-1, 0, 0);
+                      _textAlign = 'right';
                   }
               } else {
                   //top 可见
                   if (_faceInfo.left.visible) {
                       origin = new Vector3$1(width, height, 0);
                       _tickLineDir = new Vector3$1(1, 0, 0);
+                      _textAlign = 'left';
                   } else {
                       origin = new Vector3$1(0, height, 0);
                       _tickLineDir = new Vector3$1(-1, 0, 0);
+                      _textAlign = 'right';
                   }
               }
 
@@ -20788,25 +21364,29 @@ var Chartx = (function () {
                   if (this._axisLine.getOrigin().equals(origin)) {
                       return;
                   }
-                  this._axisLine.dispose();
+                  //this._axisLine.dispose();
                   this._axisLine.setOrigin(origin);
-                  this._axisLine.drawStart();
-                  this._axisLine.draw();
+                  this._axisLine.update();
+                  // this._axisLine.drawStart();
+                  // this._axisLine.draw();
 
                   //二次绘制
-                  this._tickLine.dispose();
+                  // this._tickLine.dispose();
                   this._tickLine.setDir(_tickLineDir);
                   this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-                  this._tickLine.drawStart();
-                  this._tickLine.draw();
+                  this._tickLine.update();
+                  // this._tickLine.drawStart();
+                  // this._tickLine.draw();
 
-                  this._tickText.dispose();
+                  //this._tickText.dispose();
 
                   this._tickText.setDir(_tickLineDir);
                   this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+                  this._tickText.setTextAlign(_textAlign);
+                  this._tickText.offset.setX(_offsetX);
+                  // this._tickText.drawStart(this._formatTextSection);
+                  // this._tickText.draw();
 
-                  this._tickText.drawStart(this._formatTextSection);
-                  this._tickText.draw();
               } else {
                   this._axisLine = new AxisLine(_coordSystem, this.axisLine);
                   this._axisLine.setDir(_axisDir);
@@ -20830,7 +21410,7 @@ var Chartx = (function () {
                   //初始化tickText
 
                   this._tickText = new TickTexts(_coordSystem, this.label);
-                  this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + 20;
+                  this._tickText.offset.x = _offsetX;
 
                   this._tickText.setDir(_tickLineDir);
                   this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
@@ -20930,6 +21510,16 @@ var Chartx = (function () {
 
               // console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
           }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+
+              this._axisLine.dispose();
+              this._tickLine.dispose();
+              this._tickText.dispose();
+              this._root.orbitControls.off('change', this._onChangeBind);
+              this._onChangeBind = null;
+          }
       }]);
       return ZAxis;
   }(Component);
@@ -20954,21 +21544,21 @@ var Chartx = (function () {
 
           _this._cartesionUI = _cartesionUI;
 
-          _this.enabled = false;
+          _this.enabled = true;
 
           _this.line = { //x方向上的线
               enabled: true,
               lineType: 'solid', //线条类型(dashed = 虚线 | solid = 实线)
-              strokeStyle: '#f0f0f0' //'#e5e5e5',
+              strokeStyle: '#e5e5e5'
           };
 
           _this.fill = {
-              enabled: true,
+              enabled: false,
               fillStyle: '#ccc',
-              alpha: 0.8
+              alpha: 0.1
           };
 
-          _.extend(true, _this, opt.grid);
+          _$1.extend(true, _this, opt.grid);
 
           _this.init();
           return _this;
@@ -20992,13 +21582,14 @@ var Chartx = (function () {
               this.group.add(this.frontGroup);
               this.group.add(this.backGroup);
 
-              this._root.orbitControls.on('change', function () {
+              this._onChangeBind = function () {
                   if (!me.enabled) return;
                   var _faceInfo = me._cartesionUI.getFaceInfo();
-                  _.each(_faceInfo, function (value, key) {
+                  _$1.each(_faceInfo, function (value, key) {
                       me[key + 'Group'].visible = value.visible;
                   });
-              });
+              };
+              this._root.orbitControls.on('change', this._onChangeBind);
           }
       }, {
           key: 'drawFace',
@@ -21038,24 +21629,29 @@ var Chartx = (function () {
 
               var coordBoundBox = _coordSystem.getBoundbox();
               var _size = new Vector3$1(); //空间盒子的大小
+
               coordBoundBox.getSize(_size);
               var width = _size.x,
                   height = _size.y,
                   depth = _size.z;
 
 
+              var xSection = me._coordSystem.xAxisAttribute.getSection();
+              var ySection = me._coordSystem.yAxisAttribute.getSection();
+              var zSection = me._coordSystem.zAxisAttribute.getSection();
+
               if (!me.line.enabled) {
                   return;
               }
               //绘制左面的线条
               var LinesVectors = [];
-              me._coordSystem.yAxisAttribute.section.forEach(function (num) {
+              ySection.forEach(function (num) {
                   var posY = me._coordSystem.getYAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, posY, 0));
                   LinesVectors.push(new Vector3$1(0, posY, -depth));
               });
 
-              me._coordSystem.zAxisAttribute.section.forEach(function (num) {
+              zSection.forEach(function (num) {
                   var posZ = me._coordSystem.getZAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, 0, -posZ));
                   LinesVectors.push(new Vector3$1(0, height, -posZ));
@@ -21065,13 +21661,13 @@ var Chartx = (function () {
 
               //绘制右面的线条
               LinesVectors = [];
-              me._coordSystem.yAxisAttribute.section.forEach(function (num) {
+              ySection.forEach(function (num) {
                   var posY = me._coordSystem.getYAxisPosition(num);
                   LinesVectors.push(new Vector3$1(width, posY, 0));
                   LinesVectors.push(new Vector3$1(width, posY, -depth));
               });
 
-              me._coordSystem.zAxisAttribute.section.forEach(function (num) {
+              zSection.forEach(function (num) {
                   var posZ = me._coordSystem.getZAxisPosition(num);
                   LinesVectors.push(new Vector3$1(width, 0, -posZ));
                   LinesVectors.push(new Vector3$1(width, height, -posZ));
@@ -21081,13 +21677,13 @@ var Chartx = (function () {
 
               //绘制上面的线条
               LinesVectors = [];
-              me._coordSystem.xAxisAttribute.section.forEach(function (num) {
+              xSection.forEach(function (num) {
                   var posX = me._coordSystem.getXAxisPosition(num);
                   LinesVectors.push(new Vector3$1(posX, height, 0));
                   LinesVectors.push(new Vector3$1(posX, height, -depth));
               });
 
-              me._coordSystem.zAxisAttribute.section.forEach(function (num) {
+              zSection.forEach(function (num) {
                   var posZ = me._coordSystem.getZAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, height, -posZ));
                   LinesVectors.push(new Vector3$1(width, height, -posZ));
@@ -21097,13 +21693,13 @@ var Chartx = (function () {
 
               //绘制下面的线条
               LinesVectors = [];
-              me._coordSystem.xAxisAttribute.section.forEach(function (num) {
+              xSection.forEach(function (num) {
                   var posX = me._coordSystem.getXAxisPosition(num);
                   LinesVectors.push(new Vector3$1(posX, 0, 0));
                   LinesVectors.push(new Vector3$1(posX, 0, -depth));
               });
 
-              me._coordSystem.zAxisAttribute.section.forEach(function (num) {
+              zSection.forEach(function (num) {
                   var posZ = me._coordSystem.getZAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, 0, -posZ));
                   LinesVectors.push(new Vector3$1(width, 0, -posZ));
@@ -21113,13 +21709,13 @@ var Chartx = (function () {
 
               //绘制前面的线条
               LinesVectors = [];
-              me._coordSystem.xAxisAttribute.section.forEach(function (num) {
+              xSection.forEach(function (num) {
                   var posX = me._coordSystem.getXAxisPosition(num);
                   LinesVectors.push(new Vector3$1(posX, 0, 0));
                   LinesVectors.push(new Vector3$1(posX, height, 0));
               });
 
-              me._coordSystem.yAxisAttribute.section.forEach(function (num) {
+              ySection.forEach(function (num) {
                   var posY = me._coordSystem.getYAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, posY, 0));
                   LinesVectors.push(new Vector3$1(width, posY, 0));
@@ -21130,13 +21726,13 @@ var Chartx = (function () {
 
               //绘制后面的线条
               LinesVectors = [];
-              me._coordSystem.xAxisAttribute.section.forEach(function (num) {
+              xSection.forEach(function (num) {
                   var posX = me._coordSystem.getXAxisPosition(num);
                   LinesVectors.push(new Vector3$1(posX, 0, -depth));
                   LinesVectors.push(new Vector3$1(posX, height, -depth));
               });
 
-              me._coordSystem.yAxisAttribute.section.forEach(function (num) {
+              ySection.forEach(function (num) {
                   var posY = me._coordSystem.getYAxisPosition(num);
                   LinesVectors.push(new Vector3$1(0, posY, -depth));
                   LinesVectors.push(new Vector3$1(width, posY, -depth));
@@ -21149,6 +21745,13 @@ var Chartx = (function () {
           value: function draw() {
               this.drawFace();
               this.drawLine();
+          }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+              get(Grid.prototype.__proto__ || Object.getPrototypeOf(Grid.prototype), 'dispose', this).call(this);
+              this._root.orbitControls.off('change', this._onChangeBind);
+              this._onChangeBind = null;
           }
       }]);
       return Grid;
@@ -21185,24 +21788,28 @@ var Chartx = (function () {
           _this.zAxis = opt.zAxis || {};
           _this.grid = opt.grid || {};
 
-          _.extend(true, _this, opt);
+          _$1.extend(true, _this, opt);
 
           if (opt.horizontal) {
               _this.xAxis.isH = true;
               _this.zAxis.isH = true;
-              _.each(_this.yAxis, function (yAxis) {
+              _$1.each(_this.yAxis, function (yAxis) {
                   yAxis.isH = true;
               });
           }
           if ("enabled" in opt) {
               //如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
-              _.extend(true, _this.xAxis, {
+              _$1.extend(true, _this.xAxis, {
                   enabled: opt.enabled
               });
-              _.each(_this.yAxis, function (yAxis) {
-                  _.extend(true, yAxis, {
+              _$1.each(_this.yAxis, function (yAxis) {
+                  _$1.extend(true, yAxis, {
                       enabled: opt.enabled
                   });
+              });
+
+              _$1.extend(true, _this.zAxis, {
+                  enabled: opt.enabled
               });
 
               _this.grid.enabled = opt.enabled;
@@ -21234,23 +21841,14 @@ var Chartx = (function () {
               this.group.add(this._xAxis.group);
 
               //这里定义的是配置
-              var yAxis = this.yAxis;
-              var yAxisLeft = void 0;
 
-              // yAxis 肯定是个数组
-              if (!_.isArray(yAxis)) {
-                  yAxis = [yAxis];
-              }
-              //left是一定有的
-              yAxisLeft = _.find(yAxis, function (ya) {
-                  return ya.align == "left";
-              });
+              var yAxisLeft = this._yAxisLeft,
+                  yAxisRight = this._yAxisRight;
 
               if (yAxisLeft) {
-                  this._yAxisLeft = new YAxis(this);
-                  this._yAxisLeft.axis = yAxisLeft;
+                  this._yAxisLeft = new YAxis(this, 'left');
                   this.group.add(this._yAxisLeft.group);
-                  this._yAxis.push(this._yAxisLeft);
+                  //this._yAxis.push(this._yAxisLeft);
               }
 
               //后续坐标系如果还受其他组件的影响,继续计算并加入进来
@@ -21351,6 +21949,15 @@ var Chartx = (function () {
 
               return result;
           }
+      }, {
+          key: "dispose",
+          value: function dispose() {
+
+              this._yAxisLeft.dispose();
+              this._xAxis.dispose();
+              this._zAxis.dispose();
+              this._grid.dispose();
+          }
       }]);
       return Cartesian3DUI;
   }(Component);
@@ -21382,7 +21989,7 @@ var Chartx = (function () {
 
   function getLinearTickPositions(arr, $maxPart, $cfg) {
 
-      arr = _.without(arr, undefined, null, "");
+      arr = _$1.without(arr, undefined, null, "");
 
       var scale = $cfg && $cfg.scale ? parseFloat($cfg.scale) : 1;
       //返回的数组中的值 是否都为整数(思霏)  防止返回[8, 8.2, 8.4, 8.6, 8.8, 9]   应该返回[8, 9]
@@ -21391,10 +21998,10 @@ var Chartx = (function () {
       if (isNaN(scale)) {
           scale = 1;
       }
-      var max = _.max(arr);
+      var max = _$1.max(arr);
       var initMax = max;
       max *= scale;
-      var min = _.min(arr);
+      var min = _$1.min(arr);
 
       if (min == max) {
           if (max > 0) {
@@ -21464,7 +22071,7 @@ var Chartx = (function () {
 
   var DataSection = {
       section: function section($arr, $maxPart, $cfg) {
-          return _.uniq(getLinearTickPositions($arr, $maxPart, $cfg));
+          return _$1.uniq(getLinearTickPositions($arr, $maxPart, $cfg));
       }
   };
 
@@ -21475,7 +22082,12 @@ var Chartx = (function () {
           this._root = root;
           this.field = '';
           this.data = null;
-          this.section = [];
+
+          this._section = [];
+          this._userSection = [];
+
+          this.colors = []; //y轴需要颜色
+          this._colorMap = {};
       }
 
       createClass(AxisAttribute, [{
@@ -21485,14 +22097,65 @@ var Chartx = (function () {
               this.data = this.getAxisDataFrame(this.field);
           }
       }, {
+          key: 'setColors',
+          value: function setColors(colors) {
+              var _this = this;
+
+              this.color = [];
+              this._colorMap = {};
+              var getTheme = this._root.getTheme.bind(this._root);
+
+              if (colors) {
+                  this.colors = colors;
+              } else {
+                  var fields = _$1.flatten(this.field);
+                  this.colors = [];
+
+                  fields.forEach(function (v, i) {
+                      var color = getTheme(i);
+                      _this.colors.push(color);
+                      _this._colorMap[v] = color;
+                      //自定义Section
+                      if (_this._userSection[i]) {
+                          _this._colorMap[_this._userSection[i]] = color;
+                      }
+                  });
+              }
+          }
+      }, {
+          key: 'getColor',
+          value: function getColor(field) {
+              return this._colorMap[field];
+          }
+      }, {
           key: 'setData',
           value: function setData(data) {
               this.data = data;
           }
       }, {
-          key: 'setDataSection',
-          value: function setDataSection(section) {
-              this.section = section;
+          key: 'setOrgSection',
+          value: function setOrgSection(section) {
+              this._section = section;
+          }
+      }, {
+          key: 'setCustomSection',
+          value: function setCustomSection(section) {
+              this._userSection = section;
+          }
+      }, {
+          key: 'getSection',
+          value: function getSection() {
+              return this._userSection.length ? this._userSection : this._section;
+          }
+      }, {
+          key: 'getOrgSection',
+          value: function getOrgSection() {
+              return this._section;
+          }
+      }, {
+          key: 'getCustomSection',
+          value: function getCustomSection() {
+              return this._userSection;
           }
       }, {
           key: 'computeDataSection',
@@ -21501,7 +22164,7 @@ var Chartx = (function () {
 
               var scetion = this._setDataSection(this.field);
               joinArr = joinArr.concat(scetion);
-              var arr = _.flatten(joinArr);
+              var arr = _$1.flatten(joinArr);
               for (var i = 0, il = arr.length; i < il; i++) {
                   arr[i] = Number(arr[i] || 0);
                   if (isNaN(arr[i])) {
@@ -21509,7 +22172,7 @@ var Chartx = (function () {
                       i--;
                       il--;
                   }
-              }            this.section = DataSection.section(arr);
+              }            this._section = DataSection.section(arr);
           }
       }, {
           key: '_setDataSection',
@@ -21519,8 +22182,8 @@ var Chartx = (function () {
               //vLen就会等于2
               var vLen = 1;
 
-              _.each(yFields, function (f) {
-                  if (_.isArray(f) && f.length > 1) {
+              _$1.each(yFields, function (f) {
+                  if (_$1.isArray(f) && f.length > 1) {
                       vLen = 2;
                   }
               });
@@ -21534,7 +22197,7 @@ var Chartx = (function () {
           key: '_oneDimensional',
           value: function _oneDimensional(yFields) {
               var dataOrg = this.getAxisDataFrame(yFields);
-              var arr = _.flatten(dataOrg); //_.flatten( data.org );
+              var arr = _$1.flatten(dataOrg); //_.flatten( data.org );
 
               for (var i = 0, il = arr.length; i < il; i++) {
                   arr[i] = arr[i] || 0;
@@ -21550,12 +22213,12 @@ var Chartx = (function () {
               var d = this.getAxisDataFrame(yFields);
               var arr = [];
               var min;
-              _.each(d, function (d, i) {
+              _$1.each(d, function (d, i) {
                   if (!d.length) {
                       return;
                   }
                   //有数据的情况下 
-                  if (!_.isArray(d[0])) {
+                  if (!_$1.isArray(d[0])) {
                       arr.push(d);
                       return;
                   }
@@ -21587,7 +22250,7 @@ var Chartx = (function () {
                   }                arr.push(varr);
               });
               arr.push(min);
-              return _.flatten(arr);
+              return _$1.flatten(arr);
           }
       }, {
           key: 'getAxisDataFrame',
@@ -21640,6 +22303,7 @@ var Chartx = (function () {
 
           _this.xAxisAttribute = new AxisAttribute(root);
           _this.yAxisAttribute = new AxisAttribute(root);
+          _this.yAxisAttributeRight = new AxisAttribute(root);
           _this.zAxisAttribute = new AxisAttribute(root);
 
           _this._coordUI = null;
@@ -21652,8 +22316,6 @@ var Chartx = (function () {
       createClass(Cartesian3D, [{
           key: 'setDefaultOpts',
           value: function setDefaultOpts(opts) {
-              //todo 先那里使用
-
               var me = this;
               me.coord = {
                   xAxis: {
@@ -21664,19 +22326,20 @@ var Chartx = (function () {
                       posParseToInt: false
                   },
                   zAxis: {
+                      enabled: true,
                       field: '',
                       layoutType: "peak",
                       depth: 50 //最大深度是1000
                   }
               };
 
-              opts = _.clone(opts);
+              opts = _$1.clone(opts);
               if (opts.coord.yAxis) {
                   var _nyarr = [];
                   //TODO: 因为我们的deep extend 对于数组是整个对象引用过去，所以，这里需要
                   //把每个子元素单独clone一遍，恩恩恩， 在canvax中优化extend对于array的处理
-                  _.each(_.flatten([opts.coord.yAxis]), function (yopt) {
-                      _nyarr.push(_.clone(yopt));
+                  _$1.each(_$1.flatten([opts.coord.yAxis]), function (yopt) {
+                      _nyarr.push(_$1.clone(yopt));
                   });
                   opts.coord.yAxis = _nyarr;
               } else {
@@ -21699,7 +22362,7 @@ var Chartx = (function () {
                               align = "right";
                           }
                           var optsYaxisObj = null;
-                          optsYaxisObj = _.find(opts.coord.yAxis, function (obj, i) {
+                          optsYaxisObj = _$1.find(opts.coord.yAxis, function (obj, i) {
                               return obj.align == align || !obj.align && i == (align == "left" ? 0 : 1);
                           });
 
@@ -21718,12 +22381,12 @@ var Chartx = (function () {
                           if (!optsYaxisObj.field) {
                               optsYaxisObj.field = [];
                           } else {
-                              if (!_.isArray(optsYaxisObj.field)) {
+                              if (!_$1.isArray(optsYaxisObj.field)) {
                                   optsYaxisObj.field = [optsYaxisObj.field];
                               }
                           }
 
-                          if (_.isArray(graphs.field)) {
+                          if (_$1.isArray(graphs.field)) {
                               optsYaxisObj.field = optsYaxisObj.field.concat(graphs.field);
                           } else {
                               optsYaxisObj.field.push(graphs.field);
@@ -21737,14 +22400,16 @@ var Chartx = (function () {
               //要手动把yAxis 按照 left , right的顺序做次排序
               var _lys = [],
                   _rys = [];
-              _.each(opts.coord.yAxis, function (yAxis, i) {
+              _$1.each(opts.coord.yAxis, function (yAxis, i) {
                   if (!yAxis.align) {
                       yAxis.align = i ? "right" : "left";
                   }
                   if (yAxis.align == "left") {
                       _lys.push(yAxis);
+                      opts.coord._yAxisLeft = yAxis;
                   } else {
                       _rys.push(yAxis);
+                      opts.coord._yAxisRight = yAxis;
                   }
                   if (!yAxis.layoutType) {
                       yAxis.layoutType = 'proportion'; //默认布局
@@ -21772,10 +22437,12 @@ var Chartx = (function () {
 
       }, {
           key: 'getRatioPixelToWorldByOrigin',
-          value: function getRatioPixelToWorldByOrigin() {
+          value: function getRatioPixelToWorldByOrigin(_origin) {
               var baseBoundbox = get(Cartesian3D.prototype.__proto__ || Object.getPrototypeOf(Cartesian3D.prototype), 'getBoundbox', this).call(this);
-              var _origin = baseBoundbox.min.clone();
-              _origin.setZ(baseBoundbox.max.z);
+              if (_origin === undefined) {
+                  _origin = baseBoundbox.min.clone();
+                  _origin.setZ(baseBoundbox.max.z);
+              }
               var ratio = this._root.renderView.getVisableSize(_origin).ratio;
               return ratio;
           }
@@ -21784,106 +22451,160 @@ var Chartx = (function () {
           value: function init() {
 
               this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
-              var opt = _.clone(this._root.opt);
+              var opt = _$1.clone(this._root.opt);
 
               //这个判断不安全
-              if (_.isSafeObject(opt, 'coord.xAxis.field')) {
+              if (_$1.isSafeObject(opt, 'coord.xAxis.field')) {
                   this.xAxisAttribute.setField(opt.coord.xAxis.field);
-                  //this.xAxisAttribute.setData(opt.coord.xAxis.field)
+              }
+              var arr = _$1.flatten(this.xAxisAttribute.data);
 
-                  if (!_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
-                      var arr = _.flatten(this.xAxisAttribute.data);
-
-                      if (this.coord.xAxis.layoutType == "proportion") {
-                          if (arr.length == 1) {
-                              arr.push(0);
-                              arr.push(arr[0] * 2);
-                          }                        arr = arr.sort(function (a, b) {
-                              return a - b;
-                          });
-                          arr = DataSection.section(arr);
-                      }
-                      this.xAxisAttribute.setDataSection(arr);
-                  }
+              if (this.coord.xAxis.layoutType == "proportion") {
+                  if (arr.length == 1) {
+                      arr.push(0);
+                      arr.push(arr[0] * 2);
+                  }                arr = arr.sort(function (a, b) {
+                      return a - b;
+                  });
+                  arr = DataSection.section(arr);
+              }
+              this.xAxisAttribute.setOrgSection(arr);
+              if (_$1.isSafeObject(opt, 'coord.xAxis.dataSection')) {
+                  this.xAxisAttribute.setCustomSection(opt.coord.xAxis.dataSection);
               }
 
               //获取axisY
-              var yFields = [];
-              if (_.isSafeObject(opt, 'coord.yAxis.field')) {
-                  if (_.isArray(opt.coord.yAxis.field)) {
-                      yFields = yFields.concat(opt.coord.yAxis.field);
+              var yLeftFields = [],
+                  yRightFields = [];
+              if (_$1.isSafeObject(opt, 'coord.yAxis.field')) {
+                  if (_$1.isArray(opt.coord.yAxis.field)) {
+                      if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                          yLeftFields = yLeftFields.concat(opt.coord.yAxis.field);
+                      } else {
+                          yRightFields = yRightFields.concat(opt.coord.yAxis.field);
+                      }
                   } else {
-                      yFields.push(opt.coord.yAxis.field);
+                      if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                          yLeftFields.push(opt.coord.yAxis.field);
+                      } else {
+                          yRightFields.push(opt.coord.yAxis.field);
+                      }
                   }
               }
 
               opt.graphs && opt.graphs.forEach(function (cp) {
-                  if (_.isArray(cp.field)) {
-                      yFields = yFields.concat(cp.field);
+                  if (_$1.isArray(cp.field)) {
+                      if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
+                          yLeftFields = yLeftFields.concat(cp.field);
+                      } else {
+                          yRightFields = yRightFields.concat(cp.field);
+                      }
                   } else {
-                      yFields.push(cp.field);
+                      if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
+                          yLeftFields.push(cp.field);
+                      } else {
+                          yRightFields.push(cp.field);
+                      }
                   }
               });
 
-              yFields = _.uniq(yFields);
-              this.yAxisAttribute.setField(yFields);
-              //let dataOrgY = this._getAxisDataFrame(yFields);
-              //let _section = this._setDataSection(yFields);
+              yLeftFields = _$1.uniq(yLeftFields);
+              yRightFields = _$1.uniq(yRightFields);
 
+              this.yAxisAttribute.setField(yLeftFields);
+              this.yAxisAttributeRight.setField(yRightFields);
 
-              //this.yAxisAttribute.setData(yFields);
-              var dataOrgY = this.yAxisAttribute.data;
-              if (!_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
-                  var joinArr = [];
-                  if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
-                      joinArr.push(opt.coord.yAxis.waterLine);
+              var dataOrgYLeft = this.yAxisAttribute.data;
+              var dataOrgYRight = this.yAxisAttributeRight.data;
+
+              var joinArrLeft = [],
+                  joinArrRight = [];
+              if (_$1.isSafeObject(opt, "coord.yAxis.waterLine")) {
+                  if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                      joinArrLeft.push(opt.coord.yAxis.waterLine);
+                  } else {
+                      joinArrRight.push(opt.coord.yAxis.waterLine);
                   }
-
-                  if (_.isSafeObject(opt, "coord.yAxis.min")) {
-                      joinArr.push(opt.coord.yAxis.min);
-                  }                if (dataOrgY.length == 1 && !_.isArray(dataOrgY[0])) {
-                      joinArr.push(dataOrgY[0] * 2);
-                  }
-                  //joinArr = joinArr.concat(_section);
-                  this.yAxisAttribute.computeDataSection(joinArr);
               }
 
-              if (_.isSafeObject(opt, 'coord.zAxis.field')) {
+              if (_$1.isSafeObject(opt, "coord.yAxis.min")) {
+                  if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                      joinArrLeft.push(opt.coord.yAxis.min);
+                  } else {
+                      joinArrRight.push(opt.coord.yAxis.min);
+                  }
+              }            if (dataOrgYLeft.length == 1 && !_$1.isArray(dataOrgYLeft[0])) {
+
+                  joinArrLeft.push(dataOrgY[0] * 2);
+              }            if (dataOrgYRight.length == 1 && !_$1.isArray(dataOrgYRight[0])) {
+
+                  joinArrRight.push(dataOrgY[0] * 2);
+              }
+              //joinArr = joinArr.concat(_section);
+              if (this.coord._yAxisLeft.layoutType == 'proportion') {
+                  this.yAxisAttribute.computeDataSection(joinArrLeft);
+              } else {
+                  var arr = _$1.flatten(this.yAxisAttribute.data);
+                  this.yAxisAttribute.setOrgSection(arr);
+              }
+
+              if (this.coord._yAxisRight && this.coord._yAxisRight.layoutType == '"proportion"') {
+                  this.yAxisAttributeRight.computeDataSection(joinArrRight);
+              } else {
+                  var arr = _$1.flatten(this.yAxisAttributeRight.data);
+                  this.yAxisAttributeRight.setOrgSection(arr);
+              }
+
+              if (_$1.isSafeObject(opt, 'coord.yAxis.dataSection')) {
+                  if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                      this.yAxisAttribute.setCustomSection(opt.coord.yAxis.dataSection);
+                  } else {
+                      this.yAxisAttributeRight.setCustomSection(opt.coord.yAxis.dataSection);
+                  }
+              }
+
+              //Z轴的计算
+              if (_$1.isSafeObject(opt, 'coord.zAxis.field')) {
                   this.zAxisAttribute.setField(opt.coord.zAxis.field);
                   //this.zAxisAttribute.setData(opt.coord.zAxis.field)
 
-                  if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-                      var arr = _.flatten(this.zAxisAttribute.data);
-                      if (this.coord.zAxis.layoutType == "proportion") {
-                          if (arr.length == 1) {
-                              arr.push(0);
-                              arr.push(arr[0] * 2);
-                          }                        arr = arr.sort(function (a, b) {
-                              return a - b;
-                          });
-                          arr = DataSection.section(arr);
-                      }
-                      this.zAxisAttribute.setDataSection(arr);
-                  }
-              }
-              if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-                  //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-                  var _section = [];
+                  // if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+                  //     var arr = _.flatten(this.zAxisAttribute.data);
+                  //     if (this.coord.zAxis.layoutType == "proportion") {
+                  //         if (arr.length == 1) {
+                  //             arr.push(0);
+                  //             arr.push(arr[0] * 2);
+                  //         };
+                  //         arr = arr.sort(function (a, b) { return a - b });
+                  //         arr = DataSection.section(arr)
+                  //     };
 
-                  var yAxisObj = _.find(this.coord.yAxis, function (item) {
-                      return !item.align || item.align == 'left';
-                  });
-                  yAxisObj.field.forEach(function (item) {
-                      _section.push(item.toString());
-                  });
-
-                  this.zAxisAttribute.setDataSection(_section);
-              } else {
-                  this.zAxisAttribute.setDataSection(opt.coord.zAxis.dataSection);
+                  //     this.zAxisAttribute.setDataSection(arr);
+                  // }
               }
+
+              //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+              var _section = [];
+
+              var yAxisObj = this.coord._yAxisLeft;
+              yAxisObj.field.forEach(function (item) {
+                  _section.push(item.toString());
+              });
+
+              this.zAxisAttribute.setOrgSection(_section);
+
+              if (_$1.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+
+                  this.zAxisAttribute.setCustomSection(opt.coord.zAxis.dataSection);
+              }
+
+              //y轴的颜色值先预设好
+              this.yAxisAttribute.setColors();
+              //todo y轴右轴忽略
 
               //先计算一次空间范围供计算坐标轴宽高使用
               this.getBoundbox();
+              this.addLights();
           }
 
           //更新坐标原点
@@ -21940,6 +22661,58 @@ var Chartx = (function () {
           value: function addLights() {
               //加入灯光
 
+              var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+
+              this._root.rootStage.add(ambientlight);
+
+              var center = this.center.clone();
+              center = this._getWorldPos(center);
+              //center.setY(0);
+
+              var dirLights = [];
+              var intensity = 0.8;
+              var lightColor = 0xcccccc;
+              var position = new Vector3$1(-1, -1, 1);
+
+              dirLights[0] = new DirectionalLight(lightColor, intensity);
+              position.multiplyScalar(10000);
+              dirLights[0].position.copy(position);
+              dirLights[0].target.position.copy(center);
+              this._root.rootStage.add(dirLights[0]);
+
+              dirLights[1] = new DirectionalLight(lightColor, intensity);
+              position = new Vector3$1(1, -1, 1);
+              position.multiplyScalar(10000);
+              dirLights[1].position.copy(position);
+              dirLights[1].target.position.copy(center);
+              this._root.rootStage.add(dirLights[1]);
+
+              // pointLight[0] = new PointLight(lightColor, intensity);
+              // position = new Vector3(-1, -1, 1);
+              // position.multiplyScalar(10000);
+              // pointLight[0].position.copy(position);
+              // this._root.rootStage.add(pointLight[0]);
+
+
+              // pointLight[1] = new PointLight(lightColor, intensity);
+              // position = new Vector3(1, -1, 1);
+              // position.multiplyScalar(10000);
+              // pointLight[1].position.copy(position);
+              // this._root.rootStage.add(pointLight[1]);
+
+
+              // pointLight[2] = new PointLight(lightColor, intensity);
+              // position = new Vector3(-1, -1, -1);
+              // position.multiplyScalar(10000);
+              // pointLight[2].position.copy(position);
+              // this._root.rootStage.add(pointLight[2]);
+
+
+              // pointLight[3] = new PointLight('#fff', 1);
+              // position = new Vector3(1, -1, -1);
+              // position.multiplyScalar(1000);
+              // pointLight[3].position.copy(position);
+              // this._root.rootStage.add(pointLight[3]);
 
           }
       }, {
@@ -21996,8 +22769,8 @@ var Chartx = (function () {
           value: function getXAxisPosition(data) {
               var _val = 0;
               var _range = this.boundbox.max.x - this.boundbox.min.x;
-              var dataLen = this.xAxisAttribute.section.length;
-              var ind = _.indexOf(this.xAxisAttribute.section, data); //先不考虑不存在的值
+              var dataLen = this.xAxisAttribute.getSection().length;
+              var ind = _$1.indexOf(this.xAxisAttribute.getSection(), data); //先不考虑不存在的值
               var layoutType = this.coord.xAxis.layoutType;
               if (dataLen == 1) {
                   _val = _range / 2;
@@ -22031,15 +22804,16 @@ var Chartx = (function () {
           value: function getYAxisPosition(data) {
               var _val = 0;
               var _range = this.boundbox.max.y - this.boundbox.min.y;
-              var dataLen = this.yAxisAttribute.section.length;
-              var ind = _.indexOf(this.yAxisAttribute.section, data); //先不考虑不存在的值
-              var _yAxisLeft = _.find(this.coord.yAxis, function (yaxis) {
+              var dataLen = this.yAxisAttribute.getSection().length;
+              var ind = _$1.indexOf(this.yAxisAttribute.getSection(), data); //先不考虑不存在的值
+
+              var _yAxisLeft = _$1.find(this.coord.yAxis, function (yaxis) {
                   return !yaxis.align || yaxis.align == 'left';
               });
               var layoutType = _yAxisLeft.layoutType;
 
-              var maxVal = Math.max.apply(null, this.yAxisAttribute.section);
-              var minVal = Math.min.apply(null, this.yAxisAttribute.section);
+              var maxVal = Math.max.apply(null, this.yAxisAttribute.getSection());
+              var minVal = Math.min.apply(null, this.yAxisAttribute.getSection());
 
               if (dataLen == 1) {
                   _val = _range / 2;
@@ -22072,8 +22846,8 @@ var Chartx = (function () {
           value: function getZAxisPosition(data) {
               var _val = 0;
               var _range = this.boundbox.max.z - this.boundbox.min.z;
-              var dataLen = this.zAxisAttribute.section.length;
-              var ind = _.indexOf(this.zAxisAttribute.section, data); //先不考虑不存在的值
+              var dataLen = this.zAxisAttribute.getSection().length;
+              var ind = _$1.indexOf(this.zAxisAttribute.getSection(), data); //先不考虑不存在的值
               var layoutType = this.coord.zAxis.layoutType;
 
               if (dataLen == 1) {
@@ -22109,9 +22883,9 @@ var Chartx = (function () {
 
               var ceil = new Vector3$1();
               var size = this.boundbox.getSize();
-              var dataLenX = this.xAxisAttribute.section.length;
-              var dataLenY = this.yAxisAttribute.section.length;
-              var dataLenZ = this.zAxisAttribute.section.length;
+              var dataLenX = this.xAxisAttribute.getSection().length;
+              var dataLenY = this.yAxisAttribute.getSection().length;
+              var dataLenZ = this.zAxisAttribute.getSection().length;
 
               // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
               // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
@@ -22122,6 +22896,12 @@ var Chartx = (function () {
               ceil.setZ(size.z / (dataLenZ + 1));
 
               return ceil;
+          }
+      }, {
+          key: 'dispose',
+          value: function dispose() {
+
+              this._coordUI.dispose();
           }
       }]);
       return Cartesian3D;
@@ -22164,14 +22944,20 @@ var Chartx = (function () {
           var me = this;
           var chart = null;
 
+          function destroy() {
+              this.dispose();
+              me.instances[chart.id] = null;
+              delete me.instances[chart.id];
+          }
+
           //这个el如果之前有绘制过图表，那么就要在instances中找到图表实例，然后销毁
           var chart_id = $.query(el).getAttribute("chart_id");
           if (chart_id != undefined) {
               var _chart = me.instances[chart_id];
               if (_chart) {
-                  _chart.destroy();
-              }            delete me.instances[chart_id];
-          }
+                  _chart.fire({ type: 'destroy' });
+                  _chart.off('destroy', destroy);
+              }        }
           //默认为惯性坐标系
           var Coord = InertialSystem;
 
@@ -22205,10 +22991,7 @@ var Chartx = (function () {
               chart.draw();
 
               me.instances[chart.id] = chart;
-              chart.on("destroy", function () {
-                  me.instances[chart.id] = null;
-                  delete me.instances[chart.id];
-              });
+              chart.on("destroy", destroy);
           }        //} catch(err){
           //    throw "Chatx Error：" + err
           //};

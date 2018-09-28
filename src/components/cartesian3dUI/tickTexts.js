@@ -1,6 +1,6 @@
 
 import { Component } from '../Component';
-import { Vector3, TextTexture } from 'mmgl/src/index';
+import { Vector3, TextTexture, Box3 } from 'mmgl/src/index';
 
 // {
 //     enabled: 1,
@@ -26,11 +26,15 @@ class TickTexts extends Component {
 
         this.rotation = 0;
 
+        this.origin = null;
+
         this.textAlign = opts.textAlign;
+
+        this.verticalAlign = opts.verticalAlign;
 
         this.dir = new Vector3();
 
-        this.offset = opts.offset;
+        this.offset = new Vector3(...Object.values(opts.offset)) || new Vector3();
 
         this._tickTextGroup = null;
 
@@ -40,33 +44,15 @@ class TickTexts extends Component {
         this.group.add(this._tickTextGroup);
     }
 
-    // initData(axis, attribute) {
-    //     let me = this;
-    //     let _dir = new Vector3();
-    //     let axisSectionLength = axis.length / (attribute.section.length - 1);
-    //     let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-
-    //     attribute.section.forEach((num, index) => {
-    //         //起点
-    //         let startPoint = new Vector3();
-    //         startPoint.copy(axis.dir);
-    //         startPoint.multiplyScalar(axisSectionLength * index);
-    //         startPoint.add(axis.origin);
-    //         startPoint.add(_offset);
-    //         me.origins.push(startPoint);
-    //     });
-
-
-    // }
-
 
     initData(axis, attribute, fn) {
         let me = this;
-        let _dir = new Vector3();
-        let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-        this.origins = [];
+        let _dir = me.dir.clone();
+        //let _offset = _dir.multiplyScalar(this.offset);
+        let _offset = this.offset;
+        me.origins = [];
 
-        attribute.section.forEach((num, index) => {
+        attribute.getSection().forEach((num, index) => {
             //起点
             let val = fn.call(this._coordSystem, num)
             let startPoint = axis.dir.clone().multiplyScalar(val);
@@ -75,47 +61,81 @@ class TickTexts extends Component {
             me.origins.push(startPoint);
 
         });
+
+        me.updataOrigins = this._updataOrigins(axis, attribute, fn)
     }
 
-    set offset(_offset) {
-        let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-        this._offset = _offset * ratio;
-    }
-
-    get offset() {
-        return this._offset;
-    }
     setDir(dir) {
         this.dir = dir;
     }
+    setTextAlign(align) {
+        this.textAlign = align;
+    }
+    setVerticalAlign(align) {
+        this.verticalAlign = align;
+    }
+
+    _updataOrigins(axis, attribute, fn) {
+        let _axis = axis;
+        let _attribute = attribute;
+        let _fn = fn;
+        return function () {
+            this.initData(_axis, _attribute, _fn);
+        }
+    }
+
     drawStart(texts) {
         let me = this;
-
-        // this._tickTextGroup.removeAll();
-        //文本对齐计算
-        let ratio = this._root.renderView.getVisableSize(me.origins[0]).ratio;
-        let maxWidth = TextTexture.getTextWidth(texts, ['normal', 'normal', this.fontColor, this.fontSize].join(' '));
-
         (texts || []).forEach((text, index) => {
-            let width = TextTexture.getTextWidth([text], ['normal', 'normal', me.fontColor, me.fontSize].join(' '))
             let obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor)
-            obj.position.copy(me.origins[index]);
-            if (me.textAlign == 'right') {
-                obj.position.add(new Vector3((maxWidth - width) * ratio / 2, 0, 0));
+            obj.userData.lastScale = new Vector3();
+            let oldFn = obj.onBeforeRender;
+            obj.onBeforeRender = function () {
+                oldFn.apply(obj, arguments);
+                if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
+                    this.userData.lastScale.copy(this.scale.clone().floor());
+                    me.updataOrigins();
+                    obj.position.copy(me.origins[index]);
+                    //obj.position.add(me.offset);
+
+                    //todo 默认center 居中对齐
+
+                    if (me.textAlign == 'right') {
+
+                        obj.position.add(new Vector3(-(this.scale.x) * 0.5, 0, 0));
+                    }
+                    if (me.textAlign == 'left') {
+                        obj.position.add(new Vector3((this.scale.x) * 0.5, 0, 0));
+                    }
+                    if (me.verticalAlign == 'top') {
+                        obj.position.add(new Vector3(0, -(this.scale.y) * 0.5, 0));
+                    }
+                    if (me.verticalAlign == 'bottom') {
+                        obj.position.add(new Vector3(0, (this.scale.y) * 0.5, 0));
+                    }
+
+                    //console.log(`sprite ${this.id}`, maxSize, this.scale)
+                }
+
             }
-            if (me.textAlign == 'left') {
-                obj.position.add(new Vector3(-(maxWidth - width) * ratio / 2, 0, 0));
-            }
+
+
             me._tickTextGroup.add(obj);
 
         })
-        //todo:通过计算最长文本在三维空间中的位置
-        // this._tickTexts = this._root.renderView.creatSpriteText(this.texts, this.origins)
+
+
+
+
 
     }
     draw() {
 
         this.group.add(this._tickTextGroup);
+    }
+
+    update() {
+        //文字需要实时更新
     }
     // getBoundBox() {
     //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
@@ -142,7 +162,6 @@ class TickTexts extends Component {
     //     return result;
     // }
     dispose() {
-        //todo sprite重构
         let remove = [];
         this.group.traverse((obj) => {
             if (obj.isTextSprite) {

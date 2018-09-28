@@ -1,4 +1,4 @@
-import { Component,_ } from "../Component";
+import { Component, _ } from "../Component";
 import { Vector3, Box3 } from "mmgl/src/index";
 import { YAxis } from './yAxis';
 import { XAxis } from './xAxis';
@@ -54,6 +54,10 @@ class Cartesian3DUI extends Component {
                 });
             });
 
+            _.extend(true, this.zAxis, {
+                enabled: opt.enabled
+            });
+
             this.grid.enabled = opt.enabled;
         };
 
@@ -71,7 +75,7 @@ class Cartesian3DUI extends Component {
         //todo  是否要计算offset值去更改最终原点的位置
         // let offset = new Vector3(this._yAxisLeft.width, this._xAxis.height, 0);
         //todo 三维空间中不需要考虑原点的移动 
-        this._coordSystem.updateOrigin(new Vector3(0,0,0));
+        this._coordSystem.updateOrigin(new Vector3(0, 0, 0));
 
 
 
@@ -85,24 +89,16 @@ class Cartesian3DUI extends Component {
         this.group.add(this._xAxis.group);
 
         //这里定义的是配置
-        let yAxis = this.yAxis;
-        let yAxisLeft, yAxisRight;
 
-        // yAxis 肯定是个数组
-        if (!_.isArray(yAxis)) {
-            yAxis = [yAxis];
-        };
+        let yAxisLeft = this._yAxisLeft,
+            yAxisRight = this._yAxisRight;
 
-        //left是一定有的
-        yAxisLeft = _.find(yAxis, function (ya) {
-            return ya.align == "left"
-        });
+
 
         if (yAxisLeft) {
-            this._yAxisLeft = new YAxis(this);
-            this._yAxisLeft.axis = yAxisLeft;
+            this._yAxisLeft = new YAxis(this, 'left');
             this.group.add(this._yAxisLeft.group);
-            this._yAxis.push(this._yAxisLeft);
+            //this._yAxis.push(this._yAxisLeft);
         }
 
         //后续坐标系如果还受其他组件的影响,继续计算并加入进来
@@ -152,7 +148,7 @@ class Cartesian3DUI extends Component {
             rbb = new Vector3(width, 0, -depth),       //左后下 
             rbt = new Vector3(width, height, -depth);  //左后上
 
-        let cameraPos = new Vector3(); 
+        let cameraPos = new Vector3();
         this._root.renderView._camera.getWorldPosition(cameraPos);
 
         let zDir = new Vector3(0, 0, 1);
@@ -195,6 +191,13 @@ class Cartesian3DUI extends Component {
 
         return result;
 
+    }
+    dispose() {
+
+        this._yAxisLeft.dispose();
+        this._xAxis.dispose();
+        this._zAxis.dispose();
+        this._grid.dispose();
     }
 
 }

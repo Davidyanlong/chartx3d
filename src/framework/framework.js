@@ -7,7 +7,7 @@ class Framework extends Events {
 
         this.layers = [];
         this.isUpdate = true;
-        this.currTick = new Date();
+        this.currTick = new Date().getTime();
         this.lastTick = null;
         this.renderer = null;
 
@@ -24,10 +24,10 @@ class Framework extends Events {
         //创建渲染器
         try {
             this.renderer = new WebGLRenderer({
-               alpha: true,
-               depth: true,
-               antialias: true,
-               premultipliedAlpha: true
+                alpha: true,
+                depth: true,
+                antialias: true,
+                premultipliedAlpha: true
             });
 
             //this.render._sortObjects=false;
@@ -46,7 +46,11 @@ class Framework extends Events {
     render() {
 
         let redraw = this.isUpdate;
-        this.isUpdate = false;
+
+        if (this.lastTick - this.currTick > 1000 * 5) {
+            this.isUpdate = false;
+        }
+
         this.fire({ type: 'renderbefore' });
         if (redraw) {
             this.layers.forEach(view => {
@@ -54,6 +58,7 @@ class Framework extends Events {
                 this.renderer.render(view._scene, view._camera)
 
             });
+            this.lastTick = new Date().getTime();
         }
         this.fire({ type: 'renderafter' });
     }
@@ -61,11 +66,15 @@ class Framework extends Events {
     renderFrame() {
         let me = this;
         this.render();
-        window.renderFrame(function () {
+        this.frameId = window.requestAnimationFrame(function () {
             me.renderFrame();
         })
     }
 
+    stopRenderFrame() {
+        window.cancelAnimationFrame(this.frameId);
+        this.frameId = null;
+    }
     addView(view) {
         this.layers.push(view);
     }
@@ -84,10 +93,6 @@ class Framework extends Events {
 }
 
 
-window.renderFrame = (function () {
-    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (tick, canvas) {
-        window.setTimeout(tick, 1000 / 60)
-    }
-})();
+
 
 export { Framework };

@@ -90,6 +90,9 @@ class InertialSystem extends Events {
     draw() {
 
     }
+    dispose(){
+
+    }
 
 
 

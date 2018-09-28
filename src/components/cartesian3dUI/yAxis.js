@@ -1,16 +1,15 @@
 
 import { Component, _ } from '../Component';
 import { AxisLine } from './axisLine';
-import { Vector3, Box3, TextTexture } from 'mmgl/src/index';
+import { Vector3, Box3, TextTexture, Vector2 } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
 import { TickTexts } from './tickTexts';
 import { numAddSymbol } from '../../../utils/tools';
 
 class YAxis extends Component {
-    constructor(_cartesionUI) {
+    constructor(_cartesionUI, axisType = 'left') {
         super(_cartesionUI._coordSystem);
         let opt = this._opt = _cartesionUI;
-
         //this._coord = _coord || {};
         this._cartesionUI = _cartesionUI;
 
@@ -37,32 +36,32 @@ class YAxis extends Component {
         this.enabled = true;
         this.tickLine = {//刻度线
             enabled: 1,
-            lineWidth: 1, //线宽
-            lineLength: 4, //线长
-            strokeStyle: '#cccccc',
-            // distance: 2,
-            offset: 0,
+            lineWidth: 1, //线宽像素
+            lineLength: 20, //线长(空间单位)
+            strokeStyle: '#333',
+            offset: 0, //空间单位
         };
         this.axisLine = {//轴线
             enabled: 1,
-            lineWidth: 2,
-            strokeStyle: '#cccccc'
+            lineWidth: 2, //线宽像素
+            strokeStyle: '#333'
         };
         this.label = {
             enabled: 1,
-            fontColor: '#999',
+            fontColor: '#333',
             fontSize: 12,
             format: null,
             rotation: 0,
-            textAlign: "right",
+            textAlign: "right",       //水平方向对齐: left  right center 
+            verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
             lineHeight: 1,
-            offset: 2    //和刻度线的距离
+            offset: { x: 0, y: 0, z: 40 }    //和刻度线的距离
         };
 
-        if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
-            //如果是横向直角坐标系图
-            this.label.rotation = 90;
-        };
+        // if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+        //     //如果是横向直角坐标系图
+        //     this.label.rotation = 90;
+        // };
 
         this.pos = {
             x: 0,
@@ -71,16 +70,16 @@ class YAxis extends Component {
         this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
 
         this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
-        this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
-        this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
+        // this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
+        // this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
 
         //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
-        this.dataSectionGroup = [];
+        //this.dataSectionGroup = [];
 
         //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
-        this.middleweight = null;
+        // this.middleweight = null;
 
-        this.dataOrg = data.org || []; //源数据
+        //this.dataOrg = data.org || []; //源数据
 
 
         this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
@@ -102,11 +101,24 @@ class YAxis extends Component {
         this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
 
         this.layoutType = "proportion"; // rule , peak, proportion
+        if (axisType == 'left') {
+            _.extend(true, this, this._opt.yAxis[0]);
 
-        _.extend(true, this, opt.yAxis);
+            // this.label.enabled = this.enabled && this.label.enabled;
+            // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+            // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
-        this.init(opt, this._coordSystem.yAxisAttribute);
+            this.init(opt, this._coordSystem.yAxisAttribute);
 
+        } else {
+            //可以忽略
+            //_.extend(true, this, this._opt._yAxisRight);
+            //this.init(opt, this._coordSystem.yAxisAttributeRight);
+
+        }
+
+
+        this.group.visible = !!this.enabled;
         this._getName();
 
     }
@@ -121,10 +133,11 @@ class YAxis extends Component {
 
         this._initData(data);
 
-        this._root.orbitControls.on('change', () => {
-
+        this._onChangeBind = () => {
             me._initModules();
-        })
+        };
+
+        this._root.orbitControls.on('change', this._onChangeBind);
         me._initModules();
 
     }
@@ -143,22 +156,32 @@ class YAxis extends Component {
         let origin = _coordSystem.getOrigin();
         let _tickLineDir = new Vector3(0, 0, 1);
         let _faceInfo = this._cartesionUI.getFaceInfo();
+        let _textAlign = this.label.textAlign;
+        let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
 
         if (_faceInfo.left.visible) {
             if (_faceInfo.back.visible) {
                 origin = _coordSystem.getOrigin();
                 _tickLineDir = new Vector3(0, 0, 1);
+                _textAlign = 'right';
+
+
             } else {
                 origin = new Vector3(0, 0, -depth);
                 _tickLineDir = new Vector3(0, 0, -1);
+                _textAlign = 'left';
+                _offsetZ *= -1;
             }
         } else {
             if (_faceInfo.back.visible) {
                 origin = new Vector3(width, 0, 0);
                 _tickLineDir = new Vector3(0, 0, 1);
+                _textAlign = 'left';
             } else {
                 origin = new Vector3(width, 0, -depth);
                 _tickLineDir = new Vector3(0, 0, -1);
+                _textAlign = 'right';
+                _offsetZ *= -1;
             }
         }
 
@@ -167,25 +190,30 @@ class YAxis extends Component {
             if (this._axisLine.getOrigin().equals(origin)) {
                 return;
             }
-            this._axisLine.dispose();
+
+            // this._axisLine.dispose();
             this._axisLine.setOrigin(origin);
-            this._axisLine.drawStart();
-            this._axisLine.draw();
+            this._axisLine.update();
+            // this._axisLine.drawStart();
+            // this._axisLine.draw();
 
             //二次绘制
-            this._tickLine.dispose();
+            //this._tickLine.dispose();
             this._tickLine.setDir(_tickLineDir);
             this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
-            this._tickLine.drawStart();
-            this._tickLine.draw();
+            this._tickLine.update();
+            // this._tickLine.drawStart();
+            // this._tickLine.draw();
 
-            this._tickText.dispose();
+
+            //this._tickText.dispose();
 
             this._tickText.setDir(_tickLineDir);
             this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
-
-            this._tickText.drawStart(this._formatTextSection);
-            this._tickText.draw();
+            this._tickText.setTextAlign(_textAlign);
+            this._tickText.offset.setZ(_offsetZ);
+            // this._tickText.drawStart(this._formatTextSection);
+            // this._tickText.draw();
 
 
         } else {
@@ -212,8 +240,9 @@ class YAxis extends Component {
 
             // 初始化tickText
             this._tickText = new TickTexts(_coordSystem, this.label);
-            this._tickText.offset = this.label.offset + this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset + this._maxTextWidth / 2;
+            this._tickText.offset.z = _offsetZ;
 
+            this._tickText.setTextAlign(_textAlign);
             this._tickText.setDir(_tickLineDir);
             this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
 
@@ -233,30 +262,24 @@ class YAxis extends Component {
     _initData(data) {
         var me = this;
 
+        this.dataSection = data.getSection();
 
-        //如果用户传入了自定义的dataSection， 那么优先级最高
-        if (!this._opt.dataSection) {
 
-            this.dataSection = data.section;
-        } else {
-            this.dataSection = this._opt.dataSection;
-        };
-
-        //如果还是0
-        if (this.dataSection.length == 0) {
-            this.dataSection = [0]
-        };
-
-        // if( _.min(this.dataSection) < this._opt.min ){
-        //     var minDiss = me._opt.min - _.min(me.dataSection);
-        //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
-        //     _.each( this.dataSection, function( num, i ){
-        //         me.dataSection[i] += minDiss;
-        //     } );
+        // //如果还是0
+        // if (this.dataSection.length == 0) {
+        //     this.dataSection = [0]
         // };
 
-        //如果有 middleweight 设置，就会重新设置dataSectionGroup
-        this.dataSectionGroup = [_.clone(this.dataSection)];
+        // // if( _.min(this.dataSection) < this._opt.min ){
+        // //     var minDiss = me._opt.min - _.min(me.dataSection);
+        // //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
+        // //     _.each( this.dataSection, function( num, i ){
+        // //         me.dataSection[i] += minDiss;
+        // //     } );
+        // // };
+
+        // //如果有 middleweight 设置，就会重新设置dataSectionGroup
+        // this.dataSectionGroup = [_.clone(this.dataSection)];
 
         // this._sort();
         // this._setBottomAndBaseNumber();
@@ -408,6 +431,17 @@ class YAxis extends Component {
 
         }
     }
+
+    dispose() {
+
+        this._axisLine.dispose();
+        this._tickLine.dispose();
+        this._tickText.dispose();
+        this._root.orbitControls.off('change', this._onChangeBind);
+        this._onChangeBind = null;
+
+    }
+
 
 
 }

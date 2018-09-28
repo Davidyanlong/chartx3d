@@ -65,6 +65,15 @@ class AxisLine extends Component {
         this.axis = this._root.renderView.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color)
     }
 
+    update() {
+        let pos = this.getOrigin();
+        this.axis.traverse(obj => {
+            if (obj.isLine2) {
+                obj.position.copy(pos);
+            }
+        })
+    }
+
     draw() {
 
         this.group.add(this.axis);

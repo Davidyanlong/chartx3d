@@ -23,18 +23,18 @@ class Grid extends Component {
 
         this._cartesionUI = _cartesionUI;
 
-        this.enabled = false;
+        this.enabled = true;
 
         this.line = {                                //x方向上的线
             enabled: true,
             lineType: 'solid',                //线条类型(dashed = 虚线 | solid = 实线)
-            strokeStyle: '#f0f0f0', //'#e5e5e5',
+            strokeStyle: '#e5e5e5',
         };
 
         this.fill = {
-            enabled: true,
+            enabled: false,
             fillStyle: '#ccc',
-            alpha: 0.8
+            alpha: 0.1
         };
 
 
@@ -58,14 +58,16 @@ class Grid extends Component {
         this.group.add(this.frontGroup);
         this.group.add(this.backGroup);
 
-        this._root.orbitControls.on('change', () => {
+
+        this._onChangeBind= () => {
             if (!me.enabled) return;
             let _faceInfo = me._cartesionUI.getFaceInfo();
             _.each(_faceInfo, (value, key) => {
                 me[key + 'Group'].visible = value.visible;
             })
 
-        })
+        };
+        this._root.orbitControls.on('change', this._onChangeBind );
 
 
     }
@@ -108,6 +110,7 @@ class Grid extends Component {
 
         let coordBoundBox = _coordSystem.getBoundbox();
         let _size = new Vector3(); //空间盒子的大小
+
         coordBoundBox.getSize(_size);
         let {
             x: width,
@@ -115,18 +118,22 @@ class Grid extends Component {
             z: depth
         } = _size;
 
+        let xSection = me._coordSystem.xAxisAttribute.getSection();
+        let ySection = me._coordSystem.yAxisAttribute.getSection();
+        let zSection = me._coordSystem.zAxisAttribute.getSection();
+
         if (!me.line.enabled) {
             return;
         }
         //绘制左面的线条
         let LinesVectors = [];
-        me._coordSystem.yAxisAttribute.section.forEach(num => {
+        ySection.forEach(num => {
             let posY = me._coordSystem.getYAxisPosition(num);
             LinesVectors.push(new Vector3(0, posY, 0));
             LinesVectors.push(new Vector3(0, posY, -depth));
         })
 
-        me._coordSystem.zAxisAttribute.section.forEach(num => {
+        zSection.forEach(num => {
             let posZ = me._coordSystem.getZAxisPosition(num);
             LinesVectors.push(new Vector3(0, 0, -posZ));
             LinesVectors.push(new Vector3(0, height, -posZ));
@@ -136,13 +143,13 @@ class Grid extends Component {
 
         //绘制右面的线条
         LinesVectors = [];
-        me._coordSystem.yAxisAttribute.section.forEach(num => {
+        ySection.forEach(num => {
             let posY = me._coordSystem.getYAxisPosition(num);
             LinesVectors.push(new Vector3(width, posY, 0));
             LinesVectors.push(new Vector3(width, posY, -depth));
         })
 
-        me._coordSystem.zAxisAttribute.section.forEach(num => {
+        zSection.forEach(num => {
             let posZ = me._coordSystem.getZAxisPosition(num);
             LinesVectors.push(new Vector3(width, 0, -posZ));
             LinesVectors.push(new Vector3(width, height, -posZ));
@@ -152,13 +159,13 @@ class Grid extends Component {
 
         //绘制上面的线条
         LinesVectors = [];
-        me._coordSystem.xAxisAttribute.section.forEach(num => {
+        xSection.forEach(num => {
             let posX = me._coordSystem.getXAxisPosition(num);
             LinesVectors.push(new Vector3(posX, height, 0));
             LinesVectors.push(new Vector3(posX, height, -depth));
         })
 
-        me._coordSystem.zAxisAttribute.section.forEach(num => {
+        zSection.forEach(num => {
             let posZ = me._coordSystem.getZAxisPosition(num);
             LinesVectors.push(new Vector3(0, height, -posZ));
             LinesVectors.push(new Vector3(width, height, -posZ));
@@ -169,13 +176,13 @@ class Grid extends Component {
 
         //绘制下面的线条
         LinesVectors = [];
-        me._coordSystem.xAxisAttribute.section.forEach(num => {
+        xSection.forEach(num => {
             let posX = me._coordSystem.getXAxisPosition(num);
             LinesVectors.push(new Vector3(posX, 0, 0));
             LinesVectors.push(new Vector3(posX, 0, -depth));
         })
 
-        me._coordSystem.zAxisAttribute.section.forEach(num => {
+        zSection.forEach(num => {
             let posZ = me._coordSystem.getZAxisPosition(num);
             LinesVectors.push(new Vector3(0, 0, -posZ));
             LinesVectors.push(new Vector3(width, 0, -posZ));
@@ -185,13 +192,13 @@ class Grid extends Component {
 
         //绘制前面的线条
         LinesVectors = [];
-        me._coordSystem.xAxisAttribute.section.forEach(num => {
+        xSection.forEach(num => {
             let posX = me._coordSystem.getXAxisPosition(num);
             LinesVectors.push(new Vector3(posX, 0, 0));
             LinesVectors.push(new Vector3(posX, height, 0));
         })
 
-        me._coordSystem.yAxisAttribute.section.forEach(num => {
+        ySection.forEach(num => {
             let posY = me._coordSystem.getYAxisPosition(num);
             LinesVectors.push(new Vector3(0, posY, 0));
             LinesVectors.push(new Vector3(width, posY, 0));
@@ -202,13 +209,13 @@ class Grid extends Component {
 
         //绘制后面的线条
         LinesVectors = [];
-        me._coordSystem.xAxisAttribute.section.forEach(num => {
+        xSection.forEach(num => {
             let posX = me._coordSystem.getXAxisPosition(num);
             LinesVectors.push(new Vector3(posX, 0, -depth));
             LinesVectors.push(new Vector3(posX, height, -depth));
         })
 
-        me._coordSystem.yAxisAttribute.section.forEach(num => {
+        ySection.forEach(num => {
             let posY = me._coordSystem.getYAxisPosition(num);
             LinesVectors.push(new Vector3(0, posY, -depth));
             LinesVectors.push(new Vector3(width, posY, -depth));
@@ -221,6 +228,11 @@ class Grid extends Component {
     draw() {
         this.drawFace();
         this.drawLine();
+    }
+    dispose(){
+        super.dispose();
+        this._root.orbitControls.off('change', this._onChangeBind );
+        this._onChangeBind = null;
     }
 
 }

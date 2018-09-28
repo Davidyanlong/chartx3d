@@ -11,7 +11,7 @@ class Application {
 
         //默认值有一个view;
         this.view = [];
-        
+
         this.createView();
 
     }
@@ -20,11 +20,22 @@ class Application {
         this._framework.renderFrame();
     }
 
-    createView(){
+    createView() {
         this.view.push(new View(this._framework))
     }
+    dispose() {
 
-    
+        this.view.forEach(vw => {
+            this._framework.removeView(vw);
+            vw.dispose();
+        })
+        this._framework.stopRenderFrame();
+        this._framework.renderer.dispose();
+        this._framework.render = null;
+        this.view = [];
+    }
+
+
 
 }
 

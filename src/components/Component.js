@@ -13,11 +13,35 @@ class Component extends Events {
         // this.group = new Group();
         // this.name = '';
         this.group = this._root.renderView.addGroup({
-            name: this.constructor.name.toLowerCase()+'_root'
+            name: this.constructor.name.toLowerCase() + '_root'
         });
     }
     setGroupName(name) {
         this.group.name = name;
+    }
+
+    dispose() {
+        let removes = [];
+        this.group.traverse(obj => {
+            if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isTextSprite) {
+                if (obj.geometry) {
+                    obj.geometry.dispose();
+                }
+                if (obj.material) {
+                    obj.material.dispose();
+                }
+                removes.push(obj);
+            }
+        });
+        while (removes.length) {
+            let obj = removes.pop();
+            if (obj.parent) {
+                obj.parent.remove(obj);
+            } else {
+                obj = null;
+            }
+
+        }
     }
 
     //后续组件的公共部分可以提取到这里

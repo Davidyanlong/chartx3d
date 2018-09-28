@@ -1,4 +1,4 @@
-import { Component } from '../Component';
+import { Component,_ } from '../Component';
 import { Vector3 } from 'mmgl/src/index';
 
 // this.tickLine = {//刻度线
@@ -41,7 +41,7 @@ class TickLines extends Component {
         let _dir = new Vector3();
         let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
         this.origins = [];
-        attribute.section.forEach((num, index) => {
+        attribute.getSection().forEach((num, index) => {
             //起点
             let val = fn.call(this._coordSystem, num)
             let startPoint = axis.dir.clone().multiplyScalar(val);
@@ -52,16 +52,15 @@ class TickLines extends Component {
         });
     }
     set length(len) {
-        let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-        this._length = len * ratio;
+
+        this._length = len;
     }
     get length() {
         return this._length;
     }
 
     set offset(_offset) {
-        let ratio = this._coordSystem.getRatioPixelToWorldByOrigin();
-        this._offset = _offset * ratio;
+        this._offset = _offset;
     }
 
     get offset() {
@@ -73,6 +72,34 @@ class TickLines extends Component {
     }
     drawStart() {
         this._tickLine = this._root.renderView.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
+    }
+    update() {
+        let origins = this.origins;
+        let triangleVertices = [];
+        let endPoint = null;
+        let direction = this.dir.clone();
+        let length = this._length;
+
+
+        let i = 0;
+        this._tickLine.traverse(obj => {
+            if (obj.isLine2) {
+                triangleVertices = [];
+                triangleVertices.push([0, 0, 0]);
+
+                endPoint = new Vector3();
+                endPoint.copy(direction);
+                endPoint.multiplyScalar(length);
+
+                triangleVertices.push(endPoint.toArray());
+
+                obj.geometry.setPositions(_.flatten(triangleVertices));
+                obj.position.copy(origins[i]);
+                i++;
+            }
+        })
+
+
     }
 
     draw() {

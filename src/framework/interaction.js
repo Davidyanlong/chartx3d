@@ -1,6 +1,10 @@
 import { Events, Raycaster, Vector2 } from 'mmgl/src/index';
-
+//避免多次触发
 let isChange = false;
+let isMouseOver = false;
+let isMouseOut = false;
+let isClick = false;
+let EVENT = null;
 class Interaction extends Events {
     constructor(scene, camera, domElement) {
         super();
@@ -13,8 +17,14 @@ class Interaction extends Events {
         this.target = null;
         this.domElement = (domElement !== undefined) ? domElement : document;
 
+        this._onMouseMovebind = scope.onMouseMove.bind(scope);
+        this._onMousedownbind = scope.onMousedown.bind(scope);
+        this._onMouseupbind = scope.onMouseup.bind(scope);
 
-        this.domElement.addEventListener('mousemove', scope.onMouseMove.bind(scope), false);
+        this.domElement.addEventListener('mousemove', this._onMouseMovebind, false);
+        this.domElement.addEventListener('mousedown', this._onMousedownbind, false);
+        this.domElement.addEventListener('mouseup', this._onMouseupbind, false);
+
 
     }
     update() {
@@ -35,18 +45,33 @@ class Interaction extends Events {
         // }
         if (intersects.length > 0) {
             if (intersects[0].object == this.target) {
-                this.target.fire({ type: 'mouseover' });
+                if (!isMouseOver) {
+                    this.target.fire({ type: 'mouseover', event: EVENT });
+                    isMouseOver = true;
+                    isMouseOut = false;
+                }
+                if (isClick) {
+                    this.target.fire({ type: 'click', event: EVENT });
+                    isClick = false;
+                }
 
             } else {
-                if (this.target !== null) {
-                    this.target.fire({ type: 'mouseout' });
+                if (this.target !== null && !isMouseOut) {
+                    this.target.fire({ type: 'mouseout', event: EVENT });
+                    isMouseOut = true;
+                    isMouseOver = false;
+                    // console.log({ type: 'mouseout' })
                 }
                 this.target = intersects[0].object;
             }
+
         } else {
-            if (this.target !== null) {
+            if (this.target !== null && !isMouseOut) {
                 this.target.fire({ type: 'mouseout' });
                 this.target = null;
+                isMouseOut = true;
+                isMouseOver = false;
+                //console.log({ type: 'mouseout' })
             }
         }
 
@@ -54,25 +79,52 @@ class Interaction extends Events {
     }
 
     dispose() {
-        //let scope = this;
+        let scope = this;
         // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
-        // scope.domElement.removeEventListener('mousedown', onMouseDown, false);
+        scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
+        scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false);
         // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
 
         // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
         // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
         // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
 
-        document.removeEventListener('mousemove', onMouseMove, false);
+        scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false);
         // document.removeEventListener('mouseup', onMouseUp, false);
         // window.removeEventListener('keydown', onKeyDown, false);
+
+        scope._onMousedownbind = null;
+        scope._onMouseupbind = null;
+        scope._onMouseMovebind = null;
+
+        isChange = false;
+        isMouseOver = false;
+        isMouseOut = false;
+        isClick = false;
+        EVENT = null;
+    }
+    onMousedown() {
+        //isClick = true;
+        EVENT = event;
+    }
+    onMouseup() {
+        isClick = true;
+        isChange = true;
+        this.fire({ type: 'click', event: event });
+        this.fire({ type: 'refresh' });
+
+        EVENT = event;
+        // console.log('click');
+
     }
 
     onMouseMove(event) {
         event.preventDefault();
         this.currMousePos.x = (event.offsetX / this.domElement.clientWidth) * 2 - 1;
         this.currMousePos.y = -(event.offsetY / this.domElement.clientHeight) * 2 + 1;
-        this.fire({ type: 'move' });
+        this.fire({ type: 'move', event: event });
+        this.fire({ type: 'refresh' });
+        EVENT = event;
         isChange = true;
     }
 

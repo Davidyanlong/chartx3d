@@ -1,5 +1,5 @@
 {
-  "name": "chartx3D",
+  "name": "chartx3d",
   "title": "chartx3D.js",
   "description": "Data Visualization Chart Library",
   "version": "0.0.1",
@@ -35,7 +35,9 @@
     "rollup-plugin-uglify": "^3.0.0"
   },
   "dependencies": {
-    "mmgl": "0.0.20"
+    "der-server": "0.0.9",
+    "gulp": "^3.9.1",
+    "mmgl": "0.0.27"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

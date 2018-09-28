@@ -5,6 +5,7 @@ import {
     BoxGeometry,
     Mesh,
     MeshBasicMaterial,
+    MeshLambertMaterial,
     Matrix4,
     Group,
     OrthographicCamera,
@@ -52,7 +53,7 @@ class View {
         this.height = 0;
 
         this.aspect = 1;
-        this.fov = 75;
+        this.fov = 45;
         this.near = 0.1;
         this.far = 10000;
         this.mode = null;
@@ -176,7 +177,7 @@ class View {
 
 
         if (!materials) {
-            materials = new MeshBasicMaterial({
+            materials = new MeshLambertMaterial({
                 // depthTest: true,
                 // depthWrite: true
             });
@@ -210,7 +211,8 @@ class View {
     createPlane(width = 1, height = 1, materials = undefined, showInfo = {}, group = undefined, faceStyle = {}) {
 
         if (!materials) {
-            materials = new MeshBasicMaterial({
+
+            materials = new MeshLambertMaterial({
                 color: faceStyle.fillStyle || 0xffffff * Math.random(),
                 side: FrontSide,
                 transparent: true,
@@ -283,7 +285,7 @@ class View {
             geometry.vertices.push(item);
         })
         let line = new Line(geometry, material);
-       // line.renderOrder=-110;
+        // line.renderOrder=-110;
         group.add(line);
 
         return group;
@@ -412,7 +414,6 @@ class View {
     }
 
     createTextSprite(text, fontSize, color) {
-        let group = new Group();
         let sprite = new TextSprite({
             fontSize: fontSize,
             texture: {  //纹理中需要的文字大小不需要指定,TextSprite会自动计算
@@ -425,8 +426,7 @@ class View {
                 transparent: true
             }
         });
-        group.add(sprite);
-        return group;
+        return sprite;
     }
 
     getObjectScale(object) {
@@ -448,6 +448,14 @@ class View {
         this._camera.updateProjectionMatrix();
     }
 
+    dispose() {
+        
+        this._scene = null;
+        this._camera = null;
+
+        this._frameWork = null;
+        this.renderer = null;
+    }
 
 
 

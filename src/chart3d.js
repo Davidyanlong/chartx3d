@@ -5,6 +5,7 @@ import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Component } from './components/Component';
 import DataFrame from "../utils/dataframe";
+import { theme } from './theme';
 
 
 import { Events } from 'mmgl/src/index';
@@ -37,7 +38,7 @@ class Chart3d extends Events {
         this.app = null;
         this.currCoord = null;
 
-
+        this._theme = theme.colors.slice(0);
 
         //初始化画布
         this._createDomContainer(opt.el);
@@ -97,7 +98,7 @@ class Chart3d extends Events {
 
 
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-        let interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
+        let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
 
 
 
@@ -113,42 +114,28 @@ class Chart3d extends Events {
         controls.autoRotateSpeed = 1.0
 
         //自动旋转时间
-        window.setTimeout(() => {
-            controls.autoRotate = false;
-        }, 15000);
+        // window.setTimeout(() => {
+        //     controls.autoRotate = false;
+        // }, 15000);
 
         //如果发生交互停止自动旋转
-        controls.on('start', () => {
-            controls.autoRotate = false
-        });
+        controls.on('start', onStart);
         //有交互开始渲染
-        controls.on('change', () => {
-            me.app._framework.isUpdate = true;
-        });
+        this._onChangeBind = onChange.bind(me);
+        controls.on('change', this._onChangeBind);
 
-        this.app._framework.on('renderbefore', () => {
-            if (controls.position0.equals(controls.object.position) && controls.zoom0 === controls.object.zoom) {
-                return;
-            }
-            console.log('renderbefore……')
-            controls.saveState();
-            controls.update();
+        this._onRenderBeforeBind = onRenderBefore.bind(controls);
+        this.app._framework.on('renderbefore', this._onRenderBeforeBind);
 
+        this._onRenderAfterBind = onRenderAfter.bind(interaction);
+        this.app._framework.on('renderafter', this._onRenderAfterBind)
 
-        });
-
-        this.app._framework.on('renderafter',()=>{
-            interaction.update();
-        })
-
-        interaction.on('move', () => {
-            this.app._framework.isUpdate = true;
-            console.log('move')
-        })
+        interaction.on('refresh', this._onChangeBind);
 
         //启动渲染进程
         this.app.launch();
-        window.addEventListener('resize', this.resize.bind(this), false);
+        this._onWindowResizeBind = me.resize.bind(me);
+        window.addEventListener('resize', this._onWindowResizeBind, false);
     }
     setCoord(_Coord) {
 
@@ -233,7 +220,7 @@ class Chart3d extends Events {
         this.rootStage = renderView.addGroup({ name: 'rootStage' });
         renderView.addObject(this.rootStage);
         renderView.setSize(this.width, this.height);
-        // renderView.setBackground(0xFFFFFF);
+        renderView.setBackground(0xFFFFFF);
 
         //默认透视投影
         this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
@@ -243,6 +230,16 @@ class Chart3d extends Events {
         this.height = this.el.offsetHeight;
         this.renderView.resize(this.width, this.height, this.opt.controls.boxHeight);
     }
+
+    //ind 如果有就获取对应索引的具体颜色值
+    getTheme(ind) {
+        var colors = this._theme;
+        if (ind != undefined) {
+            return colors[ind % colors.length]
+        };
+        return colors;
+    }
+
     //数据变更后调用reset
     reset() {
 
@@ -251,10 +248,107 @@ class Chart3d extends Events {
     resetData() {
 
     }
-    destroy() {
+    dispose() {
+
+        // function clearScene(obj) {
+        //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
+        //         if (obj.geometry) {
+        //             obj.geometry.dispose();
+        //             //obj.geometry = null;
+        //         }
+        //         if (obj.material) {
+        //             if (Array.isArray(obj.material)) {
+        //                 obj.material.forEach(ma => {
+        //                     if (ma.map) {
+        //                         ma.map.dispose();
+        //                     }
+        //                     ma.dispose();
+        //                 })
+        //             } else {
+        //                 if (obj.material.map) {
+        //                     obj.material.map.dispose();
+        //                 }
+        //                 obj.material.dispose();
+
+        //             }
+
+        //             //obj.material = null;
+        //         }
+
+        //         obj = null;
+        //     }
+        //     else if (obj.isLight) {
+        //         if (obj.parent) {
+        //             // obj.parent.remove(obj);
+        //         }
+        //     } else {
+        //         if (obj.children !== undefined) {
+        //             while (obj.children.length > 0) {
+        //                 clearScene(obj.children[0]);
+        //                 obj.remove(obj.children[0]);
+        //             }
+        //         }
+        //     }
+        // }
+
+        // clearScene(this.renderView._scene);
+
+        //先销毁坐标系统
+        this.currCoord.dispose();
+        //销毁组件
+        this.components.forEach(cmp => {
+            cmp.dispose();
+        })
+        //初始化渲染状态
+        this.renderer._state.reset();
+        
+        //清理渲染数据
+        this.renderer.dispose();
+
+
+        //清理事件
+        this.orbitControls.off('start', onStart);
+        this.orbitControls.off('change', this._onChangeBind);
+
+        this.app._framework.off('renderbefore', this._onRenderBeforeBind);
+        this._onRenderBeforeBind = null;
+
+        this.app._framework.off('renderafter', this._onRenderAfterBind)
+        this._onRenderAfterBind = null;
+
+        this.interaction.off('refresh', this._onChangeBind);
+        this._onChangeBind = null;
+
+        window.removeEventListener('resize', this._onWindowResizeBind, false);
+        this._onWindowResizeBind = null;
+
+        this.interaction.dispose();
+        this.orbitControls.dispose();
+
+        this.app.dispose()
 
     }
 }
 
+
+function onStart() {
+    this.autoRotate = false
+};
+
+function onChange(e) {
+    this.app._framework.isUpdate = true;
+}
+
+function onRenderBefore() {
+    if (this.position0.equals(this.object.position) && this.zoom0 === this.object.zoom) {
+        return;
+    }
+    this.saveState();
+    this.update();
+}
+
+function onRenderAfter() {
+    this.update();
+}
 export { Chart3d };
 

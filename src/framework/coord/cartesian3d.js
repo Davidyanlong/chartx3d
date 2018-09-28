@@ -1,6 +1,6 @@
 
 import { InertialSystem } from './inertial';
-import { Vector3, Box3, Matrix3, Matrix4, Object3D, Math as _Math, MeshBasicMaterial } from 'mmgl/src/index'
+import { Vector3, Box3, Matrix3, Matrix4, Math as _Math, AmbientLight, PointLight, DirectionalLight } from 'mmgl/src/index'
 import { Cartesian3DUI } from '../../components/cartesian3dUI/index'
 import _ from '../../../lib/underscore';
 import { AxisAttribute } from './model/axisAttribute';
@@ -38,6 +38,7 @@ class Cartesian3D extends InertialSystem {
 
         this.xAxisAttribute = new AxisAttribute(root);
         this.yAxisAttribute = new AxisAttribute(root);
+        this.yAxisAttributeRight = new AxisAttribute(root);
         this.zAxisAttribute = new AxisAttribute(root);
 
         this._coordUI = null;
@@ -46,8 +47,6 @@ class Cartesian3D extends InertialSystem {
 
     }
     setDefaultOpts(opts) {
-        //todo 先那里使用
-
         var me = this;
         me.coord = {
             xAxis: {
@@ -58,6 +57,7 @@ class Cartesian3D extends InertialSystem {
                 posParseToInt: false
             },
             zAxis: {
+                enabled: true,
                 field: '',
                 layoutType: "peak",
                 depth: 50     //最大深度是1000
@@ -144,8 +144,10 @@ class Cartesian3D extends InertialSystem {
             }
             if (yAxis.align == "left") {
                 _lys.push(yAxis);
+                opts.coord._yAxisLeft = yAxis;
             } else {
                 _rys.push(yAxis);
+                opts.coord._yAxisRight = yAxis;
             }
             if (!yAxis.layoutType) {
                 yAxis.layoutType = 'proportion'; //默认布局
@@ -153,6 +155,8 @@ class Cartesian3D extends InertialSystem {
 
         });
         opts.coord.yAxis = _lys.concat(_rys);
+
+
 
         return opts;
     }
@@ -174,10 +178,12 @@ class Cartesian3D extends InertialSystem {
 
     }
     //粗略计算在原点位置的世界线段的长度与屏幕像素的长度比
-    getRatioPixelToWorldByOrigin() {
+    getRatioPixelToWorldByOrigin(_origin) {
         let baseBoundbox = super.getBoundbox();
-        let _origin = baseBoundbox.min.clone();
-        _origin.setZ(baseBoundbox.max.z);
+        if (_origin === undefined) {
+            _origin = baseBoundbox.min.clone();
+            _origin.setZ(baseBoundbox.max.z);
+        }
         let ratio = this._root.renderView.getVisableSize(_origin).ratio;
         return ratio;
     }
@@ -189,107 +195,162 @@ class Cartesian3D extends InertialSystem {
         //这个判断不安全
         if (_.isSafeObject(opt, 'coord.xAxis.field')) {
             this.xAxisAttribute.setField(opt.coord.xAxis.field);
-            //this.xAxisAttribute.setData(opt.coord.xAxis.field)
+        }
+        var arr = _.flatten(this.xAxisAttribute.data);
 
-            if (!_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
-                var arr = _.flatten(this.xAxisAttribute.data);
-
-                if (this.coord.xAxis.layoutType == "proportion") {
-                    if (arr.length == 1) {
-                        arr.push(0);
-                        arr.push(arr[0] * 2);
-                    };
-                    arr = arr.sort(function (a, b) { return a - b });
-                    arr = DataSection.section(arr)
-                };
+        if (this.coord.xAxis.layoutType == "proportion") {
+            if (arr.length == 1) {
+                arr.push(0);
+                arr.push(arr[0] * 2);
+            };
+            arr = arr.sort(function (a, b) { return a - b });
+            arr = DataSection.section(arr)
+        };
 
 
-                this.xAxisAttribute.setDataSection(arr);
-            }
+        this.xAxisAttribute.setOrgSection(arr);
+        if (_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
+            this.xAxisAttribute.setCustomSection(opt.coord.xAxis.dataSection);
         }
 
 
         //获取axisY
-        let yFields = [];
+        let yLeftFields = [], yRightFields = [];
         if (_.isSafeObject(opt, 'coord.yAxis.field')) {
             if (_.isArray(opt.coord.yAxis.field)) {
-                yFields = yFields.concat(opt.coord.yAxis.field);
+                if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                    yLeftFields = yLeftFields.concat(opt.coord.yAxis.field);
+                } else {
+                    yRightFields = yRightFields.concat(opt.coord.yAxis.field);
+                }
+
             } else {
-                yFields.push(opt.coord.yAxis.field);
+                if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                    yLeftFields.push(opt.coord.yAxis.field);
+                } else {
+                    yRightFields.push(opt.coord.yAxis.field);
+                }
             }
 
         }
 
         opt.graphs && opt.graphs.forEach(cp => {
             if (_.isArray(cp.field)) {
-                yFields = yFields.concat(cp.field);
+                if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
+                    yLeftFields = yLeftFields.concat(cp.field);
+                } else {
+                    yRightFields = yRightFields.concat(cp.field);
+                }
             } else {
-                yFields.push(cp.field);
+                if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
+                    yLeftFields.push(cp.field);
+                } else {
+                    yRightFields.push(cp.field);
+                }
             }
         })
 
-        yFields = _.uniq(yFields);
-        this.yAxisAttribute.setField(yFields);
-        //let dataOrgY = this._getAxisDataFrame(yFields);
-        //let _section = this._setDataSection(yFields);
+        yLeftFields = _.uniq(yLeftFields);
+        yRightFields = _.uniq(yRightFields);
 
+        this.yAxisAttribute.setField(yLeftFields);
+        this.yAxisAttributeRight.setField(yRightFields);
 
-        //this.yAxisAttribute.setData(yFields);
-        let dataOrgY = this.yAxisAttribute.data;
-        if (!_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
-            let joinArr = [];
-            if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
-                joinArr.push(opt.coord.yAxis.waterLine);
+        let dataOrgYLeft = this.yAxisAttribute.data;
+        let dataOrgYRight = this.yAxisAttributeRight.data;
+
+        let joinArrLeft = [], joinArrRight = [];
+        if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
+            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                joinArrLeft.push(opt.coord.yAxis.waterLine);
+            } else {
+                joinArrRight.push(opt.coord.yAxis.waterLine)
             }
-
-            if (_.isSafeObject(opt, "coord.yAxis.min")) {
-                joinArr.push(opt.coord.yAxis.min);
-            };
-            if (dataOrgY.length == 1 && !_.isArray(dataOrgY[0])) {
-                joinArr.push(dataOrgY[0] * 2);
-            };
-
-            //joinArr = joinArr.concat(_section);
-            this.yAxisAttribute.computeDataSection(joinArr);
         }
 
+        if (_.isSafeObject(opt, "coord.yAxis.min")) {
+            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                joinArrLeft.push(opt.coord.yAxis.min);
+            } else {
+                joinArrRight.push(opt.coord.yAxis.min)
+            }
+        };
+        if (dataOrgYLeft.length == 1 && !_.isArray(dataOrgYLeft[0])) {
+
+            joinArrLeft.push(dataOrgY[0] * 2);
+        };
+        if (dataOrgYRight.length == 1 && !_.isArray(dataOrgYRight[0])) {
+
+            joinArrRight.push(dataOrgY[0] * 2);
+        };
+
+        //joinArr = joinArr.concat(_section);
+        if (this.coord._yAxisLeft.layoutType == 'proportion') {
+            this.yAxisAttribute.computeDataSection(joinArrLeft);
+        } else {
+            var arr = _.flatten(this.yAxisAttribute.data);
+            this.yAxisAttribute.setOrgSection(arr);
+        }
+
+        if (this.coord._yAxisRight && this.coord._yAxisRight.layoutType == '"proportion"') {
+            this.yAxisAttributeRight.computeDataSection(joinArrRight);
+        } else {
+            var arr = _.flatten(this.yAxisAttributeRight.data);
+            this.yAxisAttributeRight.setOrgSection(arr);
+        }
+
+
+        if (_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
+            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
+                this.yAxisAttribute.setCustomSection(opt.coord.yAxis.dataSection);
+            } else {
+                this.yAxisAttributeRight.setCustomSection(opt.coord.yAxis.dataSection);
+            }
+        }
+
+        //Z轴的计算
         if (_.isSafeObject(opt, 'coord.zAxis.field')) {
             this.zAxisAttribute.setField(opt.coord.zAxis.field);
             //this.zAxisAttribute.setData(opt.coord.zAxis.field)
 
-            if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-                var arr = _.flatten(this.zAxisAttribute.data);
-                if (this.coord.zAxis.layoutType == "proportion") {
-                    if (arr.length == 1) {
-                        arr.push(0);
-                        arr.push(arr[0] * 2);
-                    };
-                    arr = arr.sort(function (a, b) { return a - b });
-                    arr = DataSection.section(arr)
-                };
+            // if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+            //     var arr = _.flatten(this.zAxisAttribute.data);
+            //     if (this.coord.zAxis.layoutType == "proportion") {
+            //         if (arr.length == 1) {
+            //             arr.push(0);
+            //             arr.push(arr[0] * 2);
+            //         };
+            //         arr = arr.sort(function (a, b) { return a - b });
+            //         arr = DataSection.section(arr)
+            //     };
 
-                this.zAxisAttribute.setDataSection(arr);
-            }
+            //     this.zAxisAttribute.setDataSection(arr);
+            // }
         }
-        if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-            //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-            let _section = [];
 
-            let yAxisObj = _.find(this.coord.yAxis, item => {
-                return !item.align || item.align == 'left';
-            })
-            yAxisObj.field.forEach(item => {
-                _section.push(item.toString());
-            });
+        //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+        let _section = [];
 
-            this.zAxisAttribute.setDataSection(_section);
+        let yAxisObj = this.coord._yAxisLeft;
+        yAxisObj.field.forEach(item => {
+            _section.push(item.toString());
+        });
 
-        } else {
-            this.zAxisAttribute.setDataSection(opt.coord.zAxis.dataSection);
+        this.zAxisAttribute.setOrgSection(_section);
+
+
+        if (_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
+
+            this.zAxisAttribute.setCustomSection(opt.coord.zAxis.dataSection);
         }
+
+        //y轴的颜色值先预设好
+        this.yAxisAttribute.setColors();
+        //todo y轴右轴忽略
 
         //先计算一次空间范围供计算坐标轴宽高使用
         this.getBoundbox();
+        this.addLights();
     }
 
 
@@ -346,6 +407,83 @@ class Cartesian3D extends InertialSystem {
     addLights() {
         //加入灯光
 
+        var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+
+        this._root.rootStage.add(ambientlight);
+
+        let center = this.center.clone();
+        center = this._getWorldPos(center);
+        //center.setY(0);
+
+        let dirLights = [];
+        let intensity = 0.8;
+        let lightColor = 0xcccccc;
+        let position = new Vector3(-1, -1, 1);
+
+        dirLights[0] = new DirectionalLight(lightColor, intensity);
+        position.multiplyScalar(10000);
+        dirLights[0].position.copy(position);
+        dirLights[0].target.position.copy(center);
+        this._root.rootStage.add(dirLights[0]);
+
+
+        dirLights[1] = new DirectionalLight(lightColor, intensity);
+        position = new Vector3(1, -1, 1);
+        position.multiplyScalar(10000);
+        dirLights[1].position.copy(position);
+        dirLights[1].target.position.copy(center);
+        this._root.rootStage.add(dirLights[1]);
+
+
+        // dirLights[2] = new DirectionalLight(lightColor, intensity);
+        // position = new Vector3(-1, -1, -1);
+        // position.multiplyScalar(10000);
+        // dirLights[2].position.copy(position);
+        // dirLights[2].target.position.copy(center);
+        // this._root.rootStage.add(dirLights[2]);
+
+
+        // dirLights[3] = new DirectionalLight(lightColor, intensity);
+        // position = new Vector3(1, -1, -1);
+        // position.multiplyScalar(10000);
+        // dirLights[3].position.copy(position);
+        // dirLights[3].target.position.copy(center);
+        // this._root.rootStage.add(dirLights[3]);
+
+
+
+
+        let pointLight = [];
+
+        // pointLight[0] = new PointLight(lightColor, intensity);
+        // position = new Vector3(-1, -1, 1);
+        // position.multiplyScalar(10000);
+        // pointLight[0].position.copy(position);
+        // this._root.rootStage.add(pointLight[0]);
+
+
+        // pointLight[1] = new PointLight(lightColor, intensity);
+        // position = new Vector3(1, -1, 1);
+        // position.multiplyScalar(10000);
+        // pointLight[1].position.copy(position);
+        // this._root.rootStage.add(pointLight[1]);
+
+
+        // pointLight[2] = new PointLight(lightColor, intensity);
+        // position = new Vector3(-1, -1, -1);
+        // position.multiplyScalar(10000);
+        // pointLight[2].position.copy(position);
+        // this._root.rootStage.add(pointLight[2]);
+
+
+        // pointLight[3] = new PointLight('#fff', 1);
+        // position = new Vector3(1, -1, -1);
+        // position.multiplyScalar(1000);
+        // pointLight[3].position.copy(position);
+        // this._root.rootStage.add(pointLight[3]);
+
+
+
 
     }
 
@@ -398,8 +536,8 @@ class Cartesian3D extends InertialSystem {
     getXAxisPosition(data) {
         let _val = 0;
         let _range = this.boundbox.max.x - this.boundbox.min.x;
-        let dataLen = this.xAxisAttribute.section.length;
-        let ind = _.indexOf(this.xAxisAttribute.section, data);//先不考虑不存在的值
+        let dataLen = this.xAxisAttribute.getSection().length;
+        let ind = _.indexOf(this.xAxisAttribute.getSection(), data);//先不考虑不存在的值
         var layoutType = this.coord.xAxis.layoutType;
         if (dataLen == 1) {
             _val = _range / 2;
@@ -439,15 +577,16 @@ class Cartesian3D extends InertialSystem {
     getYAxisPosition(data) {
         let _val = 0;
         let _range = this.boundbox.max.y - this.boundbox.min.y;
-        let dataLen = this.yAxisAttribute.section.length;
-        let ind = _.indexOf(this.yAxisAttribute.section, data);//先不考虑不存在的值
+        let dataLen = this.yAxisAttribute.getSection().length;
+        let ind = _.indexOf(this.yAxisAttribute.getSection(), data);//先不考虑不存在的值
+
         let _yAxisLeft = _.find(this.coord.yAxis, yaxis => {
             return !yaxis.align || yaxis.align == 'left';
         })
         let layoutType = _yAxisLeft.layoutType;
 
-        let maxVal = Math.max.apply(null, this.yAxisAttribute.section);
-        let minVal = Math.min.apply(null, this.yAxisAttribute.section);
+        let maxVal = Math.max.apply(null, this.yAxisAttribute.getSection());
+        let minVal = Math.min.apply(null, this.yAxisAttribute.getSection());
 
         if (dataLen == 1) {
             _val = _range / 2;
@@ -485,8 +624,8 @@ class Cartesian3D extends InertialSystem {
     getZAxisPosition(data) {
         let _val = 0;
         let _range = this.boundbox.max.z - this.boundbox.min.z;
-        let dataLen = this.zAxisAttribute.section.length;
-        let ind = _.indexOf(this.zAxisAttribute.section, data);//先不考虑不存在的值
+        let dataLen = this.zAxisAttribute.getSection().length;
+        let ind = _.indexOf(this.zAxisAttribute.getSection(), data);//先不考虑不存在的值
         var layoutType = this.coord.zAxis.layoutType;
 
         if (dataLen == 1) {
@@ -527,9 +666,9 @@ class Cartesian3D extends InertialSystem {
 
         let ceil = new Vector3();
         let size = this.boundbox.getSize();
-        let dataLenX = this.xAxisAttribute.section.length;
-        let dataLenY = this.yAxisAttribute.section.length;
-        let dataLenZ = this.zAxisAttribute.section.length;
+        let dataLenX = this.xAxisAttribute.getSection().length;
+        let dataLenY = this.yAxisAttribute.getSection().length;
+        let dataLenZ = this.zAxisAttribute.getSection().length;
 
         // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
         // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
@@ -541,6 +680,11 @@ class Cartesian3D extends InertialSystem {
 
         return ceil;
 
+    }
+
+    dispose() {
+
+        this._coordUI.dispose();
     }
 
 

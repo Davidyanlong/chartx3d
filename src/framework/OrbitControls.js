@@ -115,117 +115,124 @@ class OrbitControls extends Events {
         this._dollyDelta = new Vector2();
 
 
-        //
 
-        scope.domElement.addEventListener('contextmenu', onContextMenu.bind(scope), false);
+        scope._onContextMenubind = onContextMenu.bind(scope);
+        scope._onMouseDownbind = onMouseDown.bind(scope);
+        scope._onMouseWheelbind = onMouseWheel.bind(scope);
+        scope._onTouchStartbind = onTouchStart.bind(scope);
+        scope._onTouchEndbind = onTouchEnd.bind(scope);
+        scope._onTouchMove = onTouchMove.bind(scope);
+        scope._onKeyDownbind = onKeyDown.bind(scope);
 
-        scope.domElement.addEventListener('mousedown', onMouseDown.bind(scope), false);
-        scope.domElement.addEventListener('wheel', onMouseWheel.bind(scope), false);
+        scope.domElement.addEventListener('contextmenu', this._onContextMenubind, false);
 
-        scope.domElement.addEventListener('touchstart', onTouchStart.bind(scope), false);
-        scope.domElement.addEventListener('touchend', onTouchEnd.bind(scope), false);
-        scope.domElement.addEventListener('touchmove', onTouchMove.bind(scope), false);
+        scope.domElement.addEventListener('mousedown', this._onMouseDownbind, false);
+        scope.domElement.addEventListener('wheel', this._onMouseWheelbind, false);
 
-        window.addEventListener('keydown', onKeyDown.bind(scope), false);
+        scope.domElement.addEventListener('touchstart', this._onTouchStartbind, false);
+        scope.domElement.addEventListener('touchend', this._onTouchEndbind, false);
+        scope.domElement.addEventListener('touchmove', this._onTouchMove, false);
 
-        
+        window.addEventListener('keydown', this._onKeyDownbind, false);
+
+
         this.update = (function () {
-           
+
             let offset = new Vector3();
-        
+
             // so camera.up is the orbit axis
             let quat = new Quaternion().setFromUnitVectors(object.up, new Vector3(0, 1, 0));
             let quatInverse = quat.clone().inverse();
-        
+
             let lastPosition = new Vector3();
             let lastQuaternion = new Quaternion();
-        
+
             return function update() {
-                
+
                 let position = scope.object.position;
-        
+
                 offset.copy(position).sub(scope.target);
-        
+
                 // rotate offset to "y-axis-is-up" space
                 offset.applyQuaternion(quat);
-        
+
                 // angle from z-axis around y-axis
                 scope._spherical.setFromVector3(offset);
-        
+
                 if (scope.autoRotate && this._state === STATE.NONE) {
-        
+
                     rotateLeft.call(scope, getAutoRotationAngle.call(scope));
-        
+
                 }
-        
+
                 scope._spherical.theta += scope._sphericalDelta.theta;
                 scope._spherical.phi += scope._sphericalDelta.phi;
-        
+
                 // restrict theta to be between desired limits
                 scope._spherical.theta = Math.max(scope.minAzimuthAngle, Math.min(scope.maxAzimuthAngle, scope._spherical.theta));
-        
+
                 // restrict phi to be between desired limits
                 scope._spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, scope._spherical.phi));
-        
+
                 scope._spherical.makeSafe();
-        
-        
+
+
                 scope._spherical.radius *= scope._scale;
-        
+
                 // restrict radius to be between desired limits
                 scope._spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, scope._spherical.radius));
-        
+
                 // move target to panned location
                 scope.target.add(scope._panOffset);
-        
+
                 offset.setFromSpherical(scope._spherical);
-        
+
                 // rotate offset back to "camera-up-vector-is-up" space
                 offset.applyQuaternion(quatInverse);
-        
+
                 position.copy(scope.target).add(offset);
-        
+
                 scope.object.lookAt(scope.target);
-        
+
                 if (scope.enableDamping === true) {
-        
+
                     scope._sphericalDelta.theta *= (1 - scope.dampingFactor);
                     scope._sphericalDelta.phi *= (1 - scope.dampingFactor);
-        
+
                     scope._panOffset.multiplyScalar(1 - scope.dampingFactor);
-        
+
                 } else {
-        
+
                     scope._sphericalDelta.set(0, 0, 0);
-        
+
                     scope._panOffset.set(0, 0, 0);
-        
+
                 }
-        
+
                 scope._scale = 1;
-        
+
                 // update condition is:
                 // min(camera displacement, camera rotation in radians)^2 > EPS
                 // using small-angle approximation cos(x/2) = 1 - x^2 / 8
-        
+
                 if (this._zoomChanged ||
                     lastPosition.distanceToSquared(scope.object.position) > EPS ||
                     8 * (1 - lastQuaternion.dot(scope.object.quaternion)) > EPS) {
-        
+
                     scope.fire(changeEvent);
-        
+
                     lastPosition.copy(scope.object.position);
                     lastQuaternion.copy(scope.object.quaternion);
                     this._zoomChanged = false;
-        
+
                     return true;
-        
+
                 }
-        
+
                 return false;
-        
+
             };
-        
+
         })()
 
         // force an update at start
@@ -280,18 +287,28 @@ class OrbitControls extends Events {
 
     dispose() {
         let scope = this;
-        scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
-        scope.domElement.removeEventListener('mousedown', onMouseDown, false);
-        scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+        scope.domElement.removeEventListener('contextmenu', scope._onContextMenubind, false);
+        scope.domElement.removeEventListener('mousedown', scope._onMouseDownbind, false);
+        scope.domElement.removeEventListener('wheel', scope._onMouseWheelbind, false);
 
-        scope.domElement.removeEventListener('touchstart', onTouchStart, false);
-        scope.domElement.removeEventListener('touchend', onTouchEnd, false);
-        scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+        scope.domElement.removeEventListener('touchstart', scope.onTouchStart, false);
+        scope.domElement.removeEventListener('touchend', scope._onTouchEndbind, false);
+        scope.domElement.removeEventListener('touchmove', scope._onTouchMove, false);
 
-        document.removeEventListener('mousemove', onMouseMove, false);
-        document.removeEventListener('mouseup', onMouseUp, false);
+        document.removeEventListener('mousemove', scope._onMouseMovebind, false);
+        document.removeEventListener('mouseup', scope._onMouseUpbind, false);
 
-        window.removeEventListener('keydown', onKeyDown, false);
+        window.removeEventListener('keydown', scope._onKeyDownbind, false);
+
+        scope._onContextMenubind = null;
+        scope._onMouseDownbind = null;
+        scope._onMouseWheelbind = null;
+        scope.onTouchStart = null;
+        scope._onTouchEndbind = null;
+        scope._onTouchMove = null;
+        scope._onMouseMovebind = null;
+        scope._onMouseUpbind = null;
+        scope._onKeyDownbind = null;
 
         //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
 
@@ -739,8 +756,10 @@ function onMouseDown(event) {
 
     if (scope._state !== STATE.NONE) {
 
-        document.addEventListener('mousemove', onMouseMove.bind(scope), false);
-        document.addEventListener('mouseup', onMouseUp.bind(scope), false);
+        scope._onMouseMovebind = onMouseMove.bind(scope);
+        scope._onMouseUpbind = onMouseUp.bind(scope);
+        document.addEventListener('mousemove', scope._onMouseMovebind, false);
+        document.addEventListener('mouseup', scope._onMouseUpbind, false);
 
         scope.fire(startEvent);
 

@@ -1,6 +1,6 @@
 
 import { Component, _ } from '../../Component';
-import { Vector3, MeshBasicMaterial } from 'mmgl/src/index';
+import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color } from 'mmgl/src/index';
 
 let renderOrder = 100;
 class Bar extends Component {
@@ -72,12 +72,14 @@ class Bar extends Component {
     }
     computePos() {
         let me = this;
-        let fields = [];
+        let fields = [], customField = [];
         if (!_.isArray(this.field)) {
             fields.push(this.field);
         } else {
             fields = this.field.slice(0);
         }
+        let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
+        let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
         this.drawPosData = [];
         let xDatas = this._coordSystem.xAxisAttribute.data;
         let yDatas = this._coordSystem.yAxisAttribute.data;
@@ -86,6 +88,18 @@ class Bar extends Component {
             xDatas = _.flatten(xDatas);
         }
 
+        let yValidData = [];
+        zSection.forEach((zs, index) => {
+            fields.forEach(fd => {
+                if (zs == fd.toString()) {
+                    yValidData.push(yDatas[index]);
+                    if (zCustomSection.length > 0) {
+                        customField.push(zCustomSection[index]);
+                    }
+
+                }
+            })
+        })
         //yDatas = _.flatten(yDatas);
         //let dd = false;
         let lastArray = [];
@@ -96,7 +110,14 @@ class Bar extends Component {
             //this.stack = [];
             //具体XYZ的值
             this.value = null;
+            //堆叠值
             this.stackValue = null
+            //堆叠楼层
+            this.floor = 0;
+            //绘制的字段顺序
+            this.level = 0;
+            this.field = '';
+
             //
             //this.pos = null;
         };
@@ -105,24 +126,29 @@ class Bar extends Component {
 
         xDatas.forEach((xd, no) => {
             lastArray = [];
-            yDatas.forEach((yda, index) => {
-
-                let zd = fields[index].toString();
+            yValidData.forEach((yda, index) => {
+                let _fd = fields[index];
+                let zd = customField[index] ? customField[index] : fields[index].toString();
 
                 if (yda.length > 1) {
                     yda.forEach((ydad, num) => {
 
                         let ydadd = _.flatten(ydad).slice(0);
+                        let _fdd = _fd[num];
                         ydadd.forEach((yd, i) => {
                             if (i === no) {
                                 let _tmp = new DataOrg();
+                                _tmp.floor = num;
+                                _tmp.level = index + num;
+                                _tmp.field = _fdd;
                                 if (num > 0) {
                                     _tmp.isStack = true;
                                     _tmp.value = new Vector3(xd, yd, zd);
                                     _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
 
                                 } else {
-
+                                    _tmp.isStack = true;
+                                    _tmp.stackValue = new Vector3(xd, 0, zd);
                                     _tmp.value = new Vector3(xd, yd, zd);
 
                                 }
@@ -138,6 +164,7 @@ class Bar extends Component {
 
                 } else {
                     let _tmp = new DataOrg();
+                    _tmp.field = _fd;
                     _.flatten(yda).slice(0).forEach((yd, i) => {
                         if (i === no) {
                             _tmp.value = new Vector3(xd, yd, zd);
@@ -157,27 +184,19 @@ class Bar extends Component {
         let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
         let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
         let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-        let boxWidth = ceil.x * 0.8;
-        let boxDepth = ceil.z * 0.8;
+        let boxWidth = ceil.x * 0.7;
+        let boxDepth = ceil.z * 0.7;
         let boxHeight = 1;
+        console.log(new Date);
         this.drawPosData.forEach(dataOrg => {
 
-            let metaril = new MeshBasicMaterial({
-                color: 0xffffff * Math.random(),
-                transparent: true,
-                opacity: 1,
-                depthTest: true,
-                depthWrite: true,
-                // polygonOffset: true,
-                // polygonOffsetFactor: 1,
-                // polygonOffsetUnits: 1.5
-            })
 
             let pos = new Vector3();
             let stack = new Vector3();
             pos.setX(getXAxisPosition(dataOrg.value.x));
             pos.setY(getYAxisPosition(dataOrg.value.y));
             pos.setZ(getZAxisPosition(dataOrg.value.z));
+
             if (dataOrg.isStack) {
                 stack.setX(pos.x - boxWidth * 0.5);
                 stack.setY(getYAxisPosition(dataOrg.stackValue.y));
@@ -191,25 +210,94 @@ class Bar extends Component {
 
             }
             boxHeight = Math.max(Math.abs(pos.y), 1);
-            console.log('boxHeight', boxHeight, dataOrg.value.y);
+            //console.log('boxHeight', boxHeight, dataOrg.value.y);
+
+            // MeshLambertMaterial
+            //MeshPhongMaterial
+            let metaril = new MeshPhongMaterial({
+                color: this._getColor(this.node.fillStyle, dataOrg),
+                transparent: true,
+                opacity: 1,
+                depthTest: true,
+                depthWrite: true,
+                side: DoubleSide,
+                // polygonOffset: true,
+                // polygonOffsetFactor: 1,
+                // polygonOffsetUnits: 1.5
+            })
             let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
             box.position.copy(stack);
             box.renderOrder = renderOrder++;
             this.group.add(box);
 
-            box.on('mouseover', function () {
-                this.userData.color = this.material.color.clone();
-                this.material.setValues({ color: 0xf00000 });
-            })
-            box.on('mouseout', function () {
-                this.material.setValues({ color: this.userData.color });
-            })
 
+
+            box.on('mouseover', this.onMouseOver);
+            box.on('mouseout', this.onMouseOut);
+            box.on('click', this.onClick);
 
 
         });
 
     }
+    onMouseOver() {
+        //上下午中的this 是bar 对象
+        this.userData.color = this.material.color.clone();
+        //高亮
+        let tempColor = {};
+        this.material.color.getHSL(tempColor);
+        this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
+
+    }
+    onMouseOut() {
+
+        this.material.setValues({ color: this.userData.color });
+
+    }
+    onClick() {
+
+        console.log(this.id);
+        let dom = document.getElementById('testdiv');
+        // dom.style.left = e.event.clientX+'px';
+        // dom.style.top = e.event.clientY+'px';
+
+    }
+    _getColor(c, dataOrg) {
+
+
+        var color = this._coordSystem.yAxisAttribute.getColor(dataOrg.field);
+
+        //field对应的索引，， 取颜色这里不要用i
+        if (_.isString(c)) {
+            color = c
+        };
+        if (_.isArray(c)) {
+            color = _.flatten(c)[_.indexOf(_flattenField, field)];
+        };
+        if (_.isFunction(c)) {
+            color = c.apply(this, [rectData]);
+        };
+
+        return color;
+    }
+    dispose() {
+
+        this.group.traverse((obj) => {
+            if (obj.has('click', this.onClick)) {
+                obj.off('click', this.onClick);
+            }
+            if (obj.has('mouseover', this.onMouseOver)) {
+                obj.off('mouseover', this.onMouseOver);
+            }
+            if (obj.has('mouseout', this.onMouseOut)) {
+                obj.off('mouseout', this.onMouseOut);
+            }
+        })
+
+        super.dispose();
+
+    }
+
 }
 
 export { Bar };

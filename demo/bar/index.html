@@ -29,7 +29,7 @@
 </head>
 
 <body>
-
+    <!-- <div id="testdiv" style="background:red;width:20px;height:20px;position:absolute;z-index: 100000;">test</div> -->
     <table>
         <tr>
             <td id="td-vl">
@@ -54,16 +54,16 @@
                     //theme : [],
                     controls:{
 
-                       boxWidth:800,         //空间中X的最大值(最大宽度)  
+                       boxWidth:1500,         //空间中X的最大值(最大宽度)  
                        boxHeight:1000,        //空间中Y的最大值(最大高度)  
                        boxDepth:500,         //空间中Z的最大值(最大深度)
 
-                       distance:300,        //默认相机距离
-                       maxDistance:3000,     //最大相机距离
+                       distance:900,        //默认相机距离
+                       maxDistance:5000,     //最大相机距离
                        minDistance:300,      //最小相机距离 
                        
                        alpha:20,    //绕X轴旋转
-                       beta:20,      //绕Y轴旋转
+                       beta:40,      //绕Y轴旋转
                     },
                     coord : {
                         type : "cartesian3d",
@@ -95,7 +95,7 @@
                                 }
                             },
                             
-                           // dataSection : ['页面访问数','访问次数','PPC']
+                            dataSection : ['页面访问数','访问次数','PPC']
                         },
                         yAxis : [
                             {
@@ -104,9 +104,10 @@
                                 },
                                 //dataSection : [1,2,3,4,5,6,7,8],
                                 label : {
+                                    textAlign:'left',
                                     format : function(val){
                                         
-                                        return   val
+                                        return   val;
                                     }
                                 }
                             }
@@ -120,15 +121,15 @@
                     
                        // {
                        //     type : "bar",
-                       //     field : "click",
+                       //     field : ["uv","click"],
                        //     yAxisAlign : "left",
                        //     label : {
                        //         enabled : true
                        //     }
-                       // },
+                       //},
                         {
                             type : "bar",
-                            field : [ ["uv","pv" ,"ppc"] ],
+                            field : ["uv","click", ["pv" ,"ppc"] ],
                             yAxisAlign : "left",
                             label : {
                                 enabled : true,
@@ -146,7 +147,10 @@
                 
                 window.bar = Chartx.create("canvasTest" , data , options)
                 
-                            
+                 function destroyTest(){
+                     window.bar.destroy();
+                     console.log('OK');
+                 }           
 
             </textarea></form>
             </td>
@@ -163,7 +167,7 @@
                     <div class="test-c">
                         <div id="canvasTest" style='width:100%;height:400px;position:relative;'></div>
                     </div>
-
+                    <button onclick="destroyTest">销毁测试</button>
                 </div>
             </td>
         </tr>
@@ -173,3 +177,4 @@
 </body>
 
 </html>
+
