@@ -2,7 +2,6 @@ chartx3d  0.1 代码规范
 =================
 
 * 配置使用规范约定
-
 ```
  var data = [
             ["xfield", "uv", "pv", "click", "ppc"],
