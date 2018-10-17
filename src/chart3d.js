@@ -95,8 +95,6 @@ class Chart3d extends Events {
         this._initRenderer(rendererOpts);
 
 
-
-
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
         let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
 
@@ -136,6 +134,9 @@ class Chart3d extends Events {
         this.app.launch();
         this._onWindowResizeBind = me.resize.bind(me);
         window.addEventListener('resize', this._onWindowResizeBind, false);
+
+        //绑定tip事件
+        this.bindEvent()
     }
     setCoord(_Coord) {
 
@@ -172,7 +173,58 @@ class Chart3d extends Events {
         this.app._framework.isUpdate = true;
     }
 
+    getComponent(name) {
+        let _cmp = null;
+        this.components.forEach(cmp => {
+            if (cmp.constructor.name == name) {
+                _cmp = cmp;
+            }
+        })
+        return _cmp;
+    }
 
+    bindEvent() {
+
+
+        this.on('tipShow', (e) => {
+
+            let tips = this.getComponent('Tips');
+            let { clientX: x, clientY: y } = e.event;
+            if (tips !== null) {
+                tips.show({
+                    eventInfo: e.data,
+                    pos: {
+                        x,
+                        y
+                    }
+                })
+            }
+        })
+        this.on('tipHide', (e) => {
+
+            let tips = this.getComponent('Tips');
+            if (tips !== null) {
+                tips.hide();
+            }
+        })
+
+
+        this.on('tipMove', (e) => {
+
+            let tips = this.getComponent('Tips');
+            let { clientX: x, clientY: y } = e.event;
+            if (tips !== null) {
+                tips.show({
+                    eventInfo: e.data,
+                    pos: {
+                        x,
+                        y
+                    }
+                })
+            }
+        })
+
+    }
 
     _createDomContainer(_domSelector) {
 
@@ -301,7 +353,7 @@ class Chart3d extends Events {
         })
         //初始化渲染状态
         this.renderer._state.reset();
-        
+
         //清理渲染数据
         this.renderer.dispose();
 
@@ -326,6 +378,9 @@ class Chart3d extends Events {
         this.orbitControls.dispose();
 
         this.app.dispose()
+
+        //todo 内存对象清除优化
+
 
     }
 }

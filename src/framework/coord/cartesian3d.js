@@ -38,7 +38,8 @@ class Cartesian3D extends InertialSystem {
 
         this.xAxisAttribute = new AxisAttribute(root);
         this.yAxisAttribute = new AxisAttribute(root);
-        this.yAxisAttributeRight = new AxisAttribute(root);
+        //右轴在三维中暂时不存在
+        //this.yAxisAttributeRight = new AxisAttribute(root);
         this.zAxisAttribute = new AxisAttribute(root);
 
         this._coordUI = null;
@@ -60,7 +61,7 @@ class Cartesian3D extends InertialSystem {
                 enabled: true,
                 field: '',
                 layoutType: "peak",
-                depth: 50     //最大深度是1000
+                //   depth: 50     //最大深度是1000
             }
         };
 
@@ -126,6 +127,7 @@ class Cartesian3D extends InertialSystem {
                         optsYaxisObj.field.push(graphs.field)
                     }
 
+                    optsYaxisObj.field = _.uniq(optsYaxisObj.field);
                 } else {
                     //在，直角坐标系中，每个graphs一定要有一个field设置，如果没有，就去掉这个graphs
                     opts.graphs.splice(i--, 1);
@@ -154,6 +156,7 @@ class Cartesian3D extends InertialSystem {
             }
 
         });
+
         opts.coord.yAxis = _lys.concat(_rys);
 
 
@@ -172,6 +175,12 @@ class Cartesian3D extends InertialSystem {
             baseBoundbox.max.y - baseBoundbox.min.y - offset.y,
             baseBoundbox.max.z - baseBoundbox.min.z - offset.z
         )
+
+        //如果指定了Z轴的宽度就不采用默认计算的宽度
+        if (_.isSafeObject(this._root.opt.coord, 'zAxis.depth')) {
+            this.boundbox.max.z = this._root.opt.coord.zAxis.depth;
+        }
+
         this.center = this.boundbox.getCenter();
         this.center.setZ(-this.center.z);
         return this.boundbox;
@@ -216,21 +225,34 @@ class Cartesian3D extends InertialSystem {
 
         //获取axisY
         let yLeftFields = [], yRightFields = [];
-        if (_.isSafeObject(opt, 'coord.yAxis.field')) {
-            if (_.isArray(opt.coord.yAxis.field)) {
-                if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
-                    yLeftFields = yLeftFields.concat(opt.coord.yAxis.field);
+        //默认Y轴的写法为数据对象[{
+        // field:'uv',
+        // label: {
+        //     textAlign: 'left',
+        //     format: function (val) {
+        //        return val;
+        //     }
+        // }
+        //}]
+        if (_.isSafeObject(opt, 'coord.yAxis.0.field')) {
+            opt.coord.yAxis.forEach(yaxis => {
+
+                if (_.isArray(yaxis.field)) {
+                    if (!yaxis.align || yaxis.align == 'left') {
+                        yLeftFields = yLeftFields.concat(yaxis.field);
+                    } else {
+                        yRightFields = yRightFields.concat(yaxis.field);
+                    }
+
                 } else {
-                    yRightFields = yRightFields.concat(opt.coord.yAxis.field);
+                    if (!yaxis.align || yaxis.align == 'left') {
+                        yLeftFields.push(yaxis.field);
+                    } else {
+                        yRightFields.push(yaxis.field);
+                    }
                 }
 
-            } else {
-                if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
-                    yLeftFields.push(opt.coord.yAxis.field);
-                } else {
-                    yRightFields.push(opt.coord.yAxis.field);
-                }
-            }
+            });
 
         }
 
@@ -254,37 +276,29 @@ class Cartesian3D extends InertialSystem {
         yRightFields = _.uniq(yRightFields);
 
         this.yAxisAttribute.setField(yLeftFields);
-        this.yAxisAttributeRight.setField(yRightFields);
+        //this.yAxisAttributeRight.setField(yRightFields);
 
         let dataOrgYLeft = this.yAxisAttribute.data;
-        let dataOrgYRight = this.yAxisAttributeRight.data;
+        // let dataOrgYRight = this.yAxisAttributeRight.data;
 
         let joinArrLeft = [], joinArrRight = [];
-        if (_.isSafeObject(opt, "coord.yAxis.waterLine")) {
-            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
-                joinArrLeft.push(opt.coord.yAxis.waterLine);
-            } else {
-                joinArrRight.push(opt.coord.yAxis.waterLine)
-            }
-        }
 
-        if (_.isSafeObject(opt, "coord.yAxis.min")) {
-            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
-                joinArrLeft.push(opt.coord.yAxis.min);
-            } else {
-                joinArrRight.push(opt.coord.yAxis.min)
+        opt.coord.yAxis.forEach(yaxis => {
+
+            if ((!yaxis.align || yaxis.align == 'left') && yaxis.waterLine) {
+                joinArrLeft.push(yaxis.waterLine);
             }
-        };
+
+            if ((!yaxis.align || yaxis.align == 'left') && yaxis.min!==undefined) {
+                joinArrLeft.push(yaxis.min);
+            }
+        })
         if (dataOrgYLeft.length == 1 && !_.isArray(dataOrgYLeft[0])) {
 
             joinArrLeft.push(dataOrgY[0] * 2);
         };
-        if (dataOrgYRight.length == 1 && !_.isArray(dataOrgYRight[0])) {
 
-            joinArrRight.push(dataOrgY[0] * 2);
-        };
 
-        //joinArr = joinArr.concat(_section);
         if (this.coord._yAxisLeft.layoutType == 'proportion') {
             this.yAxisAttribute.computeDataSection(joinArrLeft);
         } else {
@@ -292,20 +306,15 @@ class Cartesian3D extends InertialSystem {
             this.yAxisAttribute.setOrgSection(arr);
         }
 
-        if (this.coord._yAxisRight && this.coord._yAxisRight.layoutType == '"proportion"') {
-            this.yAxisAttributeRight.computeDataSection(joinArrRight);
-        } else {
-            var arr = _.flatten(this.yAxisAttributeRight.data);
-            this.yAxisAttributeRight.setOrgSection(arr);
-        }
 
-
-        if (_.isSafeObject(opt, 'coord.yAxis.dataSection')) {
-            if (!opt.coord.yaxis.align || opt.coord.yaxis.align == 'left') {
-                this.yAxisAttribute.setCustomSection(opt.coord.yAxis.dataSection);
-            } else {
-                this.yAxisAttributeRight.setCustomSection(opt.coord.yAxis.dataSection);
-            }
+        if (_.isSafeObject(opt, 'coord.yAxis.0.dataSection')) {
+            opt.coord.yAxis.forEach(yaxis => {
+                if (!yaxis.align || yaxis.align == 'left') {
+                    this.yAxisAttribute.setCustomSection(yaxis.dataSection);
+                } else {
+                    // this.yAxisAttributeRight.setCustomSection(yaxis.dataSection);
+                }
+            })
         }
 
         //Z轴的计算
@@ -340,7 +349,6 @@ class Cartesian3D extends InertialSystem {
 
 
         if (_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-
             this.zAxisAttribute.setCustomSection(opt.coord.zAxis.dataSection);
         }
 
@@ -553,7 +561,8 @@ class Cartesian3D extends InertialSystem {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
                 // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                _val = _range * (data / (maxVal - minVal));
+                _val = _range * ((data-minVal) / (maxVal - minVal));
+                
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak
@@ -561,7 +570,6 @@ class Cartesian3D extends InertialSystem {
                 // if (this.posParseToInt) {
                 //     _ceilWidth = parseInt(_ceilWidth);
                 // };
-
                 _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
             };
         };
@@ -601,7 +609,7 @@ class Cartesian3D extends InertialSystem {
                 // if (val == undefined) {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
-                _val = _range * (data / (maxVal - minVal));
+                _val = _range * ((data-minVal) / (maxVal - minVal));
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak
@@ -642,7 +650,7 @@ class Cartesian3D extends InertialSystem {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
                 // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                _val = _range * (data / (maxVal - minVal));
+                _val = _range * ((data-minVal) / (maxVal - minVal));
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak

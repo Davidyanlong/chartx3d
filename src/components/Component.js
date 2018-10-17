@@ -43,6 +43,9 @@ class Component extends Events {
 
         }
     }
+    draw(){
+       //基类不实现
+    }
 
     //后续组件的公共部分可以提取到这里
 

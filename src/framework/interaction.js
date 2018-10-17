@@ -45,6 +45,7 @@ class Interaction extends Events {
         // }
         if (intersects.length > 0) {
             if (intersects[0].object == this.target) {
+                this.target.fire({ type: 'mousemove', event: EVENT });
                 if (!isMouseOver) {
                     this.target.fire({ type: 'mouseover', event: EVENT });
                     isMouseOver = true;

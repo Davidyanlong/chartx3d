@@ -40,7 +40,7 @@ class ZAxis extends Component {
         };
         this.axisLine = {
             enabled: 1, //是否有轴线
-            lineWidth: 2,
+            lineWidth: 1,
             strokeStyle: '#333'
         };
         this.label = {
@@ -216,28 +216,60 @@ class ZAxis extends Component {
         let _faceInfo = this._cartesionUI.getFaceInfo();
 
         let _textAlign = this.label.textAlign;
-        let _offsetX = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
+        let _offsetX = this.label.offset.x + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
 
         if (_faceInfo.bottom.visible) {
+
             if (_faceInfo.left.visible) {
                 origin = new Vector3(width, 0, 0);
                 _tickLineDir = new Vector3(1, 0, 0);
-                _textAlign = 'left';
+
             } else {
                 origin = new Vector3(0, 0, 0);
                 _tickLineDir = new Vector3(-1, 0, 0);
-                _textAlign = 'right';
             }
+
+            if (_faceInfo.front.visible) {
+                if (_faceInfo.left.visible) {
+                    _textAlign = 'right';
+                } else {
+                    _textAlign = 'left';
+                    _offsetX = -_offsetX;
+                }
+            } else {
+                if (_faceInfo.left.visible) {
+                    _textAlign = 'left';
+                } else {
+                    _textAlign = 'right';
+                    _offsetX = -_offsetX;
+                }
+            }
+
         } else {
             //top 可见
             if (_faceInfo.left.visible) {
                 origin = new Vector3(width, height, 0);
                 _tickLineDir = new Vector3(1, 0, 0);
-                _textAlign = 'left';
+               
             } else {
                 origin = new Vector3(0, height, 0)
                 _tickLineDir = new Vector3(-1, 0, 0);
-                _textAlign = 'right';
+               
+            }
+          if (_faceInfo.front.visible) {
+                if (_faceInfo.left.visible) {
+                    _textAlign = 'right';
+                } else {
+                    _textAlign = 'left';
+                    _offsetX = -_offsetX;
+                }
+            } else {
+                if (_faceInfo.left.visible) {
+                    _textAlign = 'left';
+                } else {
+                    _textAlign = 'right';
+                    _offsetX = -_offsetX;
+                }
             }
         }
 

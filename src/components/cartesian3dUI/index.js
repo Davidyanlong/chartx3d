@@ -148,43 +148,43 @@ class Cartesian3DUI extends Component {
             rbb = new Vector3(width, 0, -depth),       //左后下 
             rbt = new Vector3(width, height, -depth);  //左后上
 
-        let cameraPos = new Vector3();
-        this._root.renderView._camera.getWorldPosition(cameraPos);
+      
 
         let zDir = new Vector3(0, 0, 1);
         let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
-        let v = cameraPos.clone().sub(coordCenter).normalize();
-
+        let cameraPos = coordCenter.clone();
+        this._root.renderView._camera.getWorldPosition(cameraPos);
+        
         let result = {
             left: {
                 dir: new Vector3(1, 0, 0),     //法线方向
                 center: new Box3().setFromPoints([lft, lft, lbb, lbt]).getCenter(),
-                visible: v.clone().cross(zDir).y <= 0
+                visible: cameraPos.clone().cross(zDir).y <= 0
             },
             right: {
                 dir: new Vector3(-1, 0, 0),     //法线方向
                 center: new Box3().setFromPoints([rft, rft, rbb, rbt]).getCenter(),
-                visible: v.clone().cross(zDir).y > 0
+                visible: cameraPos.clone().cross(zDir).y > 0
             },
             top: {
                 dir: new Vector3(0, -1, 0),     //法线方向
                 center: new Box3().setFromPoints([lft, rft, lbt, rbt]).getCenter(),
-                visible: v.clone().cross(zDir).x < 0
+                visible: cameraPos.clone().cross(zDir).x < 0
             },
             bottom: {
                 dir: new Vector3(0, 1, 0),     //法线方向
                 center: new Box3().setFromPoints([lfb, rfb, lbb, rbb]).getCenter(),
-                visible: v.clone().cross(zDir).x >= 0
+                visible: cameraPos.clone().cross(zDir).x >= 0
             },
             front: {
                 dir: new Vector3(0, 0, -1),
                 center: new Box3().setFromPoints([lfb, rfb, rft, lft]).getCenter(),
-                visible: v.dot(zDir) < 0
+                visible: cameraPos.dot(zDir) < 0
             },
             back: {
                 dir: new Vector3(0, 0, 1),
                 center: new Box3().setFromPoints([lbb, rbb, rbt, lbt]).getCenter(),
-                visible: v.dot(zDir) >= 0
+                visible: cameraPos.dot(zDir) >= 0
             }
 
         }

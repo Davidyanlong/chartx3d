@@ -43,7 +43,7 @@ class YAxis extends Component {
         };
         this.axisLine = {//轴线
             enabled: 1,
-            lineWidth: 2, //线宽像素
+            lineWidth: 1, //线宽像素
             strokeStyle: '#333'
         };
         this.label = {

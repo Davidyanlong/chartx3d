@@ -642,7 +642,7 @@ _this12.lights=false;_this12.setValues(parameters);return _this12;}_createClass(
      * @class  线条
      * @description 线条对象
      * @author bujue
-     */var Line$1=function(_Object3D4){_inherits(Line$1,_Object3D4);function Line$1(geometry,material){_classCallCheck(this,Line$1);var _this13=_possibleConstructorReturn(this,(Line$1.__proto__||Object.getPrototypeOf(Line$1)).call(this));_this13.type='Line';_this13.geometry=geometry!==undefined?geometry:new BufferGeometry();_this13.material=material!==undefined?material:new LineBasicMaterial({color:Math.random()*0xffffff});_this13.drawMode=LinesMode;if(_this13.material.isLineDashedMaterial){_this13.computeLineDistances();}return _this13;}_createClass(Line$1,[{key:'setDrawMode',value:function setDrawMode(value){this.drawMode=value;}},{key:'computeLineDistances',value:function computeLineDistances(){_computeLineDistances.call(this);}},{key:'raycast',value:function raycast(raycaster,intersects){raycast$1.call(this,raycaster,intersects);}},{key:'isLine',get:function get(){return true;}}]);return Line$1;}(Object3D);var _computeLineDistances=function(){var start=new Vector3();var end=new Vector3();return function computeLineDistances(){var geometry=this.geometry;if(geometry.isBufferGeometry){// we assume non-indexed geometry
+     */var Line=function(_Object3D4){_inherits(Line,_Object3D4);function Line(geometry,material){_classCallCheck(this,Line);var _this13=_possibleConstructorReturn(this,(Line.__proto__||Object.getPrototypeOf(Line)).call(this));_this13.type='Line';_this13.geometry=geometry!==undefined?geometry:new BufferGeometry();_this13.material=material!==undefined?material:new LineBasicMaterial({color:Math.random()*0xffffff});_this13.drawMode=LinesMode;if(_this13.material.isLineDashedMaterial){_this13.computeLineDistances();}return _this13;}_createClass(Line,[{key:'setDrawMode',value:function setDrawMode(value){this.drawMode=value;}},{key:'computeLineDistances',value:function computeLineDistances(){_computeLineDistances.call(this);}},{key:'raycast',value:function raycast(raycaster,intersects){raycast$1.call(this,raycaster,intersects);}},{key:'isLine',get:function get(){return true;}}]);return Line;}(Object3D);var _computeLineDistances=function(){var start=new Vector3();var end=new Vector3();return function computeLineDistances(){var geometry=this.geometry;if(geometry.isBufferGeometry){// we assume non-indexed geometry
 if(geometry.index===null){var positionAttribute=geometry.attributes.position;var lineDistances=[];for(var i=0,l=positionAttribute.count;i<l;i+=2){start.fromBufferAttribute(positionAttribute,i);end.fromBufferAttribute(positionAttribute,i+1);lineDistances[i]=i===0?0:lineDistances[i-1];lineDistances[i+1]=lineDistances[i]+start.distanceTo(end);}geometry.addAttribute('lineDistance',new Float32BufferAttribute(lineDistances,1));}}else if(geometry.isGeometry){var vertices=geometry.vertices;var lineDistances=geometry.lineDistances;for(var i=0,l=vertices.length;i<l;i+=2){start.copy(vertices[i]);end.copy(vertices[i+1]);lineDistances[i]=i===0?0:lineDistances[i-1];lineDistances[i+1]=lineDistances[i]+start.distanceTo(end);}}return this;};}();var raycast$1=function(){var inverseMatrix=new Matrix4();var ray=new Ray();var sphere=new Sphere();return function raycast(raycaster,intersects){var precision=raycaster.linePrecision;var precisionSq=precision*precision;var geometry=this.geometry;var matrixWorld=this.matrixWorld;// Checking boundingSphere distance to ray
 if(geometry.boundingSphere===null)geometry.computeBoundingSphere();sphere.copy(geometry.boundingSphere);sphere.applyMatrix4(matrixWorld);if(raycaster.ray.intersectsSphere(sphere)===false)return;//
 inverseMatrix.getInverse(matrixWorld);ray.copy(raycaster.ray).applyMatrix4(inverseMatrix);var vStart=new Vector3();var vEnd=new Vector3();var interSegment=new Vector3();var interRay=new Vector3();var step=1;if(geometry.isBufferGeometry){var index=geometry.index;var attributes=geometry.attributes;var positions=attributes.position.array;if(index!==null){var indices=index.array;for(var i=0,l=indices.length-1;i<l;i+=step){var a=indices[i];var b=indices[i+1];vStart.fromArray(positions,a*3);vEnd.fromArray(positions,b*3);var distSq=ray.distanceSqToSegment(vStart,vEnd,interRay,interSegment);if(distSq>precisionSq)continue;interRay.applyMatrix4(this.matrixWorld);//Move back to world space for distance calculation
@@ -823,8 +823,7 @@ if(deep&&copy&&_$1.isObject(copy)&&copy.constructor===Object){target[name]=_$1.e
 var Component=function(_Events7){_inherits(Component,_Events7);function Component(_coordSystem){_classCallCheck(this,Component);var _this40=_possibleConstructorReturn(this,(Component.__proto__||Object.getPrototypeOf(Component)).call(this));_this40._coordSystem=_coordSystem;_this40._root=_coordSystem._root;// //每一个组件存放在一个Group中
 // this.group = new Group();
 // this.name = '';
-_this40.group=_this40._root.renderView.addGroup({name:_this40.constructor.name.toLowerCase()+'_root'});return _this40;}_createClass(Component,[{key:'setGroupName',value:function setGroupName(name){this.group.name=name;}},{key:'dispose',value:function dispose(){var removes=[];this.group.traverse(function(obj){if(obj.isMesh||obj.isLine||obj.isLine2||obj.isTextSprite){if(obj.geometry){obj.geometry.dispose();}if(obj.material){obj.material.dispose();}removes.push(obj);}});while(removes.length){var obj=removes.pop();if(obj.parent){obj.parent.remove(obj);}else{obj=null;}}}},{key:'draw',value:function draw(){}//基类不实现
-//后续组件的公共部分可以提取到这里
+_this40.group=_this40._root.renderView.addGroup({name:_this40.constructor.name.toLowerCase()+'_root'});return _this40;}_createClass(Component,[{key:'setGroupName',value:function setGroupName(name){this.group.name=name;}},{key:'dispose',value:function dispose(){var removes=[];this.group.traverse(function(obj){if(obj.isMesh||obj.isLine||obj.isLine2||obj.isTextSprite){if(obj.geometry){obj.geometry.dispose();}if(obj.material){obj.material.dispose();}removes.push(obj);}});while(removes.length){var obj=removes.pop();if(obj.parent){obj.parent.remove(obj);}else{obj=null;}}}//后续组件的公共部分可以提取到这里
 }]);return Component;}(Events);var renderOrder=100;var Bar=function(_Component){_inherits(Bar,_Component);function Bar(chart3d,opt){_classCallCheck(this,Bar);var _this41=_possibleConstructorReturn(this,(Bar.__proto__||Object.getPrototypeOf(Bar)).call(this,chart3d.currCoord));_this41.type="bar";// this.field  = null;
 // this.enabledField = null;
 // this.yAxisAlign = "left"; //默认设置为左y轴
@@ -854,132 +853,22 @@ this.level=0;this.field='';//
 //this.pos = null;
 };//let ceil = this.getCeilSize();
 xDatas.forEach(function(xd,no){lastArray=[];yValidData.forEach(function(yda,index){var _fd=fields[index];var zd=customField[index]?customField[index]:fields[index].toString();if(yda.length>1){yda.forEach(function(ydad,num){var ydadd=_$1.flatten(ydad).slice(0);var _fdd=_fd[num];ydadd.forEach(function(yd,i){if(i===no){var _tmp=new DataOrg();_tmp.floor=num;_tmp.level=index+num;_tmp.field=_fdd;if(num>0){_tmp.isStack=true;_tmp.value=new Vector3(xd,yd,zd);_tmp.stackValue=new Vector3(xd,lastArray[i],zd);}else{_tmp.isStack=true;_tmp.stackValue=new Vector3(xd,0,zd);_tmp.value=new Vector3(xd,yd,zd);}me.drawPosData.push(_tmp);}});_$1.flatten(ydad).slice(0).forEach(function(t,y){lastArray[y]=(lastArray[y]||0)+t;});//lastArray = _.flatten(ydad).slice(0);
-});}else{var _tmp=new DataOrg();_tmp.field=_fd;_$1.flatten(yda).slice(0).forEach(function(yd,i){if(i===no){_tmp.value=new Vector3(xd,yd,zd);me.drawPosData.push(_tmp);}});}});});}},{key:'draw',value:function draw(){var _this42=this;var me=this;this.computePos();var ceil=this._coordSystem.getCeilSize();var getXAxisPosition=this._coordSystem.getXAxisPosition.bind(this._coordSystem);var getYAxisPosition=this._coordSystem.getYAxisPosition.bind(this._coordSystem);var getZAxisPosition=this._coordSystem.getZAxisPosition.bind(this._coordSystem);var boxWidth=ceil.x*0.7;var boxDepth=ceil.z*0.7;var boxHeight=1;this.drawPosData.forEach(function(dataOrg){var pos=new Vector3();var stack=new Vector3();pos.setX(getXAxisPosition(dataOrg.value.x));pos.setY(getYAxisPosition(dataOrg.value.y));pos.setZ(getZAxisPosition(dataOrg.value.z));if(dataOrg.isStack){stack.setX(pos.x-boxWidth*0.5);stack.setY(getYAxisPosition(dataOrg.stackValue.y));stack.setZ(-pos.z+boxDepth*0.5);}else{stack.setX(pos.x-boxWidth*0.5);stack.setY(0);stack.setZ(-pos.z+boxDepth*0.5);}boxHeight=Math.max(Math.abs(pos.y),1);//console.log('boxHeight', boxHeight, dataOrg.value.y);
+});}else{var _tmp=new DataOrg();_tmp.field=_fd;_$1.flatten(yda).slice(0).forEach(function(yd,i){if(i===no){_tmp.value=new Vector3(xd,yd,zd);me.drawPosData.push(_tmp);}});}});});}},{key:'draw',value:function draw(){var _this42=this;this.computePos();var ceil=this._coordSystem.getCeilSize();var getXAxisPosition=this._coordSystem.getXAxisPosition.bind(this._coordSystem);var getYAxisPosition=this._coordSystem.getYAxisPosition.bind(this._coordSystem);var getZAxisPosition=this._coordSystem.getZAxisPosition.bind(this._coordSystem);var boxWidth=ceil.x*0.7;var boxDepth=ceil.z*0.7;var boxHeight=1;this.drawPosData.forEach(function(dataOrg){var pos=new Vector3();var stack=new Vector3();pos.setX(getXAxisPosition(dataOrg.value.x));pos.setY(getYAxisPosition(dataOrg.value.y));pos.setZ(getZAxisPosition(dataOrg.value.z));if(dataOrg.isStack){stack.setX(pos.x-boxWidth*0.5);stack.setY(getYAxisPosition(dataOrg.stackValue.y));stack.setZ(-pos.z+boxDepth*0.5);}else{stack.setX(pos.x-boxWidth*0.5);stack.setY(0);stack.setZ(-pos.z+boxDepth*0.5);}boxHeight=Math.max(Math.abs(pos.y),1);//console.log('boxHeight', boxHeight, dataOrg.value.y);
 // MeshLambertMaterial
 //MeshPhongMaterial
-var _color=_this42._getColor(_this42.node.fillStyle,dataOrg);var metaril=new MeshPhongMaterial({color:_this42._getColor(_this42.node.fillStyle,dataOrg),transparent:true,opacity:1,depthTest:true,depthWrite:true,side:DoubleSide// polygonOffset: true,
+var metaril=new MeshPhongMaterial({color:_this42._getColor(_this42.node.fillStyle,dataOrg),transparent:true,opacity:1,depthTest:true,depthWrite:true,side:DoubleSide// polygonOffset: true,
 // polygonOffsetFactor: 1,
 // polygonOffsetUnits: 1.5
-});var box=_this42._root.renderView.createBox(boxWidth,boxHeight,boxDepth,metaril);box.position.copy(stack);var _dataOrg$value=dataOrg.value,x=_dataOrg$value.x,y=_dataOrg$value.y,z=_dataOrg$value.z;var px=stack.x,py=stack.y,pz=stack.z;box.userData.info={title:z,value:{x:x,y:y,z:z},pos:{x:px,y:py,z:pz},color:_this42._getColor(_this42.node.fillStyle,dataOrg)};box.renderOrder=renderOrder++;_this42.group.add(box);box.on('mouseover',function(e){me.onMouseOver.call(this);me._root.fire({type:'tipShow',event:e.event,data:this.userData.info});});box.on('mouseout',function(e){me.onMouseOut.call(this);me._root.fire({type:'tipHide',event:e.event,data:this.userData.info});});box.on('mousemove',function(e){me._root.fire({type:'tipMove',event:e.event,data:this.userData.info});});box.on('click',_this42.onClick);});}},{key:'onMouseOver',value:function onMouseOver(e){//上下文中的this 是bar 对象
+});var box=_this42._root.renderView.createBox(boxWidth,boxHeight,boxDepth,metaril);box.position.copy(stack);var _dataOrg$value=dataOrg.value,x=_dataOrg$value.x,y=_dataOrg$value.y,z=_dataOrg$value.z;var px=stack.x,py=stack.y,pz=stack.z;box.userData.info={value:{x:x,y:y,z:z},pos:{x:px,y:py,z:pz},color:_this42._getColor(_this42.node.fillStyle,dataOrg)};box.renderOrder=renderOrder++;_this42.group.add(box);box.on('mouseover',_this42.onMouseOver);box.on('mouseout',_this42.onMouseOut);box.on('click',_this42.onClick);box.on('mousemove',_this42.onMove);});}},{key:'onMouseOver',value:function onMouseOver(e){//上下文中的this 是bar 对象
 this.userData.color=this.material.color.clone();//高亮
-var tempColor={};this.material.color.getHSL(tempColor);this.material.setValues({color:new Color$1().setHSL(tempColor.h,tempColor.s,tempColor.l+0.1)});}},{key:'onMouseOut',value:function onMouseOut(){$('#target').hide();this.material.setValues({color:this.userData.color});}},{key:'onClick',value:function onClick(e){//this.fire(e)
+var tempColor={};this.material.color.getHSL(tempColor);this.material.setValues({color:new Color$1().setHSL(tempColor.h,tempColor.s,tempColor.l+0.1)});// this._root.fire({type:e.type});
+}},{key:'onMouseOut',value:function onMouseOut(){$('#target').hide();this.material.setValues({color:this.userData.color});// this._root.fire({type:e.type});
+}},{key:'onClick',value:function onClick(){console.log(this);var dom=document.getElementById('testdiv');// dom.style.left = e.event.clientX+'px';
+// dom.style.top = e.event.clientY+'px';
+// this._root.fire({type:e.type});
+}},{key:'onMove',value:function onMove(e){var event=e.event;$('#target').show().css({left:event.clientX,top:event.clientY});//this._root.fire({type:e.type});
 }},{key:'_getColor',value:function _getColor(c,dataOrg){var color=this._coordSystem.yAxisAttribute.getColor(dataOrg.field);//field对应的索引，， 取颜色这里不要用i
-if(_$1.isString(c)){color=c;}if(_$1.isArray(c)){color=_$1.flatten(c)[_$1.indexOf(_flattenField,field)];}if(_$1.isFunction(c)){color=c.apply(this,[rectData]);}return color;}},{key:'dispose',value:function dispose(){var _this43=this;this.group.traverse(function(obj){if(obj.has('click',_this43.onClick)){obj.off('click',_this43.onClick);}if(obj.has('mouseover',_this43.onMouseOver)){obj.off('mouseover',_this43.onMouseOver);}if(obj.has('mouseout',_this43.onMouseOut)){obj.off('mouseout',_this43.onMouseOut);}});_get(Bar.prototype.__proto__||Object.getPrototypeOf(Bar.prototype),'dispose',this).call(this);}}]);return Bar;}(Component);var Tips=function(_Component2){_inherits(Tips,_Component2);function Tips(chart3d,opt){_classCallCheck(this,Tips);var _this44=_possibleConstructorReturn(this,(Tips.__proto__||Object.getPrototypeOf(Tips)).call(this,chart3d.currCoord));_this44.tipDomContainer=chart3d.domView;_this44.cW=chart3d.width;//容器的width
-_this44.cH=chart3d.height;//容器的height
-_this44.dW=0;//html的tips内容width
-_this44.dH=0;//html的tips内容Height
-_this44.borderRadius="5px";//背景框的 圆角 
-_this44.sprite=null;_this44.content=null;//tips的详细内容
-_this44.fillStyle="rgba(255,255,255,0.95)";//"#000000";
-_this44.fontColor="#999";_this44.strokeStyle="#ccc";_this44.position="right";//在鼠标的左（右）边
-_this44._tipDom=null;_this44.offsetX=10;//tips内容到鼠标位置的偏移量x
-_this44.offsetY=10;//tips内容到鼠标位置的偏移量y
-//所有调用tip的 event 上面 要附带有符合下面结构的eventInfo属性
-//会deepExtend到this.indo上面来
-_this44.eventInfo=null;_this44.positionInRange=true;//false; //tip的浮层是否限定在画布区域
-_this44.enabled=true;//tips是默认显示的
-_this44.pointer='line';//tips的指针,默认为直线，可选为：'line' | 'region'(柱状图中一般用region)
-_this44.pointerAnim=true;_this44._tipsPointer=null;_$1.extend(true,_this44,opt);// this.sprite = new Canvax.Display.Sprite({
-//     id: "TipSprite"
-// });
-// var self = this;
-_this44.group.on("removed",function(){_this44._tipDom=null;});console.log('tips component loaded!');return _this44;}// static register(opt, app) {
-//     //所有的tips放在一个单独的tips中
-//     var _tips = new this(opt, app);
-//     app.stage.addChild(_tips.sprite);
-//     app.components.push({
-//         type: "tips",
-//         id: "tips",
-//         plug: _tips
-//     });
-// }
-_createClass(Tips,[{key:'show',value:function show(e){if(!this.enabled)return;if(e.eventInfo){this.eventInfo=e.eventInfo;// var stage = e.target.getStage();
-// this.cW = stage.context.width;
-// this.cH = stage.context.height;
-var content=this._setContent(e);if(content){this._setPosition(e);//this.sprite.toFront();
-//比如散点图，没有hover到点的时候，也要显示，所有放到最下面
-//反之，如果只有hover到点的时候才显示point，那么就放这里
-//this._tipsPointerShow(e);
-}else{this.hide();}}//this._tipsPointerShow(e)
-}},{key:'move',value:function move(e){if(!this.enabled)return;if(e.eventInfo){this.eventInfo=e.eventInfo;var content=this._setContent(e);if(content){this._setPosition(e);//比如散点图，没有hover到点的时候，也要显示，所有放到最下面
-//反之，如果只有hover到点的时候才显示point，那么就放这里
-//this._tipsPointerMove(e)
-}else{//move的时候hide的只有dialogTips, pointer不想要隐藏
-//this.hide();
-this._hideDialogTips();}}this._tipsPointerMove(e);}},{key:'hide',value:function hide(){if(!this.enabled)return;this._hideDialogTips();//this._tipsPointerHide()
-}},{key:'_hideDialogTips',value:function _hideDialogTips(){if(this.eventInfo){this.eventInfo=null;//this.sprite.removeAllChildren();
-this._removeContent();}}/**
-         *@pos {x:0,y:0}
-         */},{key:'_setPosition',value:function _setPosition(e){if(!this.enabled)return;if(!this._tipDom)return;var pos=e.pos;// || e.target.localToGlobal(e.point);
-var x=this._checkX(pos.x+this.offsetX);var y=this._checkY(pos.y+this.offsetY);this._tipDom.style.cssText+=";visibility:visible;left:"+x+"px;top:"+y+"px;-webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;";if(this.position=="left"){this._tipDom.style.left=this._checkX(pos.x-this.offsetX-this._tipDom.offsetWidth)+"px";}}/**
-         *content相关-------------------------
-         */},{key:'_creatTipDom',value:function _creatTipDom(e){var me=this;me._tipDom=document.createElement("div");me._tipDom.className="chart-tips";me._tipDom.style.cssText+="；-moz-border-radius:"+me.borderRadius+"; -webkit-border-radius:"+me.borderRadius+"; border-radius:"+me.borderRadius+";background:"+me.fillStyle+";border:1px solid "+me.strokeStyle+";visibility:hidden;position:absolute;enabled:inline-block;*enabled:inline;*zoom:1;padding:6px;color:"+me.fontColor+";line-height:1.5";me._tipDom.style.cssText+="; -moz-box-shadow:1px 1px 3px "+me.strokeStyle+"; -webkit-box-shadow:1px 1px 3px "+me.strokeStyle+"; box-shadow:1px 1px 3px "+me.strokeStyle+";";me._tipDom.style.cssText+="; border:none;white-space:nowrap;word-wrap:normal;";me._tipDom.style.cssText+="; text-align:left;";me.tipDomContainer.appendChild(this._tipDom);}},{key:'_removeContent',value:function _removeContent(){if(!this._tipDom)return;this.tipDomContainer.removeChild(this._tipDom);this._tipDom=null;}},{key:'_setContent',value:function _setContent(e){var tipxContent=this._getContent(e);if(!tipxContent&&tipxContent!==0){return;}if(!this._tipDom){this._creatTipDom(e);}this._tipDom.innerHTML=tipxContent;this.dW=this._tipDom.offsetWidth;this.dH=this._tipDom.offsetHeight;return tipxContent;}},{key:'_getContent',value:function _getContent(e){var tipsContent=void 0;if(this.content){tipsContent=_$1.isFunction(this.content)?this.content(e.eventInfo):this.content;}else{tipsContent=this._getDefaultContent(e.eventInfo);}return tipsContent;}},{key:'_getDefaultContent',value:function _getDefaultContent(info){var str="";if(info.title!==undefined&&info.title!==null&&info.title!==""){str+="<div style='font-size:14px;border-bottom:1px solid #f0f0f0;padding:4px;margin-bottom:6px;'>"+info.title+"</div>";}var style=info.color||info.fillStyle||info.strokeStyle;// var value = typeof (info.value) == "object" ? JSON.stringify(node.value) : numAddSymbol(node.value);
-str+="<div style='line-height:1.5;font-size:12px;padding:0 4px;'>";if(style){str+="<div style='background:"+style+";margin-right:8px;margin-top:5px;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></div>";}_$1.each(info.value,function(value,key){str+='<div><span style="margin-right:5px">- '+key+':</span><span>'+value+'</span></div>';});str+="</div>";// _.each(info.nodes, function (node, i) {
-//     //value 是null 或者 undefined
-//     if (!node.value && node.value !== 0) {
-//         return;
-//     }; 
-//     if( style ){
-//         str += "<span style='background:" + style + ";margin-right:8px;margin-top:5px;float:left;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></span>";
-//     };
-//     str += value + "</div>";
-// });
-return str;}/*
-        _getDefaultContent_bak( info )
-        {
-
-
-            if( !info.nodes.length ){
-                return null;
-            };
-
-            var str  = "<table style='border:none'>";
-            var self = this;
-
-            if( info.title !== undefined && info.title !== null &&info.title !== "" ){
-                str += "<tr><td colspan='2'>"+ info.title +"</td></tr>"
-            };
-
-            _.each( info.nodes , function( node , i ){
-                if( node.value === undefined || node.value === null ){
-                    return;
-                };
-
-                
-                str+= "<tr style='color:"+ (node.color || node.fillStyle || node.strokeStyle) +"'>";
-                
-                let tsStyle="style='border:none;white-space:nowrap;word-wrap:normal;'";
-                let label = node.label || node.field || node.name;
-                if( label ){
-                    label += "：";
-                } else {
-                    label = "";
-                };
-            
-                str+="<td "+tsStyle+">"+ label +"</td>";
-                str += "<td "+tsStyle+">"+ (typeof node.value == "object" ? JSON.stringify(node.value) : numAddSymbol(node.value)) +"</td></tr>";
-            });
-            str+="</table>";
-            return str;
-        }
-        *//**
-         *获取back要显示的x
-         *并且校验是否超出了界限
-         */},{key:'_checkX',value:function _checkX(x){if(this.positionInRange){var w=this.dW+2;//后面的2 是 两边的 linewidth
-if(x<0){x=0;}if(x+w>this.cW){x=this.cW-w;}}return x;}/**
-         *获取back要显示的x
-         *并且校验是否超出了界限
-         */},{key:'_checkY',value:function _checkY(y){if(this.positionInRange){var h=this.dH+2;//后面的2 是 两边的 linewidth
-if(y<0){y=0;}if(y+h>this.cH){y=this.cH-h;}}return y;}},{key:'_tipsPointerShow',value:function _tipsPointerShow(e){var _coord=this.root._coord;//目前只实现了直角坐标系的tipsPointer
-if(!_coord||_coord.type!='rect')return;if(!this.pointer)return;var el=this._tipsPointer;var y=_coord.origin.y-_coord.height;var x=0;if(this.pointer=="line"){x=_coord.origin.x+e.eventInfo.xAxis.x;}if(this.pointer=="region"){x=_coord.origin.x+e.eventInfo.xAxis.x-_coord._xAxis.ceilWidth/2;if(e.eventInfo.xAxis.ind<0){//当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
-x=_coord.origin.x;}}if(!el){if(this.pointer=="line"){el=new Line({//xyToInt : false,
-context:{x:x,y:y,start:{x:0,y:0},end:{x:0,y:_coord.height},lineWidth:1,strokeStyle:"#cccccc"}});}if(this.pointer=="region"){el=new Rect({//xyToInt : false,
-context:{width:_coord._xAxis.ceilWidth,height:_coord.height,x:x,y:y,fillStyle:"#cccccc",globalAlpha:0.3}});}this.root.graphsSprite.addChild(el,0);this._tipsPointer=el;}else{if(this.pointerAnim&&_coord._xAxis.layoutType!="proportion"){if(el.__animation){el.__animation.stop();}el.__animation=el.animate({x:x,y:y},{duration:200});}else{el.context.x=x;el.context.y=y;}}}},{key:'_tipsPointerHide',value:function _tipsPointerHide(){var _coord=this.root._coord;//目前只实现了直角坐标系的tipsPointer
-if(!_coord||_coord.type!='rect')return;if(!this.pointer||!this._tipsPointer)return;//console.log("hide");
-this._tipsPointer.destroy();this._tipsPointer=null;}},{key:'_tipsPointerMove',value:function _tipsPointerMove(e){var _coord=this.root._coord;//目前只实现了直角坐标系的tipsPointer
-if(!_coord||_coord.type!='rect')return;if(!this.pointer||!this._tipsPointer)return;//console.log("move");
-var el=this._tipsPointer;var x=_coord.origin.x+e.eventInfo.xAxis.x;if(this.pointer=="region"){x=_coord.origin.x+e.eventInfo.xAxis.x-_coord._xAxis.ceilWidth/2;if(e.eventInfo.xAxis.ind<0){//当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
-x=_coord.origin.x;}}var y=_coord.origin.y-_coord.height;if(x==el.__targetX){return;}if(this.pointerAnim&&_coord._xAxis.layoutType!="proportion"){if(el.__animation){el.__animation.stop();}el.__targetX=x;el.__animation=el.animate({x:x,y:y},{duration:200,onComplete:function onComplete(){delete el.__targetX;delete el.__animation;}});}else{el.context.x=x;el.context.y=y;}}}]);return Tips;}(Component);var $$1={// dom操作相关代码
+if(_$1.isString(c)){color=c;}if(_$1.isArray(c)){color=_$1.flatten(c)[_$1.indexOf(_flattenField,field)];}if(_$1.isFunction(c)){color=c.apply(this,[rectData]);}return color;}},{key:'dispose',value:function dispose(){var _this43=this;this.group.traverse(function(obj){if(obj.has('click',_this43.onClick)){obj.off('click',_this43.onClick);}if(obj.has('mouseover',_this43.onMouseOver)){obj.off('mouseover',_this43.onMouseOver);}if(obj.has('mouseout',_this43.onMouseOut)){obj.off('mouseout',_this43.onMouseOut);}});_get(Bar.prototype.__proto__||Object.getPrototypeOf(Bar.prototype),'dispose',this).call(this);}}]);return Bar;}(Component);var $$1={// dom操作相关代码
 query:function query(el){if(_$1.isString(el)){return document.getElementById(el);}if(el.nodeType==1){//则为一个element本身
 return el;}if(el.length){return el[0];}return null;},createView:function createView(_width,_height,id){var view=document.createElement("div");view.className="canvax-view";view.style.cssText+="position:relative;width:100%;height:100%;";var stageView=document.createElement("div");stageView.style.cssText+="position:absolute;width:"+_width+"px;height:"+_height+"px;";//用来存放一些dom元素
 var domView=document.createElement("div");domView.style.cssText+="position:absolute;width:"+_width+"px;height:"+_height+"px;";view.appendChild(stageView);view.appendChild(domView);return{view:view,stageView:stageView,domView:domView};}};//如果应用传入的数据是[{name:name, sex:sex ...} , ...] 这样的数据，就自动转换为chartx需要的矩阵格式数据
@@ -989,9 +878,9 @@ if(list.length>0&&!_$1.isArray(list[0])){var newArr=[];var fields=[];var fieldNu
      * @param  {[Number]} $n [数字]
      * @param  {[type]} $s [千分位上的符号]
      * @return {[String]}    [根据$s提供的值 对千分位进行分隔 并且小数点上自动加上'.'号  组合成字符串]
-     */function numAddSymbol($n,$s){var s=Number($n);var symbol=$s?$s:',';if(!s){return String($n);}if(s>=1000){var num=parseInt(s/1000);return String($n.toString().replace(num,num+symbol));}else{return String($n);}}var Framework=function(_Events8){_inherits(Framework,_Events8);function Framework(){_classCallCheck(this,Framework);var _this45=_possibleConstructorReturn(this,(Framework.__proto__||Object.getPrototypeOf(Framework)).call(this));_this45.layers=[];_this45.isUpdate=true;_this45.currTick=new Date().getTime();_this45.lastTick=null;_this45.renderer=null;return _this45;}_createClass(Framework,[{key:'init',value:function init(){this._InitRender();}},{key:'_InitRender',value:function _InitRender(){//创建渲染器
+     */function numAddSymbol($n,$s){var s=Number($n);var symbol=$s?$s:',';if(!s){return String($n);}if(s>=1000){var num=parseInt(s/1000);return String($n.toString().replace(num,num+symbol));}else{return String($n);}}var Framework=function(_Events8){_inherits(Framework,_Events8);function Framework(){_classCallCheck(this,Framework);var _this44=_possibleConstructorReturn(this,(Framework.__proto__||Object.getPrototypeOf(Framework)).call(this));_this44.layers=[];_this44.isUpdate=true;_this44.currTick=new Date().getTime();_this44.lastTick=null;_this44.renderer=null;return _this44;}_createClass(Framework,[{key:'init',value:function init(){this._InitRender();}},{key:'_InitRender',value:function _InitRender(){//创建渲染器
 try{this.renderer=new WebGLRenderer({alpha:true,depth:true,antialias:true,premultipliedAlpha:true});//this.render._sortObjects=false;
-}catch(e){this.view.style.cssText="display: flex;justify-content: center;align-items:center;font-size:16px;color:#666;width:100%;height:100%;";this.view.innerHTML='很抱歉,您的浏览器不能展示3D图表!';console.error(e);return;}}},{key:'render',value:function render(){var _this46=this;var redraw=this.isUpdate;if(this.lastTick-this.currTick>1000*5){this.isUpdate=false;}this.fire({type:'renderbefore'});if(redraw){this.layers.forEach(function(view){_this46.renderer.render(view._scene,view._camera);});this.lastTick=new Date().getTime();}this.fire({type:'renderafter'});}},{key:'renderFrame',value:function renderFrame(){var me=this;this.render();this.frameId=window.requestAnimationFrame(function(){me.renderFrame();});}},{key:'stopRenderFrame',value:function stopRenderFrame(){window.cancelAnimationFrame(this.frameId);this.frameId=null;}},{key:'addView',value:function addView(view){this.layers.push(view);}},{key:'removeView',value:function removeView(view){//todo 移除view 后续需要进行垃圾回收
+}catch(e){this.view.style.cssText="display: flex;justify-content: center;align-items:center;font-size:16px;color:#666;width:100%;height:100%;";this.view.innerHTML='很抱歉,您的浏览器不能展示3D图表!';console.error(e);return;}}},{key:'render',value:function render(){var _this45=this;var redraw=this.isUpdate;if(this.lastTick-this.currTick>1000*5){this.isUpdate=false;}this.fire({type:'renderbefore'});if(redraw){this.layers.forEach(function(view){_this45.renderer.render(view._scene,view._camera);});this.lastTick=new Date().getTime();}this.fire({type:'renderafter'});}},{key:'renderFrame',value:function renderFrame(){var me=this;this.render();this.frameId=window.requestAnimationFrame(function(){me.renderFrame();});}},{key:'stopRenderFrame',value:function stopRenderFrame(){window.cancelAnimationFrame(this.frameId);this.frameId=null;}},{key:'addView',value:function addView(view){this.layers.push(view);}},{key:'removeView',value:function removeView(view){//todo 移除view 后续需要进行垃圾回收
 var index=this.layers.indexOf(view);if(index>=0){this.layers.splice(index,1);}}}]);return Framework;}(Events);var RenderFont=function(){function RenderFont(){var params=arguments.length>0&&arguments[0]!==undefined?arguments[0]:{};_classCallCheck(this,RenderFont);this.chartInfos={};this.scale=params.scale||window.devicePixelRatio||1;this.style={color:params.color||new Color$1('#000'),fontSize:params.fontSize||14,fontFamily:params.fontFamily||'微软雅黑,sans-serif',isBold:params.isBold||false,textAlign:params.textAlign||'top',textBaseline:params.textBaseline||'top',verticalAlign:params.verticalAlign||'middle'// top , middle, bottom
 };//根据传入的文字内容自动计算 纹理的大小
 this.textureWidth=2;this.textureHeight=2;// this.rcpTextureWidth = 1 / this.textureWidth;
@@ -1060,7 +949,7 @@ var transMatrix=new Matrix4();var geometry=new BoxGeometry(1,1,1);var mesh=new M
 geometry.vertices.forEach(function(vertice){vertice.addScalar(0.5);vertice.z*=-1;});//更加给定的得数据变换box
 transMatrix.makeScale(width,height,depth);geometry.vertices.forEach(function(vertice){vertice.applyMatrix4(transMatrix);});return mesh;}//创建一个面
 },{key:'createPlane',value:function createPlane(){var width=arguments.length>0&&arguments[0]!==undefined?arguments[0]:1;var height=arguments.length>1&&arguments[1]!==undefined?arguments[1]:1;var materials=arguments.length>2&&arguments[2]!==undefined?arguments[2]:undefined;var showInfo=arguments.length>3&&arguments[3]!==undefined?arguments[3]:{};var group=arguments.length>4&&arguments[4]!==undefined?arguments[4]:undefined;var faceStyle=arguments.length>5&&arguments[5]!==undefined?arguments[5]:{};if(!materials){materials=new MeshLambertMaterial({color:faceStyle.fillStyle||0xffffff*Math.random(),side:FrontSide,transparent:true,opacity:faceStyle.alpha||1,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:0.1,depthTest:true,depthWrite:false});}var planetGeometry=new PlaneGeometry(width,height);var planeMesh=new Mesh(planetGeometry,materials);if(showInfo.dir.equals(new Vector3(1,0,0))){planeMesh.rotateY(_Math.degToRad(90));}if(showInfo.dir.equals(new Vector3(-1,0,0))){planeMesh.rotateY(_Math.degToRad(-90));}if(showInfo.dir.equals(new Vector3(0,1,0))){planeMesh.rotateX(_Math.degToRad(-90));}if(showInfo.dir.equals(new Vector3(0,-1,0))){planeMesh.rotateX(_Math.degToRad(90));}if(showInfo.dir.equals(new Vector3(0,0,-1))){planeMesh.rotateY(_Math.degToRad(180));}if(showInfo.center){planeMesh.position.copy(showInfo.center);}if(group){group.visible=showInfo.visible;group.add(planeMesh);}planeMesh.renderOrder=-100;return planeMesh;}//绘制普通线条
-},{key:'createCommonLine',value:function createCommonLine(){var points=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var lineStyle=arguments[1];var group=this.addGroup({name:'commonLines'});var material=new LineBasicMaterial({color:lineStyle.strokeStyle,transparent:true,depthTest:true,depthWrite:false});if(lineStyle.lineType=='dashed'){material=new LineDashedMaterial({color:lineStyle.strokeStyle});}var geometry=new Geometry();points.forEach(function(item){geometry.vertices.push(item);});var line=new Line$1(geometry,material);// line.renderOrder=-110;
+},{key:'createCommonLine',value:function createCommonLine(){var points=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var lineStyle=arguments[1];var group=this.addGroup({name:'commonLines'});var material=new LineBasicMaterial({color:lineStyle.strokeStyle,transparent:true,depthTest:true,depthWrite:false});if(lineStyle.lineType=='dashed'){material=new LineDashedMaterial({color:lineStyle.strokeStyle});}var geometry=new Geometry();points.forEach(function(item){geometry.vertices.push(item);});var line=new Line(geometry,material);// line.renderOrder=-110;
 group.add(line);return group;}//绘制线条
 },{key:'createLine',value:function createLine(origins,direction,length,lineWidth,lineColor){var group=new Group();var line=null;direction.normalize();var matLine=new LineMeshMaterial({color:lineColor,linewidth:lineWidth,// in pixels
 resolution:new Vector2(this.width,this.height),dashed:false});if(!_$1.isArray(origins)){origins=[origins];}var triangleVertices=[];origins.forEach(function(origin){triangleVertices=[];triangleVertices.push([0,0,0]);var endPoint=new Vector3();//endPoint.copy([0,0,0]);
@@ -1074,11 +963,11 @@ var spriteHeight=14*4;fontStyle={enabled:1,fontColor:'#999',fontSize:12,format:n
 };if(!_$1.isArray(texts)){texts=[texts];}if(!_$1.isArray(origins)){origins=[origins];}renderFont.setStyle(fontStyle);var maxSize=renderFont.drawTexts(texts);var size=maxSize;//renderFont.measureText(text);
 var spriteWidth=size.width/size.height*spriteHeight;texts.forEach(function(text,index){var texture=new Texture();texture.image=renderFont.canvas;texture.wrapS=RepeatWrapping;texture.wrapT=RepeatWrapping;texture.minFilter=LinearFilter;texture.magFilter=LinearFilter;texture.repeat.set(1/texts.length,1);texture.offset.set(index/texts.length,0);texture.needsUpdate=true;var spriteMatrial=new SpriteMaterial$$1({map:texture});var sprite=new Sprite(spriteMatrial);sprite.scale.set(spriteWidth,spriteHeight,1);sprite.position.copy(origins[index]);textGroup.add(sprite);});return textGroup;}},{key:'createTextSprite',value:function createTextSprite(text,fontSize,color){var sprite=new TextSprite({fontSize:fontSize,texture:{//纹理中需要的文字大小不需要指定,TextSprite会自动计算
 padding:0,text:text,fontFamily:'SimHei, Arial, Helvetica, sans-serif'},material:{color:color||0x333333,transparent:true}});return sprite;}},{key:'getObjectScale',value:function getObjectScale(object){var objectWorldScale=new Vector3();return object.getWorldScale(objectWorldScale);}},{key:'resize',value:function resize(_width,_height,frustumSize){this.setSize(_width,_height);if(this.mode=='perspective'){this._camera.aspect=this.aspect;}else{this._camera.left=frustumSize*aspect/-2;this._camera.right=frustumSize*aspect/2;this._camera.top=frustumSize/2;this._camera.bottom=frustumSize/-2;}this._camera.updateProjectionMatrix();}},{key:'dispose',value:function dispose(){this._scene=null;this._camera=null;this._frameWork=null;this.renderer=null;}}]);return View;}();var Application=function(){function Application(){_classCallCheck(this,Application);this._framework=new Framework();this._framework.init();//默认值有一个view;
-this.view=[];this.createView();}_createClass(Application,[{key:'launch',value:function launch(){this._framework.renderFrame();}},{key:'createView',value:function createView(){this.view.push(new View(this._framework));}},{key:'dispose',value:function dispose(){var _this47=this;this.view.forEach(function(vw){_this47._framework.removeView(vw);vw.dispose();});this._framework.stopRenderFrame();this._framework.renderer.dispose();this._framework.render=null;this.view=[];}}]);return Application;}();//默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
+this.view=[];this.createView();}_createClass(Application,[{key:'launch',value:function launch(){this._framework.renderFrame();}},{key:'createView',value:function createView(){this.view.push(new View(this._framework));}},{key:'dispose',value:function dispose(){var _this46=this;this.view.forEach(function(vw){_this46._framework.removeView(vw);vw.dispose();});this._framework.stopRenderFrame();this._framework.renderer.dispose();this._framework.render=null;this.view=[];}}]);return Application;}();//默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
 //惯性坐标系
-var InertialSystem=function(_Events9){_inherits(InertialSystem,_Events9);function InertialSystem(root){_classCallCheck(this,InertialSystem);var _this48=_possibleConstructorReturn(this,(InertialSystem.__proto__||Object.getPrototypeOf(InertialSystem)).call(this));_this48._root=root;var opts=_$1.clone(_this48._root.opt);_this48.coord={};//坐标原点
-_this48.origin=new Vector3(0,0,0);//中心的
-_this48.center=new Vector3(0,0,0);_this48.padding={left:0,top:0,right:0,bottom:0,front:0,back:0};_this48.group=root.renderView.addGroup({name:'InertialSystem'});_$1.extend(true,_this48,_this48.setDefaultOpts(opts));return _this48;}_createClass(InertialSystem,[{key:'setDefaultOpts',value:function setDefaultOpts(opts){return opts;}},{key:'getBoundbox',value:function getBoundbox(){var _boundbox=new Box3();var _opt=this._root.opt.controls;var _frustumSize=this._root.renderView.mode=='ortho'?_opt.boxHeight*0.8:_opt.boxHeight;var _width=_opt.boxWidth;var _depth=_opt.boxDepth;//斜边
+var InertialSystem=function(_Events9){_inherits(InertialSystem,_Events9);function InertialSystem(root){_classCallCheck(this,InertialSystem);var _this47=_possibleConstructorReturn(this,(InertialSystem.__proto__||Object.getPrototypeOf(InertialSystem)).call(this));_this47._root=root;var opts=_$1.clone(_this47._root.opt);_this47.coord={};//坐标原点
+_this47.origin=new Vector3(0,0,0);//中心的
+_this47.center=new Vector3(0,0,0);_this47.padding={left:0,top:0,right:0,bottom:0,front:0,back:0};_this47.group=root.renderView.addGroup({name:'InertialSystem'});_$1.extend(true,_this47,_this47.setDefaultOpts(opts));return _this47;}_createClass(InertialSystem,[{key:'setDefaultOpts',value:function setDefaultOpts(opts){return opts;}},{key:'getBoundbox',value:function getBoundbox(){var _boundbox=new Box3();var _opt=this._root.opt.controls;var _frustumSize=this._root.renderView.mode=='ortho'?_opt.boxHeight*0.8:_opt.boxHeight;var _width=_opt.boxWidth;var _depth=_opt.boxDepth;//斜边
 var _hypotenuse=_opt.distance||new Vector3(_width,0,_depth).length();var _ratio=this._root.renderView.getVisableSize(new Vector3(0,0,-_hypotenuse)).ratio;var minX=-_width*0.5+this.padding.left*_ratio;var minY=-_frustumSize*0.5+this.padding.bottom*_ratio;var minZ=this.padding.front-_hypotenuse*0.5-_depth;var maxX=_width*0.5-this.padding.right*_ratio;var maxY=_frustumSize*0.5-this.padding.top*_ratio;var maxZ=-_hypotenuse*0.5+this.padding.back;_boundbox.min.set(minX,minY,minZ);_boundbox.max.set(maxX,maxY,maxZ);return _boundbox;}},{key:'_getWorldPos',value:function _getWorldPos(pos){var posWorld=pos.clone();this.group.updateMatrixWorld();posWorld.applyMatrix4(this.group.matrixWorld);return posWorld;}},{key:'dataToPoint',value:function dataToPoint(data,dir){}},{key:'pointToData',value:function pointToData(){}},{key:'initCoordUI',value:function initCoordUI(){//什么都不做
 return null;}},{key:'draw',value:function draw(){}},{key:'dispose',value:function dispose(){}}]);return InertialSystem;}(Events);/**
     * 把原始的数据
@@ -1113,38 +1002,38 @@ var me=this;_.each(colors,function(color,i){me.colors[i]=color;});return this.co
 //    Orbit - left mouse / touch: one-finger move
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or arrow keys / touch: two-finger move
-var EPS$1=0.000001;var changeEvent={type:'change'};var startEvent={type:'start'};var endEvent={type:'end'};var MOUSE={LEFT:0,MIDDLE:1,RIGHT:2};var STATE={NONE:-1,ROTATE:0,DOLLY:1,PAN:2,TOUCH_ROTATE:3,TOUCH_DOLLY_PAN:4};var OrbitControls=function(_Events10){_inherits(OrbitControls,_Events10);function OrbitControls(object,domElement){_classCallCheck(this,OrbitControls);var _this49=_possibleConstructorReturn(this,(OrbitControls.__proto__||Object.getPrototypeOf(OrbitControls)).call(this));var scope=_this49;_this49.object=object;_this49.domElement=domElement!==undefined?domElement:document;// Set to false to disable this control
-_this49.enabled=true;// "target" sets the location of focus, where the object orbits around
-_this49.target=new Vector3();// How far you can dolly in and out ( PerspectiveCamera only )
-_this49.minDistance=0;_this49.maxDistance=Infinity;// How far you can zoom in and out ( OrthographicCamera only )
-_this49.minZoom=0;_this49.maxZoom=Infinity;// How far you can orbit vertically, upper and lower limits.
+var EPS$1=0.000001;var changeEvent={type:'change'};var startEvent={type:'start'};var endEvent={type:'end'};var MOUSE={LEFT:0,MIDDLE:1,RIGHT:2};var STATE={NONE:-1,ROTATE:0,DOLLY:1,PAN:2,TOUCH_ROTATE:3,TOUCH_DOLLY_PAN:4};var OrbitControls=function(_Events10){_inherits(OrbitControls,_Events10);function OrbitControls(object,domElement){_classCallCheck(this,OrbitControls);var _this48=_possibleConstructorReturn(this,(OrbitControls.__proto__||Object.getPrototypeOf(OrbitControls)).call(this));var scope=_this48;_this48.object=object;_this48.domElement=domElement!==undefined?domElement:document;// Set to false to disable this control
+_this48.enabled=true;// "target" sets the location of focus, where the object orbits around
+_this48.target=new Vector3();// How far you can dolly in and out ( PerspectiveCamera only )
+_this48.minDistance=0;_this48.maxDistance=Infinity;// How far you can zoom in and out ( OrthographicCamera only )
+_this48.minZoom=0;_this48.maxZoom=Infinity;// How far you can orbit vertically, upper and lower limits.
 // Range is 0 to Math.PI radians.
-_this49.minPolarAngle=0;// radians
-_this49.maxPolarAngle=Math.PI;// radians
+_this48.minPolarAngle=0;// radians
+_this48.maxPolarAngle=Math.PI;// radians
 // How far you can orbit horizontally, upper and lower limits.
 // If set, must be a sub-interval of the interval [ - Math.PI, Math.PI ].
-_this49.minAzimuthAngle=-Infinity;// radians
-_this49.maxAzimuthAngle=Infinity;// radians
+_this48.minAzimuthAngle=-Infinity;// radians
+_this48.maxAzimuthAngle=Infinity;// radians
 // Set to true to enable damping (inertia)
 // If damping is enabled, you must call controls.update() in your animation loop
-_this49.enableDamping=false;_this49.dampingFactor=0.25;// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
+_this48.enableDamping=false;_this48.dampingFactor=0.25;// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
 // Set to false to disable zooming
-_this49.enableZoom=true;_this49.zoomSpeed=1.0;// Set to false to disable rotating
-_this49.enableRotate=true;_this49.rotateSpeed=1.0;// Set to false to disable panning
-_this49.enablePan=true;_this49.panSpeed=1.0;_this49.screenSpacePanning=false;// if true, pan in screen-space
-_this49.keyPanSpeed=7.0;// pixels moved per arrow key push
+_this48.enableZoom=true;_this48.zoomSpeed=1.0;// Set to false to disable rotating
+_this48.enableRotate=true;_this48.rotateSpeed=1.0;// Set to false to disable panning
+_this48.enablePan=true;_this48.panSpeed=1.0;_this48.screenSpacePanning=false;// if true, pan in screen-space
+_this48.keyPanSpeed=7.0;// pixels moved per arrow key push
 // Set to true to automatically rotate around the target
 // If auto-rotate is enabled, you must call controls.update() in your animation loop
-_this49.autoRotate=false;_this49.autoRotateSpeed=2.0;// 30 seconds per round when fps is 60
+_this48.autoRotate=false;_this48.autoRotateSpeed=2.0;// 30 seconds per round when fps is 60
 // Set to false to disable use of the keys
-_this49.enableKeys=true;// The four arrow keys
-_this49.keys={LEFT:37,UP:38,RIGHT:39,BOTTOM:40};// Mouse buttons
-_this49.mouseButtons={ORBIT:MOUSE.LEFT,ZOOM:MOUSE.MIDDLE,PAN:MOUSE.RIGHT};// for reset
-_this49.target0=_this49.target.clone();_this49.position0=_this49.object.position.clone();_this49.zoom0=_this49.object.zoom;//
+_this48.enableKeys=true;// The four arrow keys
+_this48.keys={LEFT:37,UP:38,RIGHT:39,BOTTOM:40};// Mouse buttons
+_this48.mouseButtons={ORBIT:MOUSE.LEFT,ZOOM:MOUSE.MIDDLE,PAN:MOUSE.RIGHT};// for reset
+_this48.target0=_this48.target.clone();_this48.position0=_this48.object.position.clone();_this48.zoom0=_this48.object.zoom;//
 // internals
 //
-_this49._state=STATE.NONE;// current position in spherical coordinates
-_this49._spherical=new Spherical();_this49._sphericalDelta=new Spherical();_this49._scale=1;_this49._panOffset=new Vector3();_this49._zoomChanged=false;_this49._rotateStart=new Vector2();_this49._rotateEnd=new Vector2();_this49._rotateDelta=new Vector2();_this49._panStart=new Vector2();_this49._panEnd=new Vector2();_this49._panDelta=new Vector2();_this49._dollyStart=new Vector2();_this49._dollyEnd=new Vector2();_this49._dollyDelta=new Vector2();scope._onContextMenubind=onContextMenu.bind(scope);scope._onMouseDownbind=onMouseDown.bind(scope);scope._onMouseWheelbind=onMouseWheel.bind(scope);scope._onTouchStartbind=onTouchStart.bind(scope);scope._onTouchEndbind=onTouchEnd.bind(scope);scope._onTouchMove=onTouchMove.bind(scope);scope._onKeyDownbind=onKeyDown.bind(scope);scope.domElement.addEventListener('contextmenu',_this49._onContextMenubind,false);scope.domElement.addEventListener('mousedown',_this49._onMouseDownbind,false);scope.domElement.addEventListener('wheel',_this49._onMouseWheelbind,false);scope.domElement.addEventListener('touchstart',_this49._onTouchStartbind,false);scope.domElement.addEventListener('touchend',_this49._onTouchEndbind,false);scope.domElement.addEventListener('touchmove',_this49._onTouchMove,false);window.addEventListener('keydown',_this49._onKeyDownbind,false);_this49.update=function(){var offset=new Vector3();// so camera.up is the orbit axis
+_this48._state=STATE.NONE;// current position in spherical coordinates
+_this48._spherical=new Spherical();_this48._sphericalDelta=new Spherical();_this48._scale=1;_this48._panOffset=new Vector3();_this48._zoomChanged=false;_this48._rotateStart=new Vector2();_this48._rotateEnd=new Vector2();_this48._rotateDelta=new Vector2();_this48._panStart=new Vector2();_this48._panEnd=new Vector2();_this48._panDelta=new Vector2();_this48._dollyStart=new Vector2();_this48._dollyEnd=new Vector2();_this48._dollyDelta=new Vector2();scope._onContextMenubind=onContextMenu.bind(scope);scope._onMouseDownbind=onMouseDown.bind(scope);scope._onMouseWheelbind=onMouseWheel.bind(scope);scope._onTouchStartbind=onTouchStart.bind(scope);scope._onTouchEndbind=onTouchEnd.bind(scope);scope._onTouchMove=onTouchMove.bind(scope);scope._onKeyDownbind=onKeyDown.bind(scope);scope.domElement.addEventListener('contextmenu',_this48._onContextMenubind,false);scope.domElement.addEventListener('mousedown',_this48._onMouseDownbind,false);scope.domElement.addEventListener('wheel',_this48._onMouseWheelbind,false);scope.domElement.addEventListener('touchstart',_this48._onTouchStartbind,false);scope.domElement.addEventListener('touchend',_this48._onTouchEndbind,false);scope.domElement.addEventListener('touchmove',_this48._onTouchMove,false);window.addEventListener('keydown',_this48._onKeyDownbind,false);_this48.update=function(){var offset=new Vector3();// so camera.up is the orbit axis
 var quat=new Quaternion().setFromUnitVectors(object.up,new Vector3(0,1,0));var quatInverse=quat.clone().inverse();var lastPosition=new Vector3();var lastQuaternion=new Quaternion();return function update(){var position=scope.object.position;offset.copy(position).sub(scope.target);// rotate offset to "y-axis-is-up" space
 offset.applyQuaternion(quat);// angle from z-axis around y-axis
 scope._spherical.setFromVector3(offset);if(scope.autoRotate&&this._state===STATE.NONE){rotateLeft.call(scope,getAutoRotationAngle.call(scope));}scope._spherical.theta+=scope._sphericalDelta.theta;scope._spherical.phi+=scope._sphericalDelta.phi;// restrict theta to be between desired limits
@@ -1156,7 +1045,7 @@ offset.applyQuaternion(quatInverse);position.copy(scope.target).add(offset);scop
 // min(camera displacement, camera rotation in radians)^2 > EPS
 // using small-angle approximation cos(x/2) = 1 - x^2 / 8
 if(this._zoomChanged||lastPosition.distanceToSquared(scope.object.position)>EPS$1||8*(1-lastQuaternion.dot(scope.object.quaternion))>EPS$1){scope.fire(changeEvent);lastPosition.copy(scope.object.position);lastQuaternion.copy(scope.object.quaternion);this._zoomChanged=false;return true;}return false;};}();// force an update at start
-_this49.update();return _this49;}//
+_this48.update();return _this48;}//
 // public methods
 //
 _createClass(OrbitControls,[{key:'getPolarAngle',value:function getPolarAngle(){return _spherical.phi;}},{key:'getAzimuthalAngle',value:function getAzimuthalAngle(){return _spherical.theta;}},{key:'saveState',value:function saveState(){var scope=this;scope.target0.copy(scope.target);scope.position0.copy(scope.object.position);scope.zoom0=scope.object.zoom;}},{key:'reset',value:function reset(){var scope=this;scope.target.copy(scope.target0);scope.object.position.copy(scope.position0);scope.object.zoom=scope.zoom0;scope.object.updateProjectionMatrix();scope.fire(changeEvent);scope.update();scope._state=STATE.NONE;}// this method is exposed, but perhaps it would be better if we can make it private...
@@ -1200,7 +1089,7 @@ if(scope.enableRotate===false)return;if(scope._state!==STATE.TOUCH_ROTATE)return
 handleTouchMoveRotate.call(scope,event);break;case 2:// two-fingered touch: dolly-pan
 if(scope.enableZoom===false&&scope.enablePan===false)return;if(scope._state!==STATE.TOUCH_DOLLY_PAN)return;// is this needed?
 handleTouchMoveDollyPan.call(scope,event);break;default:scope._state=STATE.NONE;}}function onTouchEnd(event){var scope=this;if(scope.enabled===false)return;handleTouchEnd.call(scope,event);scope.fire(endEvent);scope._state=STATE.NONE;}function onContextMenu(event){var scope=this;if(scope.enabled===false)return;event.preventDefault();}//避免多次触发
-var isChange=false;var isMouseOver=false;var isMouseOut=false;var isClick=false;var EVENT=null;var Interaction=function(_Events11){_inherits(Interaction,_Events11);function Interaction(scene,camera,domElement){_classCallCheck(this,Interaction);var _this50=_possibleConstructorReturn(this,(Interaction.__proto__||Object.getPrototypeOf(Interaction)).call(this));var scope=_this50;_this50.raycaster=new Raycaster$$1();_this50.currMousePos=new Vector2();_this50.camera=camera;_this50.scene=scene;_this50.target=null;_this50.domElement=domElement!==undefined?domElement:document;_this50._onMouseMovebind=scope.onMouseMove.bind(scope);_this50._onMousedownbind=scope.onMousedown.bind(scope);_this50._onMouseupbind=scope.onMouseup.bind(scope);_this50.domElement.addEventListener('mousemove',_this50._onMouseMovebind,false);_this50.domElement.addEventListener('mousedown',_this50._onMousedownbind,false);_this50.domElement.addEventListener('mouseup',_this50._onMouseupbind,false);return _this50;}_createClass(Interaction,[{key:'update',value:function update(){if(!isChange)return;isChange=false;// update the picking ray with the camera and mouse position
+var isChange=false;var isMouseOver=false;var isMouseOut=false;var isClick=false;var EVENT=null;var Interaction=function(_Events11){_inherits(Interaction,_Events11);function Interaction(scene,camera,domElement){_classCallCheck(this,Interaction);var _this49=_possibleConstructorReturn(this,(Interaction.__proto__||Object.getPrototypeOf(Interaction)).call(this));var scope=_this49;_this49.raycaster=new Raycaster$$1();_this49.currMousePos=new Vector2();_this49.camera=camera;_this49.scene=scene;_this49.target=null;_this49.domElement=domElement!==undefined?domElement:document;_this49._onMouseMovebind=scope.onMouseMove.bind(scope);_this49._onMousedownbind=scope.onMousedown.bind(scope);_this49._onMouseupbind=scope.onMouseup.bind(scope);_this49.domElement.addEventListener('mousemove',_this49._onMouseMovebind,false);_this49.domElement.addEventListener('mousedown',_this49._onMousedownbind,false);_this49.domElement.addEventListener('mouseup',_this49._onMouseupbind,false);return _this49;}_createClass(Interaction,[{key:'update',value:function update(){if(!isChange)return;isChange=false;// update the picking ray with the camera and mouse position
 this.raycaster.setFromCamera(this.currMousePos,this.camera);// calculate objects intersecting the picking ray
 var intersects=this.raycaster.intersectObjects(this.scene.children,true);// for (var i = 0; i < intersects.length; i++) {
 //     intersects[i].object.material.color.set(0xff0000);
@@ -1216,19 +1105,19 @@ scope.domElement.removeEventListener('mousemove',scope._onMouseMovebind,false);/
 // window.removeEventListener('keydown', onKeyDown, false);
 scope._onMousedownbind=null;scope._onMouseupbind=null;scope._onMouseMovebind=null;isChange=false;isMouseOver=false;isMouseOut=false;isClick=false;EVENT=null;}},{key:'onMousedown',value:function onMousedown(){//isClick = true;
 EVENT=event;}},{key:'onMouseup',value:function onMouseup(){isClick=true;isChange=true;this.fire({type:'click',event:event});this.fire({type:'refresh'});EVENT=event;// console.log('click');
-}},{key:'onMouseMove',value:function onMouseMove(event){event.preventDefault();this.currMousePos.x=event.offsetX/this.domElement.clientWidth*2-1;this.currMousePos.y=-(event.offsetY/this.domElement.clientHeight)*2+1;this.fire({type:'move',event:event});this.fire({type:'refresh'});EVENT=event;isChange=true;}}]);return Interaction;}(Events);var _cid=0;var Chart3d=function(_Events12){_inherits(Chart3d,_Events12);function Chart3d(opt){_classCallCheck(this,Chart3d);var _this51=_possibleConstructorReturn(this,(Chart3d.__proto__||Object.getPrototypeOf(Chart3d)).call(this));_this51.domSelector=opt.el;_this51.opt=opt.opts;_this51.data=opt.data;_this51.el=null;_this51.view=null;_this51.domView=null;_this51.stageView=null;_this51.canvasDom=null;//画布DOM元素
-_this51.width=0;//画布的宽
-_this51.height=0;//画布的高 
-_this51.renderer=null;_this51.renderView=null;_this51.app=null;_this51.currCoord=null;_this51._theme=theme.colors.slice(0);//初始化画布
-_this51._createDomContainer(opt.el);//初始化数据
+}},{key:'onMouseMove',value:function onMouseMove(event){event.preventDefault();this.currMousePos.x=event.offsetX/this.domElement.clientWidth*2-1;this.currMousePos.y=-(event.offsetY/this.domElement.clientHeight)*2+1;this.fire({type:'move',event:event});this.fire({type:'refresh'});EVENT=event;isChange=true;}}]);return Interaction;}(Events);var _cid=0;var Chart3d=function(_Events12){_inherits(Chart3d,_Events12);function Chart3d(opt){_classCallCheck(this,Chart3d);var _this50=_possibleConstructorReturn(this,(Chart3d.__proto__||Object.getPrototypeOf(Chart3d)).call(this));_this50.domSelector=opt.el;_this50.opt=opt.opts;_this50.data=opt.data;_this50.el=null;_this50.view=null;_this50.domView=null;_this50.stageView=null;_this50.canvasDom=null;//画布DOM元素
+_this50.width=0;//画布的宽
+_this50.height=0;//画布的高 
+_this50.renderer=null;_this50.renderView=null;_this50.app=null;_this50.currCoord=null;_this50._theme=theme.colors.slice(0);//初始化画布
+_this50._createDomContainer(opt.el);//初始化数据
 //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
 //还是 data = [ {xfiled, 2016, yfield: 1111} ]，这样的格式，
 //通过parse2MatrixData最终转换的是data = [ ['xfield','yfield'] , ['2016', 111]] 这样 chartx的数据格式
 //后面有些地方比如 一些graphs中会使用dataFrame.org，， 那么这个dataFrame.org和_data的区别是，
 //_data是全量数据， dataFrame.org是_data经过dataZoom运算过后的子集
-_this51._data=parse2MatrixData(opt.data);//三维引擎初始化
-_this51.app=new Application();//初始化渲染器
-_this51.renderer=_this51.app._framework.renderer;_this51.DefaultControls={boxWidth:1000,//空间中X的最大值(最大宽度)  
+_this50._data=parse2MatrixData(opt.data);//三维引擎初始化
+_this50.app=new Application();//初始化渲染器
+_this50.renderer=_this50.app._framework.renderer;_this50.DefaultControls={boxWidth:1000,//空间中X的最大值(最大宽度)  
 boxHeight:1000,//空间中Y的最大值(最大高度)  
 boxDepth:1000,//空间中Z的最大值(最大深度)
 distance:1100,//默认相机距离
@@ -1240,20 +1129,19 @@ alpha:40,//绕X轴旋转
 beta:20,//绕Y轴旋转
 gamma:0//绕Z轴旋转
 };//组件管理机制,所有的组件都绘制在这个地方
-_this51.components=[];_this51.inited=false;_this51.dataFrame=_this51._initData(_this51._data,opt.opts);//每个图表的数据集合 都 存放在dataFrame中。
-_this51.init();return _this51;}_createClass(Chart3d,[{key:'init',value:function init(){var me=this;var rendererOpts=_$1.extend({},this.DefaultControls);this.opt.controls=this.opt.controls||{};var controlOpts=this.opt.controls=_$1.extend(rendererOpts,this.opt.controls);this._initRenderer(rendererOpts);var controls=this.orbitControls=new OrbitControls(this.renderView._camera,this.view);var interaction=this.interaction=new Interaction(this.rootStage,this.renderView._camera,this.view);controls.minDistance=controlOpts.minDistance;controls.maxDistance=controlOpts.maxDistance;controls.minZoom=controlOpts.minZoom;controls.maxZoom=controlOpts.maxZoom;controls.enableDamping=true;controls.enablePan=false;controls.enableKeys=false;controls.autoRotate=true;controls.autoRotateSpeed=1.0;//自动旋转时间
+_this50.components=[];_this50.inited=false;_this50.dataFrame=_this50._initData(_this50._data,opt.opts);//每个图表的数据集合 都 存放在dataFrame中。
+_this50.init();return _this50;}_createClass(Chart3d,[{key:'init',value:function init(){var me=this;var rendererOpts=_$1.extend({},this.DefaultControls);this.opt.controls=this.opt.controls||{};var controlOpts=this.opt.controls=_$1.extend(rendererOpts,this.opt.controls);this._initRenderer(rendererOpts);var controls=this.orbitControls=new OrbitControls(this.renderView._camera,this.view);var interaction=this.interaction=new Interaction(this.rootStage,this.renderView._camera,this.view);controls.minDistance=controlOpts.minDistance;controls.maxDistance=controlOpts.maxDistance;controls.minZoom=controlOpts.minZoom;controls.maxZoom=controlOpts.maxZoom;controls.enableDamping=true;controls.enablePan=false;controls.enableKeys=false;controls.autoRotate=true;controls.autoRotateSpeed=1.0;//自动旋转时间
 // window.setTimeout(() => {
 //     controls.autoRotate = false;
 // }, 15000);
 //如果发生交互停止自动旋转
 controls.on('start',onStart);//有交互开始渲染
 this._onChangeBind=onChange.bind(me);controls.on('change',this._onChangeBind);this._onRenderBeforeBind=onRenderBefore.bind(controls);this.app._framework.on('renderbefore',this._onRenderBeforeBind);this._onRenderAfterBind=onRenderAfter.bind(interaction);this.app._framework.on('renderafter',this._onRenderAfterBind);interaction.on('refresh',this._onChangeBind);//启动渲染进程
-this.app.launch();this._onWindowResizeBind=me.resize.bind(me);window.addEventListener('resize',this._onWindowResizeBind,false);//绑定tip事件
-this.bindEvent();}},{key:'setCoord',value:function setCoord(_Coord){//初始化物体的惯性坐标(放在具体的坐标系下)
+this.app.launch();this._onWindowResizeBind=me.resize.bind(me);window.addEventListener('resize',this._onWindowResizeBind,false);}},{key:'setCoord',value:function setCoord(_Coord){//初始化物体的惯性坐标(放在具体的坐标系下)
 if(_Coord===InertialSystem||_Coord.prototype instanceof InertialSystem){this.currCoord=new _Coord(this);this.rootStage.add(this.currCoord.group);}this.currCoord.initCoordUI();}//添加组件
 },{key:'addComponent',value:function addComponent(cmp,opts){//todo 图像是否要分开,目前没有分开共用Component一个基类
-if(cmp.prototype instanceof Component){var instance=new cmp(this,opts);this.components.push(instance);}}},{key:'drawComponent',value:function drawComponent(){var _this52=this;//先绘制坐标系
-this.currCoord.draw();this.components.forEach(function(cmp){_this52.currCoord.group.add(cmp.group);cmp.draw();});}},{key:'draw',value:function draw(){this.drawComponent();this.app._framework.isUpdate=true;}},{key:'getComponent',value:function getComponent(name){var _cmp=null;this.components.forEach(function(cmp){if(cmp.constructor.name==name){_cmp=cmp;}});return _cmp;}},{key:'bindEvent',value:function bindEvent(){var _this53=this;this.on('tipShow',function(e){var tips=_this53.getComponent('Tips');var _e$event=e.event,x=_e$event.clientX,y=_e$event.clientY;if(tips!==null){tips.show({eventInfo:e.data,pos:{x:x,y:y}});}});this.on('tipHide',function(e){var tips=_this53.getComponent('Tips');if(tips!==null){tips.hide();}});this.on('tipMove',function(e){var tips=_this53.getComponent('Tips');var _e$event2=e.event,x=_e$event2.clientX,y=_e$event2.clientY;if(tips!==null){tips.show({eventInfo:e.data,pos:{x:x,y:y}});}});}},{key:'_createDomContainer',value:function _createDomContainer(_domSelector){var viewObj=null;this._cid="chartx3d_"+_cid++;this.el=$$1.query(_domSelector);this.width=this.el.offsetWidth;this.height=this.el.offsetHeight;viewObj=$$1.createView(this.width,this.height,this._cid);this.view=viewObj.view;this.stageView=viewObj.stageView;this.domView=viewObj.domView;this.el.innerHTML="";this.el.appendChild(this.view);this.id="chartx_"+this._cid;this.el.setAttribute("chart_id",this.id);this.el.setAttribute("chartx3d_version","1.0");}},{key:'_initData',value:function _initData(data,opt){return DataFrame.call(this,data,opt);}},{key:'_initRenderer',value:function _initRenderer(rendererOpts){var app=this.app;var renderView=null;this.stageView.appendChild(this.renderer.domElement);this.canvasDom=this.renderer.domElement;if(app.view.length>0){//默认使用第0个view
+if(cmp.prototype instanceof Component){var instance=new cmp(this,opts);this.components.push(instance);}}},{key:'drawComponent',value:function drawComponent(){var _this51=this;//先绘制坐标系
+this.currCoord.draw();this.components.forEach(function(cmp){_this51.currCoord.group.add(cmp.group);cmp.draw();});}},{key:'draw',value:function draw(){this.drawComponent();this.app._framework.isUpdate=true;}},{key:'_createDomContainer',value:function _createDomContainer(_domSelector){var viewObj=null;this._cid="chartx3d_"+_cid++;this.el=$$1.query(_domSelector);this.width=this.el.offsetWidth;this.height=this.el.offsetHeight;viewObj=$$1.createView(this.width,this.height,this._cid);this.view=viewObj.view;this.stageView=viewObj.stageView;this.domView=viewObj.domView;this.el.innerHTML="";this.el.appendChild(this.view);this.id="chartx_"+this._cid;this.el.setAttribute("chart_id",this.id);this.el.setAttribute("chartx3d_version","1.0");}},{key:'_initData',value:function _initData(data,opt){return DataFrame.call(this,data,opt);}},{key:'_initRenderer',value:function _initRenderer(rendererOpts){var app=this.app;var renderView=null;this.stageView.appendChild(this.renderer.domElement);this.canvasDom=this.renderer.domElement;if(app.view.length>0){//默认使用第0个view
 renderView=this.renderView=app.view[0];}this.rootStage=renderView.addGroup({name:'rootStage'});renderView.addObject(this.rootStage);renderView.setSize(this.width,this.height);renderView.setBackground(0xFFFFFF);//默认透视投影
 this.renderView.project(rendererOpts,'perspective');//'ortho' | 'perspective',
 }},{key:'resize',value:function resize(){this.width=this.el.offsetWidth;this.height=this.el.offsetHeight;this.renderView.resize(this.width,this.height,this.opt.controls.boxHeight);}//ind 如果有就获取对应索引的具体颜色值
@@ -1302,16 +1190,16 @@ this.components.forEach(function(cmp){cmp.dispose();});//初始化渲染状态
 this.renderer._state.reset();//清理渲染数据
 this.renderer.dispose();//清理事件
 this.orbitControls.off('start',onStart);this.orbitControls.off('change',this._onChangeBind);this.app._framework.off('renderbefore',this._onRenderBeforeBind);this._onRenderBeforeBind=null;this.app._framework.off('renderafter',this._onRenderAfterBind);this._onRenderAfterBind=null;this.interaction.off('refresh',this._onChangeBind);this._onChangeBind=null;window.removeEventListener('resize',this._onWindowResizeBind,false);this._onWindowResizeBind=null;this.interaction.dispose();this.orbitControls.dispose();this.app.dispose();//todo 内存对象清除优化
-}}]);return Chart3d;}(Events);function onStart(){this.autoRotate=false;}function onChange(e){this.app._framework.isUpdate=true;}function onRenderBefore(){if(this.position0.equals(this.object.position)&&this.zoom0===this.object.zoom){return;}this.saveState();this.update();}function onRenderAfter(){this.update();}var AxisLine=function(_Component3){_inherits(AxisLine,_Component3);function AxisLine(_coordSystem,opts){_classCallCheck(this,AxisLine);// enabled: 1,
+}}]);return Chart3d;}(Events);function onStart(){this.autoRotate=false;}function onChange(e){this.app._framework.isUpdate=true;}function onRenderBefore(){if(this.position0.equals(this.object.position)&&this.zoom0===this.object.zoom){return;}this.saveState();this.update();}function onRenderAfter(){this.update();}var AxisLine=function(_Component2){_inherits(AxisLine,_Component2);function AxisLine(_coordSystem,opts){_classCallCheck(this,AxisLine);// enabled: 1,
 // lineWidth: 1,
 // strokeStyle: '#cccccc'
 //轴的起点
-var _this54=_possibleConstructorReturn(this,(AxisLine.__proto__||Object.getPrototypeOf(AxisLine)).call(this,_coordSystem));_this54.origin=new Vector3(0,0,0);//轴的方向
-_this54.dir=new Vector3(1,0,0);//轴的长度
-_this54.length=1;//轴线的宽带
-_this54.lineWidth=opts.lineWidth||2;//轴线的颜色 (默认黑色)
-_this54.color=opts.strokeStyle;_this54.axis=null;//不可见    
-_this54.group.visible=!!opts.enabled;return _this54;}_createClass(AxisLine,[{key:'defaultStyle',value:function defaultStyle(){//todo
+var _this52=_possibleConstructorReturn(this,(AxisLine.__proto__||Object.getPrototypeOf(AxisLine)).call(this,_coordSystem));_this52.origin=new Vector3(0,0,0);//轴的方向
+_this52.dir=new Vector3(1,0,0);//轴的长度
+_this52.length=1;//轴线的宽带
+_this52.lineWidth=opts.lineWidth||2;//轴线的颜色 (默认黑色)
+_this52.color=opts.strokeStyle;_this52.axis=null;//不可见    
+_this52.group.visible=!!opts.enabled;return _this52;}_createClass(AxisLine,[{key:'defaultStyle',value:function defaultStyle(){//todo
 }},{key:'setStyle',value:function setStyle(){//todo
 }},{key:'setOrigin',value:function setOrigin(pos){this.origin.copy(pos);}},{key:'getOrigin',value:function getOrigin(){return this.origin.clone();}},{key:'setDir',value:function setDir(dir){this.dir.copy(dir);}},{key:'setLength',value:function setLength(length){this.length=length;}},{key:'setGroupName',value:function setGroupName(name){this.group.name=name;}},{key:'drawStart',value:function drawStart(){this.axis=this._root.renderView.createLine(this.origin,this.dir,this.length,this.lineWidth,this.color);}},{key:'update',value:function update(){var pos=this.getOrigin();this.axis.traverse(function(obj){if(obj.isLine2){obj.position.copy(pos);}});}},{key:'draw',value:function draw(){this.group.add(this.axis);}},{key:'dispose',value:function dispose(){var remove=[];this.group.traverse(function(obj){if(obj.isLine2){if(obj.geometry){obj.geometry.dispose();}if(obj.material){obj.material.dispose();}remove.push(obj);}});while(remove.length){var obj=remove.pop();obj.parent.remove(obj);}}// getBoundBox() {
 //     let result = new Box3();
@@ -1346,13 +1234,13 @@ _this54.group.visible=!!opts.enabled;return _this54;}_createClass(AxisLine,[{key
 //     // distance: 2,
 //     offset: 2,
 // };
-var TickLines=function(_Component4){_inherits(TickLines,_Component4);function TickLines(_coordSystem,opts){_classCallCheck(this,TickLines);//点的起点位置集合
-var _this55=_possibleConstructorReturn(this,(TickLines.__proto__||Object.getPrototypeOf(TickLines)).call(this,_coordSystem));_this55.origins=[];//刻度线的绘制方向
-_this55.dir=new Vector3();//刻度线的宽带
-_this55.lineWidth=opts.lineWidth;//刻度线的长度
+var TickLines=function(_Component3){_inherits(TickLines,_Component3);function TickLines(_coordSystem,opts){_classCallCheck(this,TickLines);//点的起点位置集合
+var _this53=_possibleConstructorReturn(this,(TickLines.__proto__||Object.getPrototypeOf(TickLines)).call(this,_coordSystem));_this53.origins=[];//刻度线的绘制方向
+_this53.dir=new Vector3();//刻度线的宽带
+_this53.lineWidth=opts.lineWidth;//刻度线的长度
 //todo 轴线的长度是个数组 通过像素值转换
-_this55.length=opts.lineLength;_this55.color=opts.strokeStyle;_this55.offset=opts.offset;_this55._tickLine=null;_this55.group.visible=!!opts.enabled;return _this55;}_createClass(TickLines,[{key:'initData',value:function initData(axis,attribute,fn){var _this56=this;var me=this;var _dir=new Vector3();var _offset=_dir.copy(me.dir).multiplyScalar(this._offset);this.origins=[];attribute.getSection().forEach(function(num,index){//起点
-var val=fn.call(_this56._coordSystem,num);var startPoint=axis.dir.clone().multiplyScalar(val);startPoint.add(axis.origin);startPoint.add(_offset);me.origins.push(startPoint);});}},{key:'setDir',value:function setDir(dir){this.dir=dir;}},{key:'drawStart',value:function drawStart(){this._tickLine=this._root.renderView.createLine(this.origins,this.dir,this._length,this.lineWidth,this.color);}},{key:'update',value:function update(){var origins=this.origins;var triangleVertices=[];var endPoint=null;var direction=this.dir.clone();var length=this._length;var i=0;this._tickLine.traverse(function(obj){if(obj.isLine2){triangleVertices=[];triangleVertices.push([0,0,0]);endPoint=new Vector3();endPoint.copy(direction);endPoint.multiplyScalar(length);triangleVertices.push(endPoint.toArray());obj.geometry.setPositions(_$1.flatten(triangleVertices));obj.position.copy(origins[i]);i++;}});}},{key:'draw',value:function draw(){this.group.add(this._tickLine);}// getBoundBox() {
+_this53.length=opts.lineLength;_this53.color=opts.strokeStyle;_this53.offset=opts.offset;_this53._tickLine=null;_this53.group.visible=!!opts.enabled;return _this53;}_createClass(TickLines,[{key:'initData',value:function initData(axis,attribute,fn){var _this54=this;var me=this;var _dir=new Vector3();var _offset=_dir.copy(me.dir).multiplyScalar(this._offset);this.origins=[];attribute.getSection().forEach(function(num,index){//起点
+var val=fn.call(_this54._coordSystem,num);var startPoint=axis.dir.clone().multiplyScalar(val);startPoint.add(axis.origin);startPoint.add(_offset);me.origins.push(startPoint);});}},{key:'setDir',value:function setDir(dir){this.dir=dir;}},{key:'drawStart',value:function drawStart(){this._tickLine=this._root.renderView.createLine(this.origins,this.dir,this._length,this.lineWidth,this.color);}},{key:'update',value:function update(){var origins=this.origins;var triangleVertices=[];var endPoint=null;var direction=this.dir.clone();var length=this._length;var i=0;this._tickLine.traverse(function(obj){if(obj.isLine2){triangleVertices=[];triangleVertices.push([0,0,0]);endPoint=new Vector3();endPoint.copy(direction);endPoint.multiplyScalar(length);triangleVertices.push(endPoint.toArray());obj.geometry.setPositions(_$1.flatten(triangleVertices));obj.position.copy(origins[i]);i++;}});}},{key:'draw',value:function draw(){this.group.add(this._tickLine);}// getBoundBox() {
 //     let result = new Box3();
 //     result.makeEmpty();
 //     this._tickLine.traverse(function (mesh) {
@@ -1374,10 +1262,10 @@ var val=fn.call(_this56._coordSystem,num);var startPoint=axis.dir.clone().multip
 //     lineHeight: 1,
 //     offset: 2     //和刻度线的距离
 // }
-var TickTexts=function(_Component5){_inherits(TickTexts,_Component5);function TickTexts(_coordSystem,opts){_classCallCheck(this,TickTexts);//起点位置集合
-var _this57=_possibleConstructorReturn(this,(TickTexts.__proto__||Object.getPrototypeOf(TickTexts)).call(this,_coordSystem));_this57.origins=[];_this57.texts=[];_this57.fontColor=opts.fontColor||'#333';_this57.fontSize=opts.fontSize||12;_this57.rotation=0;_this57.origin=null;_this57.textAlign=opts.textAlign;_this57.verticalAlign=opts.verticalAlign;_this57.dir=new Vector3();_this57.offset=new(Function.prototype.bind.apply(Vector3,[null].concat(_toConsumableArray(Object.values(opts.offset)))))()||new Vector3();_this57._tickTextGroup=null;_this57._tickTextGroup=_this57._root.renderView.addGroup({name:'tickTexts'});_this57.group.visible=!!opts.enabled;_this57.group.add(_this57._tickTextGroup);return _this57;}_createClass(TickTexts,[{key:'initData',value:function initData(axis,attribute,fn){var _this58=this;var me=this;var _dir=me.dir.clone();//let _offset = _dir.multiplyScalar(this.offset);
+var TickTexts=function(_Component4){_inherits(TickTexts,_Component4);function TickTexts(_coordSystem,opts){_classCallCheck(this,TickTexts);//起点位置集合
+var _this55=_possibleConstructorReturn(this,(TickTexts.__proto__||Object.getPrototypeOf(TickTexts)).call(this,_coordSystem));_this55.origins=[];_this55.texts=[];_this55.fontColor=opts.fontColor||'#333';_this55.fontSize=opts.fontSize||12;_this55.rotation=0;_this55.origin=null;_this55.textAlign=opts.textAlign;_this55.verticalAlign=opts.verticalAlign;_this55.dir=new Vector3();_this55.offset=new(Function.prototype.bind.apply(Vector3,[null].concat(_toConsumableArray(Object.values(opts.offset)))))()||new Vector3();_this55._tickTextGroup=null;_this55._tickTextGroup=_this55._root.renderView.addGroup({name:'tickTexts'});_this55.group.visible=!!opts.enabled;_this55.group.add(_this55._tickTextGroup);return _this55;}_createClass(TickTexts,[{key:'initData',value:function initData(axis,attribute,fn){var _this56=this;var me=this;var _dir=me.dir.clone();//let _offset = _dir.multiplyScalar(this.offset);
 var _offset=this.offset;me.origins=[];attribute.getSection().forEach(function(num,index){//起点
-var val=fn.call(_this58._coordSystem,num);var startPoint=axis.dir.clone().multiplyScalar(val);startPoint.add(axis.origin);startPoint.add(_offset);me.origins.push(startPoint);});me.updataOrigins=this._updataOrigins(axis,attribute,fn);}},{key:'setDir',value:function setDir(dir){this.dir=dir;}},{key:'setTextAlign',value:function setTextAlign(align){this.textAlign=align;}},{key:'setVerticalAlign',value:function setVerticalAlign(align){this.verticalAlign=align;}},{key:'_updataOrigins',value:function _updataOrigins(axis,attribute,fn){var _axis=axis;var _attribute=attribute;var _fn=fn;return function(){this.initData(_axis,_attribute,_fn);};}},{key:'drawStart',value:function drawStart(texts){var me=this;(texts||[]).forEach(function(text,index){var obj=me._root.renderView.createTextSprite(text.toString(),me.fontSize,me.fontColor);//obj.userData.lastScale = new Vector3();
+var val=fn.call(_this56._coordSystem,num);var startPoint=axis.dir.clone().multiplyScalar(val);startPoint.add(axis.origin);startPoint.add(_offset);me.origins.push(startPoint);});me.updataOrigins=this._updataOrigins(axis,attribute,fn);}},{key:'setDir',value:function setDir(dir){this.dir=dir;}},{key:'setTextAlign',value:function setTextAlign(align){this.textAlign=align;}},{key:'setVerticalAlign',value:function setVerticalAlign(align){this.verticalAlign=align;}},{key:'_updataOrigins',value:function _updataOrigins(axis,attribute,fn){var _axis=axis;var _attribute=attribute;var _fn=fn;return function(){this.initData(_axis,_attribute,_fn);};}},{key:'drawStart',value:function drawStart(texts){var me=this;(texts||[]).forEach(function(text,index){var obj=me._root.renderView.createTextSprite(text.toString(),me.fontSize,me.fontColor);//obj.userData.lastScale = new Vector3();
 var oldFn=obj.onBeforeRender;obj.onBeforeRender=function(){oldFn.apply(obj,arguments);// if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
 // this.userData.lastScale.copy(this.scale.clone().floor());
 me.updataOrigins();obj.position.copy(me.origins[index]);//obj.position.add(me.offset);
@@ -1411,28 +1299,28 @@ obj.position.add(new Vector3(0,this.scale.y*0.5,0));}//console.log(`sprite ${thi
 //     });
 //     return result;
 // }
-},{key:'dispose',value:function dispose(){var remove=[];this.group.traverse(function(obj){if(obj.isTextSprite){if(obj.geometry){obj.geometry.dispose();}if(obj.material){obj.material.dispose();if(obj.material.map){obj.material.map.dispose();}}remove.push(obj);}});while(remove.length){var obj=remove.pop();obj.parent.remove(obj);}}}]);return TickTexts;}(Component);var YAxis=function(_Component6){_inherits(YAxis,_Component6);function YAxis(_cartesionUI){var axisType=arguments.length>1&&arguments[1]!==undefined?arguments[1]:'left';_classCallCheck(this,YAxis);var _this59=_possibleConstructorReturn(this,(YAxis.__proto__||Object.getPrototypeOf(YAxis)).call(this,_cartesionUI._coordSystem));var opt=_this59._opt=_cartesionUI;//this._coord = _coord || {};
-_this59._cartesionUI=_cartesionUI;_this59.width=null;//第一次计算后就会有值
-_this59.yMaxHeight=0;//y轴最大高
-_this59.height=0;//y轴第一条线到原点的高
-_this59.maxW=0;//最大文本的 width
-_this59.field=[];//这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
-_this59.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this59._title=null;//this.label对应的文本对象
-_this59.enabled=true;_this59.tickLine={//刻度线
+},{key:'dispose',value:function dispose(){var remove=[];this.group.traverse(function(obj){if(obj.isTextSprite){if(obj.geometry){obj.geometry.dispose();}if(obj.material){obj.material.dispose();if(obj.material.map){obj.material.map.dispose();}}remove.push(obj);}});while(remove.length){var obj=remove.pop();obj.parent.remove(obj);}}}]);return TickTexts;}(Component);var YAxis=function(_Component5){_inherits(YAxis,_Component5);function YAxis(_cartesionUI){var axisType=arguments.length>1&&arguments[1]!==undefined?arguments[1]:'left';_classCallCheck(this,YAxis);var _this57=_possibleConstructorReturn(this,(YAxis.__proto__||Object.getPrototypeOf(YAxis)).call(this,_cartesionUI._coordSystem));var opt=_this57._opt=_cartesionUI;//this._coord = _coord || {};
+_this57._cartesionUI=_cartesionUI;_this57.width=null;//第一次计算后就会有值
+_this57.yMaxHeight=0;//y轴最大高
+_this57.height=0;//y轴第一条线到原点的高
+_this57.maxW=0;//最大文本的 width
+_this57.field=[];//这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
+_this57.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this57._title=null;//this.label对应的文本对象
+_this57.enabled=true;_this57.tickLine={//刻度线
 enabled:1,lineWidth:1,//线宽像素
 lineLength:20,//线长(空间单位)
 strokeStyle:'#333',offset:0//空间单位
-};_this59.axisLine={//轴线
+};_this57.axisLine={//轴线
 enabled:1,lineWidth:1,//线宽像素
-strokeStyle:'#333'};_this59.label={enabled:1,fontColor:'#333',fontSize:12,format:null,rotation:0,textAlign:"right",//水平方向对齐: left  right center 
+strokeStyle:'#333'};_this57.label={enabled:1,fontColor:'#333',fontSize:12,format:null,rotation:0,textAlign:"right",//水平方向对齐: left  right center 
 verticalAlign:'middle',//垂直方向对齐 top bottom middle
 lineHeight:1,offset:{x:0,y:0,z:40//和刻度线的距离
 }};// if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
 //     //如果是横向直角坐标系图
 //     this.label.rotation = 90;
 // };
-_this59.pos={x:0,y:0};_this59.align="left";//yAxis轴默认是再左边，但是再双轴的情况下，可能会right
-_this59.layoutData=[];//dataSection 对应的layout数据{y:-100, value:'1000'}
+_this57.pos={x:0,y:0};_this57.align="left";//yAxis轴默认是再左边，但是再双轴的情况下，可能会right
+_this57.layoutData=[];//dataSection 对应的layout数据{y:-100, value:'1000'}
 // this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
 // this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
 //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
@@ -1440,20 +1328,20 @@ _this59.layoutData=[];//dataSection 对应的layout数据{y:-100, value:'1000'}
 //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
 // this.middleweight = null;
 //this.dataOrg = data.org || []; //源数据
-_this59.baseNumber=null;//默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
-_this59.basePoint=null;//value为 baseNumber 的point {x,y}
-_this59.min=null;_this59.max=null;//后面加的，目前还没用
-_this59._yOriginTrans=0;//当设置的 baseNumber 和datasection的min不同的时候，
+_this57.baseNumber=null;//默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
+_this57.basePoint=null;//value为 baseNumber 的point {x,y}
+_this57.min=null;_this57.max=null;//后面加的，目前还没用
+_this57._yOriginTrans=0;//当设置的 baseNumber 和datasection的min不同的时候，
 //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
 //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-_this59.filter=null;//function(params){}; 
-_this59.isH=false;//是否横向
-_this59.animation=false;_this59.sort=null;//"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
-_this59.layoutType="proportion";// rule , peak, proportion
-if(axisType=='left'){_$1.extend(true,_this59,_this59._opt.yAxis[0]);// this.label.enabled = this.enabled && this.label.enabled;
+_this57.filter=null;//function(params){}; 
+_this57.isH=false;//是否横向
+_this57.animation=false;_this57.sort=null;//"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
+_this57.layoutType="proportion";// rule , peak, proportion
+if(axisType=='left'){_$1.extend(true,_this57,_this57._opt.yAxis[0]);// this.label.enabled = this.enabled && this.label.enabled;
 // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
 // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-_this59.init(opt,_this59._coordSystem.yAxisAttribute);}_this59.group.visible=!!_this59.enabled;_this59._getName();return _this59;}_createClass(YAxis,[{key:'init',value:function init(opt,data){var me=this;//extend会设置好this.field
+_this57.init(opt,_this57._coordSystem.yAxisAttribute);}_this57.group.visible=!!_this57.enabled;_this57._getName();return _this57;}_createClass(YAxis,[{key:'init',value:function init(opt,data){var me=this;//extend会设置好this.field
 //先要矫正子啊field确保一定是个array
 if(!_$1.isArray(this.field)){this.field=[this.field];}this._initData(data);this._onChangeBind=function(){me._initModules();};this._root.orbitControls.on('change',this._onChangeBind);me._initModules();}},{key:'_initModules',value:function _initModules(){if(!this.enabled)return;var _axisDir=new Vector3(0,1,0);var _coordSystem=this._coordSystem;var coordBoundBox=_coordSystem.getBoundbox();var _size=new Vector3();//空间盒子的大小
 coordBoundBox.getSize(_size);var width=_size.x,height=_size.y,depth=_size.z;var origin=_coordSystem.getOrigin();var _tickLineDir=new Vector3(0,0,1);var _faceInfo=this._cartesionUI.getFaceInfo();var _textAlign=this.label.textAlign;var _offsetZ=this.label.offset.z+this.axisLine.lineWidth+this.tickLine.lineLength+this.tickLine.offset;if(_faceInfo.left.visible){if(_faceInfo.back.visible){origin=_coordSystem.getOrigin();_tickLineDir=new Vector3(0,0,1);_textAlign='right';}else{origin=new Vector3(0,0,-depth);_tickLineDir=new Vector3(0,0,-1);_textAlign='left';_offsetZ*=-1;}}else{if(_faceInfo.back.visible){origin=new Vector3(width,0,0);_tickLineDir=new Vector3(0,0,1);_textAlign='left';}else{origin=new Vector3(width,0,-depth);_tickLineDir=new Vector3(0,0,-1);_textAlign='right';_offsetZ*=-1;}}if(this._axisLine){if(this._axisLine.getOrigin().equals(origin)){return;}// this._axisLine.dispose();
@@ -1533,35 +1421,35 @@ this._maxTextWidth=_maxTextWidth;var ratio=_coordSystem.getRatioPixelToWorldByOr
 // if (this._title) {
 //     this.height += this._title.getTextHeight()
 // };
-}}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return YAxis;}(Component);var XAxis=function(_Component7){_inherits(XAxis,_Component7);function XAxis(_cartesionUI){_classCallCheck(this,XAxis);var _this60=_possibleConstructorReturn(this,(XAxis.__proto__||Object.getPrototypeOf(XAxis)).call(this,_cartesionUI._coordSystem));var opt=_this60._opt=_cartesionUI;_this60._cartesionUI=_cartesionUI;_this60.width=0;_this60.height=0;_this60.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this60._title=null;//this.title对应的文本对象
-_this60.enabled=true;_this60.axisLine={enabled:1,//是否有轴线
-lineWidth:1,strokeStyle:'#333'};_this60.tickLine={enabled:1,lineWidth:1,//线宽像素
+}}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return YAxis;}(Component);var XAxis=function(_Component6){_inherits(XAxis,_Component6);function XAxis(_cartesionUI){_classCallCheck(this,XAxis);var _this58=_possibleConstructorReturn(this,(XAxis.__proto__||Object.getPrototypeOf(XAxis)).call(this,_cartesionUI._coordSystem));var opt=_this58._opt=_cartesionUI;_this58._cartesionUI=_cartesionUI;_this58.width=0;_this58.height=0;_this58.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this58._title=null;//this.title对应的文本对象
+_this58.enabled=true;_this58.axisLine={enabled:1,//是否有轴线
+lineWidth:1,strokeStyle:'#333'};_this58.tickLine={enabled:1,lineWidth:1,//线宽像素
 lineLength:20,//线长(空间单位)
 strokeStyle:'#333',offset:0//空间单位
-};_this60.label={enabled:1,fontColor:'#333',fontSize:12,rotation:0,format:null,offset:{x:0,y:0,z:40},textAlign:"center",//水平方向对齐: left  right center 
+};_this58.label={enabled:1,fontColor:'#333',fontSize:12,rotation:0,format:null,offset:{x:0,y:0,z:40},textAlign:"center",//水平方向对齐: left  right center 
 verticalAlign:'top',//垂直方向对齐 top bottom middle
 lineHeight:1,evade:true//是否开启逃避检测，目前的逃避只是隐藏
 };if(opt.isH&&(!opt.label||opt.label.rotaion===undefined)){//如果是横向直角坐标系图
-_this60.label.rotation=90;}_this60.maxTxtH=0;_this60.pos={x:0,y:0};// this.dataOrg = []; //源数据
-_this60.dataSection=[];//默认就等于源数据,也可以用户自定义传入来指定
-_this60.layoutData=[];//{x:100, value:'1000',visible:true}
-_this60.sprite=null;//过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+_this58.label.rotation=90;}_this58.maxTxtH=0;_this58.pos={x:0,y:0};// this.dataOrg = []; //源数据
+_this58.dataSection=[];//默认就等于源数据,也可以用户自定义传入来指定
+_this58.layoutData=[];//{x:100, value:'1000',visible:true}
+_this58.sprite=null;//过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
 //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-_this60.filter=null;//function(params){}; 
-_this60.isH=false;//是否为横向转向的x轴
-_this60.animation=false;//layoutType == "proportion"的时候才有效
-_this60.maxVal=null;_this60.minVal=null;_this60.ceilWidth=0;//x方向一维均分长度, layoutType == peak 的时候要用到
-_this60.layoutType="rule";// rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+_this58.filter=null;//function(params){}; 
+_this58.isH=false;//是否为横向转向的x轴
+_this58.animation=false;//layoutType == "proportion"的时候才有效
+_this58.maxVal=null;_this58.minVal=null;_this58.ceilWidth=0;//x方向一维均分长度, layoutType == peak 的时候要用到
+_this58.layoutType="rule";// rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
 //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
 //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
 //function
-_this60.trimLayout=null;_this60.posParseToInt=false;//比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-_$1.extend(true,_this60,opt.xAxis);// this.label.enabled = this.enabled && this.label.enabled;
+_this58.trimLayout=null;_this58.posParseToInt=false;//比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+_$1.extend(true,_this58,opt.xAxis);// this.label.enabled = this.enabled && this.label.enabled;
 // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
 // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-_this60.init(opt,_this60._coordSystem.xAxisAttribute);//xAxis的field只有一个值,
+_this58.init(opt,_this58._coordSystem.xAxisAttribute);//xAxis的field只有一个值,
 //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
-_this60.group.visible=!!_this60.enabled;return _this60;}_createClass(XAxis,[{key:'init',value:function init(opt,data){var me=this;// this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+_this58.group.visible=!!_this58.enabled;return _this58;}_createClass(XAxis,[{key:'init',value:function init(opt,data){var me=this;// this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
 // this.group.add(this.rulesGroup);
 this._initHandle(data);this._onChangeBind=function(){me._initModules();};this._root.orbitControls.on('change',this._onChangeBind);me._initModules();}},{key:'_initHandle',value:function _initHandle(data){var me=this;if(data&&data.field){this.field=data.field;}// if (data && data.data) {
 //     this.dataOrg = _.flatten(data.data);
@@ -1612,38 +1500,38 @@ var me=this;var _coordSystem=me._coordSystem;if(!me.enabled){me.height=0;}else{v
 // };
 }}//设置布局
 },{key:'setLayout',value:function setLayout(opt){}},{key:'draw',value:function draw(){this._axisLine.draw();this._tickLine.draw();this._tickText.draw();//console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
-}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return XAxis;}(Component);var ZAxis=function(_Component8){_inherits(ZAxis,_Component8);function ZAxis(_cartesionUI){_classCallCheck(this,ZAxis);var _this61=_possibleConstructorReturn(this,(ZAxis.__proto__||Object.getPrototypeOf(ZAxis)).call(this,_cartesionUI._coordSystem));var opt=_this61._opt=_cartesionUI;_this61._cartesionUI=_cartesionUI;//this._coord = _coord || {};
-_this61.width=0;_this61.height=0;_this61.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this61._title=null;//this.title对应的文本对象
-_this61.enabled=true;_this61.tickLine={enabled:1,lineWidth:1,//线宽像素
+}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return XAxis;}(Component);var ZAxis=function(_Component7){_inherits(ZAxis,_Component7);function ZAxis(_cartesionUI){_classCallCheck(this,ZAxis);var _this59=_possibleConstructorReturn(this,(ZAxis.__proto__||Object.getPrototypeOf(ZAxis)).call(this,_cartesionUI._coordSystem));var opt=_this59._opt=_cartesionUI;_this59._cartesionUI=_cartesionUI;//this._coord = _coord || {};
+_this59.width=0;_this59.height=0;_this59.title={content:"",shapeType:"text",fontColor:'#999',fontSize:12,offset:2,textAlign:"center",textBaseline:"middle",strokeStyle:null,lineHeight:0};_this59._title=null;//this.title对应的文本对象
+_this59.enabled=true;_this59.tickLine={enabled:1,lineWidth:1,//线宽像素
 lineLength:20,//线长(空间单位)
 strokeStyle:'#333',offset:0//空间单位
-};_this61.axisLine={enabled:1,//是否有轴线
-lineWidth:1,strokeStyle:'#333'};_this61.label={enabled:1,fontColor:'#333',fontSize:12,rotation:0,format:null,offset:{x:40,y:0,z:0},textAlign:"right",//水平方向对齐: left  right center 
+};_this59.axisLine={enabled:1,//是否有轴线
+lineWidth:1,strokeStyle:'#333'};_this59.label={enabled:1,fontColor:'#333',fontSize:12,rotation:0,format:null,offset:{x:40,y:0,z:0},textAlign:"right",//水平方向对齐: left  right center 
 verticalAlign:'middle',//垂直方向对齐 top bottom middle
 lineHeight:1//  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
 };if(opt.isH&&(!opt.label||opt.label.rotaion===undefined)){//如果是横向直角坐标系图
-_this61.label.rotation=90;}// this.depth = 500;
-_this61.maxTxtH=0;_this61.pos={x:0,y:0};//this.dataOrg = []; //源数据
-_this61.dataSection=[];//默认就等于源数据,也可以用户自定义传入来指定
-_this61.layoutData=[];//{x:100, value:'1000',visible:true}
-_this61.sprite=null;//过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+_this59.label.rotation=90;}// this.depth = 500;
+_this59.maxTxtH=0;_this59.pos={x:0,y:0};//this.dataOrg = []; //源数据
+_this59.dataSection=[];//默认就等于源数据,也可以用户自定义传入来指定
+_this59.layoutData=[];//{x:100, value:'1000',visible:true}
+_this59.sprite=null;//过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
 //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-_this61.filter=null;//function(params){}; 
-_this61.isH=false;//是否为横向转向的x轴
-_this61.animation=false;//layoutType == "proportion"的时候才有效
-_this61.maxVal=null;_this61.minVal=null;_this61.ceilWidth=0;//x方向一维均分长度, layoutType == peak 的时候要用到
-_this61.layoutType="peak";// rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+_this59.filter=null;//function(params){}; 
+_this59.isH=false;//是否为横向转向的x轴
+_this59.animation=false;//layoutType == "proportion"的时候才有效
+_this59.maxVal=null;_this59.minVal=null;_this59.ceilWidth=0;//x方向一维均分长度, layoutType == peak 的时候要用到
+_this59.layoutType="peak";// rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
 //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
 //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
 //function
-_this61.trimLayout=null;// if (!opt._coord.zAxisAttribute.section.length) {
+_this59.trimLayout=null;// if (!opt._coord.zAxisAttribute.section.length) {
 //     this.depth = 50;
 // }
-_this61.posParseToInt=false;//比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-_$1.extend(true,_this61,opt.zAxis);// this.label.enabled = this.enabled && this.label.enabled;
+_this59.posParseToInt=false;//比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+_$1.extend(true,_this59,opt.zAxis);// this.label.enabled = this.enabled && this.label.enabled;
 // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
 // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-_this61.init(opt,_this61._coordSystem.zAxisAttribute);_this61.group.visible=!!_this61.enabled;return _this61;}_createClass(ZAxis,[{key:'init',value:function init(opt,data){var me=this;// this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+_this59.init(opt,_this59._coordSystem.zAxisAttribute);_this59.group.visible=!!_this59.enabled;return _this59;}_createClass(ZAxis,[{key:'init',value:function init(opt,data){var me=this;// this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
 // this.group.add(this.rulesGroup);
 this._initHandle(data);this._onChangeBind=function(){me._initModules();};this._root.orbitControls.on('change',this._onChangeBind);me._initModules();}},{key:'_initHandle',value:function _initHandle(data){var me=this;if(data&&data.field){this.field=data.field;}// if (data && data.data) {
 //     this.dataOrg = _.flatten(data.data);
@@ -1726,15 +1614,15 @@ var width=TextTexture.getTextWidth(me._formatTextSection,['normal','normal',this
 // };
 }}//设置布局
 },{key:'setLayout',value:function setLayout(opt){}},{key:'draw',value:function draw(){this._axisLine.draw();this._tickLine.draw();this._tickText.draw();// console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
-}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return ZAxis;}(Component);var Grid=function(_Component9){_inherits(Grid,_Component9);function Grid(_cartesionUI){_classCallCheck(this,Grid);var _this62=_possibleConstructorReturn(this,(Grid.__proto__||Object.getPrototypeOf(Grid)).call(this,_cartesionUI._coordSystem));var opt=_this62._opt=_cartesionUI;// this.width = 0;
+}},{key:'dispose',value:function dispose(){this._axisLine.dispose();this._tickLine.dispose();this._tickText.dispose();this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return ZAxis;}(Component);var Grid=function(_Component8){_inherits(Grid,_Component8);function Grid(_cartesionUI){_classCallCheck(this,Grid);var _this60=_possibleConstructorReturn(this,(Grid.__proto__||Object.getPrototypeOf(Grid)).call(this,_cartesionUI._coordSystem));var opt=_this60._opt=_cartesionUI;// this.width = 0;
 // this.height = 0;
 // this.pos = {
 //     x: 0,
 //     y: 0
 // };
-_this62._cartesionUI=_cartesionUI;_this62.enabled=true;_this62.line={//x方向上的线
+_this60._cartesionUI=_cartesionUI;_this60.enabled=true;_this60.line={//x方向上的线
 enabled:true,lineType:'solid',//线条类型(dashed = 虚线 | solid = 实线)
-strokeStyle:'#e5e5e5'};_this62.fill={enabled:false,fillStyle:'#ccc',alpha:0.1};_$1.extend(true,_this62,opt.grid);_this62.init();return _this62;}_createClass(Grid,[{key:'init',value:function init(){var me=this;this.leftGroup=this._root.renderView.addGroup({name:'leftGroup'});//x轴上的线集合
+strokeStyle:'#e5e5e5'};_this60.fill={enabled:false,fillStyle:'#ccc',alpha:0.1};_$1.extend(true,_this60,opt.grid);_this60.init();return _this60;}_createClass(Grid,[{key:'init',value:function init(){var me=this;this.leftGroup=this._root.renderView.addGroup({name:'leftGroup'});//x轴上的线集合
 this.rightGroup=this._root.renderView.addGroup({name:'rightGroup'});this.topGroup=this._root.renderView.addGroup({name:'topGroup'});this.bottomGroup=this._root.renderView.addGroup({name:'bottomGroup'});this.frontGroup=this._root.renderView.addGroup({name:'frontGroup'});this.backGroup=this._root.renderView.addGroup({name:'backGroup'});this.group.add(this.leftGroup);this.group.add(this.rightGroup);this.group.add(this.topGroup);this.group.add(this.bottomGroup);this.group.add(this.frontGroup);this.group.add(this.backGroup);this._onChangeBind=function(){if(!me.enabled)return;var _faceInfo=me._cartesionUI.getFaceInfo();_$1.each(_faceInfo,function(value,key){me[key+'Group'].visible=value.visible;});};this._root.orbitControls.on('change',this._onChangeBind);}},{key:'drawFace',value:function drawFace(){var me=this;if(!me.enabled)return;var _coordSystem=this._coordSystem;var _faceInfo=this._cartesionUI.getFaceInfo();var coordBoundBox=_coordSystem.getBoundbox();var _size=new Vector3();//空间盒子的大小
 coordBoundBox.getSize(_size);var width=_size.x,height=_size.y,depth=_size.z;if(me.fill.enabled){//todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
 //todo view中构建 materail 通过fill 使用同一份material
@@ -1746,11 +1634,11 @@ LinesVectors=[];ySection.forEach(function(num){var posY=me._coordSystem.getYAxis
 LinesVectors=[];xSection.forEach(function(num){var posX=me._coordSystem.getXAxisPosition(num);LinesVectors.push(new Vector3(posX,height,0));LinesVectors.push(new Vector3(posX,height,-depth));});zSection.forEach(function(num){var posZ=me._coordSystem.getZAxisPosition(num);LinesVectors.push(new Vector3(0,height,-posZ));LinesVectors.push(new Vector3(width,height,-posZ));});lines=me._root.renderView.createCommonLine(LinesVectors,this.line);me.topGroup.add(lines);//绘制下面的线条
 LinesVectors=[];xSection.forEach(function(num){var posX=me._coordSystem.getXAxisPosition(num);LinesVectors.push(new Vector3(posX,0,0));LinesVectors.push(new Vector3(posX,0,-depth));});zSection.forEach(function(num){var posZ=me._coordSystem.getZAxisPosition(num);LinesVectors.push(new Vector3(0,0,-posZ));LinesVectors.push(new Vector3(width,0,-posZ));});lines=me._root.renderView.createCommonLine(LinesVectors,this.line);me.bottomGroup.add(lines);//绘制前面的线条
 LinesVectors=[];xSection.forEach(function(num){var posX=me._coordSystem.getXAxisPosition(num);LinesVectors.push(new Vector3(posX,0,0));LinesVectors.push(new Vector3(posX,height,0));});ySection.forEach(function(num){var posY=me._coordSystem.getYAxisPosition(num);LinesVectors.push(new Vector3(0,posY,0));LinesVectors.push(new Vector3(width,posY,0));});lines=me._root.renderView.createCommonLine(LinesVectors,this.line);me.frontGroup.add(lines);//绘制后面的线条
-LinesVectors=[];xSection.forEach(function(num){var posX=me._coordSystem.getXAxisPosition(num);LinesVectors.push(new Vector3(posX,0,-depth));LinesVectors.push(new Vector3(posX,height,-depth));});ySection.forEach(function(num){var posY=me._coordSystem.getYAxisPosition(num);LinesVectors.push(new Vector3(0,posY,-depth));LinesVectors.push(new Vector3(width,posY,-depth));});lines=me._root.renderView.createCommonLine(LinesVectors,this.line);me.backGroup.add(lines);}},{key:'draw',value:function draw(){this.drawFace();this.drawLine();}},{key:'dispose',value:function dispose(){_get(Grid.prototype.__proto__||Object.getPrototypeOf(Grid.prototype),'dispose',this).call(this);this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return Grid;}(Component);var Cartesian3DUI=function(_Component10){_inherits(Cartesian3DUI,_Component10);function Cartesian3DUI(_coordSystem){_classCallCheck(this,Cartesian3DUI);//坐标轴实例
-var _this63=_possibleConstructorReturn(this,(Cartesian3DUI.__proto__||Object.getPrototypeOf(Cartesian3DUI)).call(this,_coordSystem));_this63._xAxis=null;_this63._yAxis=[];_this63._yAxisLeft=null;//暂时忽略_yAxisRight
-_this63._yAxisRight=null;_this63._zAxis=null;_this63._grid=null;var opt=_coordSystem.coord;_this63.type="cartesian3d";_this63.horizontal=false;//配置信息
-_this63.xAxis=opt.xAxis||{};_this63.yAxis=opt.yAxis||[];_this63.zAxis=opt.zAxis||{};_this63.grid=opt.grid||{};_$1.extend(true,_this63,opt);if(opt.horizontal){_this63.xAxis.isH=true;_this63.zAxis.isH=true;_$1.each(_this63.yAxis,function(yAxis){yAxis.isH=true;});}if("enabled"in opt){//如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
-_$1.extend(true,_this63.xAxis,{enabled:opt.enabled});_$1.each(_this63.yAxis,function(yAxis){_$1.extend(true,yAxis,{enabled:opt.enabled});});_$1.extend(true,_this63.zAxis,{enabled:opt.enabled});_this63.grid.enabled=opt.enabled;}_this63.init(opt);return _this63;}_createClass(Cartesian3DUI,[{key:'init',value:function init(opt){this._initModules();//todo z轴的宽度没有计算在内
+LinesVectors=[];xSection.forEach(function(num){var posX=me._coordSystem.getXAxisPosition(num);LinesVectors.push(new Vector3(posX,0,-depth));LinesVectors.push(new Vector3(posX,height,-depth));});ySection.forEach(function(num){var posY=me._coordSystem.getYAxisPosition(num);LinesVectors.push(new Vector3(0,posY,-depth));LinesVectors.push(new Vector3(width,posY,-depth));});lines=me._root.renderView.createCommonLine(LinesVectors,this.line);me.backGroup.add(lines);}},{key:'draw',value:function draw(){this.drawFace();this.drawLine();}},{key:'dispose',value:function dispose(){_get(Grid.prototype.__proto__||Object.getPrototypeOf(Grid.prototype),'dispose',this).call(this);this._root.orbitControls.off('change',this._onChangeBind);this._onChangeBind=null;}}]);return Grid;}(Component);var Cartesian3DUI=function(_Component9){_inherits(Cartesian3DUI,_Component9);function Cartesian3DUI(_coordSystem){_classCallCheck(this,Cartesian3DUI);//坐标轴实例
+var _this61=_possibleConstructorReturn(this,(Cartesian3DUI.__proto__||Object.getPrototypeOf(Cartesian3DUI)).call(this,_coordSystem));_this61._xAxis=null;_this61._yAxis=[];_this61._yAxisLeft=null;//暂时忽略_yAxisRight
+_this61._yAxisRight=null;_this61._zAxis=null;_this61._grid=null;var opt=_coordSystem.coord;_this61.type="cartesian3d";_this61.horizontal=false;//配置信息
+_this61.xAxis=opt.xAxis||{};_this61.yAxis=opt.yAxis||[];_this61.zAxis=opt.zAxis||{};_this61.grid=opt.grid||{};_$1.extend(true,_this61,opt);if(opt.horizontal){_this61.xAxis.isH=true;_this61.zAxis.isH=true;_$1.each(_this61.yAxis,function(yAxis){yAxis.isH=true;});}if("enabled"in opt){//如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
+_$1.extend(true,_this61.xAxis,{enabled:opt.enabled});_$1.each(_this61.yAxis,function(yAxis){_$1.extend(true,yAxis,{enabled:opt.enabled});});_$1.extend(true,_this61.zAxis,{enabled:opt.enabled});_this61.grid.enabled=opt.enabled;}_this61.init(opt);return _this61;}_createClass(Cartesian3DUI,[{key:'init',value:function init(opt){this._initModules();//todo z轴的宽度没有计算在内
 //todo  是否要计算offset值去更改最终原点的位置
 // let offset = new Vector3(this._yAxisLeft.width, this._xAxis.height, 0);
 //todo 三维空间中不需要考虑原点的移动 
@@ -1798,8 +1686,8 @@ pos=correctFloat(pos+tickInterval);// If the interval is not big enough in the c
 // the loop variable, we need to break out to prevent endless loop. Issue #619
 if(pos===lastPos){break;}// Record the last value
 lastPos=pos;}if(tickPositions.length>=3){if(tickPositions[tickPositions.length-2]>=initMax){tickPositions.pop();}}return tickPositions;}var DataSection={section:function section($arr,$maxPart,$cfg){return _$1.uniq(getLinearTickPositions($arr,$maxPart,$cfg));}};var AxisAttribute=function(){function AxisAttribute(root){_classCallCheck(this,AxisAttribute);this._root=root;this.field='';this.data=null;this._section=[];this._userSection=[];this.colors=[];//y轴需要颜色
-this._colorMap={};}_createClass(AxisAttribute,[{key:'setField',value:function setField(val){this.field=val;this.data=this.getAxisDataFrame(this.field);}},{key:'setColors',value:function setColors(colors){var _this64=this;this.color=[];this._colorMap={};var getTheme=this._root.getTheme.bind(this._root);if(colors){this.colors=colors;}else{var fields=_$1.flatten(this.field);this.colors=[];fields.forEach(function(v,i){var color=getTheme(i);_this64.colors.push(color);_this64._colorMap[v]=color;//自定义Section
-if(_this64._userSection[i]){_this64._colorMap[_this64._userSection[i]]=color;}});}}},{key:'getColor',value:function getColor(field){return this._colorMap[field];}},{key:'setData',value:function setData(data){this.data=data;}},{key:'setOrgSection',value:function setOrgSection(section){this._section=section;}},{key:'setCustomSection',value:function setCustomSection(section){this._userSection=section;}},{key:'getSection',value:function getSection(){return this._userSection.length?this._userSection:this._section;}},{key:'getOrgSection',value:function getOrgSection(){return this._section;}},{key:'getCustomSection',value:function getCustomSection(){return this._userSection;}},{key:'computeDataSection',value:function computeDataSection(){var joinArr=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var scetion=this._setDataSection(this.field);joinArr=joinArr.concat(scetion);var arr=_$1.flatten(joinArr);for(var i=0,il=arr.length;i<il;i++){arr[i]=Number(arr[i]||0);if(isNaN(arr[i])){arr.splice(i,1);i--;il--;}}this._section=DataSection.section(arr);}},{key:'_setDataSection',value:function _setDataSection(yFields){//如果有堆叠，比如[ ["uv","pv"], "click" ]
+this._colorMap={};}_createClass(AxisAttribute,[{key:'setField',value:function setField(val){this.field=val;this.data=this.getAxisDataFrame(this.field);}},{key:'setColors',value:function setColors(colors){var _this62=this;this.color=[];this._colorMap={};var getTheme=this._root.getTheme.bind(this._root);if(colors){this.colors=colors;}else{var fields=_$1.flatten(this.field);this.colors=[];fields.forEach(function(v,i){var color=getTheme(i);_this62.colors.push(color);_this62._colorMap[v]=color;//自定义Section
+if(_this62._userSection[i]){_this62._colorMap[_this62._userSection[i]]=color;}});}}},{key:'getColor',value:function getColor(field){return this._colorMap[field];}},{key:'setData',value:function setData(data){this.data=data;}},{key:'setOrgSection',value:function setOrgSection(section){this._section=section;}},{key:'setCustomSection',value:function setCustomSection(section){this._userSection=section;}},{key:'getSection',value:function getSection(){return this._userSection.length?this._userSection:this._section;}},{key:'getOrgSection',value:function getOrgSection(){return this._section;}},{key:'getCustomSection',value:function getCustomSection(){return this._userSection;}},{key:'computeDataSection',value:function computeDataSection(){var joinArr=arguments.length>0&&arguments[0]!==undefined?arguments[0]:[];var scetion=this._setDataSection(this.field);joinArr=joinArr.concat(scetion);var arr=_$1.flatten(joinArr);for(var i=0,il=arr.length;i<il;i++){arr[i]=Number(arr[i]||0);if(isNaN(arr[i])){arr.splice(i,1);i--;il--;}}this._section=DataSection.section(arr);}},{key:'_setDataSection',value:function _setDataSection(yFields){//如果有堆叠，比如[ ["uv","pv"], "click" ]
 //那么这个 this.dataOrg， 也是个对应的结构
 //vLen就会等于2
 var vLen=1;_$1.each(yFields,function(f){if(_$1.isArray(f)&&f.length>1){vLen=2;}});if(vLen==1){return this._oneDimensional(yFields);}if(vLen==2){return this._twoDimensional(yFields);}}},{key:'_oneDimensional',value:function _oneDimensional(yFields){var dataOrg=this.getAxisDataFrame(yFields);var arr=_$1.flatten(dataOrg);//_.flatten( data.org );
@@ -1820,9 +1708,9 @@ if(!_$1.isArray(d[0])){arr.push(d);return;}var varr=[];var len=d[0].length;var v
      * 通过Data和相关的配置,给出各个坐标轴的DataSection,计算出各个轴上数据点对应的位置
      * 
      * ***/var Cartesian3D=function(_InertialSystem){_inherits(Cartesian3D,_InertialSystem);function Cartesian3D(root){_classCallCheck(this,Cartesian3D);//相对与世界坐标的原点位置
-var _this65=_possibleConstructorReturn(this,(Cartesian3D.__proto__||Object.getPrototypeOf(Cartesian3D)).call(this,root));_this65.origin=new Vector3(0,0,0);_this65.center=new Vector3(0,0,0);_this65.offset=new Vector3(0,0,0);_this65.boundbox=new Box3();_this65.xAxisAttribute=new AxisAttribute(root);_this65.yAxisAttribute=new AxisAttribute(root);//右轴在三维中暂时不存在
+var _this63=_possibleConstructorReturn(this,(Cartesian3D.__proto__||Object.getPrototypeOf(Cartesian3D)).call(this,root));_this63.origin=new Vector3(0,0,0);_this63.center=new Vector3(0,0,0);_this63.offset=new Vector3(0,0,0);_this63.boundbox=new Box3();_this63.xAxisAttribute=new AxisAttribute(root);_this63.yAxisAttribute=new AxisAttribute(root);//右轴在三维中暂时不存在
 //this.yAxisAttributeRight = new AxisAttribute(root);
-_this65.zAxisAttribute=new AxisAttribute(root);_this65._coordUI=null;_this65.init();return _this65;}_createClass(Cartesian3D,[{key:'setDefaultOpts',value:function setDefaultOpts(opts){var me=this;me.coord={xAxis:{//波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
+_this63.zAxisAttribute=new AxisAttribute(root);_this63._coordUI=null;_this63.init();return _this63;}_createClass(Cartesian3D,[{key:'setDefaultOpts',value:function setDefaultOpts(opts){var me=this;me.coord={xAxis:{//波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
 layoutType:"rule",//"peak",  
 //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
 //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
@@ -1841,7 +1729,7 @@ var _lys=[],_rys=[];_$1.each(opts.coord.yAxis,function(yAxis,i){if(!yAxis.align)
 }});opts.coord.yAxis=_lys.concat(_rys);return opts;}},{key:'getBoundbox',value:function getBoundbox(){//笛卡尔坐标的原点默认为左下方
 var baseBoundbox=_get(Cartesian3D.prototype.__proto__||Object.getPrototypeOf(Cartesian3D.prototype),'getBoundbox',this).call(this);var offset=this.offset.clone();this.baseBoundbox=baseBoundbox;this.boundbox.min.set(0,0,0);this.boundbox.max.set(baseBoundbox.max.x-baseBoundbox.min.x-offset.x,baseBoundbox.max.y-baseBoundbox.min.y-offset.y,baseBoundbox.max.z-baseBoundbox.min.z-offset.z);//如果指定了Z轴的宽度就不采用默认计算的宽度
 if(_$1.isSafeObject(this._root.opt.coord,'zAxis.depth')){this.boundbox.max.z=this._root.opt.coord.zAxis.depth;}this.center=this.boundbox.getCenter();this.center.setZ(-this.center.z);return this.boundbox;}//粗略计算在原点位置的世界线段的长度与屏幕像素的长度比
-},{key:'getRatioPixelToWorldByOrigin',value:function getRatioPixelToWorldByOrigin(_origin){var baseBoundbox=_get(Cartesian3D.prototype.__proto__||Object.getPrototypeOf(Cartesian3D.prototype),'getBoundbox',this).call(this);if(_origin===undefined){_origin=baseBoundbox.min.clone();_origin.setZ(baseBoundbox.max.z);}var ratio=this._root.renderView.getVisableSize(_origin).ratio;return ratio;}},{key:'init',value:function init(){var _this66=this;this.group=this._root.renderView.addGroup({name:'cartesian3dSystem'});var opt=_$1.clone(this._root.opt);//这个判断不安全
+},{key:'getRatioPixelToWorldByOrigin',value:function getRatioPixelToWorldByOrigin(_origin){var baseBoundbox=_get(Cartesian3D.prototype.__proto__||Object.getPrototypeOf(Cartesian3D.prototype),'getBoundbox',this).call(this);if(_origin===undefined){_origin=baseBoundbox.min.clone();_origin.setZ(baseBoundbox.max.z);}var ratio=this._root.renderView.getVisableSize(_origin).ratio;return ratio;}},{key:'init',value:function init(){var _this64=this;this.group=this._root.renderView.addGroup({name:'cartesian3dSystem'});var opt=_$1.clone(this._root.opt);//这个判断不安全
 if(_$1.isSafeObject(opt,'coord.xAxis.field')){this.xAxisAttribute.setField(opt.coord.xAxis.field);}var arr=_$1.flatten(this.xAxisAttribute.data);if(this.coord.xAxis.layoutType=="proportion"){if(arr.length==1){arr.push(0);arr.push(arr[0]*2);}arr=arr.sort(function(a,b){return a-b;});arr=DataSection.section(arr);}this.xAxisAttribute.setOrgSection(arr);if(_$1.isSafeObject(opt,'coord.xAxis.dataSection')){this.xAxisAttribute.setCustomSection(opt.coord.xAxis.dataSection);}//获取axisY
 var yLeftFields=[],yRightFields=[];//默认Y轴的写法为数据对象[{
 // field:'uv',
@@ -1854,7 +1742,7 @@ var yLeftFields=[],yRightFields=[];//默认Y轴的写法为数据对象[{
 //}]
 if(_$1.isSafeObject(opt,'coord.yAxis.0.field')){opt.coord.yAxis.forEach(function(yaxis){if(_$1.isArray(yaxis.field)){if(!yaxis.align||yaxis.align=='left'){yLeftFields=yLeftFields.concat(yaxis.field);}else{yRightFields=yRightFields.concat(yaxis.field);}}else{if(!yaxis.align||yaxis.align=='left'){yLeftFields.push(yaxis.field);}else{yRightFields.push(yaxis.field);}}});}opt.graphs&&opt.graphs.forEach(function(cp){if(_$1.isArray(cp.field)){if(!cp.yAxisAlign||cp.yAxisAlign=='left'){yLeftFields=yLeftFields.concat(cp.field);}else{yRightFields=yRightFields.concat(cp.field);}}else{if(!cp.yAxisAlign||cp.yAxisAlign=='left'){yLeftFields.push(cp.field);}else{yRightFields.push(cp.field);}}});yLeftFields=_$1.uniq(yLeftFields);yRightFields=_$1.uniq(yRightFields);this.yAxisAttribute.setField(yLeftFields);//this.yAxisAttributeRight.setField(yRightFields);
 var dataOrgYLeft=this.yAxisAttribute.data;// let dataOrgYRight = this.yAxisAttributeRight.data;
-var joinArrLeft=[];opt.coord.yAxis.forEach(function(yaxis){if((!yaxis.align||yaxis.align=='left')&&yaxis.waterLine){joinArrLeft.push(yaxis.waterLine);}if((!yaxis.align||yaxis.align=='left')&&yaxis.min!==undefined){joinArrLeft.push(yaxis.min);}});if(dataOrgYLeft.length==1&&!_$1.isArray(dataOrgYLeft[0])){joinArrLeft.push(dataOrgY[0]*2);}if(this.coord._yAxisLeft.layoutType=='proportion'){this.yAxisAttribute.computeDataSection(joinArrLeft);}else{var arr=_$1.flatten(this.yAxisAttribute.data);this.yAxisAttribute.setOrgSection(arr);}if(_$1.isSafeObject(opt,'coord.yAxis.0.dataSection')){opt.coord.yAxis.forEach(function(yaxis){if(!yaxis.align||yaxis.align=='left'){_this66.yAxisAttribute.setCustomSection(yaxis.dataSection);}});}//Z轴的计算
+var joinArrLeft=[];opt.coord.yAxis.forEach(function(yaxis){if((!yaxis.align||yaxis.align=='left')&&yaxis.waterLine){joinArrLeft.push(yaxis.waterLine);}if((!yaxis.align||yaxis.align=='left')&&yaxis.min!==undefined){joinArrLeft.push(yaxis.min);}});if(dataOrgYLeft.length==1&&!_$1.isArray(dataOrgYLeft[0])){joinArrLeft.push(dataOrgY[0]*2);}if(this.coord._yAxisLeft.layoutType=='proportion'){this.yAxisAttribute.computeDataSection(joinArrLeft);}else{var arr=_$1.flatten(this.yAxisAttribute.data);this.yAxisAttribute.setOrgSection(arr);}if(_$1.isSafeObject(opt,'coord.yAxis.0.dataSection')){opt.coord.yAxis.forEach(function(yaxis){if(!yaxis.align||yaxis.align=='left'){_this64.yAxisAttribute.setCustomSection(yaxis.dataSection);}});}//Z轴的计算
 if(_$1.isSafeObject(opt,'coord.zAxis.field')){this.zAxisAttribute.setField(opt.coord.zAxis.field);//this.zAxisAttribute.setData(opt.coord.zAxis.field)
 // if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
 //     var arr = _.flatten(this.zAxisAttribute.data);
@@ -1966,13 +1854,14 @@ _val=_ceilWidth*(ind+1)-_ceilWidth/2;}}if(isNaN(_val)){_val=0;}return _val;}},{k
 // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
 ceil.setX(size.x/(dataLenX+1));ceil.setY(size.y/(dataLenY+1));ceil.setZ(size.z/(dataLenZ+1));return ceil;}},{key:'dispose',value:function dispose(){this._coordUI.dispose();}}]);return Cartesian3D;}(InertialSystem);var coord={// rect : Rect,
 // polar : Polar
-cartesian3d:Cartesian3D,coord3d:InertialSystem};var components={bar:Bar,// theme : Theme,
+cartesian3d:Cartesian3D,coord3d:InertialSystem};var components={bar:Bar// theme : Theme,
 // legend : Legend,
 // dataZoom : DataZoom,
 // markLine : MarkLine,
 // markPoint : MarkPoint,
 // anchor : Anchor,
-tips:Tips// barTgi : BarTgi,
+// tips : Tips,
+// barTgi : BarTgi,
 // waterMark : WaterMark,
 // cross : Cross
 };// //皮肤设定begin ---------------

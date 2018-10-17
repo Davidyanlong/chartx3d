@@ -91,6 +91,7 @@ class Bar extends Component {
         let yValidData = [];
         zSection.forEach((zs, index) => {
             fields.forEach(fd => {
+
                 if (zs == fd.toString()) {
                     yValidData.push(yDatas[index]);
                     if (zCustomSection.length > 0) {
@@ -179,6 +180,7 @@ class Bar extends Component {
         })
     }
     draw() {
+        let me =this;
         this.computePos();
         let ceil = this._coordSystem.getCeilSize();
         let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
@@ -187,7 +189,7 @@ class Bar extends Component {
         let boxWidth = ceil.x * 0.7;
         let boxDepth = ceil.z * 0.7;
         let boxHeight = 1;
-        console.log(new Date);
+
         this.drawPosData.forEach(dataOrg => {
 
 
@@ -214,6 +216,7 @@ class Bar extends Component {
 
             // MeshLambertMaterial
             //MeshPhongMaterial
+            let _color = this._getColor(this.node.fillStyle, dataOrg);
             let metaril = new MeshPhongMaterial({
                 color: this._getColor(this.node.fillStyle, dataOrg),
                 transparent: true,
@@ -227,41 +230,73 @@ class Bar extends Component {
             })
             let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
             box.position.copy(stack);
+            let { x, y, z } = dataOrg.value;
+            let { x:px, y:py, z:pz } = stack;
+            box.userData.info = {
+                title:z,
+                value: {
+                    x,
+                    y,
+                    z
+                },
+                pos: {
+                    x: px,
+                    y: py,
+                    z: pz
+                },
+                color: this._getColor(this.node.fillStyle, dataOrg)
+            }
             box.renderOrder = renderOrder++;
             this.group.add(box);
 
 
+            box.on('mouseover', function(e){
+                me.onMouseOver.call(this);
+                me._root.fire({
+                    type:'tipShow',
+                    event:e.event,
+                    data:this.userData.info
+                })
+            });
+            box.on('mouseout', function(e){
+                me.onMouseOut.call(this);
+                me._root.fire({
+                    type:'tipHide',
+                    event:e.event,
+                    data:this.userData.info
+                })
+            });
+           
+            box.on('mousemove', function(e){
+                me._root.fire({
+                    type:'tipMove',
+                    event:e.event,
+                    data:this.userData.info
+                })
+            });
 
-            box.on('mouseover', this.onMouseOver);
-            box.on('mouseout', this.onMouseOut);
+
             box.on('click', this.onClick);
-
 
         });
 
     }
-    onMouseOver() {
-        //上下午中的this 是bar 对象
+    onMouseOver(e) {
+        //上下文中的this 是bar 对象
         this.userData.color = this.material.color.clone();
         //高亮
         let tempColor = {};
         this.material.color.getHSL(tempColor);
         this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
-
     }
     onMouseOut() {
-
+        $('#target').hide()
         this.material.setValues({ color: this.userData.color });
-
     }
-    onClick() {
-
-        console.log(this.id);
-        let dom = document.getElementById('testdiv');
-        // dom.style.left = e.event.clientX+'px';
-        // dom.style.top = e.event.clientY+'px';
-
+    onClick(e) {
+        //this.fire(e)
     }
+   
     _getColor(c, dataOrg) {
 
 

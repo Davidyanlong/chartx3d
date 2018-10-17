@@ -4,6 +4,11 @@ var commonjs = require('rollup-plugin-commonjs');
 var resolve = require('rollup-plugin-node-resolve');
 var uglify = require('rollup-plugin-uglify');
 var json = require('rollup-plugin-json');
+var babelCore = require("babel-core");
+
+var fs = require('fs');
+
+
 function glsl() {
 
     return {
@@ -29,23 +34,31 @@ function glsl() {
 
 }
 
+
 rollup.rollup({
     input: 'src/index.js',
     plugins: [
         glsl(),
         json(),
-        babel({
-            exclude: '/node_modules\/((?!mmgl).)*$/',
-            //include: 'node_modules/mmgl/**'
-        }),
+
         resolve({
             jsnext: true,
             main: true,
-            browser: true,
+            browser: true
         }),
-        commonjs()
+
+        //commonjs(),
+
+        // babel({
+        //     //babelrc: true,
+        //     //presets: ["es2015-loose-rollup"],
+        //      exclude: '/node_modules\/((?!mmgl).)*$/',
+        //     //exclude: 'node_modules/**'
+        // }),
+
         //uglify()
     ]
+
 }).then(function (bundle) {
 
     // output format - 'amd', 'cjs', 'es6', 'iife', 'umd'
@@ -55,34 +68,41 @@ rollup.rollup({
     // iife – 使用于<script> 标签引用的方式
     // umd – 适用于CommonJs和AMD风格通用模式
 
+
     bundle.write({
         format: 'iife',
         name: 'Chartx',
-        file: 'dist/chartx.js',
+        file: 'dist/chartx_es6.js',
         //sourceMap: 'inline'
-    });
+    }).then(() => {
+        let result = babelCore.transformFileSync("dist/chartx_es6.js", {
+            compact:true
+        });
+        
+        fs.writeFileSync('dist/chartx.js', result.code);
+
+    })
+
+    // bundle.write({
+    //     format: 'amd',
+    //     name: 'Chartx',
+    //     file: 'dist/amd/chartx.js',
+    //     //sourceMap: 'inline'
+    // });
+
+    // bundle.write({
+    //     format: 'umd',
+    //     name: 'Chartx',
+    //     file: 'dist/umd/chartx.js',
+    //     //sourceMap: 'inline'
+    // });
 
 
-    bundle.write({
-        format: 'amd',
-        name: 'Chartx',
-        file: 'dist/amd/chartx.js',
-        //sourceMap: 'inline'
-    });
-
-    bundle.write({
-        format: 'umd',
-        name: 'Chartx',
-        file: 'dist/umd/chartx.js',
-        //sourceMap: 'inline'
-    });
-
-
-    bundle.write({
-        format: 'cjs',
-        name: 'Chartx',
-        file: 'dist/cjs/chartx.js',
-        //sourceMap: 'inline'
-    });
+    // bundle.write({
+    //     format: 'cjs',
+    //     name: 'Chartx',
+    //     file: 'dist/cjs/chartx.js',
+    //     //sourceMap: 'inline'
+    // });
 
 });

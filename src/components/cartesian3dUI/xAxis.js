@@ -31,7 +31,7 @@ class XAxis extends Component {
         this.enabled = true;
         this.axisLine = {
             enabled: 1, //是否有轴线
-            lineWidth: 2,
+            lineWidth: 1,
             strokeStyle: '#333'
         };
 
@@ -237,29 +237,18 @@ class XAxis extends Component {
             if (this._axisLine.getOrigin().equals(origin)) {
                 return;
             }
-            // this._axisLine.dispose();
             this._axisLine.setOrigin(origin);
             this._axisLine.update();
-            // this._axisLine.drawStart();
-            // this._axisLine.draw();
 
             //二次绘制
-            //this._tickLine.dispose();
             this._tickLine.setDir(_tickLineDir);
             this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
             this._tickLine.update();
-            // this._tickLine.drawStart();
-            // this._tickLine.draw();
-
-            //this._tickText.dispose();
 
             this._tickText.setDir(_tickLineDir);
             this._tickText.offset.setZ(_offsetZ);
             this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
             this._tickText.setVerticalAlign(_verticalAlign);
-
-            // this._tickText.drawStart(this._formatTextSection);
-            // this._tickText.draw();
 
 
         } else {

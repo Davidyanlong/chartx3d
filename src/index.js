@@ -28,7 +28,7 @@ import { Bar } from "./components/graphs/bar/index";
 // import MarkLine from "./components/markline/index"
 // import MarkPoint from "./components/markpoint/index"
 // import Anchor from "./components/anchor/index"
-// import Tips from "./components/tips/index"
+ import {Tips} from "./components/tips/index"
 // import BarTgi from "./components/bartgi/index"
 // import Theme from "./components/theme/index"
 // import WaterMark from "./components/watermark/index"
@@ -70,7 +70,7 @@ var components = {
     // markLine : MarkLine,
     // markPoint : MarkPoint,
     // anchor : Anchor,
-    // tips : Tips,
+    tips : Tips,
     // barTgi : BarTgi,
     // waterMark : WaterMark,
     // cross : Cross
