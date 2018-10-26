@@ -54,7 +54,7 @@ class TickTexts extends Component {
 
         attribute.getSection().forEach((num, index) => {
             //起点
-            let val = fn.call(this._coordSystem, num)
+            let val = fn.call(this._coordSystem, num,attribute)
             let startPoint = axis.dir.clone().multiplyScalar(val);
             startPoint.add(axis.origin);
             startPoint.add(_offset);

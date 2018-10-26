@@ -17,29 +17,23 @@ class AxisAttribute {
         this.field = val;
         this.data = this.getAxisDataFrame(this.field);
     }
-    setColors(colors) {
-
-        this.color = [];
+    setColors(_colorMap) {
+        let fields = _.flatten(this.field);
+        this.colors = [];
         this._colorMap = {};
-        let getTheme = this._root.getTheme.bind(this._root);
-
-        if (colors) {
-            this.colors = colors;
-        } else {
-            let fields = _.flatten(this.field);
-            this.colors = [];
-
-            fields.forEach((v, i) => {
-                let color = getTheme(i);
-                this.colors.push(color);
-                this._colorMap[v] = color;
-                //自定义Section
-                if (this._userSection[i]) {
-                    this._colorMap[this._userSection[i]] = color;
-                }
-
-            })
-        }
+        fields.forEach((v, i) => {
+            let _c = _colorMap[v];
+            if (_c) {
+                this.colors.push(_c);
+                this._colorMap[v] = _c;
+            }
+        })
+        this.colors.forEach((color, i) => {
+            //自定义Section
+            if (this._userSection[i]) {
+                this._colorMap[this._userSection[i]] = color;
+            }
+        })
 
 
     }
@@ -51,7 +45,9 @@ class AxisAttribute {
         this.data = data;
     }
 
-
+    getData(field) {
+        return this.getAxisDataFrame(field);
+    }
     setOrgSection(section) {
         this._section = section;
     }

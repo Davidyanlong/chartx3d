@@ -9,7 +9,7 @@ import { numAddSymbol } from '../../../utils/tools';
 class XAxis extends Component {
     constructor(_cartesionUI) {
         super(_cartesionUI._coordSystem);
-        let opt = this._opt = _cartesionUI;
+        let opt = this._opt = this._coordSystem.coord.xAxis;
 
         this._cartesionUI = _cartesionUI;
         this.width = 0;
@@ -259,7 +259,7 @@ class XAxis extends Component {
             this._axisLine.setLength(coordBoundBox.max.x);
             this._axisLine.setGroupName('xAxisLine')
             this._axisLine.drawStart();
-
+            
             this.group.add(this._axisLine.group);
 
             //初始化tickLine

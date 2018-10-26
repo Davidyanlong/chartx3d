@@ -59,6 +59,7 @@ class Chart3d extends Events {
         this.renderer = this.app._framework.renderer;
 
         this.DefaultControls = {
+            autoRotate:true,
             boxWidth: 1000,         //空间中X的最大值(最大宽度)  
             boxHeight: 1000,        //空间中Y的最大值(最大高度)  
             boxDepth: 1000,         //空间中Z的最大值(最大深度)
@@ -108,7 +109,7 @@ class Chart3d extends Events {
         controls.enableDamping = true;
         controls.enablePan = false;
         controls.enableKeys = false;
-        controls.autoRotate = true;
+        controls.autoRotate = controlOpts.autoRotate;
         controls.autoRotateSpeed = 1.0
 
         //自动旋转时间
@@ -187,9 +188,8 @@ class Chart3d extends Events {
 
 
         this.on('tipShow', (e) => {
-
             let tips = this.getComponent('Tips');
-            let { clientX: x, clientY: y } = e.event;
+            let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
                 tips.show({
                     eventInfo: e.data,
@@ -212,7 +212,7 @@ class Chart3d extends Events {
         this.on('tipMove', (e) => {
 
             let tips = this.getComponent('Tips');
-            let { clientX: x, clientY: y } = e.event;
+            let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
                 tips.show({
                     eventInfo: e.data,

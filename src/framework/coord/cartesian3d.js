@@ -10,9 +10,9 @@ import DataSection from '../../../utils/datasection';
 /** note: 
  * 获取所有的配置信息,取去配置中影响布局的相关参数
  * coord{
- *    xAsix{}
- *    yAxis{} 
- *    zAxis{} 
+ *    xAsix:{}
+ *    yAxis:[] 
+ *    zAxis:{} 
  * }
  * 
  * graphs{}
@@ -22,6 +22,8 @@ import DataSection from '../../../utils/datasection';
  * 通过Data和相关的配置,给出各个坐标轴的DataSection,计算出各个轴上数据点对应的位置
  * 
  * ***/
+const DEFAULT_AXIS = 'default_axis_for_Y';
+const cartesian_wm = new WeakMap();
 
 class Cartesian3D extends InertialSystem {
     constructor(root) {
@@ -37,18 +39,21 @@ class Cartesian3D extends InertialSystem {
         this.boundbox = new Box3();
 
         this.xAxisAttribute = new AxisAttribute(root);
-        this.yAxisAttribute = new AxisAttribute(root);
-        //右轴在三维中暂时不存在
-        //this.yAxisAttributeRight = new AxisAttribute(root);
+        //默认Y轴
+        this.yAxisAttribute = {};
+
         this.zAxisAttribute = new AxisAttribute(root);
 
         this._coordUI = null;
+
+        this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
 
         this.init();
 
     }
     setDefaultOpts(opts) {
         var me = this;
+        this._zSection=[];
         me.coord = {
             xAxis: {
                 //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
@@ -57,21 +62,34 @@ class Cartesian3D extends InertialSystem {
                 //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
                 posParseToInt: false
             },
+            yAxis: [], //y轴至少有一个
             zAxis: {
                 enabled: true,
                 field: '',
-                layoutType: "peak",
+                layoutType: "rule",
                 //   depth: 50     //最大深度是1000
             }
         };
 
         opts = _.clone(opts);
+
+        //规范Y轴的定义,采用数组形式,如果没有定义就初始化为空数组
         if (opts.coord.yAxis) {
             var _nyarr = [];
-            //TODO: 因为我们的deep extend 对于数组是整个对象引用过去，所以，这里需要
-            //把每个子元素单独clone一遍，恩恩恩， 在canvax中优化extend对于array的处理
-            _.each(_.flatten([opts.coord.yAxis]), function (yopt) {
+            _.each(_.flatten([opts.coord.yAxis]), function (yopt, index) {
+                //标记定义的Y轴信息是否在绘图中使用
+                yopt._used = false;
+                //如果坐标轴没有置顶名称,第一个为默认坐标轴,其余的将被舍弃
+                if (_.isEmpty(yopt.name)) {
+                    if (index == 0) {
+                        yopt.name = DEFAULT_AXIS;
+                    } else {
+                        return;
+                    }
+                }
                 _nyarr.push(_.clone(yopt));
+
+
             });
             opts.coord.yAxis = _nyarr;
         } else {
@@ -79,55 +97,76 @@ class Cartesian3D extends InertialSystem {
         }
 
 
+
+        let getYaxisInfo = (name) => {
+            let _opt = null;
+            if (opts.coord.yAxis) {
+                _.each(_.flatten([opts.coord.yAxis]), function (yopt) {
+                    if (yopt.name == name) {
+                        yopt._used = true;
+                        _opt = yopt
+                    }
+                })
+            }
+            return _opt;
+        }
+
+
+
         //根据opt中得Graphs配置，来设置 coord.yAxis
         if (opts.graphs) {
             //有graphs的就要用找到这个graphs.field来设置coord.yAxis
             for (var i = 0; i < opts.graphs.length; i++) {
+               
                 var graphs = opts.graphs[i];
+                this._zSection.push(graphs.field.toString());
                 if (graphs.type == "bar") {
                     //如果graphs里面有柱状图，那么就整个xAxis都强制使用 peak 的layoutType
                     me.coord.xAxis.layoutType = "peak";
+                    me.coord.zAxis.layoutType = "peak";
                 }
                 if (graphs.field) {
                     //没有配置field的话就不绘制这个 graphs了
-                    var align = "left"; //默认left
-                    if (graphs.yAxisAlign == "right") {
-                        align = "right";
-                    };
-
-                    var optsYaxisObj = null;
-                    optsYaxisObj = _.find(opts.coord.yAxis, function (obj, i) {
-                        return obj.align == align || (!obj.align && i == (align == "left" ? 0 : 1));
-                    });
-
-                    if (!optsYaxisObj) {
-                        optsYaxisObj = {
-                            align: align,
-                            field: []
+                    //根据graphs中的数据整理y轴的数据
+                    let _axisName = graphs.yAxisName;
+                    if (!graphs.yAxisName) {
+                        //没有指定坐标轴的名称,取默认轴
+                        _axisName = DEFAULT_AXIS
+                    }
+                    //增加Y轴
+                    let _tAxis = getYaxisInfo(_axisName)
+                    if (!_tAxis) {
+                        let _yAxisNew = {
+                            field: [],
+                            name: _axisName,
+                            _used: true
                         }
-                        opts.coord.yAxis.push(optsYaxisObj);
+                        if (_.isArray(graphs.field)) {
+                            _yAxisNew.field = _yAxisNew.field.concat(graphs.field);
+                        } else {
+                            _yAxisNew.field.push(graphs.field)
+                        }
+                        opts.coord.yAxis.push(_yAxisNew);
                     } else {
-                        if (!optsYaxisObj.align) {
-                            optsYaxisObj.align = align;
 
+                        if (_.isEmpty(_tAxis.field)) {
+                            _tAxis.field = [];
+                        }
+                        if (_.isArray(_tAxis.field)) {
+                            if (_.isArray(graphs.field)) {
+                                _tAxis.field = _tAxis.field.concat(graphs.field);
+                            } else {
+                                _tAxis.field.push(graphs.field);
+                            }
+                        } else {
+                            if (_.isArray(graphs.field)) {
+                                _tAxis.field = [_tAxis.field].concat(graphs.field);
+                            } else {
+                                _tAxis.field = [_tAxis.field].push(graphs.field);
+                            }
                         }
                     }
 
-                    if (!optsYaxisObj.field) {
-                        optsYaxisObj.field = [];
-                    } else {
-                        if (!_.isArray(optsYaxisObj.field)) {
-                            optsYaxisObj.field = [optsYaxisObj.field];
-                        }
-                    }
-
-                    if (_.isArray(graphs.field)) {
-                        optsYaxisObj.field = optsYaxisObj.field.concat(graphs.field)
-                    } else {
-                        optsYaxisObj.field.push(graphs.field)
-                    }
-
-                    optsYaxisObj.field = _.uniq(optsYaxisObj.field);
                 } else {
                     //在，直角坐标系中，每个graphs一定要有一个field设置，如果没有，就去掉这个graphs
                     opts.graphs.splice(i--, 1);
@@ -135,33 +174,178 @@ class Cartesian3D extends InertialSystem {
             }
 
 
+        };
+        //初始化Y轴的相关参数
+        for (var i = 0; i < opts.coord.yAxis.length; i++) {
+            if (!opts.coord.yAxis[i].layoutType) {
+                opts.coord.yAxis[i].layoutType = 'proportion'; //默认布局
+            }
+            //没有field的Y轴是无效的配置
+            if (_.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
+                opts.coord.yAxis.splice(i--, 1);
+            }
+            if(opts.coord.yAxis[i]){
+                delete opts.coord.yAxis[i]._used;
+            }
 
         };
-        //再梳理一遍yAxis，get没有align的手动配置上align
-        //要手动把yAxis 按照 left , right的顺序做次排序
-        var _lys = [], _rys = [];
-        _.each(opts.coord.yAxis, function (yAxis, i) {
-            if (!yAxis.align) {
-                yAxis.align = i ? "right" : "left";
-            }
-            if (yAxis.align == "left") {
-                _lys.push(yAxis);
-                opts.coord._yAxisLeft = yAxis;
-            } else {
-                _rys.push(yAxis);
-                opts.coord._yAxisRight = yAxis;
-            }
-            if (!yAxis.layoutType) {
-                yAxis.layoutType = 'proportion'; //默认布局
-            }
-
-        });
-
-        opts.coord.yAxis = _lys.concat(_rys);
-
-
-
         return opts;
+    }
+
+    init() {
+
+
+        let opt = _.clone(this.coord);
+        try {
+
+            //X轴数据集初始化
+            if (opt.xAxis.field) {
+                this.xAxisAttribute.setField(opt.xAxis.field);
+            } else {
+                console.error('没有配置X轴对应的字段field,请配置coord.xAxis.field')
+            }
+
+            var arr = _.flatten(this.xAxisAttribute.data);
+
+            if (this.coord.xAxis.layoutType == "proportion") {
+                if (arr.length == 1) {
+                    arr.push(0);
+                    arr.push(arr[0] * 2);
+                };
+                arr = arr.sort(function (a, b) { return a - b });
+                arr = DataSection.section(arr)
+            };
+
+            this.xAxisAttribute.setOrgSection(arr);
+            //如果用户指定了dataSection,就采用用户自己的
+            if (opt.xAxis.dataSection) {
+                this.xAxisAttribute.setCustomSection(opt.xAxis.dataSection);
+            }
+
+            //y轴的颜色值先预设好
+            let _allField = [];
+            opt.yAxis.forEach(yx => {
+                yx.field.forEach(fd => {
+                    if (_.isArray(fd)) {
+                        fd.forEach(fname => {
+                            _allField.push(fname);
+                        })
+                    } else {
+                        _allField.push(fd);
+                    }
+                })
+            })
+            let _colors = [], _colorMap = {};
+            let getTheme = this._root.getTheme.bind(this._root);
+            _allField.forEach((v, i) => {
+                let color = getTheme(i);
+                _colors.push(color);
+                _colorMap[v] = color;
+            })
+
+
+            //Y轴数据集初始化
+            //初步计算坐标轴的dataSection
+            let maxSegment = 0;
+            let maxSegmentUser = Infinity;
+            opt.yAxis.forEach((yopt) => {
+                let _yAxisAttr = this.yAxisAttribute[yopt.name];
+                if (!_yAxisAttr) {
+                    _yAxisAttr = new AxisAttribute(this._root);
+                    this.yAxisAttribute[yopt.name] = _yAxisAttr;
+                    cartesian_wm.set(this.yAxisAttribute[yopt.name], yopt);
+                }
+                _yAxisAttr.setField(yopt.field);
+                let dataOrg = _yAxisAttr.data;
+
+                let joinArr = [];
+                if (dataOrg.length == 1 && !_.isArray(dataOrg[0])) {
+                    joinArr.push(dataOrg[0] * 2);
+                };
+
+
+                if (yopt.layoutType == 'proportion') {
+                    _yAxisAttr.computeDataSection(joinArr);
+                } else {
+                    var arr = _.flatten(_yAxisAttr.data);
+                    _yAxisAttr.setOrgSection(arr);
+                }
+
+                //如果用户制定了某个轴的dataSection,就采用用户制定的最短dataSection的个数定义Y轴的数据
+                //否则则采用自动计算后最多的段,重新计算其他的坐标轴
+
+                if (yopt.dataSection) {
+                    maxSegmentUser = Math.min(maxSegmentUser, yopt.dataSection.length);
+                    _yAxisAttr.setCustomSection(yopt.dataSection);
+                }
+                _yAxisAttr.setColors(_colorMap);
+                maxSegment = Math.max(maxSegment, _yAxisAttr.getSection().length);
+            });
+
+            //根据最多段重新计算dataSection
+            maxSegment = maxSegmentUser === Infinity ? maxSegment : maxSegmentUser;
+            for (let _yAxisAttr in this.yAxisAttribute) {
+                let _section = this.yAxisAttribute[_yAxisAttr].getSection();
+                let step = (_section[_section.length - 1] - _section[0]) / (maxSegment-1);
+                if (step > 1) {
+                    step = Math.ceil(step);
+                }
+                //如果不相等,按照固定的段重新计算
+                if (_section.length !== maxSegment) {
+                    let arr = [];
+                    for (var i = 0; i < maxSegment; i++) {
+                        arr.push(_section[0] + i * step);
+                    }
+                    this.yAxisAttribute[_yAxisAttr].setCustomSection(arr);
+                }
+
+            }
+            //Z轴的计算
+            if (opt.zAxis.field) {
+                this.zAxisAttribute.setField(opt.zAxis.field);
+            }
+            //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+            //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
+            // let _sectionZ = [];
+            // opt.graphs.forEach((yOps) => {
+            //     debugger
+            //     _sectionZ.push(yOps.field.toString());
+            // })
+            
+
+            this.zAxisAttribute.setOrgSection(this._zSection);
+
+
+            if (opt.zAxis.dataSection) {
+                this.zAxisAttribute.setCustomSection(opt.zAxis.dataSection);
+            }
+
+
+
+
+
+
+
+        } catch (e) {
+            console.error('配置出错啦!', e);
+        }
+        //先计算一次空间范围供计算坐标轴宽高使用
+        this.getBoundbox();
+        this.addLights();
+    }
+    getYAxis(name = DEFAULT_AXIS) {
+        let yAxisAttr = this.yAxisAttribute[name];
+        //如果没有指定名称,通知默认名称不存在,取第一个配置的Name
+        if (!yAxisAttr) {
+            name = this.coord.yAxis[0].name;
+            yAxisAttr = this.yAxisAttribute[name];
+        }
+
+        let yOpts = cartesian_wm.get(yAxisAttr);
+        return {
+            attr: yAxisAttr,
+            opts: yOpts
+        }
     }
 
     getBoundbox() {
@@ -195,170 +379,6 @@ class Cartesian3D extends InertialSystem {
         }
         let ratio = this._root.renderView.getVisableSize(_origin).ratio;
         return ratio;
-    }
-    init() {
-
-        this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
-        let opt = _.clone(this._root.opt)
-
-        //这个判断不安全
-        if (_.isSafeObject(opt, 'coord.xAxis.field')) {
-            this.xAxisAttribute.setField(opt.coord.xAxis.field);
-        }
-        var arr = _.flatten(this.xAxisAttribute.data);
-
-        if (this.coord.xAxis.layoutType == "proportion") {
-            if (arr.length == 1) {
-                arr.push(0);
-                arr.push(arr[0] * 2);
-            };
-            arr = arr.sort(function (a, b) { return a - b });
-            arr = DataSection.section(arr)
-        };
-
-
-        this.xAxisAttribute.setOrgSection(arr);
-        if (_.isSafeObject(opt, 'coord.xAxis.dataSection')) {
-            this.xAxisAttribute.setCustomSection(opt.coord.xAxis.dataSection);
-        }
-
-
-        //获取axisY
-        let yLeftFields = [], yRightFields = [];
-        //默认Y轴的写法为数据对象[{
-        // field:'uv',
-        // label: {
-        //     textAlign: 'left',
-        //     format: function (val) {
-        //        return val;
-        //     }
-        // }
-        //}]
-        if (_.isSafeObject(opt, 'coord.yAxis.0.field')) {
-            opt.coord.yAxis.forEach(yaxis => {
-
-                if (_.isArray(yaxis.field)) {
-                    if (!yaxis.align || yaxis.align == 'left') {
-                        yLeftFields = yLeftFields.concat(yaxis.field);
-                    } else {
-                        yRightFields = yRightFields.concat(yaxis.field);
-                    }
-
-                } else {
-                    if (!yaxis.align || yaxis.align == 'left') {
-                        yLeftFields.push(yaxis.field);
-                    } else {
-                        yRightFields.push(yaxis.field);
-                    }
-                }
-
-            });
-
-        }
-
-        opt.graphs && opt.graphs.forEach(cp => {
-            if (_.isArray(cp.field)) {
-                if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
-                    yLeftFields = yLeftFields.concat(cp.field);
-                } else {
-                    yRightFields = yRightFields.concat(cp.field);
-                }
-            } else {
-                if (!cp.yAxisAlign || cp.yAxisAlign == 'left') {
-                    yLeftFields.push(cp.field);
-                } else {
-                    yRightFields.push(cp.field);
-                }
-            }
-        })
-
-        yLeftFields = _.uniq(yLeftFields);
-        yRightFields = _.uniq(yRightFields);
-
-        this.yAxisAttribute.setField(yLeftFields);
-        //this.yAxisAttributeRight.setField(yRightFields);
-
-        let dataOrgYLeft = this.yAxisAttribute.data;
-        // let dataOrgYRight = this.yAxisAttributeRight.data;
-
-        let joinArrLeft = [], joinArrRight = [];
-
-        opt.coord.yAxis.forEach(yaxis => {
-
-            if ((!yaxis.align || yaxis.align == 'left') && yaxis.waterLine) {
-                joinArrLeft.push(yaxis.waterLine);
-            }
-
-            if ((!yaxis.align || yaxis.align == 'left') && yaxis.min!==undefined) {
-                joinArrLeft.push(yaxis.min);
-            }
-        })
-        if (dataOrgYLeft.length == 1 && !_.isArray(dataOrgYLeft[0])) {
-
-            joinArrLeft.push(dataOrgY[0] * 2);
-        };
-
-
-        if (this.coord._yAxisLeft.layoutType == 'proportion') {
-            this.yAxisAttribute.computeDataSection(joinArrLeft);
-        } else {
-            var arr = _.flatten(this.yAxisAttribute.data);
-            this.yAxisAttribute.setOrgSection(arr);
-        }
-
-
-        if (_.isSafeObject(opt, 'coord.yAxis.0.dataSection')) {
-            opt.coord.yAxis.forEach(yaxis => {
-                if (!yaxis.align || yaxis.align == 'left') {
-                    this.yAxisAttribute.setCustomSection(yaxis.dataSection);
-                } else {
-                    // this.yAxisAttributeRight.setCustomSection(yaxis.dataSection);
-                }
-            })
-        }
-
-        //Z轴的计算
-        if (_.isSafeObject(opt, 'coord.zAxis.field')) {
-            this.zAxisAttribute.setField(opt.coord.zAxis.field);
-            //this.zAxisAttribute.setData(opt.coord.zAxis.field)
-
-            // if (!_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-            //     var arr = _.flatten(this.zAxisAttribute.data);
-            //     if (this.coord.zAxis.layoutType == "proportion") {
-            //         if (arr.length == 1) {
-            //             arr.push(0);
-            //             arr.push(arr[0] * 2);
-            //         };
-            //         arr = arr.sort(function (a, b) { return a - b });
-            //         arr = DataSection.section(arr)
-            //     };
-
-            //     this.zAxisAttribute.setDataSection(arr);
-            // }
-        }
-
-        //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-        let _section = [];
-
-        let yAxisObj = this.coord._yAxisLeft;
-        yAxisObj.field.forEach(item => {
-            _section.push(item.toString());
-        });
-
-        this.zAxisAttribute.setOrgSection(_section);
-
-
-        if (_.isSafeObject(opt, 'coord.zAxis.dataSection')) {
-            this.zAxisAttribute.setCustomSection(opt.coord.zAxis.dataSection);
-        }
-
-        //y轴的颜色值先预设好
-        this.yAxisAttribute.setColors();
-        //todo y轴右轴忽略
-
-        //先计算一次空间范围供计算坐标轴宽高使用
-        this.getBoundbox();
-        this.addLights();
     }
 
 
@@ -561,8 +581,8 @@ class Cartesian3D extends InertialSystem {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
                 // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                _val = _range * ((data-minVal) / (maxVal - minVal));
-                
+                _val = _range * ((data - minVal) / (maxVal - minVal));
+
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak
@@ -582,19 +602,19 @@ class Cartesian3D extends InertialSystem {
 
 
     }
-    getYAxisPosition(data) {
+    getYAxisPosition(data, yAxisAttribute) {
         let _val = 0;
         let _range = this.boundbox.max.y - this.boundbox.min.y;
-        let dataLen = this.yAxisAttribute.getSection().length;
-        let ind = _.indexOf(this.yAxisAttribute.getSection(), data);//先不考虑不存在的值
+        let dataLen = yAxisAttribute.getSection().length;
+        let ind = _.indexOf(yAxisAttribute.getSection(), data);//先不考虑不存在的值
 
         let _yAxisLeft = _.find(this.coord.yAxis, yaxis => {
             return !yaxis.align || yaxis.align == 'left';
         })
         let layoutType = _yAxisLeft.layoutType;
 
-        let maxVal = Math.max.apply(null, this.yAxisAttribute.getSection());
-        let minVal = Math.min.apply(null, this.yAxisAttribute.getSection());
+        let maxVal = Math.max.apply(null, yAxisAttribute.getSection());
+        let minVal = Math.min.apply(null, yAxisAttribute.getSection());
 
         if (dataLen == 1) {
             _val = _range / 2;
@@ -609,7 +629,7 @@ class Cartesian3D extends InertialSystem {
                 // if (val == undefined) {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
-                _val = _range * ((data-minVal) / (maxVal - minVal));
+                _val = _range * ((data - minVal) / (maxVal - minVal));
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak
@@ -650,7 +670,7 @@ class Cartesian3D extends InertialSystem {
                 //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
                 // };
                 // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                _val = _range * ((data-minVal) / (maxVal - minVal));
+                _val = _range * ((data - minVal) / (maxVal - minVal));
             };
             if (layoutType == "peak") {
                 //柱状图的就是peak
@@ -675,7 +695,7 @@ class Cartesian3D extends InertialSystem {
         let ceil = new Vector3();
         let size = this.boundbox.getSize();
         let dataLenX = this.xAxisAttribute.getSection().length;
-        let dataLenY = this.yAxisAttribute.getSection().length;
+        let dataLenY = this.getYAxis().attr.getSection().length;
         let dataLenZ = this.zAxisAttribute.getSection().length;
 
         // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;

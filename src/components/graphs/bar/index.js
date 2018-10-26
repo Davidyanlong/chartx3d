@@ -3,6 +3,7 @@ import { Component, _ } from '../../Component';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color } from 'mmgl/src/index';
 
 let renderOrder = 100;
+
 class Bar extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
@@ -21,19 +22,20 @@ class Bar extends Component {
         // this.absolute = false; 
 
         this.node = {
-            shapeType: 'box',
-            width: 0,
-            _width: 0,
-            maxWidth: 50,
-            minWidth: 1,
-            minHeight: 0,
+            shapeType: 'cube',  //'cube'立方体  'cylinder'圆柱体  ,'cone'圆锥体 
+            materialType: 'phong', //'lambert' 'phong' 'base'  作色方式
+            // width: 0,
+            // _width: 0,
+            // maxWidth: 50,
+            // minWidth: 1,
+            // minHeight: 0,
 
-            radius: 3,
+            // radius: 3,
             fillStyle: null,
-            fillAlpha: 0.95,
-            _count: 0, //总共有多少个bar
-            xDis: null,
-            filter: null
+            // fillAlpha: 0.95,
+            // _count: 0, //总共有多少个bar
+            // xDis: null,
+            // filter: null
         };
 
         this.label = {
@@ -61,8 +63,9 @@ class Bar extends Component {
 
         this.proportion = false;//比例柱状图，比例图首先肯定是个堆叠图
 
+        this.allGroupNum = 1;
         _.extend(true, this, opt);
-
+        this.materialMap = new Map();
         this.init();
 
     }
@@ -78,29 +81,39 @@ class Bar extends Component {
         } else {
             fields = this.field.slice(0);
         }
+        this.allGroupNum = fields.length;
         let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
         let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
         this.drawPosData = [];
         let xDatas = this._coordSystem.xAxisAttribute.data;
-        let yDatas = this._coordSystem.yAxisAttribute.data;
+        let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
+        let yAxisAttribute = yAxisInfo.attr;
+
+        let yDatas = yAxisAttribute.data;
         //x轴返回的数据是单列
         if (xDatas.length == 1) {
             xDatas = _.flatten(xDatas);
         }
 
         let yValidData = [];
-        zSection.forEach((zs, index) => {
-            fields.forEach(fd => {
 
-                if (zs == fd.toString()) {
-                    yValidData.push(yDatas[index]);
-                    if (zCustomSection.length > 0) {
-                        customField.push(zCustomSection[index]);
-                    }
+        yValidData = yAxisAttribute.getData(this.field);
+        if (this._coordSystem.coord.zAxis.dataSection) {
+            customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
+        }
 
-                }
-            })
-        })
+        // zSection.forEach((zs, index) => {
+        //     fields.forEach(fd => {
+
+        //         if (zs == fd.toString()) {
+        //             yValidData.push(yDatas[index]);
+        //             if (zCustomSection.length > 0) {
+        //                 customField.push(zCustomSection[index]);
+        //             }
+
+        //         }
+        //     })
+        // })
         //yDatas = _.flatten(yDatas);
         //let dd = false;
         let lastArray = [];
@@ -118,18 +131,32 @@ class Bar extends Component {
             //绘制的字段顺序
             this.level = 0;
             this.field = '';
+            this.group = null;
 
             //
             //this.pos = null;
         };
 
         //let ceil = this.getCeilSize();
+        let getZAxiaName = (fieldName) => {
+            let index = -1;
+            let name = '';
+            _.each(zSection, (section = "", num) => {
+                let ind = section.indexOf(fieldName);
+                if (ind !== -1) {
+                    index = num;
+                    name = zSection[num];
+                }
+            });
+            return zCustomSection.length ? zCustomSection[index] : name;
+        }
 
         xDatas.forEach((xd, no) => {
             lastArray = [];
             yValidData.forEach((yda, index) => {
                 let _fd = fields[index];
-                let zd = customField[index] ? customField[index] : fields[index].toString();
+                let fieldName = fields.toString();
+                let zd = getZAxiaName(fieldName);
 
                 if (yda.length > 1) {
                     yda.forEach((ydad, num) => {
@@ -166,6 +193,7 @@ class Bar extends Component {
                 } else {
                     let _tmp = new DataOrg();
                     _tmp.field = _fd;
+                    _tmp.group = (index + 1);
                     _.flatten(yda).slice(0).forEach((yd, i) => {
                         if (i === no) {
                             _tmp.value = new Vector3(xd, yd, zd);
@@ -179,36 +207,91 @@ class Bar extends Component {
 
         })
     }
+    getMaterial(dataOrg) {
+        let MaterilBar = null;
+        switch (this.node.materialType) {
+            case 'phong':
+                MaterilBar = MeshPhongMaterial;
+                break;
+            case 'lambert':
+                MaterilBar = MeshLambertMaterial
+                break;
+            case 'base':
+                MaterilBar = MeshBasicMaterial
+                break;
+            default:
+                MaterilBar = MeshPhongMaterial;
+        }
+
+        let _color = this._getColor(this.node.fillStyle, dataOrg);
+        let material = null;
+        //todo 鼠标移动高亮,需要为每个柱子设置单独的材质,后续考虑有没有其他办法减少材质
+        // if (!this.materialMap.has(_color)) {
+        material = new MaterilBar({
+            color: _color,
+            transparent: true,
+            opacity: 1,
+            depthTest: true,
+            depthWrite: true,
+            side: DoubleSide,
+            // polygonOffset: true,
+            // polygonOffsetFactor: 1,
+            // polygonOffsetUnits: 1.5
+        })
+        //   this.materialMap.set(_color, material);
+        // } else {
+        //     material = this.materialMap.get(_color);
+        // }
+
+
+        return material;
+
+    }
     draw() {
-        let me =this;
+        let me = this;
         this.computePos();
+        let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
         let ceil = this._coordSystem.getCeilSize();
         let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
         let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
         let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-        let boxWidth = ceil.x * 0.7;
+        
+        let oneMaxWidth =  ceil.x * 0.7;
+        let boxWidth = ceil.x  / this.allGroupNum * 0.7;
+        
+        let allGap = Math.floor(boxWidth * 0.1) *( this.allGroupNum-1) ;
+        let oneGap = 0;
+        if(allGap>0){
+            oneGap = allGap /(this.allGroupNum-1);
+            boxWidth = boxWidth - oneGap;
+        }
+       
+        
+        
+
         let boxDepth = ceil.z * 0.7;
         let boxHeight = 1;
-
+       
         this.drawPosData.forEach(dataOrg => {
-
 
             let pos = new Vector3();
             let stack = new Vector3();
             pos.setX(getXAxisPosition(dataOrg.value.x));
-            pos.setY(getYAxisPosition(dataOrg.value.y));
+            pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
             pos.setZ(getZAxisPosition(dataOrg.value.z));
+    
 
+            var disLeft = (ceil.x - boxWidth*dataOrg.group - oneGap*(dataOrg.group-1) ) / 2;
+        
+            disLeft += (oneGap + boxWidth) * (dataOrg.group-1);
+       
+            stack.setX(pos.x - ceil.x / 2 + disLeft + (boxWidth + oneGap)*(dataOrg.group-1));
+            stack.setZ(-pos.z + boxDepth * 0.5);
             if (dataOrg.isStack) {
-                stack.setX(pos.x - boxWidth * 0.5);
-                stack.setY(getYAxisPosition(dataOrg.stackValue.y));
-                stack.setZ(-pos.z + boxDepth * 0.5);
+                stack.setY(getYAxisPosition(dataOrg.stackValue.y, yAxisAttribute));
 
             } else {
-
-                stack.setX(pos.x - boxWidth * 0.5);
                 stack.setY(0);
-                stack.setZ(-pos.z + boxDepth * 0.5);
 
             }
             boxHeight = Math.max(Math.abs(pos.y), 1);
@@ -217,23 +300,28 @@ class Bar extends Component {
             // MeshLambertMaterial
             //MeshPhongMaterial
             let _color = this._getColor(this.node.fillStyle, dataOrg);
-            let metaril = new MeshPhongMaterial({
-                color: this._getColor(this.node.fillStyle, dataOrg),
-                transparent: true,
-                opacity: 1,
-                depthTest: true,
-                depthWrite: true,
-                side: DoubleSide,
-                // polygonOffset: true,
-                // polygonOffsetFactor: 1,
-                // polygonOffsetUnits: 1.5
-            })
-            let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
+
+
+            let material = me.getMaterial(dataOrg);
+            let box = null;
+
+            if (this.node.shapeType == 'cone') {
+                box = this._root.renderView.createCone(boxWidth, boxHeight, boxDepth, material);
+            } else if (this.node.shapeType == 'cylinder') {
+                box = this._root.renderView.createCylinder(boxWidth, boxHeight, boxDepth, material);
+            } else {
+                box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, material);
+
+            }
+
+
+
+
             box.position.copy(stack);
             let { x, y, z } = dataOrg.value;
-            let { x:px, y:py, z:pz } = stack;
+            let { x: px, y: py, z: pz } = stack;
             box.userData.info = {
-                title:z,
+                title: z,
                 value: {
                     x,
                     y,
@@ -250,28 +338,28 @@ class Bar extends Component {
             this.group.add(box);
 
 
-            box.on('mouseover', function(e){
+            box.on('mouseover', function (e) {
                 me.onMouseOver.call(this);
                 me._root.fire({
-                    type:'tipShow',
-                    event:e.event,
-                    data:this.userData.info
+                    type: 'tipShow',
+                    event: e.event,
+                    data: this.userData.info
                 })
             });
-            box.on('mouseout', function(e){
+            box.on('mouseout', function (e) {
                 me.onMouseOut.call(this);
                 me._root.fire({
-                    type:'tipHide',
-                    event:e.event,
-                    data:this.userData.info
+                    type: 'tipHide',
+                    event: e.event,
+                    data: this.userData.info
                 })
             });
-           
-            box.on('mousemove', function(e){
+
+            box.on('mousemove', function (e) {
                 me._root.fire({
-                    type:'tipMove',
-                    event:e.event,
-                    data:this.userData.info
+                    type: 'tipMove',
+                    event: e.event,
+                    data: this.userData.info
                 })
             });
 
@@ -296,12 +384,12 @@ class Bar extends Component {
     onClick(e) {
         //this.fire(e)
     }
-   
+
     _getColor(c, dataOrg) {
 
 
-        var color = this._coordSystem.yAxisAttribute.getColor(dataOrg.field);
-
+        let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+        var color = yAxisAttribute.getColor(dataOrg.field);
         //field对应的索引，， 取颜色这里不要用i
         if (_.isString(c)) {
             color = c
@@ -317,6 +405,7 @@ class Bar extends Component {
     }
     dispose() {
 
+        this.materialMap.clear();
         this.group.traverse((obj) => {
             if (obj.has('click', this.onClick)) {
                 obj.off('click', this.onClick);
@@ -328,6 +417,7 @@ class Bar extends Component {
                 obj.off('mouseout', this.onMouseOut);
             }
         })
+
 
         super.dispose();
 

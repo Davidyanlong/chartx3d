@@ -13,10 +13,6 @@ class Cartesian3DUI extends Component {
         this._xAxis = null;
         this._yAxis = [];
 
-        this._yAxisLeft = null;
-        //暂时忽略_yAxisRight
-        this._yAxisRight = null;
-
         this._zAxis = null;
         this._grid = null;
 
@@ -68,6 +64,10 @@ class Cartesian3DUI extends Component {
 
     init(opt) {
 
+        //多个Y轴单独构建一个组
+        this.yAxisGroup = this._root.renderView.addGroup({
+            name: 'yAxisGroup'
+        });
 
         this._initModules();
 
@@ -88,42 +88,32 @@ class Cartesian3DUI extends Component {
         this._xAxis = new XAxis(this);
         this.group.add(this._xAxis.group);
 
-        //这里定义的是配置
-
-        let yAxisLeft = this._yAxisLeft,
-            yAxisRight = this._yAxisRight;
-
-
-
-        if (yAxisLeft) {
-            this._yAxisLeft = new YAxis(this, 'left');
-            this.group.add(this._yAxisLeft.group);
-            //this._yAxis.push(this._yAxisLeft);
-        }
-
-        //后续坐标系如果还受其他组件的影响,继续计算并加入进来
-
-        // yAxisRight = _.find( yAxis , function( ya ){
-        //     return ya.align == "right"
-        // } );
-        // if( yAxisRight ){
-        //     yAxisRightDataFrame = this._getAxisDataFrame( yAxisRight.field )
-        //     this._yAxisRight = new yAxisConstructor( yAxisRight, yAxisRightDataFrame );
-        //     this._yAxisRight.axis = yAxisRight;
-        //     this.sprite.addChild( this._yAxisRight.sprite );
-        //     this._yAxis.push( this._yAxisRight );
-        // };
 
         this._zAxis = new ZAxis(this);
         this.group.add(this._zAxis.group);
+
+
+        this.yAxis.forEach((opt) => {
+            let _yAxis = new YAxis(this, opt)
+            this._yAxis.push(_yAxis);
+            this.yAxisGroup.add(_yAxis.group);
+        });
+
+
+        this.group.add(this.yAxisGroup);
+        
     }
 
     draw() {
 
-        this._yAxisLeft.draw();
-        this._xAxis.draw();
-        this._zAxis.draw();
-        this._grid.draw();
+        // this._yAxisLeft.draw();
+        this._yAxis.forEach(_yAxis => {
+            _yAxis.draw();
+        })
+         this._xAxis.draw();
+         this._zAxis.draw();
+         this._grid.draw();
+
     }
 
     getFaceInfo() {
@@ -148,13 +138,13 @@ class Cartesian3DUI extends Component {
             rbb = new Vector3(width, 0, -depth),       //左后下 
             rbt = new Vector3(width, height, -depth);  //左后上
 
-      
+
 
         let zDir = new Vector3(0, 0, 1);
         let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
         let cameraPos = coordCenter.clone();
         this._root.renderView._camera.getWorldPosition(cameraPos);
-        
+
         let result = {
             left: {
                 dir: new Vector3(1, 0, 0),     //法线方向
@@ -194,7 +184,9 @@ class Cartesian3DUI extends Component {
     }
     dispose() {
 
-        this._yAxisLeft.dispose();
+        this._yAxis.forEach(_yAxis => {
+            _yAxis.dispose();
+        })
         this._xAxis.dispose();
         this._zAxis.dispose();
         this._grid.dispose();

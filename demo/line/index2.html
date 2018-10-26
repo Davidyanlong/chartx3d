@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <title>xChart demo -- bar</title>
+
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
+</head>
+
+<body>
+    <div style="margin:30px">
+        <label style="margin-right:10px"><input type="radio" value="uv" name="item" checked>页面访问数</label>
+        <label style="margin-right:10px"><input type="radio" value="pv" name="item">展现量</label>
+        <label style="margin-right:10px"><input type="radio" value="click" name="item">点击量</label>
+        <label style="margin-right:10px"><input type="radio" value="ppc" name="item">点击率</label>
+
+        <label style="margin-right:10px"><input type="radio" value="ecpm" name="item">千次展现成本</label>
+        <label style="margin-right:10px"><input type="radio" value="ecpc" name="item">点击单价</label>
+        <label style="margin-right:10px"><input type="radio" value="cost" name="item">消耗</label>
+        <label style="margin-right:10px"><input type="radio" value="order" name="item">成交订单量</label>
+    </div>
+
+
+    <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
+</body>
+
+</html>
+
+<script>
+    //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
+    //第一行是表头。
+    var data = [
+        ["xfield", "uv", "pv", "click", "ppc", "ecpm", "ecpc", "cost", "order"],
+        [1, 101, 300, 33, 0.2, 456, 3.1, 4252432, 4353],
+        [2, 67, 51, 26, 0.5, 646, 1.2, 35353, 5445],
+        [3, 130, 50, 50, 0.8, 654, 4.3, 46427, 3663],
+        [4, 101, 60, 33, 0.4, 463, 3.9, 43553, 46365],
+        [5, 67, 91, 126, 0.22, 364, 4.6, 364788, 557546],
+        [6, 30, 50, 90, 0.35, 745, 1.3, 564355, 574455],
+        [7, 51, 120, 33, 0.91, 334, 0.9, 43663, 436345],
+        [8, 67, 51, 86, 0.1, 463, 0.98, 44535, 565553],
+        [9, 120, 90, 150, 0.34, 974, 4.1, 84565, 875445]
+
+    ];
+
+    /*
+    var data = [
+        { xfield : 1, uv: null, pv: undefined, click: null },
+        { xfield : 2, uv: 0, pv: "", click: ""},
+        { xfield : 3, uv: 23, pv: 145, click : undefined },
+        { xfield : 4, uv : 232, pv: 32, click : 123 },
+        { xfield : 5, uv : 232, pv: 123, click : 63 },
+        { xfield : 6, uv : 43, pv: 213, click : 42 },
+        { xfield : 7, uv : 23, pv: 152, click : 62 },
+        { xfield : 8, uv : 122, pv: 53, click : 35 },
+        { xfield : 9, uv : 23, pv: 45, click : 103 },
+        { xfield : 10, uv : 64, pv: 75, click : 74 },
+        { xfield : 11, uv : 212, pv: 74, click : 43 },
+        { xfield : 12, uv : undefined, pv: 19, click : 7 }
+    ]
+    */
+
+    let customSet = {
+        ppc: {
+            name: "ppc",
+            label: {
+                format: (val) => {
+                    return Math.round(val * 100) + '%';
+                }
+            }
+
+        },
+        ecpc: {
+            name: "ecpc",
+            label: {
+                format: (val) => {
+                    return Math.round(val * 100) + '%';
+                }
+            }
+
+        }
+    };
+
+    $('input[type="radio"]').on('change', onChange);
+    function onChange() {
+        let yAxisOp = [];
+        let graphs = [];
+        let gopts = {
+            type: "line",
+            field: ["uv"],
+            yAxisName: "uv"
+        }
+        let dataSection = [];
+        $("[name='item']").each((index, dom) => {
+            var key = dom.value;
+            var isCheck = dom.checked;
+            var graph = Object.create(gopts);
+            graph.field = [key];
+            graph.yAxisName = key;
+
+            if (isCheck) {
+                if (customSet[key]) {
+                    yAxisOp.unshift(customSet[key])
+
+                } else {
+                    yAxisOp.unshift({
+                        name: key
+                    })
+                }
+                graphs.unshift(graph);
+            } else {
+                if (customSet[key]) {
+                    yAxisOp.push(customSet[key])
+                } else {
+                    yAxisOp.push({
+                        name: key
+                    })
+                }
+                graphs.push(graph);
+
+            }
+
+
+
+        });
+
+        graphs.forEach(item => {
+            let name = $("[value='" + item.yAxisName + "']").parent().text();
+            dataSection.push(name);
+        });
+        options.coord.yAxis = yAxisOp;
+        options.coord.zAxis.dataSection = dataSection;
+        options.graphs = graphs;
+        window.line = Chartx.create("canvasTest", data, options)
+    }
+
+
+    var options = {
+        controls: {
+            autoRotate: false,
+            boxWidth:2000, 
+            distance:1800,        //默认相机距离
+            maxDistance:8000,     //最大相机距离
+            minDistance:300,      //最小相机距离
+            alpha: 15,    //绕X轴旋转
+            beta: 25,      //绕Y轴旋转
+        },
+        coord: {
+            type: "cartesian3d",
+            //横向的图表，是坐标系横向了
+            //horizontal : true,
+
+            xAxis: {
+                field: "xfield",
+                label: {
+                    rotation: 30
+                }
+            },
+            yAxis: [
+
+
+            ],
+            zAxis: {
+                depth: 2000,
+                //dataSection: ["点击率", "点击,成交", "页面访问数"]
+            }
+
+        },
+        graphs: [
+        ]
+
+    };
+    onChange();
+    //window.line = Chartx.create("canvasTest", data, options)
+</script>

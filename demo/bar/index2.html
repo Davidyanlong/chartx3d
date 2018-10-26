@@ -99,7 +99,7 @@
                 yAxis: [
                     {
                        // min:0,
-                        field: 'uv',
+                       name:'uv',
                         title: {
                             content: "left"
                         },
@@ -129,8 +129,21 @@
                 //},
                 {
                     type: "bar",
-                    field: ['uv','pv','click','ppc'],
-                    yAxisAlign: "left",
+                    field: [['uv','click']],
+                    yAxisName:'uv',
+                    label: {
+                        enabled: true,
+                        verticalAlign: "middle",
+                        position: "center",
+                        fontColor: "#fff",
+                        lineWidth: 2,
+                        rotation: -90
+                    }
+                },
+                {
+                    type: "bar",
+                    field: ['pv'],
+                    yAxisName:'uv',
                     label: {
                         enabled: true,
                         verticalAlign: "middle",

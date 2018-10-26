@@ -14,7 +14,7 @@
 
 //graphs
 import { Bar } from "./components/graphs/bar/index";
-// import Line from "./components/graphs/line/index"
+import { Line } from "./components/graphs/line/index"
 // import Scat from "./components/graphs/scat/index"
 // import Pie from "./components/graphs/pie/index"
 // import Radar from "./components/graphs/radar/index"
@@ -28,7 +28,7 @@ import { Bar } from "./components/graphs/bar/index";
 // import MarkLine from "./components/markline/index"
 // import MarkPoint from "./components/markpoint/index"
 // import Anchor from "./components/anchor/index"
- import {Tips} from "./components/tips/index"
+import { Tips } from "./components/tips/index"
 // import BarTgi from "./components/bartgi/index"
 // import Theme from "./components/theme/index"
 // import WaterMark from "./components/watermark/index"
@@ -51,7 +51,7 @@ var coord = {
 
 var graphs = {
 
-    // line  : Line,
+    //line  : Line,
     // scat  : Scat,
     // pie   : Pie,
     // radar : Radar,
@@ -63,14 +63,14 @@ var graphs = {
 
 var components = {
     bar: Bar,
-
+    line: Line,
     // theme : Theme,
     // legend : Legend,
     // dataZoom : DataZoom,
     // markLine : MarkLine,
     // markPoint : MarkPoint,
     // anchor : Anchor,
-    tips : Tips,
+    tips: Tips,
     // barTgi : BarTgi,
     // waterMark : WaterMark,
     // cross : Cross

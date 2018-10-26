@@ -11,7 +11,8 @@ class Grid extends Component {
         super(_cartesionUI._coordSystem);
 
 
-        let opt = this._opt = _cartesionUI;
+        let opt = this._opt = this._coordSystem.coord.grid;
+        this.coord = this._coordSystem.coord;
 
         // this.width = 0;
         // this.height = 0;
@@ -38,7 +39,7 @@ class Grid extends Component {
         };
 
 
-        _.extend(true, this, opt.grid);
+        _.extend(true, this, opt);
 
         this.init();
     }
@@ -58,8 +59,10 @@ class Grid extends Component {
         this.group.add(this.frontGroup);
         this.group.add(this.backGroup);
 
+        this.group.renderOrder = -1;
 
-        this._onChangeBind= () => {
+
+        this._onChangeBind = () => {
             if (!me.enabled) return;
             let _faceInfo = me._cartesionUI.getFaceInfo();
             _.each(_faceInfo, (value, key) => {
@@ -67,7 +70,7 @@ class Grid extends Component {
             })
 
         };
-        this._root.orbitControls.on('change', this._onChangeBind );
+        this._root.orbitControls.on('change', this._onChangeBind);
 
 
     }
@@ -119,7 +122,8 @@ class Grid extends Component {
         } = _size;
 
         let xSection = me._coordSystem.xAxisAttribute.getSection();
-        let ySection = me._coordSystem.yAxisAttribute.getSection();
+        let yAttribute = me._coordSystem.getYAxis().attr;
+        let ySection = yAttribute.getSection();
         let zSection = me._coordSystem.zAxisAttribute.getSection();
 
         if (!me.line.enabled) {
@@ -128,7 +132,7 @@ class Grid extends Component {
         //绘制左面的线条
         let LinesVectors = [];
         ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num);
+            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
             LinesVectors.push(new Vector3(0, posY, 0));
             LinesVectors.push(new Vector3(0, posY, -depth));
         })
@@ -144,7 +148,7 @@ class Grid extends Component {
         //绘制右面的线条
         LinesVectors = [];
         ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num);
+            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
             LinesVectors.push(new Vector3(width, posY, 0));
             LinesVectors.push(new Vector3(width, posY, -depth));
         })
@@ -199,7 +203,7 @@ class Grid extends Component {
         })
 
         ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num);
+            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
             LinesVectors.push(new Vector3(0, posY, 0));
             LinesVectors.push(new Vector3(width, posY, 0));
         })
@@ -216,7 +220,7 @@ class Grid extends Component {
         })
 
         ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num);
+            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
             LinesVectors.push(new Vector3(0, posY, -depth));
             LinesVectors.push(new Vector3(width, posY, -depth));
         })
@@ -229,9 +233,9 @@ class Grid extends Component {
         this.drawFace();
         this.drawLine();
     }
-    dispose(){
+    dispose() {
         super.dispose();
-        this._root.orbitControls.off('change', this._onChangeBind );
+        this._root.orbitControls.off('change', this._onChangeBind);
         this._onChangeBind = null;
     }
 

@@ -10,9 +10,10 @@ import { numAddSymbol } from '../../../utils/tools';
 class ZAxis extends Component {
     constructor(_cartesionUI) {
         super(_cartesionUI._coordSystem);
-        let opt = this._opt = _cartesionUI;
+
+        let opt = this._opt = this._coordSystem.coord.zAxis;
         this._cartesionUI = _cartesionUI;
-        //this._coord = _coord || {};
+        this._coord = this._coordSystem.coord || {};
 
         this.width = 0;
         this.height = 0;
@@ -250,13 +251,13 @@ class ZAxis extends Component {
             if (_faceInfo.left.visible) {
                 origin = new Vector3(width, height, 0);
                 _tickLineDir = new Vector3(1, 0, 0);
-               
+
             } else {
                 origin = new Vector3(0, height, 0)
                 _tickLineDir = new Vector3(-1, 0, 0);
-               
+
             }
-          if (_faceInfo.front.visible) {
+            if (_faceInfo.front.visible) {
                 if (_faceInfo.left.visible) {
                     _textAlign = 'right';
                 } else {

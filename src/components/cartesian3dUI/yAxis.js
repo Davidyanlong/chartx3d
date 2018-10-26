@@ -7,18 +7,20 @@ import { TickTexts } from './tickTexts';
 import { numAddSymbol } from '../../../utils/tools';
 
 class YAxis extends Component {
-    constructor(_cartesionUI, axisType = 'left') {
+    constructor(_cartesionUI, opt) {
         super(_cartesionUI._coordSystem);
-        let opt = this._opt = _cartesionUI;
-        //this._coord = _coord || {};
+
+        this._opt = opt;
+        this._coord = this._coordSystem.coord || {};
         this._cartesionUI = _cartesionUI;
+        this.name = opt.name;
 
-        this.width = null; //第一次计算后就会有值
-        this.yMaxHeight = 0; //y轴最大高
-        this.height = 0; //y轴第一条线到原点的高
+        //this.width = null; //第一次计算后就会有值
+        //this.yMaxHeight = 0; //y轴最大高
+        //this.height = 0; //y轴第一条线到原点的高
 
-        this.maxW = 0;    //最大文本的 width
-        this.field = [];   //这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
+        // this.maxW = 0;    //最大文本的 width
+        this.field = opt.field || [];   //这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
 
         this.title = {
             content: "",
@@ -58,18 +60,23 @@ class YAxis extends Component {
             offset: { x: 0, y: 0, z: 40 }    //和刻度线的距离
         };
 
+        this.origin = new Vector3();
+        this.boundboxSize = new Vector3();
+        this.yAxisAttribute = this._coordSystem.yAxisAttribute[this.name];
+
         // if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
         //     //如果是横向直角坐标系图
         //     this.label.rotation = 90;
         // };
 
-        this.pos = {
-            x: 0,
-            y: 0
-        };
-        this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
 
-        this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
+        // this.pos = {
+        //     x: 0,
+        //     y: 0
+        // };
+        // this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
+
+        //this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
         // this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
         // this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
 
@@ -82,48 +89,40 @@ class YAxis extends Component {
         //this.dataOrg = data.org || []; //源数据
 
 
-        this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
-        this.basePoint = null; //value为 baseNumber 的point {x,y}
-        this.min = null;
-        this.max = null; //后面加的，目前还没用
+        // this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
+        // this.basePoint = null; //value为 baseNumber 的point {x,y}
+        // this.min = null;
+        // this.max = null; //后面加的，目前还没用
 
-        this._yOriginTrans = 0;//当设置的 baseNumber 和datasection的min不同的时候，
+        // this._yOriginTrans = 0;//当设置的 baseNumber 和datasection的min不同的时候，
 
 
         //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
         //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-        this.filter = null; //function(params){}; 
+        //this.filter = null; //function(params){}; 
 
-        this.isH = false; //是否横向
+        //this.isH = false; //是否横向
 
-        this.animation = false;
+        //this.animation = false;
 
-        this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
+        //this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
 
-        this.layoutType = "proportion"; // rule , peak, proportion
-        if (axisType == 'left') {
-            _.extend(true, this, this._opt.yAxis[0]);
+        //this.layoutType = "proportion"; // rule , peak, proportion
 
-            // this.label.enabled = this.enabled && this.label.enabled;
-            // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
-            // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
+        _.extend(true, this, opt);
 
-            this.init(opt, this._coordSystem.yAxisAttribute);
+        // this.label.enabled = this.enabled && this.label.enabled;
+        // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+        // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
-        } else {
-            //可以忽略
-            //_.extend(true, this, this._opt._yAxisRight);
-            //this.init(opt, this._coordSystem.yAxisAttributeRight);
-
-        }
-
+        this.init(opt);
 
         this.group.visible = !!this.enabled;
         this._getName();
 
     }
 
-    init(opt, data) {
+    init(opt) {
         let me = this;
         //extend会设置好this.field
         //先要矫正子啊field确保一定是个array
@@ -131,7 +130,9 @@ class YAxis extends Component {
             this.field = [this.field];
         };
 
-        this._initData(data);
+        this._initData(this.yAxisAttribute);
+
+        this.getOrigin();
 
         this._onChangeBind = () => {
             me._initModules();
@@ -145,15 +146,15 @@ class YAxis extends Component {
         if (!this.enabled) return;
         const _axisDir = new Vector3(0, 1, 0);
         const _coordSystem = this._coordSystem;
-        let coordBoundBox = _coordSystem.getBoundbox();
-        let _size = new Vector3(); //空间盒子的大小
-        coordBoundBox.getSize(_size);
+        const coordBoundBox = _coordSystem.getBoundbox();
+
         let {
             x: width,
-            y: height,
             z: depth
-        } = _size;
-        let origin = _coordSystem.getOrigin();
+        } = this.boundboxSize;
+
+        let origin = this.origin.clone();
+
         let _tickLineDir = new Vector3(0, 0, 1);
         let _faceInfo = this._cartesionUI.getFaceInfo();
         let _textAlign = this.label.textAlign;
@@ -161,24 +162,29 @@ class YAxis extends Component {
 
         if (_faceInfo.left.visible) {
             if (_faceInfo.back.visible) {
-                origin = _coordSystem.getOrigin();
+                //默认计算的原单origin
                 _tickLineDir = new Vector3(0, 0, 1);
                 _textAlign = 'right';
 
-
             } else {
-                origin = new Vector3(0, 0, -depth);
+                 //默认计算的原单origin
+                if(_coordSystem.coord.yAxis.length==1){
+                    origin = new Vector3(0, 0, -depth);
+                }
                 _tickLineDir = new Vector3(0, 0, -1);
                 _textAlign = 'left';
                 _offsetZ *= -1;
             }
         } else {
             if (_faceInfo.back.visible) {
-                origin = new Vector3(width, 0, 0);
+                origin.setX(width);
                 _tickLineDir = new Vector3(0, 0, 1);
                 _textAlign = 'left';
             } else {
-                origin = new Vector3(width, 0, -depth);
+                origin.setX(width);
+                if(_coordSystem.coord.yAxis.length==1){
+                    origin = new Vector3(width, 0, -depth);
+                }
                 _tickLineDir = new Vector3(0, 0, -1);
                 _textAlign = 'right';
                 _offsetZ *= -1;
@@ -200,7 +206,7 @@ class YAxis extends Component {
             //二次绘制
             //this._tickLine.dispose();
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+            this._tickLine.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
             this._tickLine.update();
             // this._tickLine.drawStart();
             // this._tickLine.draw();
@@ -209,7 +215,7 @@ class YAxis extends Component {
             //this._tickText.dispose();
 
             this._tickText.setDir(_tickLineDir);
-            this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+            this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
             this._tickText.setTextAlign(_textAlign);
             this._tickText.offset.setZ(_offsetZ);
             // this._tickText.drawStart(this._formatTextSection);
@@ -232,7 +238,7 @@ class YAxis extends Component {
 
             this._tickLine = new TickLines(_coordSystem, this.tickLine);
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+            this._tickLine.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
             this._tickLine.drawStart();
             this.group.add(this._tickLine.group);
 
@@ -244,12 +250,37 @@ class YAxis extends Component {
 
             this._tickText.setTextAlign(_textAlign);
             this._tickText.setDir(_tickLineDir);
-            this._tickText.initData(this._axisLine, _coordSystem.yAxisAttribute, _coordSystem.getYAxisPosition);
+            this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
 
             this._tickText.drawStart(this._formatTextSection);
             this.group.add(this._tickText.group);
 
         }
+
+    }
+    getOrigin() {
+        let _coordSystem = this._coordSystem;
+        let coordBoundBox = _coordSystem.getBoundbox();
+        let _size = new Vector3(); //空间盒子的大小
+        coordBoundBox.getSize(_size);
+        this.boundboxSize = _size.clone();
+        let {
+            z: depth
+        } = _size;
+        let origin = _coordSystem.getOrigin();
+
+
+        let segment = _coordSystem.coord.yAxis.length;
+        let index = _.indexOf(_coordSystem.coord.yAxis, this._opt);
+        let step = 0;
+        if (segment == 1) {
+            step = 0;
+        } else {
+            step = index / (segment - 1);
+        }
+        origin.setZ(depth * -step);
+
+        this.origin = origin;
 
     }
     updateAxis() {
@@ -320,7 +351,7 @@ class YAxis extends Component {
 
         this._getName();
 
-        this._setYAxisWidth();
+        //this._setYAxisWidth();
 
 
     }
@@ -353,7 +384,7 @@ class YAxis extends Component {
         this._axisLine.draw();
         this._tickLine.draw();
         this._tickText.draw();
-        console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
+       // console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
     }
 
     getBoundbox() {
@@ -376,61 +407,61 @@ class YAxis extends Component {
         return result;
 
     }
-    _setYAxisWidth() { //检测下文字的宽度
-        var me = this;
-        const _coordSystem = me._coordSystem;
-        if (!me.enabled) {
-            me.width = 0;
-        } else {
-            var _maxTextWidth = 0;
+    // _setYAxisWidth() { //检测下文字的宽度
+    //     var me = this;
+    //     const _coordSystem = me._coordSystem;
+    //     if (!me.enabled) {
+    //         me.width = 0;
+    //     } else {
+    //         var _maxTextWidth = 0;
 
-            if (this.label.enabled) {
+    //         if (this.label.enabled) {
 
-                //me._formatTextSection.forEach((val)=>{
-                let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '))
-                _maxTextWidth = Math.max(_maxTextWidth, width);
-                //})
-                // _.each(me.dataSection, function (val, i) {
+    //             //me._formatTextSection.forEach((val)=>{
+    //             let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '))
+    //             _maxTextWidth = Math.max(_maxTextWidth, width);
+    //             //})
+    //             // _.each(me.dataSection, function (val, i) {
 
-                //     //从_formatTextSection中取出对应的格式化后的文本
-                //     let txt = me._textElements[i];
-                //     let scale = me._root.renderView.getObjectScale(txt);
+    //             //     //从_formatTextSection中取出对应的格式化后的文本
+    //             //     let txt = me._textElements[i];
+    //             //     let scale = me._root.renderView.getObjectScale(txt);
 
-                //     let textWidth = scale.x;
-                //     let textHeight = scale.y;
+    //             //     let textWidth = scale.x;
+    //             //     let textHeight = scale.y;
 
-                //     let width = textWidth; //文本在外接矩形width
-                //     let height = textHeight;//文本在外接矩形height
+    //             //     let width = textWidth; //文本在外接矩形width
+    //             //     let height = textHeight;//文本在外接矩形height
 
-                //     if (!!me.label.rotation) {
-                //         //有设置旋转
-                //         if (me.label.rotation == 90) {
-                //             width = textHeight;
-                //             height = textWidth;
-                //         } else {
-                //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
-                //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
-                //             height = parseInt(sinR * textWidth);
-                //             width = parseInt(cosR * textWidth);
-                //         };
-                //     };
+    //             //     if (!!me.label.rotation) {
+    //             //         //有设置旋转
+    //             //         if (me.label.rotation == 90) {
+    //             //             width = textHeight;
+    //             //             height = textWidth;
+    //             //         } else {
+    //             //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
+    //             //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
+    //             //             height = parseInt(sinR * textWidth);
+    //             //             width = parseInt(cosR * textWidth);
+    //             //         };
+    //             //     };
 
-                //     _maxTextWidth = Math.max(_maxTextWidth, width);
-                //     console.log('width',width);
-                // });
-            };
+    //             //     _maxTextWidth = Math.max(_maxTextWidth, width);
+    //             //     console.log('width',width);
+    //             // });
+    //         };
 
-            //这里的计算宽度流出需要考虑一下
-            this._maxTextWidth = _maxTextWidth;
-            let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
-            this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
-            //this.width+=10;
-            // if (this._title) {
-            //     this.height += this._title.getTextHeight()
-            // };
+    //         //这里的计算宽度流出需要考虑一下
+    //         this._maxTextWidth = _maxTextWidth;
+    //         let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
+    //         this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+    //         //this.width+=10;
+    //         // if (this._title) {
+    //         //     this.height += this._title.getTextHeight()
+    //         // };
 
-        }
-    }
+    //     }
+    // }
 
     dispose() {
 

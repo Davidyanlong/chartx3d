@@ -7,6 +7,8 @@ var json = require('rollup-plugin-json');
 var babelCore = require("babel-core");
 
 var fs = require('fs');
+// var earcut = require("earcut");
+// import earcut from  "earcut"
 
 
 function glsl() {
@@ -47,8 +49,8 @@ rollup.rollup({
             browser: true
         }),
 
-        //commonjs(),
-
+        commonjs({ include: 'node_modules/**'}),
+        //babel()
         // babel({
         //     //babelrc: true,
         //     //presets: ["es2015-loose-rollup"],
@@ -76,9 +78,10 @@ rollup.rollup({
         //sourceMap: 'inline'
     }).then(() => {
         let result = babelCore.transformFileSync("dist/chartx_es6.js", {
-            compact:true
+            compact: true
         });
         
+
         fs.writeFileSync('dist/chartx.js', result.code);
 
     })

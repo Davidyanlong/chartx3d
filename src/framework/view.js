@@ -3,6 +3,9 @@ import {
     Camera,
     Scene,
     BoxGeometry,
+    BufferGeometry,
+    Float32BufferAttribute,
+    CylinderGeometry,
     Mesh,
     MeshBasicMaterial,
     MeshLambertMaterial,
@@ -38,7 +41,7 @@ import {
 
 import _ from "../../lib/underscore";
 import { RenderFont } from './renderFont';
-
+import earcut from "earcut";
 
 class View {
     constructor(_frameWork) {
@@ -207,6 +210,89 @@ class View {
 
 
     }
+
+    //创建一个圆柱体
+    createCylinder(width = 1, height = 1, depth = 1, materials = undefined) {
+
+
+
+        if (!materials) {
+            materials = new MeshLambertMaterial({
+                // depthTest: true,
+                // depthWrite: true
+            });
+        }
+
+        // 初期把一个box 看作一个mesh  后期优化在渲染前做顶点合并
+        let transMatrix = new Matrix4();
+        //let radius = width * 0.5;
+        let geometry = new CylinderGeometry(1, 1, 1, 60);
+
+        let mesh = new Mesh(geometry, materials);
+
+        //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
+
+        geometry.vertices.forEach(vertice => {
+
+            vertice.addScalar(0.5);
+            //vertice.y -= 0.5;
+            vertice.z *= -1;
+        });
+
+        //更加给定的得数据变换box
+        let radius = Math.min(width, width) * 0.5;
+        transMatrix.makeScale(radius, height, radius);
+
+        geometry.vertices.forEach(vertice => {
+            vertice.applyMatrix4(transMatrix);
+        });
+
+
+        return mesh;
+
+
+    }
+    createCone(width = 1, height = 1, depth = 1, materials = undefined) {
+
+
+
+        if (!materials) {
+            materials = new MeshLambertMaterial({
+                // depthTest: true,
+                // depthWrite: true
+            });
+        }
+
+        // 初期把一个box 看作一个mesh  后期优化在渲染前做顶点合并
+        let transMatrix = new Matrix4();
+        //let radius = width * 0.5;
+        let geometry = new CylinderGeometry(0, 1, 1, 60);
+
+        let mesh = new Mesh(geometry, materials);
+
+        //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
+
+        geometry.vertices.forEach(vertice => {
+
+            vertice.addScalar(0.5);
+            //vertice.y -= 0.5;
+            vertice.z *= -1;
+        });
+
+        //更加给定的得数据变换box
+        let radius = Math.min(width, width) * 0.5;
+        transMatrix.makeScale(radius, height, radius);
+
+        geometry.vertices.forEach(vertice => {
+            vertice.applyMatrix4(transMatrix);
+        });
+
+
+        return mesh;
+
+
+    }
+
     //创建一个面
     createPlane(width = 1, height = 1, materials = undefined, showInfo = {}, group = undefined, faceStyle = {}) {
 
@@ -268,7 +354,7 @@ class View {
 
         let material = new LineBasicMaterial({
             color: lineStyle.strokeStyle,
-            transparent: true,
+            // transparent: true,
             depthTest: true,
             depthWrite: false
 
@@ -301,6 +387,7 @@ class View {
         direction.normalize()
         let matLine = new LineMeshMaterial({
             color: lineColor,
+            transparent: true,
             linewidth: lineWidth, // in pixels
             resolution: new Vector2(this.width, this.height),
             dashed: false
@@ -337,6 +424,34 @@ class View {
 
 
         return group;
+
+    }
+
+    //绘制折线(
+    createBrokenLine(points, lineWidth, lineColor, isSmooth) {
+
+        let matLine = new LineMeshMaterial({
+            color: lineColor,
+            linewidth: lineWidth, // in pixels
+            resolution: new Vector2(this.width, this.height),
+            dashed: false,
+            depthTest: true,
+            depthWrite: false
+        });
+        let lineMeshGeometry = new LineGeometry();
+
+
+
+        let triangleVertices = [];
+        points.forEach(point => {
+            triangleVertices.push(point.toArray());
+        })
+
+        lineMeshGeometry.setPositions(_.flatten(triangleVertices));
+        let line = new Line2(lineMeshGeometry, matLine);
+        line.drawMode = TrianglesDrawMode;
+        line.computeLineDistances();
+        return line;
 
     }
 
@@ -413,6 +528,36 @@ class View {
 
     }
 
+    createPolygonPlane(points = [], faceStyle = {}, materials) {
+
+        if (!materials) {
+
+            materials = new MeshBasicMaterial({
+                color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                side: DoubleSide,
+                transparent: true,
+                opacity: faceStyle.alpha || 0.5,
+                // polygonOffset: true,
+                // polygonOffsetFactor: 1,
+                // polygonOffsetUnits: 0.1,
+                depthTest: true,
+                depthWrite: false
+
+            });
+        }
+
+        //earcut(data.vertices, data.holes, data.dimensions);
+        let triangles = earcut(points, null, 3);
+        let geometry = new BufferGeometry();
+        let positionBuffer = new Float32BufferAttribute(points, 3);
+        geometry.addAttribute('position', positionBuffer);
+        geometry.setIndex(triangles);
+
+        let mesh = new Mesh(geometry, materials);
+
+        return mesh;
+    }
+
     createTextSprite(text, fontSize, color) {
         let sprite = new TextSprite({
             fontSize: fontSize,
@@ -449,7 +594,7 @@ class View {
     }
 
     dispose() {
-        
+
         this._scene = null;
         this._camera = null;
 
