@@ -26,8 +26,8 @@ const DEFAULT_AXIS = 'default_axis_for_Y';
 const cartesian_wm = new WeakMap();
 
 class Cartesian3D extends InertialSystem {
-    constructor(root) {
-        super(root);
+    constructor(el, data, opts, graphs, components) {
+        super(el, data, opts, graphs, components);
 
         //相对与世界坐标的原点位置
 
@@ -38,15 +38,15 @@ class Cartesian3D extends InertialSystem {
 
         this.boundbox = new Box3();
 
-        this.xAxisAttribute = new AxisAttribute(root);
+        this.xAxisAttribute = new AxisAttribute(this._root);
         //默认Y轴
         this.yAxisAttribute = {};
 
-        this.zAxisAttribute = new AxisAttribute(root);
+        this.zAxisAttribute = new AxisAttribute(this._root);
 
         this._coordUI = null;
 
-        this.group = this._root.app.addGroup({ name: 'cartesian3dSystem' });
+        this.group.name = 'cartesian3dSystem';
 
         this.init();
 
@@ -550,7 +550,8 @@ class Cartesian3D extends InertialSystem {
 
     }
 
-    draw() {
+    drawUI() {
+        super.drawUI();
         this._coordUI.draw();
 
         //测试
@@ -736,7 +737,7 @@ class Cartesian3D extends InertialSystem {
     }
 
     positionToScreen(pos) {
-       return positionToScreen.call(this, pos);
+        return positionToScreen.call(this, pos);
     }
 
     dispose() {

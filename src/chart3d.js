@@ -5,7 +5,7 @@ import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Component } from './components/Component';
 import DataFrame from "../utils/dataframe";
-import { theme } from './theme';
+import theme from './theme';
 
 
 import { Events } from 'mmgl/src/index';
@@ -22,6 +22,8 @@ class Chart3d extends Events {
         this.domSelector = opt.el;
         this.opt = opt.opts;
         this.data = opt.data;
+        this.graphs = opt.graphs;
+        this.components = opt.components;
 
         this.el = null;
         this.view = null;
@@ -133,7 +135,7 @@ class Chart3d extends Events {
 
         interaction.on('refresh', this._onChangeBind);
 
-        //同步主相机的位置和方向
+        // //同步主相机的位置和方向
         // controls.on('change', (e) => {
         //    this.labelView._camera.position.copy(e.target.object.position);
         //    this.labelView._camera.lookAt(e.target.target);
@@ -150,18 +152,38 @@ class Chart3d extends Events {
     setCoord(_Coord) {
 
         //初始化物体的惯性坐标(放在具体的坐标系下)
-        if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
-            this.currCoord = new _Coord(this);
-            this.rootStage.add(this.currCoord.group);
-        }
-        this.currCoord.initCoordUI();
+        // if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
+        // this.currCoord = new _Coord(this);
+        this.currCoord = _Coord;
+        this.rootStage.add(this.currCoord.group);
+        // }
 
+
+    }
+
+    initComponent() {
+        let opts = this.opt;
+        for (var p in opts) {
+            if (p == 'coord') continue;
+            if (p == 'graphs') {
+                for (var t = 0; t < opts.graphs.length; t++) {
+                    let key = opts.graphs[t].type;
+                    if (this.graphs[key]) {
+                        this.addComponent(this.graphs[key], opts.graphs[t]);
+                    }
+                }
+            }
+            if (this.components[p]) {
+                this.addComponent(this.components[p], opts[p]);
+            }
+
+        }
     }
     //添加组件
     addComponent(cmp, opts) {
         //todo 图像是否要分开,目前没有分开共用Component一个基类
         if (cmp.prototype instanceof Component) {
-
+            
             let instance = new cmp(this, opts);
             this.components.push(instance);
         }
@@ -170,7 +192,7 @@ class Chart3d extends Events {
 
     drawComponent() {
         //先绘制坐标系
-        this.currCoord.draw();
+        this.currCoord.drawUI();
         this.components.forEach(cmp => {
             this.currCoord.group.add(cmp.group);
             cmp.draw();
@@ -178,6 +200,7 @@ class Chart3d extends Events {
     }
 
     draw() {
+        this.currCoord.initCoordUI();
         this.drawComponent();
         this.app._framework.isUpdate = true;
 
@@ -304,7 +327,7 @@ class Chart3d extends Events {
 
         //初始化labelView
         this.labelGroup = app.addGroup({ name: 'labelsGroup' });
-       
+
         //Y轴反转
         let _modelMatrix = this.labelGroup.matrix.elements;
         _modelMatrix[1] = - _modelMatrix[1];
@@ -349,6 +372,9 @@ class Chart3d extends Events {
 
     resetData() {
 
+    }
+    destroy() {
+        this.dispose({ type: 'destroy' });
     }
     dispose() {
 

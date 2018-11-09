@@ -1,16 +1,15 @@
 
 import { Events, Vector3, Box3, Object3D, _Math } from "mmgl/src/index";
 import _ from '../../../lib/underscore';
+import { Chart3d } from '../../chart3d';
 
 
 //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
 //惯性坐标系
 class InertialSystem extends Events {
-    constructor(root) {
+    constructor(el, data, opts, graphs, components) {
         super();
-        this._root = root;
-
-        let opts = _.clone(this._root.opt);
+        //let opts = _.clone(this._root.opt);
         this.coord = {};
         //坐标原点
         this.origin = new Vector3(0, 0, 0);
@@ -26,8 +25,14 @@ class InertialSystem extends Events {
             back: 0
         }
 
-        this.group = root.app.addGroup({ name: 'InertialSystem' });
+        //匹配2D接口,初始化在坐标系中完成
+        let chart = this._root = new Chart3d({ el, data, opts,graphs, components });
+       
+        this.group = chart.app.addGroup({ name: 'InertialSystem' });
+        chart.setCoord(this);
         _.extend(true, this, this.setDefaultOpts(opts));
+        
+        
     }
 
     setDefaultOpts(opts) {
@@ -42,9 +47,9 @@ class InertialSystem extends Events {
         let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
         let _width = _opt.boxWidth;
         let _depth = _opt.boxDepth;
-        
+
         //斜边
-        let _hypotenuse =_opt.distance || (new Vector3(_width, 0, _depth)).length();
+        let _hypotenuse = _opt.distance || (new Vector3(_width, 0, _depth)).length();
 
         let _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
 
@@ -83,10 +88,14 @@ class InertialSystem extends Events {
         //什么都不做
         return null;
     }
-    draw() {
-
+    drawUI() {
+        this._root.initComponent();
     }
-    dispose(){
+
+    draw() {
+        this._root.draw();
+    }
+    dispose() {
 
     }
 

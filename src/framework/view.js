@@ -136,7 +136,7 @@ class View {
     }
 
     createScreenProject() {
-        let distance = this.controls.distance;
+        let distance = this.controls.maxDistance;
         this._camera = new OrthographicCamera(0, this.width, 0, -this.height, this.near, this.far);
         this._camera.position.set(0, 0, distance);
     }
@@ -543,6 +543,7 @@ class View {
             depthWrite: false
         });
 
+
         texts.forEach((text, index) => {
             let realSize = labelInfos.sizes[text];
             //realSize==[width,height]
@@ -565,6 +566,8 @@ class View {
                 maxHeight: labelInfos.maxHeight
             }
 
+            //默认不进行裁剪
+            sprite.frustumCulled = false;
             labels.push(sprite);
 
         })

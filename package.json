@@ -2,7 +2,7 @@
   "name": "chartx3d",
   "title": "chartx3D.js",
   "description": "Data Visualization Chart Library",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://thx.github.io/chartx/",
   "license": "MIT",
   "keywords": [
@@ -19,7 +19,7 @@
     "name": "nickli",
     "email": "252759102@qq.com"
   },
-  "repository": "git",
+  "repository": "https://github.com/Davidyanlong/chartx3d",
   "main": "./dist/cjs/chartx.js",
   "devDependencies": {
     "babel-core": "^6.26.3",
