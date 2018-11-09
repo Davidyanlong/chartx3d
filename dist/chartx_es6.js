@@ -88,7 +88,7 @@ var Chartx = (function () {
         }
     }
 
-    var version = "0.0.33";
+    var version = "0.0.38";
 
     const REVISION = version;
 
@@ -344,13 +344,13 @@ var Chartx = (function () {
 
     };
 
-    // import { Matrix4 } from './Matrix4';
+    //import { Matrix4 } from './Matrix4';
     // import { Quaternion } from './Quaternion';
 
     // var quaternion = new Quaternion();
     // var quaternion1 = new Quaternion();
 
-    // var matrix = new Matrix4();
+
     // var matrix1 = new Matrix4();
 
     // var min = new Vector3();
@@ -647,21 +647,21 @@ var Chartx = (function () {
             return this;
 
         }
-        // project(camera) {
+        project(camera,matrix) {
+              
+            matrix.multiplyMatrices(camera.projectionMatrix, matrix.getInverse(camera.matrixWorld));
+            return this.applyMatrix4(matrix);
 
-        //     matrix.multiplyMatrices(camera.projectionMatrix, matrix.getInverse(camera.matrixWorld));
-        //     return this.applyMatrix4(matrix);
-
-        // }
+        }
 
 
 
-        // unproject(camera) {
+        unproject(camera,matrix) {
 
-        //     matrix1.multiplyMatrices(camera.matrixWorld, matrix1.getInverse(camera.projectionMatrix));
-        //     return this.applyMatrix4(matrix1);
+            matrix.multiplyMatrices(camera.matrixWorld, matrix.getInverse(camera.projectionMatrix));
+            return this.applyMatrix4(matrix);
 
-        // }
+        }
 
 
         transformDirection(m) {
@@ -8741,6 +8741,14 @@ var Chartx = (function () {
             this._vector3 = new Vector3();
             this._frustum = new Frustum();
 
+            // clearing
+
+            this.autoClear = true;
+            this.autoClearColor = true;
+            this.autoClearDepth = true;
+            this.autoClearStencil = true;
+
+
             this._init(params);
             this._initGLContext(params);
         }
@@ -8992,7 +9000,7 @@ var Chartx = (function () {
             this.clear(false, false, true);
         }
 
-        render(scene, camera) {
+        render(scene, camera, forceClear) {
 
             if (!(camera && camera.isCamera)) {
 
@@ -9035,8 +9043,12 @@ var Chartx = (function () {
 
             if (this._info.autoReset) this._info.reset();
 
-            scene.background === null ? this.setClearColor(this._currClearColor) : this.setClearColor(scene.background);
-            this.clearColor(true);
+           
+            if (this.autoClear || forceClear) {
+                scene.background === null ? this.setClearColor(this._currClearColor) : this.setClearColor(scene.background);
+                this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
+            }
+
 
             let opaqueObjects = this._currentRenderList.opaque;
             let transparentObjects = this._currentRenderList.transparent;
@@ -14900,6 +14912,89 @@ var Chartx = (function () {
 
     }
 
+    // CircleBufferGeometry
+
+    class CircleBufferGeometry extends BufferGeometry {
+        constructor(radius, segments, thetaStart, thetaLength) {
+
+            super();
+
+            this.type = 'CircleBufferGeometry';
+
+            this.parameters = {
+                radius: radius,
+                segments: segments,
+                thetaStart: thetaStart,
+                thetaLength: thetaLength
+            };
+
+            radius = radius || 50;
+            segments = segments !== undefined ? Math.max(3, segments) : 8;
+
+            thetaStart = thetaStart !== undefined ? thetaStart : 0;
+            thetaLength = thetaLength !== undefined ? thetaLength : Math.PI * 2;
+
+            // buffers
+
+            var indices = [];
+            var vertices = [];
+            var normals = [];
+            var uvs = [];
+
+            // helper variables
+
+            var i, s;
+            var vertex = new Vector3();
+            var uv = new Vector2();
+
+            // center point
+
+            vertices.push(0, 0, 0);
+            normals.push(0, 0, 1);
+            uvs.push(0.5, 0.5);
+
+            for (s = 0, i = 3; s <= segments; s++ , i += 3) {
+
+                var segment = thetaStart + s / segments * thetaLength;
+
+                // vertex
+
+                vertex.x = radius * Math.cos(segment);
+                vertex.y = radius * Math.sin(segment);
+
+                vertices.push(vertex.x, vertex.y, vertex.z);
+
+                // normal
+
+                normals.push(0, 0, 1);
+
+                // uvs
+
+                uv.x = (vertices[i] / radius + 1) / 2;
+                uv.y = (vertices[i + 1] / radius + 1) / 2;
+
+                uvs.push(uv.x, uv.y);
+
+            }
+
+            // indices
+
+            for (i = 1; i <= segments; i++) {
+
+                indices.push(i, i + 1, 0);
+
+            }
+
+            // build geometry
+
+            this.setIndex(indices);
+            this.addAttribute('position', new Float32BufferAttribute(vertices, 3));
+            this.addAttribute('normal', new Float32BufferAttribute(normals, 3));
+            this.addAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+        }
+    }
+
     // PlaneGeometry
 
     class PlaneGeometry extends Geometry {
@@ -15184,6 +15279,118 @@ var Chartx = (function () {
 
                 numberOfVertices += vertexCounter;
             }
+        }
+    }
+
+    // SphereBufferGeometry
+
+    class SphereBufferGeometry extends BufferGeometry {
+        constructor(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength) {
+
+            super();
+
+            this.type = 'SphereBufferGeometry';
+
+            this.parameters = {
+                radius: radius,
+                widthSegments: widthSegments,
+                heightSegments: heightSegments,
+                phiStart: phiStart,
+                phiLength: phiLength,
+                thetaStart: thetaStart,
+                thetaLength: thetaLength
+            };
+
+            radius = radius || 50;
+
+            widthSegments = Math.max(3, Math.floor(widthSegments) || 8);
+            heightSegments = Math.max(2, Math.floor(heightSegments) || 6);
+
+            phiStart = phiStart !== undefined ? phiStart : 0;
+            phiLength = phiLength !== undefined ? phiLength : Math.PI * 2;
+
+            thetaStart = thetaStart !== undefined ? thetaStart : 0;
+            thetaLength = thetaLength !== undefined ? thetaLength : Math.PI;
+
+            var thetaEnd = thetaStart + thetaLength;
+
+            var ix, iy;
+
+            var index = 0;
+            var grid = [];
+
+            var vertex = new Vector3();
+            var normal = new Vector3();
+
+            // buffers
+
+            var indices = [];
+            var vertices = [];
+            var normals = [];
+            var uvs = [];
+
+            // generate vertices, normals and uvs
+
+            for (iy = 0; iy <= heightSegments; iy++) {
+
+                var verticesRow = [];
+
+                var v = iy / heightSegments;
+
+                for (ix = 0; ix <= widthSegments; ix++) {
+
+                    var u = ix / widthSegments;
+
+                    // vertex
+
+                    vertex.x = - radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+                    vertex.y = radius * Math.cos(thetaStart + v * thetaLength);
+                    vertex.z = radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+
+                    vertices.push(vertex.x, vertex.y, vertex.z);
+
+                    // normal
+
+                    normal.set(vertex.x, vertex.y, vertex.z).normalize();
+                    normals.push(normal.x, normal.y, normal.z);
+
+                    // uv
+
+                    uvs.push(u, 1 - v);
+
+                    verticesRow.push(index++);
+
+                }
+
+                grid.push(verticesRow);
+
+            }
+
+            // indices
+
+            for (iy = 0; iy < heightSegments; iy++) {
+
+                for (ix = 0; ix < widthSegments; ix++) {
+
+                    var a = grid[iy][ix + 1];
+                    var b = grid[iy][ix];
+                    var c = grid[iy + 1][ix];
+                    var d = grid[iy + 1][ix + 1];
+
+                    if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
+                    if (iy !== heightSegments - 1 || thetaEnd < Math.PI) indices.push(b, c, d);
+
+                }
+
+            }
+
+            // build geometry
+
+            this.setIndex(indices);
+            this.addAttribute('position', new Float32BufferAttribute(vertices, 3));
+            this.addAttribute('normal', new Float32BufferAttribute(normals, 3));
+            this.addAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
         }
     }
 
@@ -15987,6 +16194,667 @@ var Chartx = (function () {
         }
     }
 
+    /**
+     * @author zz85 / http://www.lab4games.net/zz85/blog
+     * Extensible curve object
+     *
+     * Some common of curve methods:
+     * .getPoint( t, optionalTarget ), .getTangent( t )
+     * .getPointAt( u, optionalTarget ), .getTangentAt( u )
+     * .getPoints(), .getSpacedPoints()
+     * .getLength()
+     * .updateArcLengths()
+     *
+     * This following curves inherit from THREE.Curve:
+     *
+     * -- 2D curves --
+     * THREE.ArcCurve
+     * THREE.CubicBezierCurve
+     * THREE.EllipseCurve
+     * THREE.LineCurve
+     * THREE.QuadraticBezierCurve
+     * THREE.SplineCurve
+     *
+     * -- 3D curves --
+     * THREE.CatmullRomCurve3
+     * THREE.CubicBezierCurve3
+     * THREE.LineCurve3
+     * THREE.QuadraticBezierCurve3
+     *
+     * A series of curves can be represented as a THREE.CurvePath.
+     *
+     **/
+
+    /**************************************************************
+     *	Abstract Curve base class
+     **************************************************************/
+
+     class Curve {
+        constructor(){
+            this.type = 'Curve';
+
+            this.arcLengthDivisions = 200; 
+        }
+
+        // Virtual base class method to overwrite and implement in subclasses
+    	//	- t [0 .. 1]
+
+    	getPoint ( /* t, optionalTarget */ ) {
+
+    		console.warn( 'THREE.Curve: .getPoint() not implemented.' );
+    		return null;
+
+    	}
+
+    	// Get point at relative position in curve according to arc length
+    	// - u [0 .. 1]
+
+    	getPointAt ( u, optionalTarget ) {
+
+    		var t = this.getUtoTmapping( u );
+    		return this.getPoint( t, optionalTarget );
+
+    	}
+
+    	// Get sequence of points using getPoint( t )
+
+    	getPoints ( divisions ) {
+
+    		if ( divisions === undefined ) divisions = 5;
+
+    		var points = [];
+
+    		for ( var d = 0; d <= divisions; d ++ ) {
+
+    			points.push( this.getPoint( d / divisions ) );
+
+    		}
+
+    		return points;
+
+    	}
+
+    	// Get sequence of points using getPointAt( u )
+
+    	getSpacedPoints ( divisions ) {
+
+    		if ( divisions === undefined ) divisions = 5;
+
+    		var points = [];
+
+    		for ( var d = 0; d <= divisions; d ++ ) {
+
+    			points.push( this.getPointAt( d / divisions ) );
+
+    		}
+
+    		return points;
+
+    	}
+
+    	// Get total curve arc length
+
+    	getLength () {
+
+    		var lengths = this.getLengths();
+    		return lengths[ lengths.length - 1 ];
+
+    	}
+
+    	// Get list of cumulative segment lengths
+
+    	getLengths( divisions ) {
+
+    		if ( divisions === undefined ) divisions = this.arcLengthDivisions;
+
+    		if ( this.cacheArcLengths &&
+    			( this.cacheArcLengths.length === divisions + 1 ) &&
+    			! this.needsUpdate ) {
+
+    			return this.cacheArcLengths;
+
+    		}
+
+    		this.needsUpdate = false;
+
+    		var cache = [];
+    		var current, last = this.getPoint( 0 );
+    		var p, sum = 0;
+
+    		cache.push( 0 );
+
+    		for ( p = 1; p <= divisions; p ++ ) {
+
+    			current = this.getPoint( p / divisions );
+    			sum += current.distanceTo( last );
+    			cache.push( sum );
+    			last = current;
+
+    		}
+
+    		this.cacheArcLengths = cache;
+
+    		return cache; // { sums: cache, sum: sum }; Sum is in the last element.
+
+    	}
+
+    	updateArcLengths () {
+
+    		this.needsUpdate = true;
+    		this.getLengths();
+
+    	}
+
+    	// Given u ( 0 .. 1 ), get a t to find p. This gives you points which are equidistant
+
+    	getUtoTmapping( u, distance ) {
+
+    		var arcLengths = this.getLengths();
+
+    		var i = 0, il = arcLengths.length;
+
+    		var targetArcLength; // The targeted u distance value to get
+
+    		if ( distance ) {
+
+    			targetArcLength = distance;
+
+    		} else {
+
+    			targetArcLength = u * arcLengths[ il - 1 ];
+
+    		}
+
+    		// binary search for the index with largest value smaller than target u distance
+
+    		var low = 0, high = il - 1, comparison;
+
+    		while ( low <= high ) {
+
+    			i = Math.floor( low + ( high - low ) / 2 ); // less likely to overflow, though probably not issue here, JS doesn't really have integers, all numbers are floats
+
+    			comparison = arcLengths[ i ] - targetArcLength;
+
+    			if ( comparison < 0 ) {
+
+    				low = i + 1;
+
+    			} else if ( comparison > 0 ) {
+
+    				high = i - 1;
+
+    			} else {
+
+    				high = i;
+    				break;
+
+    				// DONE
+
+    			}
+
+    		}
+
+    		i = high;
+
+    		if ( arcLengths[ i ] === targetArcLength ) {
+
+    			return i / ( il - 1 );
+
+    		}
+
+    		// we could get finer grain at lengths, or use simple interpolation between two points
+
+    		var lengthBefore = arcLengths[ i ];
+    		var lengthAfter = arcLengths[ i + 1 ];
+
+    		var segmentLength = lengthAfter - lengthBefore;
+
+    		// determine where we are between the 'before' and 'after' points
+
+    		var segmentFraction = ( targetArcLength - lengthBefore ) / segmentLength;
+
+    		// add that fractional amount to t
+
+    		var t = ( i + segmentFraction ) / ( il - 1 );
+
+    		return t;
+
+    	}
+
+    	// Returns a unit vector tangent at t
+    	// In case any sub curve does not implement its tangent derivation,
+    	// 2 points a small delta apart will be used to find its gradient
+    	// which seems to give a reasonable approximation
+
+    	getTangent ( t ) {
+
+    		var delta = 0.0001;
+    		var t1 = t - delta;
+    		var t2 = t + delta;
+
+    		// Capping in case of danger
+
+    		if ( t1 < 0 ) t1 = 0;
+    		if ( t2 > 1 ) t2 = 1;
+
+    		var pt1 = this.getPoint( t1 );
+    		var pt2 = this.getPoint( t2 );
+
+    		var vec = pt2.clone().sub( pt1 );
+    		return vec.normalize();
+
+    	}
+
+    	getTangentAt ( u ) {
+
+    		var t = this.getUtoTmapping( u );
+    		return this.getTangent( t );
+
+    	}
+
+    	computeFrenetFrames ( segments, closed ) {
+
+    		// see http://www.cs.indiana.edu/pub/techreports/TR425.pdf
+
+    		var normal = new Vector3();
+
+    		var tangents = [];
+    		var normals = [];
+    		var binormals = [];
+
+    		var vec = new Vector3();
+    		var mat = new Matrix4();
+
+    		var i, u, theta;
+
+    		// compute the tangent vectors for each segment on the curve
+
+    		for ( i = 0; i <= segments; i ++ ) {
+
+    			u = i / segments;
+
+    			tangents[ i ] = this.getTangentAt( u );
+    			tangents[ i ].normalize();
+
+    		}
+
+    		// select an initial normal vector perpendicular to the first tangent vector,
+    		// and in the direction of the minimum tangent xyz component
+
+    		normals[ 0 ] = new Vector3();
+    		binormals[ 0 ] = new Vector3();
+    		var min = Number.MAX_VALUE;
+    		var tx = Math.abs( tangents[ 0 ].x );
+    		var ty = Math.abs( tangents[ 0 ].y );
+    		var tz = Math.abs( tangents[ 0 ].z );
+
+    		if ( tx <= min ) {
+
+    			min = tx;
+    			normal.set( 1, 0, 0 );
+
+    		}
+
+    		if ( ty <= min ) {
+
+    			min = ty;
+    			normal.set( 0, 1, 0 );
+
+    		}
+
+    		if ( tz <= min ) {
+
+    			normal.set( 0, 0, 1 );
+
+    		}
+
+    		vec.crossVectors( tangents[ 0 ], normal ).normalize();
+
+    		normals[ 0 ].crossVectors( tangents[ 0 ], vec );
+    		binormals[ 0 ].crossVectors( tangents[ 0 ], normals[ 0 ] );
+
+
+    		// compute the slowly-varying normal and binormal vectors for each segment on the curve
+
+    		for ( i = 1; i <= segments; i ++ ) {
+
+    			normals[ i ] = normals[ i - 1 ].clone();
+
+    			binormals[ i ] = binormals[ i - 1 ].clone();
+
+    			vec.crossVectors( tangents[ i - 1 ], tangents[ i ] );
+
+    			if ( vec.length() > Number.EPSILON ) {
+
+    				vec.normalize();
+
+    				theta = Math.acos( _Math.clamp( tangents[ i - 1 ].dot( tangents[ i ] ), - 1, 1 ) ); // clamp for floating pt errors
+
+    				normals[ i ].applyMatrix4( mat.makeRotationAxis( vec, theta ) );
+
+    			}
+
+    			binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
+
+    		}
+
+    		// if the curve is closed, postprocess the vectors so the first and last normal vectors are the same
+
+    		if ( closed === true ) {
+
+    			theta = Math.acos( _Math.clamp( normals[ 0 ].dot( normals[ segments ] ), - 1, 1 ) );
+    			theta /= segments;
+
+    			if ( tangents[ 0 ].dot( vec.crossVectors( normals[ 0 ], normals[ segments ] ) ) > 0 ) {
+
+    				theta = - theta;
+
+    			}
+
+    			for ( i = 1; i <= segments; i ++ ) {
+
+    				// twist a little...
+    				normals[ i ].applyMatrix4( mat.makeRotationAxis( tangents[ i ], theta * i ) );
+    				binormals[ i ].crossVectors( tangents[ i ], normals[ i ] );
+
+    			}
+
+    		}
+
+    		return {
+    			tangents: tangents,
+    			normals: normals,
+    			binormals: binormals
+    		};
+
+    	}
+
+    	clone () {
+
+    		return new this.constructor().copy( this );
+
+    	}
+
+    	copy ( source ) {
+
+    		this.arcLengthDivisions = source.arcLengthDivisions;
+
+    		return this;
+
+    	}
+
+    	toJSON () {
+
+    		var data = {
+    			metadata: {
+    				version: 4.5,
+    				type: 'Curve',
+    				generator: 'Curve.toJSON'
+    			}
+    		};
+
+    		data.arcLengthDivisions = this.arcLengthDivisions;
+    		data.type = this.type;
+
+    		return data;
+
+    	}
+
+    	fromJSON ( json ) {
+
+    		this.arcLengthDivisions = json.arcLengthDivisions;
+
+    		return this;
+
+    	}
+     }
+
+    /**
+     * @author zz85 https://github.com/zz85
+     *
+     * Centripetal CatmullRom Curve - which is useful for avoiding
+     * cusps and self-intersections in non-uniform catmull rom curves.
+     * http://www.cemyuksel.com/research/catmullrom_param/catmullrom.pdf
+     *
+     * curve.type accepts centripetal(default), chordal and catmullrom
+     * curve.tension is used for catmullrom which defaults to 0.5
+     */
+
+
+    /*
+    Based on an optimized c++ solution in
+     - http://stackoverflow.com/questions/9489736/catmull-rom-curve-with-no-cusps-and-no-self-intersections/
+     - http://ideone.com/NoEbVM
+
+    This CubicPoly class could be used for reusing some variables and calculations,
+    but for three.js curve use, it could be possible inlined and flatten into a single function call
+    which can be placed in CurveUtils.
+    */
+
+    function CubicPoly() {
+
+        var c0 = 0, c1 = 0, c2 = 0, c3 = 0;
+
+    	/*
+    	 * Compute coefficients for a cubic polynomial
+    	 *   p(s) = c0 + c1*s + c2*s^2 + c3*s^3
+    	 * such that
+    	 *   p(0) = x0, p(1) = x1
+    	 *  and
+    	 *   p'(0) = t0, p'(1) = t1.
+    	 */
+        function init(x0, x1, t0, t1) {
+
+            c0 = x0;
+            c1 = t0;
+            c2 = - 3 * x0 + 3 * x1 - 2 * t0 - t1;
+            c3 = 2 * x0 - 2 * x1 + t0 + t1;
+
+        }
+
+        return {
+
+            initCatmullRom: function (x0, x1, x2, x3, tension) {
+
+                init(x1, x2, tension * (x2 - x0), tension * (x3 - x1));
+
+            },
+
+            initNonuniformCatmullRom: function (x0, x1, x2, x3, dt0, dt1, dt2) {
+
+                // compute tangents when parameterized in [t1,t2]
+                var t1 = (x1 - x0) / dt0 - (x2 - x0) / (dt0 + dt1) + (x2 - x1) / dt1;
+                var t2 = (x2 - x1) / dt1 - (x3 - x1) / (dt1 + dt2) + (x3 - x2) / dt2;
+
+                // rescale tangents for parametrization in [0,1]
+                t1 *= dt1;
+                t2 *= dt1;
+
+                init(x1, x2, t1, t2);
+
+            },
+
+            calc: function (t) {
+
+                var t2 = t * t;
+                var t3 = t2 * t;
+                return c0 + c1 * t + c2 * t2 + c3 * t3;
+
+            }
+
+        };
+
+    }
+
+    //
+
+    var tmp = new Vector3();
+    var px = new CubicPoly(), py = new CubicPoly(), pz = new CubicPoly();
+
+
+    class CatmullRomCurve3 extends Curve {
+        constructor(points = [], closed = false, curveType = 'centripetal', tension = 0.5) {
+            super();
+            this.type = 'CatmullRomCurve3';
+
+            this.points = points;
+            this.closed = closed;
+            this.curveType = curveType;
+            this.tension = tension;
+        }
+        get isCatmullRomCurve3() {
+            return true;
+        }
+
+        getPoint(t = 0, optionalTarget = new Vector3()) {
+
+            var point = optionalTarget;
+
+            var points = this.points;
+            var l = points.length;
+
+            var p = (l - (this.closed ? 0 : 1)) * t;
+            var intPoint = Math.floor(p);
+            var weight = p - intPoint;
+
+            if (this.closed) {
+
+                intPoint += intPoint > 0 ? 0 : (Math.floor(Math.abs(intPoint) / l) + 1) * l;
+
+            } else if (weight === 0 && intPoint === l - 1) {
+
+                intPoint = l - 2;
+                weight = 1;
+
+            }
+
+            var p0, p1, p2, p3; // 4 points
+
+            if (this.closed || intPoint > 0) {
+
+                p0 = points[(intPoint - 1) % l];
+
+            } else {
+
+                // extrapolate first point
+                tmp.subVectors(points[0], points[1]).add(points[0]);
+                p0 = tmp;
+
+            }
+
+            p1 = points[intPoint % l];
+            p2 = points[(intPoint + 1) % l];
+
+            if (this.closed || intPoint + 2 < l) {
+
+                p3 = points[(intPoint + 2) % l];
+
+            } else {
+
+                // extrapolate last point
+                tmp.subVectors(points[l - 1], points[l - 2]).add(points[l - 1]);
+                p3 = tmp;
+
+            }
+
+            if (this.curveType === 'centripetal' || this.curveType === 'chordal') {
+
+                // init Centripetal / Chordal Catmull-Rom
+                var pow = this.curveType === 'chordal' ? 0.5 : 0.25;
+                var dt0 = Math.pow(p0.distanceToSquared(p1), pow);
+                var dt1 = Math.pow(p1.distanceToSquared(p2), pow);
+                var dt2 = Math.pow(p2.distanceToSquared(p3), pow);
+
+                // safety check for repeated points
+                if (dt1 < 1e-4) dt1 = 1.0;
+                if (dt0 < 1e-4) dt0 = dt1;
+                if (dt2 < 1e-4) dt2 = dt1;
+
+                px.initNonuniformCatmullRom(p0.x, p1.x, p2.x, p3.x, dt0, dt1, dt2);
+                py.initNonuniformCatmullRom(p0.y, p1.y, p2.y, p3.y, dt0, dt1, dt2);
+                pz.initNonuniformCatmullRom(p0.z, p1.z, p2.z, p3.z, dt0, dt1, dt2);
+
+            } else if (this.curveType === 'catmullrom') {
+
+                px.initCatmullRom(p0.x, p1.x, p2.x, p3.x, this.tension);
+                py.initCatmullRom(p0.y, p1.y, p2.y, p3.y, this.tension);
+                pz.initCatmullRom(p0.z, p1.z, p2.z, p3.z, this.tension);
+
+            }
+
+            point.set(
+                px.calc(weight),
+                py.calc(weight),
+                pz.calc(weight)
+            );
+
+            return point;
+
+        }
+
+        copy(source) {
+
+            super.copy(source);
+
+            this.points = [];
+
+            for (var i = 0, l = source.points.length; i < l; i++) {
+
+                var point = source.points[i];
+
+                this.points.push(point.clone());
+
+            }
+
+            this.closed = source.closed;
+            this.curveType = source.curveType;
+            this.tension = source.tension;
+
+            return this;
+
+        }
+        toJSON() {
+
+            var data = super.toJSON();
+
+            data.points = [];
+
+            for (var i = 0, l = this.points.length; i < l; i++) {
+
+                var point = this.points[i];
+                data.points.push(point.toArray());
+
+            }
+
+            data.closed = this.closed;
+            data.curveType = this.curveType;
+            data.tension = this.tension;
+
+            return data;
+
+        }
+        fromJSON(json) {
+
+            super.fromJSON(json);
+
+            this.points = [];
+
+            for (var i = 0, l = json.points.length; i < l; i++) {
+
+                var point = json.points[i];
+                this.points.push(new Vector3().fromArray(point));
+
+            }
+
+            this.closed = json.closed;
+            this.curveType = json.curveType;
+            this.tension = json.tension;
+
+            return this;
+
+        }
+    }
+
     var _$1 = {};
     var breaker = {};
     var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
@@ -16406,7 +17274,7 @@ var Chartx = (function () {
             // //每一个组件存放在一个Group中
             // this.group = new Group();
             // this.name = '';
-            this.group = this._root.renderView.addGroup({
+            this.group = this._root.app.addGroup({
                 name: this.constructor.name.toLowerCase() + '_root'
             });
         }
@@ -16445,7 +17313,7 @@ var Chartx = (function () {
 
     }
 
-    let renderOrder = 100;
+    //let renderOrder = 100;
 
     class Bar extends Component {
         constructor(chart3d, opt) {
@@ -16513,7 +17381,7 @@ var Chartx = (function () {
 
         }
         init() {
-            this.barsGroup = this._root.renderView.addGroup({ name: 'bars_gruop' });
+            this.barsGroup = this._root.app.addGroup({ name: 'bars_gruop' });
 
         }
         computePos() {
@@ -16612,6 +17480,7 @@ var Chartx = (function () {
                                     _tmp.floor = num;
                                     _tmp.level = index + num;
                                     _tmp.field = _fdd;
+                                    _tmp.group = (index + 1);
                                     if (num > 0) {
                                         _tmp.isStack = true;
                                         _tmp.value = new Vector3(xd, yd, zd);
@@ -16645,7 +17514,7 @@ var Chartx = (function () {
 
                         });
                     }
-
+                   
                 });
 
             });
@@ -16698,23 +17567,14 @@ var Chartx = (function () {
             let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
             let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
             let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-            
-            let oneMaxWidth =  ceil.x * 0.7;
-            let boxWidth = ceil.x  / this.allGroupNum * 0.7;
-            
-            let allGap = Math.floor(boxWidth * 0.1) *( this.allGroupNum-1) ;
-            let oneGap = 0;
-            if(allGap>0){
-                oneGap = allGap /(this.allGroupNum-1);
-                boxWidth = boxWidth - oneGap;
-            }
-           
-            
-            
 
+            let boxWidth = ceil.x / this.allGroupNum * 0.7; //细分后柱子在单元格内的宽度
+            //boxWidth = Math.max(1,boxWidth);
             let boxDepth = ceil.z * 0.7;
             let boxHeight = 1;
-           
+
+            let scale = 0.9; //每个单元格柱子占用的百分比
+
             this.drawPosData.forEach(dataOrg => {
 
                 let pos = new Vector3();
@@ -16722,14 +17582,18 @@ var Chartx = (function () {
                 pos.setX(getXAxisPosition(dataOrg.value.x));
                 pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
                 pos.setZ(getZAxisPosition(dataOrg.value.z));
-        
 
-                var disLeft = (ceil.x - boxWidth*dataOrg.group - oneGap*(dataOrg.group-1) ) / 2;
-            
-                disLeft += (oneGap + boxWidth) * (dataOrg.group-1);
-           
-                stack.setX(pos.x - ceil.x / 2 + disLeft + (boxWidth + oneGap)*(dataOrg.group-1));
-                stack.setZ(-pos.z + boxDepth * 0.5);
+                let span = ceil.x / (this.allGroupNum * 2) * scale;
+                let step = (dataOrg.group - 1) * 2 + 1;
+
+                stack.setX(pos.x + (span * step - ceil.x * 0.5 * scale) - boxWidth * 0.5);
+                if (this.node.shapeType == 'cylinder' || 'cone' ==this.node.shapeType) {
+                   
+                    stack.setZ(-pos.z + boxWidth * 0.5);
+                }else{
+                    stack.setZ(-pos.z + boxDepth * 0.5);
+                }
+               
                 if (dataOrg.isStack) {
                     stack.setY(getYAxisPosition(dataOrg.stackValue.y, yAxisAttribute));
 
@@ -16737,28 +17601,30 @@ var Chartx = (function () {
                     stack.setY(0);
 
                 }
-                boxHeight = Math.max(Math.abs(pos.y), 1);
+                boxHeight = Math.max(Math.abs(pos.y), 0.01);
                 //console.log('boxHeight', boxHeight, dataOrg.value.y);
 
                 // MeshLambertMaterial
                 //MeshPhongMaterial
-                let _color = this._getColor(this.node.fillStyle, dataOrg);
-
 
                 let material = me.getMaterial(dataOrg);
                 let box = null;
 
                 if (this.node.shapeType == 'cone') {
                     box = this._root.renderView.createCone(boxWidth, boxHeight, boxDepth, material);
+                    let boundbox = new Box3().setFromObject(box);
+                    stack.x+=boundbox.getCenter().x;
                 } else if (this.node.shapeType == 'cylinder') {
                     box = this._root.renderView.createCylinder(boxWidth, boxHeight, boxDepth, material);
+                    let boundbox = new Box3().setFromObject(box);
+                    stack.x+=boundbox.getCenter().x;
                 } else {
                     box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, material);
 
                 }
 
-
-
+            
+              
 
                 box.position.copy(stack);
                 let { x, y, z } = dataOrg.value;
@@ -16777,7 +17643,7 @@ var Chartx = (function () {
                     },
                     color: this._getColor(this.node.fillStyle, dataOrg)
                 };
-                box.renderOrder = renderOrder++;
+                //box.renderOrder = renderOrder++;
                 this.group.add(box);
 
 
@@ -16870,8 +17736,34 @@ var Chartx = (function () {
             super(chart3d.currCoord);
             this.type = "line";
 
+            this.line = { //线
+                enabled: 1,
+                shapeType: "brokenLine",//折线
+                strokeStyle: '#ccc',
+                lineWidth: 2,
+                lineType: "solid",
+                smooth: true
+            };
+
+            this.icon = { //节点 
+                enabled     : 1, //是否有
+                shapeType   : "circle",
+                corner      : false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
+                radius      : 3, //半径 icon 圆点的半径
+                fillStyle   : '#ffffff',
+                strokeStyle : null,
+                lineWidth   : 2
+            };
+
+            this.area = { //填充
+    //            shapeType : "path",
+                enabled   :1,
+                fillStyle : null,
+                alpha     : 0.3
+            };
+
+
             _$1.extend(true, this, opt);
-            this.materialMap = new Map();
             this.init();
 
         }
@@ -16914,6 +17806,8 @@ var Chartx = (function () {
             if (xDatas.length == 1) {
                 xDatas = _$1.flatten(xDatas);
             }
+            //todo 三维数据这里会有问题,需要整理清楚
+
 
             let yValidData = [];
 
@@ -16922,20 +17816,7 @@ var Chartx = (function () {
                 customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
             }
 
-            // zSection.forEach((zs, index) => {
-            //     fields.forEach(fd => {
 
-            //         if (zs == fd.toString()) {
-            //             yValidData.push(yDatas[index]);
-            //             if (zCustomSection.length > 0) {
-            //                 customField.push(zCustomSection[index]);
-            //             }
-
-            //         }
-            //     })
-            // })
-            //yDatas = _.flatten(yDatas);
-            //let dd = false;
             let lastArray = [];
 
             let DataOrg = function () {
@@ -16970,62 +17851,74 @@ var Chartx = (function () {
                 return zCustomSection.length ? zCustomSection[index] : name;
             };
 
-            xDatas.forEach((xd, no) => {
-                lastArray = [];
-                yValidData.forEach((yda, index) => {
-                    let _fd = fields[index];
-                    let fieldName = fields.toString();
-                    let zd = getZAxiaName(fieldName);
+            let generate = (zd) => {
+                xDatas.forEach((xd, no) => {
+                    lastArray = [];
+                    yValidData.forEach((yda, index) => {
+                        let _fd = fields[index];
+                        if (yda.length > 1) {
+                            yda.forEach((ydad, num) => {
 
-                    if (yda.length > 1) {
-                        yda.forEach((ydad, num) => {
+                                let ydadd = _$1.flatten(ydad).slice(0);
+                                let _fdd = _fd[num];
+                                ydadd.forEach((yd, i) => {
+                                    if (i === no) {
+                                        let _tmp = new DataOrg();
+                                        _tmp.floor = num;
+                                        _tmp.level = index + num;
+                                        _tmp.field = _fdd;
+                                        if (num > 0) {
+                                            _tmp.isStack = true;
+                                            _tmp.value = new Vector3(xd, yd, zd);
+                                            _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
 
-                            let ydadd = _$1.flatten(ydad).slice(0);
-                            let _fdd = _fd[num];
-                            ydadd.forEach((yd, i) => {
-                                if (i === no) {
-                                    let _tmp = new DataOrg();
-                                    _tmp.floor = num;
-                                    _tmp.level = index + num;
-                                    _tmp.field = _fdd;
-                                    if (num > 0) {
-                                        _tmp.isStack = true;
-                                        _tmp.value = new Vector3(xd, yd, zd);
-                                        _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+                                        } else {
+                                            _tmp.isStack = true;
+                                            _tmp.stackValue = new Vector3(xd, 0, zd);
+                                            _tmp.value = new Vector3(xd, yd, zd);
 
-                                    } else {
-                                        _tmp.isStack = true;
-                                        _tmp.stackValue = new Vector3(xd, 0, zd);
-                                        _tmp.value = new Vector3(xd, yd, zd);
-
+                                        }
+                                        me.drawPosData.push(_tmp);
                                     }
+
+                                });
+                                _$1.flatten(ydad).slice(0).forEach((t, y) => {
+                                    lastArray[y] = (lastArray[y] || 0) + t;
+                                });
+                                //lastArray = _.flatten(ydad).slice(0);
+                            });
+
+                        } else {
+                            let _tmp = new DataOrg();
+                            _tmp.field = _fd;
+                            _$1.flatten(yda).slice(0).forEach((yd, i) => {
+                                if (i === no) {
+                                    _tmp.value = new Vector3(xd, yd, zd);
                                     me.drawPosData.push(_tmp);
                                 }
 
                             });
-                            _$1.flatten(ydad).slice(0).forEach((t, y) => {
-                                lastArray[y] = (lastArray[y] || 0) + t;
-                            });
-                            //lastArray = _.flatten(ydad).slice(0);
-                        });
-
-                    } else {
-                        let _tmp = new DataOrg();
-                        _tmp.field = _fd;
-                        _$1.flatten(yda).slice(0).forEach((yd, i) => {
-                            if (i === no) {
-                                _tmp.value = new Vector3(xd, yd, zd);
-                                me.drawPosData.push(_tmp);
-                            }
-
-                        });
-                    }
-
+                        }
+                    });
                 });
+            };
 
-            });
+
+            let fieldName = fields.toString();
+            if (_$1.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                let zd = getZAxiaName(fieldName);
+                generate(zd);
+            } else {
+
+                zSection.forEach(zd => {
+                    generate(zd);
+                });
+            }
+
+
         }
         draw() {
+            let me = this;
             let linePoints = {};
             this.computePos();
             let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
@@ -17041,7 +17934,13 @@ var Chartx = (function () {
                 pos.setX(getXAxisPosition(dataOrg.value.x));
                 pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
                 pos.setZ(getZAxisPosition(dataOrg.value.z));
-                linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+
+                if (_$1.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                    linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+                } else {
+                    linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
+                }
+
                 if (dataOrg.isStack) {
                     stack.setX(pos.x);
                     stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
@@ -17054,31 +17953,66 @@ var Chartx = (function () {
                     stack.setZ(-pos.z);
 
                 }
-                linePoints[dataOrg.field].push(stack);
+
+
+                if (_$1.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                    linePoints[dataOrg.field].push(stack);
+                } else {
+                    linePoints[dataOrg.value.z].push(stack);
+                }
+
             });
 
+            const DIVISONS = 200;
             for (let field in linePoints) {
-                let _color = this._getColor(null, { field: field });
-                let line = this._root.renderView.createBrokenLine(linePoints[field], 2, _color, false);
+                let _color = this._getColor(null, { field: field }) || "red";
+                
+                let points = null;
+               
+                if (me.line.smooth) {
+                    let curve = new CatmullRomCurve3(linePoints[field]);
+                    points = curve.getSpacedPoints(DIVISONS);
+                } else {
+                    points = linePoints[field];
+                }
+
+
+                let line = this._root.renderView.createBrokenLine(points, 2, _color, true);
+
                 this.group.add(line);
 
-            }
 
-            //绘制区域
-            // createPolygonPlane(points = [], faceStyle = {}, materials)
-
-            for (let field in linePoints) {
-                let points = [];
-                let _color = this._getColor(null, { field: field });
-                linePoints[field].forEach(point => {
-                    points.push(point.toArray());
-
+                //绘制区域
+                let pointArr = [];
+                points.forEach(point => {
+                    pointArr = pointArr.concat(point.toArray());
                 });
-                points.unshift([points[0][0], 0, points[0][2]]);
-                points.push([points[points.length - 1][0], 0, points[points.length - 1][2]]);
-                let polygon = this._root.renderView.createPolygonPlane(_$1.flatten(points), { fillStyle: _color });
+                pointArr.unshift(pointArr[0], 0, pointArr[2]);
+                pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
+                let polygon = this._root.renderView.createPolygonPlane(pointArr, { fillStyle: _color });
                 this.group.add(polygon);
+
+
+                //绘制node 点
+                linePoints[field].forEach(point=>{
+                    
+                    //let node = this._root.renderView.createSphere(10,{fillStyle:_color});
+                    let node = this._root.renderView.createCirclePlane(10,{fillStyle:_color});
+                    node.position.copy(point);
+                    this.group.add(node);
+                });
+              
+
             }
+
+            // //绘制区域
+            // // createPolygonPlane(points = [], faceStyle = {}, materials)
+
+            // for (let field in linePoints) {
+            //     let points = [];
+            //     let _color = this._getColor(null, { field: field });
+
+            // }
 
             console.log(linePoints);
             //debugger
@@ -17607,6 +18541,7 @@ var Chartx = (function () {
             this.currTick = new Date().getTime();
             this.lastTick = null;
             this.renderer = null;
+            this._groups = [];
 
         }
 
@@ -17650,9 +18585,19 @@ var Chartx = (function () {
 
             this.fire({ type: 'renderbefore' });
             if (redraw) {
-                this.layers.forEach(view => {
 
-                    this.renderer.render(view._scene, view._camera);
+                this.layers.forEach((view,index) => {
+                    if(this.layers.length>1 && index!==this.layers.length-1){
+                        this.renderer.autoClear = true;
+                    }else{
+                        this.renderer.autoClear = false;
+                    }
+                    // if(this.layers.length>1 && index!==this.layers.length-1){}
+                    // else{
+                        
+                        this.renderer.render(view._scene, view._camera);
+                    //}
+                   
 
                 });
                 this.lastTick = new Date().getTime();
@@ -17672,6 +18617,7 @@ var Chartx = (function () {
             window.cancelAnimationFrame(this.frameId);
             this.frameId = null;
         }
+
         addView(view) {
             this.layers.push(view);
         }
@@ -17685,236 +18631,253 @@ var Chartx = (function () {
             }
         }
 
+        addGroup(opt) {
+            let _group = new Group();
+            _group.on('removed', function () {
+                if (this.geometry) {
+                    this.geometry.dispose();
+                }
+                if (this.material) {
+                    this.material.dispose();
+                }
+            });
+            _group.name = (opt && opt.name) || '';
+            this._groups.push(_group); //todo 收集起来方便后期处理或查询使用
+            return _group;
+        }
+
 
 
     }
 
+    const _computeCanvasContent = (function () {
+        let canvas = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
+        let context = canvas.getContext("2d");
+        return context;
+    })();
+
+
     class RenderFont {
-        constructor(params = {}) {
-
-            this.chartInfos = {};
-            this.scale = params.scale || window.devicePixelRatio || 1;
+        constructor({
+            scale = 0,
+            color = '#333333',
+            fontSize = 14,
+            fontFamily = '微软雅黑,sans-serif',
+            isBold = false,
+            lineHeight = 1.2,
+            defaultTextureWidth = 128,
+            canvas = null
+        } = {}) {
+            this.scale = scale || window.devicePixelRatio || 1;
             this.style = {
-                color: params.color || new Color$1('#000'),
-                fontSize: params.fontSize || 14,
-                fontFamily: params.fontFamily || '微软雅黑,sans-serif',
-                isBold: params.isBold || false,
-                textAlign: params.textAlign || 'top',
-                textBaseline: params.textBaseline || 'top',
-                verticalAlign: params.verticalAlign || 'middle' // top , middle, bottom
-
+                color,
+                fontSize,
+                fontFamily,
+                isBold,
+                lineHeight,
             };
+            this.style.textAlign = 'left';     //写死不给用户设置,方便计算文本的定位
+            this.style.textBaseline = 'top';
+            this.defaultTextureWidth = defaultTextureWidth;
 
-            //根据传入的文字内容自动计算 纹理的大小
+            this._reNewline = /\r?\n/;
 
-            this.textureWidth = 2;
-            this.textureHeight = 2;
-
-            // this.rcpTextureWidth = 1 / this.textureWidth;
-            // this.rcpTextureHeight = 1 / this.textureHeight;
-
-            this.canvas = params.canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
+            this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
             this.context = this.canvas.getContext("2d");
 
+        }
+        getFont() {
+            return this.style.isBold ? 'bold ' : 'normal ' + this.style.fontSize + 'px ' + this.style.fontFamily;
+        }
+        getTextWidth(txt, font = "") {
+            let width = 0;
+            if (_computeCanvasContent) {
+                _computeCanvasContent.save();
+                _computeCanvasContent.font = font || this.getFont();
+                width = this._getTextWidth(_computeCanvasContent, this._getTextLines(txt));
+                _computeCanvasContent.restore();
+            }        return width;
+        }
+
+        getTextHeight(txt) {
+            return this._getTextHeight(this._getTextLines(txt));
+        }
+        _getTextWidth(ctx, textLines = []) {
+            var maxWidth = 0;
+
+            textLines.forEach(txt => {
+                let currentLineWidth = ctx.measureText(txt).width;
+                maxWidth = Math.max(maxWidth, currentLineWidth);
+            });
+
+            return maxWidth;
+        }
+
+        _getTextLines(txt) {
+            txt = txt + "";
+            return txt.split(this._reNewline);
+        }
+
+        _getTextHeight(textLines) {
+            return this.style.fontSize * textLines.length * this.style.lineHeight;
+        }
+
+        //遍历文字列表,找出最长的文字
+        computeUvsAndCanvasSize(texts) {
+            let maxWidth = 0,
+                maxHeight = 0,
+                canvasWidth = 0,
+                canvasHeight = 0,
+                uvs = {},
+                sizes = {};
+
+            let cw = 0;
+            let ch = 1;
+            //计算需要的canvas高度
+            texts.forEach(text => {
+                let width = this.getTextWidth(text);
+                maxWidth = Math.max(maxWidth, width);
+                maxHeight = Math.max(maxHeight, this.getTextHeight(text));
+                cw += width;
+                if (cw > this.defaultTextureWidth) {
+                    ch++;
+                    cw = width;
+                }
+            });
+            //一行就可以放得下
+            if (ch == 1) {
+                canvasWidth = _Math.ceilPowerOfTwo(cw);
+                canvasHeight = _Math.ceilPowerOfTwo(maxHeight);
+            } else {
+                //todo 单个文字超过默认宽度的不考虑
+                canvasWidth = this.defaultTextureWidth;
+                canvasHeight = _Math.ceilPowerOfTwo(maxHeight * ch);
+            }
+
+            let st = 0; //开始位置
+            cw = 0;
+            ch = 0;
+
+            //计算UV
+            texts.forEach((text, index) => {
+                let width = this.getTextWidth(text);
+                let height = this.getTextHeight(text);
+                sizes[text] = [width, height];
+                st = cw;
+                cw += width;
+                if (index == 0) {
+                    ch = height;
+                }
+
+                if (cw < this.defaultTextureWidth) ; else {
+                    ch += height;
+                    cw = width;
+                    st = 0;
+                }
+
+                let _h = (canvasHeight - ch);
+                let _w = cw;
+                let _h2 = (canvasHeight - ch + height);
+                uvs[text] = [
+                    st, _h,
+                    _w, _h,
+                    _w, _h2,
+                    st, _h2
+                ];
+
+            });
+
+
+
+
+            return {
+                canvasWidth,
+                canvasHeight,
+                maxHeight,
+                maxWidth,
+                uvs,
+                sizes
+            }
 
         }
 
-        setStyle(style) {
-            //todo
-        }
 
-        drawText(text) {
-            let me = this;
-            let top = 0;
-            let left = 0;
-            let textMatric = me.measureText(text);
-            let size = textMatric; //me.resetCanvasSize(textMatric);
+        setCanvasSize(width, height) {
 
-            //调整文字在纹理中的位置
-            //垂直方向
-            let subWidth = size.height - textMatric.height;
-            if (me.style.verticalAlign.toLowerCase() == 'middle') {
-                if (subWidth) {
-                    top = subWidth * 0.5;
-                }
-            } else if (me.style.verticalAlign.toLowerCase() == 'bottom') {
-                top = subWidth;
-            }
+            this.canvas.width = width * this.scale;
+            this.canvas.height = height * this.scale;
+            this.canvas.style.width = width + "px";
+            this.canvas.style.height = height + "px";
+            this.context.scale(this.scale, this.scale);
 
-            //水平方向
-            let subHeight = size.width - textMatric.width;
-            if (me.style.textAlign.toLowerCase() == 'center') {
+            this.width = width;
+            this.height = height;
 
-                if (subHeight) {
-                    left = subHeight * 0.5 + textMatric.width * 0.5;
-                }
-            } else if (me.style.textAlign.toLowerCase() == 'right') {
-                left = size.width;
-            }
-
-
-            me.context.fillStyle = "#" + me.style.color.getHexString();
-            me.context.textAlign = me.style.textAlign;
-            me.context.textBaseline = me.style.textBaseline;
-            me.context.webkitImageSmoothingEnabled = true;
-            me.context.font = me.style.isBold ? 'bold ' : 'normal ' + (me.style.fontSize * me.scale * 4) + 'px ' + me.style.fontFamily;
-            // var offset = 0.8;
-            // me.context.fillStyle = "#222222";
-            // me.context.fillText(text, left - offset, top - offset);
-            // me.context.fillStyle = "#222222";
-            // me.context.fillText(text, left + offset, top - offset);
-            // me.context.fillStyle = "#222222";
-            // me.context.fillText(text, left - offset, top + offset);
-            // me.context.fillStyle = "#222222";
-            // me.context.fillText(text, left + offset, top + offset);
-            me.context.fillStyle = "#" + me.style.color.getHexString();
-            me.context.fillText(text, left, top);
-
-
-            // charInfo.width = textMatric.width;
-            // charInfo.height = textMatric.height;
-
-            // charInfo.texcoords_left = (charInfo.left) * rcpTextureWidth;
-            // charInfo.texcoords_right = (charInfo.left + charInfo.width) * rcpTextureWidth;
-            // charInfo.texcoords_top = (charInfo.top) * rcpTextureHeight;
-            // charInfo.texcoords_bottom = (charInfo.top + charInfo.height) * rcpTextureHeight;
-
+            //透明清屏
+            this.context.fillStyle = "rgba(0,0,0,0)";
+            this.context.clearRect(0, 0, width * this.scale, height * this.scale);
         }
 
         drawTexts(texts) {
             let me = this;
-            let maxWidth = -Infinity;
-            let maxHeight = -Infinity;
-            let top = 0;
-            let left = 0;
+            let UVs = {};
+
+            let { maxWidth, maxHeight, canvasWidth, canvasHeight, uvs, sizes } = this.computeUvsAndCanvasSize(texts);
+            this.setCanvasSize(canvasWidth, canvasHeight);
+
+            me.context.fillStyle = me.style.color;
+            me.context.textAlign = me.style.textAlign;
+            me.context.textBaseline = me.style.textBaseline;
+            me.context.webkitImageSmoothingEnabled = true;
+
+            me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize + 'px ' + me.style.fontFamily;
+
 
             texts.forEach(text => {
-                let size = me.measureText(text);
-                if (maxWidth < size.width) {
-                    maxWidth = size.width;
-                }
-                if (maxHeight < size.height) {
-                    maxHeight = size.height;
-                }
-            });
+                let uv = uvs[text];
 
-            let canvasSize = me.resetCanvasSize({
-                width: maxWidth * texts.length,
-                height: maxHeight
-            });
+                UVs[text] = new Float32Array([
+                    uv[0] / canvasWidth, uv[1] / canvasHeight,
+                    uv[2] / canvasWidth, uv[3] / canvasHeight,
+                    uv[4] / canvasWidth, uv[5] / canvasHeight,
+                    uv[6] / canvasWidth, uv[7] / canvasHeight,
+                ]);
 
-            texts.forEach((text, index) => {
-                let size = me.measureText(text);
-                //调整文字在纹理中的位置
-                //垂直方向
-                let subHeight = maxHeight - size.height;
-                if (me.style.verticalAlign.toLowerCase() == 'middle') {
-                    //middle
-                    if (subHeight) {
-                        top = subWidth * 0.5;
-                    }
-                } else if (me.style.verticalAlign.toLowerCase() == 'bottom') {
-                    //bottom
-                    top = subHeight;
-                }
+                let txtArr = this._getTextLines(text);
 
-                //水平方向
-                let subWidth = maxWidth - size.width;
-                if (me.style.textAlign.toLowerCase() == 'center') {
-
-                    if (subWidth > 0) {
-                        left = maxWidth * index + subWidth * 0.5 + size.width * 0.5;
-                    }
-                } else if (me.style.textAlign.toLowerCase() == 'right') {
-                    left = maxWidth * (index + 1);
-                }
-
-                me.context.fillStyle = "#" + me.style.color.getHexString();
-                me.context.textAlign = me.style.textAlign;
-                me.context.textBaseline = me.style.textBaseline;
-                me.context.webkitImageSmoothingEnabled = true;
-
-                me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
-                // var offset = 0.1;
-                // me.context.fillStyle = "#222";
-                // me.context.fillText(text, left - offset, top - offset);
-                // me.context.fillStyle = "#222";
-                // me.context.fillText(text, left + offset, top - offset);
-                // me.context.fillStyle = "#222";
-                // me.context.fillText(text, left - offset, top + offset);
-                // me.context.fillStyle = "#222";
-                // me.context.fillText(text, left + offset, top + offset);
-                me.context.fillStyle = "#" + me.style.color.getHexString();
-
-                //me.context.fillText(text, left * this.scale, top*this.scale);
-                me.context.fillText(text, left , top);
-
-                window._debug = true;
-                if (window._debug) {
-                    console.log('left,top', left, top, maxWidth, size.width);
-                    document.body.appendChild(me.canvas);
-
-                    me.canvas.style.position = "absolute";
-                    me.canvas.style.left = "700px";
-                    me.canvas.style.top = "100px";
-                }
-
+                txtArr.forEach((txt, line) => {
+                    me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+                });
 
             });
-            return {
-                width: maxWidth,
-                height: maxHeight
-            }
-        }
 
-        resetCanvasSize(size) {
-            let me = this;
+            window._debug = false;
+            if (window._debug) {
+                //console.log('left,top', left, top, maxWidth, size.width);
+                document.body.appendChild(me.canvas);
 
-            let width = size.width;//_Math.ceilPowerOfTwo(size.width);
-            let height = size.height;//_Math.ceilPowerOfTwo(size.height);
+                me.canvas.style.position = "absolute";
+                me.canvas.style.left = "700px";
+                me.canvas.style.top = "0";
 
-           
-
-            me.canvas.width = width * this.scale;
-            me.canvas.height = height * this.scale;
-
-            me.canvas.style.width = width + 'px';
-            me.canvas.style.height = height + 'px';
-
-            me.context.scale( this.scale, this.scale);
-
-
-            this.textureWidth = width;
-            this.textureHeight = height;
-
-            return {
-                width,
-                height
             }
 
-        }
-
-        measureText(text) {
-            let size = null;
-            let div = document.createElement("div");
-            div.innerHTML = text;
-            div.style.position = 'absolute';
-            div.style.top = '-9999px';
-            div.style.left = '-9999px';
-            div.style.fontFamily = this.style.fontFamily;
-            div.style.fontWeight = this.style.isBold ? 'bold' : 'normal';
-            div.style.fontSize = this.style.fontSize  + 'px'; // or 'px'
-
-            document.body.appendChild(div);
-            size = {
-                width: div.offsetWidth,
-                height: div.offsetHeight
+            return {
+                UVs,
+                sizes,
+                maxWidth,
+                maxHeight
             };
-            document.body.removeChild(div);
-            div = null;
-
-            return size;
         }
+
+
+        measureText(txt) {
+            return {
+                width: this.getTextWidth(txt),
+                height: this.getTextHeight(txt)
+            }
+        }
+
 
     }
 
@@ -18569,14 +19532,16 @@ var Chartx = (function () {
     earcut_1.default = default_1;
 
     class View {
-        constructor(_frameWork) {
+        constructor(_frameWork, viewName) {
 
             this._scene = new Scene();
             this._camera = null;
 
+            this.name = viewName || "";
+
             this._frameWork = _frameWork;
             this.renderer = _frameWork.renderer;
-            _frameWork.addView(this);
+
             this.width = 0;
             this.height = 0;
 
@@ -18603,30 +19568,19 @@ var Chartx = (function () {
         }
 
         setBackground(color) {
-
             this._scene.background = color;
         }
+        setControls(ops) {
+            this.controls = ops;
+        }
+
 
         addObject(obj) {
-
             this._scene.add(obj);
-
         }
 
-        addGroup(opt) {
-            let _group = new Group();
-            // _group.on('removed', function () {
-            //     debugger
-            //     if (this.geometry) {
-            //         this.geometry.dispose();
-            //     }
-            //     if (this.material) {
-            //         this.material.dispose();
-            //     }
-            // });
-            _group.name = (opt && opt.name) || '';
-            return _group;
-        }
+
+
 
         removeObject(obj) {
 
@@ -18634,9 +19588,9 @@ var Chartx = (function () {
         }
 
         //mode: "ortho" || "perspective"    
-        project(controlsOpts, mode) {
+        project(mode) {
             this.mode = mode;
-            this.controls = controlsOpts;
+            let controlsOpts = this.controls;
 
             let aspect = this.aspect;
             let frustumSize = controlsOpts.boxHeight;
@@ -18663,6 +19617,12 @@ var Chartx = (function () {
 
             // console.info("getVisableSize", this.getVisableSize());
 
+        }
+
+        createScreenProject() {
+            let distance = this.controls.distance;
+            this._camera = new OrthographicCamera(0, this.width, 0, -this.height, this.near, this.far);
+            this._camera.position.set(0, 0, distance);
         }
 
 
@@ -18751,21 +19711,23 @@ var Chartx = (function () {
             // 初期把一个box 看作一个mesh  后期优化在渲染前做顶点合并
             let transMatrix = new Matrix4();
             //let radius = width * 0.5;
-            let geometry = new CylinderGeometry(1, 1, 1, 60);
+            let part = 60;
+            let geometry = new CylinderGeometry(1, 1, 1, part);
 
             let mesh = new Mesh(geometry, materials);
 
             //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
-
             geometry.vertices.forEach(vertice => {
 
                 vertice.addScalar(0.5);
+
                 //vertice.y -= 0.5;
                 vertice.z *= -1;
             });
 
             //更加给定的得数据变换box
-            let radius = Math.min(width, width) * 0.5;
+            let radius = width * 0.5;
+
             transMatrix.makeScale(radius, height, radius);
 
             geometry.vertices.forEach(vertice => {
@@ -18805,7 +19767,7 @@ var Chartx = (function () {
             });
 
             //更加给定的得数据变换box
-            let radius = Math.min(width, width) * 0.5;
+            let radius = width * 0.5;
             transMatrix.makeScale(radius, height, radius);
 
             geometry.vertices.forEach(vertice => {
@@ -18875,7 +19837,7 @@ var Chartx = (function () {
         }
         //绘制普通线条
         createCommonLine(points = [], lineStyle) {
-            let group = this.addGroup({ name: 'commonLines' });
+            let group = this._frameWork.addGroup({ name: 'commonLines' });
 
             let material = new LineBasicMaterial({
                 color: lineStyle.strokeStyle,
@@ -18952,9 +19914,8 @@ var Chartx = (function () {
 
         }
 
-        //绘制折线(
-        createBrokenLine(points, lineWidth, lineColor, isSmooth) {
-
+        //绘制折线
+        createBrokenLine(points, lineWidth, lineColor) {
             let matLine = new LineMeshMaterial({
                 color: lineColor,
                 linewidth: lineWidth, // in pixels
@@ -18965,14 +19926,11 @@ var Chartx = (function () {
             });
             let lineMeshGeometry = new LineGeometry();
 
-
-
             let triangleVertices = [];
             points.forEach(point => {
-                triangleVertices.push(point.toArray());
+                triangleVertices = triangleVertices.concat(point.toArray());
             });
-
-            lineMeshGeometry.setPositions(_$1.flatten(triangleVertices));
+            lineMeshGeometry.setPositions(triangleVertices);
             let line = new Line2(lineMeshGeometry, matLine);
             line.drawMode = TrianglesDrawMode;
             line.computeLineDistances();
@@ -18980,74 +19938,123 @@ var Chartx = (function () {
 
         }
 
-        creatSpriteText(texts, origins, fontStyle) {
+        createCirclePlane(r, faceStyle, materials) {
+            let geometry = new CircleBufferGeometry(r, 32);
+            if (!materials) {
+
+                materials = new SpriteMaterial$$1({
+                    color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                    transparent: true,
+                    opacity: faceStyle.alpha || 1,
+                    // polygonOffset: true,
+                    // polygonOffsetFactor: 1,
+                    // polygonOffsetUnits: 0.1,
+                    depthTest: true,
+                    depthWrite: false
+
+                });
+            }
+
+            let sprite = new Sprite(materials);
+            sprite.geometry = geometry;
+
+            return sprite;
+
+        }
+
+        createSphere(r, faceStyle, materials) {
+            if (!materials) {
+
+                materials = new MeshBasicMaterial$$1({
+                    color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                    transparent: true,
+                    opacity: faceStyle.alpha || 1,
+                    // polygonOffset: true,
+                    // polygonOffsetFactor: 1,
+                    // polygonOffsetUnits: 0.1,
+                    depthTest: true,
+                    depthWrite: false
+
+                });
+            }
+
+            let geometry = new SphereBufferGeometry(r);
+
+            let mesh = new Mesh(geometry, materials);
+
+            return mesh;
+
+        }
+
+
+
+        creatSpriteText(texts, fontStyle) {
             //相机变化距离,不改变大小
             //https://vouzamo.wordpress.com/2016/09/07/threejs-heads-up-display/
             //1、透视相机根据距离同时调整自己的缩放
             //2、或者在单独的场景使用正交投影渲染
 
-            let textGroup = new Group();
+            let labels = [];
 
-            let renderFont = new RenderFont({
-                verticalAlign: 'middle',
-                textAlign: 'right'
-            });
-            //todo  模糊需要解决
-            //label高度
-            let spriteHeight = 14 * 4;
+            let renderFont = new RenderFont(fontStyle);
 
-            fontStyle = {
-                enabled: 1,
-                fontColor: '#999',
-                fontSize: 12,
-                format: null,
-                rotation: 0,
-                marginToLine: 3 //和刻度线的距离
-            };
+
             if (!_$1.isArray(texts)) {
                 texts = [texts];
             }
 
-            if (!_$1.isArray(origins)) {
-                origins = [origins];
-            }
 
-            renderFont.setStyle(fontStyle);
-            let maxSize = renderFont.drawTexts(texts);
+            let labelInfos = renderFont.drawTexts(texts);
 
-            let size = maxSize; //renderFont.measureText(text);
-            let spriteWidth = size.width / size.height * spriteHeight;
+            var position = new Float32Array([
+                - 0.5, - 0.5, 0,
+                0.5, - 0.5, 0,
+                0.5, 0.5, 0,
+                - 0.5, 0.5, 0,
+            ]);
 
+            let texture = new Texture();
+            texture.image = renderFont.canvas;
 
+            // texture.wrapS = RepeatWrapping;
+            // texture.wrapT = RepeatWrapping;
+            // texture.minFilter = LinearFilter;
+            // texture.magFilter = LinearFilter;
+            texture.needsUpdate = true;
+            let spriteMatrial = new SpriteMaterial$$1({
+                map: texture,
+                transparent: true,
+                depthWrite: false
+            });
 
             texts.forEach((text, index) => {
-
-                let texture = new Texture();
-                texture.image = renderFont.canvas;
-                texture.wrapS = RepeatWrapping;
-                texture.wrapT = RepeatWrapping;
-                texture.minFilter = LinearFilter;
-                texture.magFilter = LinearFilter;
-
-                texture.repeat.set(1 / texts.length, 1);
-                texture.offset.set(index / texts.length, 0);
-
-                texture.needsUpdate = true;
-
-                let spriteMatrial = new SpriteMaterial$$1({
-                    map: texture
-                });
-
+                let realSize = labelInfos.sizes[text];
+                //realSize==[width,height]
+                let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
+                scale.multiplyScalar(realSize[1]);
                 let sprite = new Sprite(spriteMatrial);
-                sprite.scale.set(spriteWidth, spriteHeight, 1);
-                sprite.position.copy(origins[index]);
 
-                textGroup.add(sprite);
+
+                let geometry = new BufferGeometry();
+                geometry.setIndex([0, 1, 2, 0, 2, 3]);
+                geometry.addAttribute('position', new Float32BufferAttribute(position, 3, false));
+                geometry.addAttribute('uv', new Float32BufferAttribute(labelInfos.UVs[text], 2, false));
+
+                sprite.geometry = geometry;
+                sprite.scale.copy(scale);
+                sprite.userData = {
+                    text: text,
+                    size: realSize,
+                    maxWidth: labelInfos.maxWidth,
+                    maxHeight: labelInfos.maxHeight
+                };
+
+                labels.push(sprite);
 
             });
 
 
-            return textGroup;
+            return labels;
 
         }
 
@@ -19136,30 +20143,41 @@ var Chartx = (function () {
             this._framework = new Framework();
             this._framework.init();
 
-            //默认值有一个view;
-            this.view = [];
-
-            this.createView();
-
         }
 
         launch() {
             this._framework.renderFrame();
         }
 
-        createView() {
-            this.view.push(new View(this._framework));
+        createView(viewName) {
+            let _view = new View(this._framework, viewName);
+            this._framework.addView(_view);
         }
+
+        getView(viewName) {
+            let target = null;
+            this._framework.layers.forEach(view => {
+                if (view.name === viewName) {
+                    target = view;
+                }
+            });
+
+            return target;
+        }
+        addGroup(opt) {
+            return this._framework.addGroup(opt);
+        }
+
+
         dispose() {
 
-            this.view.forEach(vw => {
+            this._views.forEach(vw => {
                 this._framework.removeView(vw);
                 vw.dispose();
             });
             this._framework.stopRenderFrame();
             this._framework.renderer.dispose();
             this._framework.render = null;
-            this.view = [];
         }
 
 
@@ -19189,7 +20207,7 @@ var Chartx = (function () {
                 back: 0
             };
 
-            this.group = root.renderView.addGroup({ name: 'InertialSystem' });
+            this.group = root.app.addGroup({ name: 'InertialSystem' });
             _$1.extend(true, this, this.setDefaultOpts(opts));
         }
 
@@ -20495,7 +21513,6 @@ var Chartx = (function () {
         constructor(opt) {
             super();
 
-
             this.domSelector = opt.el;
             this.opt = opt.opts;
             this.data = opt.data;
@@ -20536,7 +21553,7 @@ var Chartx = (function () {
             this.renderer = this.app._framework.renderer;
 
             this.DefaultControls = {
-                autoRotate:true,
+                autoRotate: true,
                 boxWidth: 1000,         //空间中X的最大值(最大宽度)  
                 boxHeight: 1000,        //空间中Y的最大值(最大高度)  
                 boxDepth: 1000,         //空间中Z的最大值(最大深度)
@@ -20559,6 +21576,8 @@ var Chartx = (function () {
             this.inited = false;
             this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
+            this.mainViewName = "main_view";
+            this.labelViewName = "label_view";
 
             this.init();
 
@@ -20608,6 +21627,12 @@ var Chartx = (function () {
 
             interaction.on('refresh', this._onChangeBind);
 
+            //同步主相机的位置和方向
+            // controls.on('change', (e) => {
+            //    this.labelView._camera.position.copy(e.target.object.position);
+            //    this.labelView._camera.lookAt(e.target.target);
+            // })
+
             //启动渲染进程
             this.app.launch();
             this._onWindowResizeBind = me.resize.bind(me);
@@ -20649,6 +21674,17 @@ var Chartx = (function () {
         draw() {
             this.drawComponent();
             this.app._framework.isUpdate = true;
+
+            //test Text
+
+            // let lables = this.labelView.creatSpriteText(["测试label的展示", "第二个标签\n测试回车"]);
+            // let pp =  [new Vector3(10, 0, 0), new Vector3(400, 80, 0)];
+            // lables.forEach((label,i) => {
+            //     let pos = pp[i].clone();
+            //     label.position.copy(pos);
+            //     this.labelGroup.add(label);
+            // });
+
         }
 
         getComponent(name) {
@@ -20736,22 +21772,53 @@ var Chartx = (function () {
         _initRenderer(rendererOpts) {
             let app = this.app;
             let renderView = null;
-            this.stageView.appendChild(this.renderer.domElement);
-
-            this.canvasDom = this.renderer.domElement;
-
-            if (app.view.length > 0) { //默认使用第0个view
-                renderView = this.renderView = app.view[0];
-            }
+            let labelView = null;
 
 
-            this.rootStage = renderView.addGroup({ name: 'rootStage' });
+            //正常绘制的view
+            app.createView(this.mainViewName);
+            //label 绘制的View
+            app.createView(this.labelViewName);
+
+            renderView = this.renderView = app.getView(this.mainViewName);
+
+            labelView = this.labelView = app.getView(this.labelViewName);
+
+
+
+            this.rootStage = app.addGroup({ name: 'rootStage' });
             renderView.addObject(this.rootStage);
             renderView.setSize(this.width, this.height);
             renderView.setBackground(0xFFFFFF);
 
             //默认透视投影
-            this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
+            renderView.setControls(rendererOpts);
+            renderView.project('perspective'); //'ortho' | 'perspective',
+
+            //初始化labelView
+            this.labelGroup = app.addGroup({ name: 'labelsGroup' });
+           
+            //Y轴反转
+            let _modelMatrix = this.labelGroup.matrix.elements;
+            _modelMatrix[1] = - _modelMatrix[1];
+            _modelMatrix[5] = - _modelMatrix[5];
+            _modelMatrix[9] = - _modelMatrix[9];
+            _modelMatrix[13] = - _modelMatrix[13];
+            this.labelGroup.matrixAutoUpdate = false;
+
+            labelView.addObject(this.labelGroup);
+            labelView.setSize(this.width, this.height);
+            //labelView.setBackground("rgba(0,0,0,0)");
+            labelView.setControls(rendererOpts);
+            //labelView.project('ortho'); //'ortho' | 'perspective',
+            labelView.createScreenProject();
+
+            //todo  相机控制同步
+
+            this.stageView.appendChild(this.renderer.domElement);
+
+            this.canvasDom = this.renderer.domElement;
+
         }
         resize() {
             this.width = this.el.offsetWidth;
@@ -21190,7 +22257,7 @@ var Chartx = (function () {
 
             this._tickTextGroup = null;
 
-            this._tickTextGroup = this._root.renderView.addGroup({ name: 'tickTexts' });
+            this._tickTextGroup = this._root.app.addGroup({ name: 'tickTexts' });
 
             this.group.visible = !!opts.enabled;
             this.group.add(this._tickTextGroup);
@@ -21206,7 +22273,7 @@ var Chartx = (function () {
 
             attribute.getSection().forEach((num, index) => {
                 //起点
-                let val = fn.call(this._coordSystem, num,attribute);
+                let val = fn.call(this._coordSystem, num, attribute);
                 let startPoint = axis.dir.clone().multiplyScalar(val);
                 startPoint.add(axis.origin);
                 startPoint.add(_offset);
@@ -21235,58 +22302,117 @@ var Chartx = (function () {
                 this.initData(_axis, _attribute, _fn);
             }
         }
+        getTextPos(text) {
+            let index = _$1.indexOf(this.texts, text);
+            if (index != -1) {
+                return this.origins[index];
+            }
+            return null;
+        }
 
         drawStart(texts) {
             let me = this;
-            (texts || []).forEach((text, index) => {
-                let obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor);
-                //obj.userData.lastScale = new Vector3();
-                let oldFn = obj.onBeforeRender;
-                obj.onBeforeRender = function () {
-                    oldFn.apply(obj, arguments);
-                    // if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
-                    // this.userData.lastScale.copy(this.scale.clone().floor());
+            texts = texts || [];
+            let { fontSize, fontColor: color } = me;
+            let zDir = new Vector3(0, 0, -1);
+            this.texts = texts;
+
+            let labels = me._root.renderView.creatSpriteText(texts, { fontSize, color });
+
+            labels.forEach((label, index) => {
+                label.userData.position = me.origins[index].clone();
+                label.matrixWorldNeedsUpdate = false;
+                label.onBeforeRender = function (render, scene, camera) {
                     me.updataOrigins();
-                    obj.position.copy(me.origins[index]);
-                    //obj.position.add(me.offset);
 
-                    //todo 默认center 居中对齐
+                    //更新坐标后的位置
+                    
+                    let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+                    //屏幕的位置
+                    let textSize = this.userData.size;
+                    let halfwidth = textSize[0] * 0.5;
+                    let halfHeight = textSize[1] * 0.5;
+
                     let camearDir = new Vector3();
-
-                    me._root.renderView._camera.getWorldDirection(camearDir);
-                    let isSameDir = new Vector3(0, 0, -1).dot(camearDir);
-
+                    camera.getWorldDirection(camearDir);
+                    let isSameDir = zDir.dot(camearDir);
 
                     if (me.textAlign == 'right') {
                         let flag = isSameDir < 0 ? 1 : -1;
-                        //console.log(text, 'right', isSameDir); //this.scale.x, obj.position.x,offsetX
-                        obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
+                        pos.setX(pos.x + halfwidth * flag);
+                        label.position.copy(pos);
                     }
                     if (me.textAlign == 'left') {
-
                         let flag = isSameDir < 0 ? -1 : 1;
-
-                        //console.log(text, 'left');
-                        obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
+                        pos.setX(pos.x + halfwidth * flag);
+                        label.position.copy(pos);
                     }
                     if (me.verticalAlign == 'top') {
-                        //console.log(text, 'top');
-                        obj.position.add(new Vector3(0, -(this.scale.y) * 0.5, 0));
+                        pos.setY(pos.y - halfHeight);
+                        label.position.copy(pos);
                     }
                     if (me.verticalAlign == 'bottom') {
-                        //console.log(text, 'bottom');
-                        obj.position.add(new Vector3(0, (this.scale.y) * 0.5, 0));
+                        pos.setY(pos.y + halfHeight);
+                        label.position.copy(pos);
                     }
 
-                    //console.log(`sprite ${this.id}`, maxSize, this.scale)
-                    // }
-
+                    this.position.copy(pos);
+                    this.updateMatrixWorld(true);
                 };
-
-
-                me._tickTextGroup.add(obj);
-
+                me._tickTextGroup.add(label);
             });
+
+
+
+            // texts.forEach((text, index) => {
+            //     let obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor)
+            //     //obj.userData.lastScale = new Vector3();
+            //     let oldFn = obj.onBeforeRender;
+            //     obj.onBeforeRender = function () {
+            //         oldFn.apply(obj, arguments);
+            //         // if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
+            //         // this.userData.lastScale.copy(this.scale.clone().floor());
+            //         me.updataOrigins();
+            //         obj.position.copy(me.origins[index]);
+            //         //obj.position.add(me.offset);
+
+            //         //todo 默认center 居中对齐
+            //         let camearDir = new Vector3();
+
+            //         me._root.renderView._camera.getWorldDirection(camearDir);
+            //         let isSameDir = new Vector3(0, 0, -1).dot(camearDir);
+
+
+            //         if (me.textAlign == 'right') {
+            //             let flag = isSameDir < 0 ? 1 : -1;
+            //             //console.log(text, 'right', isSameDir); //this.scale.x, obj.position.x,offsetX
+            //             obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
+            //         }
+            //         if (me.textAlign == 'left') {
+
+            //             let flag = isSameDir < 0 ? -1 : 1;
+
+            //             //console.log(text, 'left');
+            //             obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
+            //         }
+            //         if (me.verticalAlign == 'top') {
+            //             //console.log(text, 'top');
+            //             obj.position.add(new Vector3(0, -(this.scale.y) * 0.5, 0));
+            //         }
+            //         if (me.verticalAlign == 'bottom') {
+            //             //console.log(text, 'bottom');
+            //             obj.position.add(new Vector3(0, (this.scale.y) * 0.5, 0));
+            //         }
+
+            //         //console.log(`sprite ${this.id}`, maxSize, this.scale)
+            //         // }
+
+            //     }
+
+
+            //     me._tickTextGroup.add(obj);
+
+            // })
 
 
 
@@ -21598,7 +22724,8 @@ var Chartx = (function () {
                 this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
 
                 this._tickText.drawStart(this._formatTextSection);
-                this.group.add(this._tickText.group);
+                //this.group.add(this._tickText.group);
+                this._root.labelGroup.add(this._tickText.group);
 
             }
 
@@ -21861,9 +22988,9 @@ var Chartx = (function () {
                 fontSize: 12,
                 rotation: 0,
                 format: null,
-                offset: { x: 0, y: 0, z: 40 },
+                offset: { x: 20, y: 0, z: 40 },
                 textAlign: "center",       //水平方向对齐: left  right center 
-                verticalAlign: 'top',  //垂直方向对齐 top bottom middle
+                verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
                 lineHeight: 1,
                 evade: true  //是否开启逃避检测，目前的逃避只是隐藏
             };
@@ -21922,7 +23049,7 @@ var Chartx = (function () {
         }
         init(opt, data) {
             let me = this;
-            // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+            // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
 
             // this.group.add(this.rulesGroup);
 
@@ -22026,18 +23153,20 @@ var Chartx = (function () {
                     _tickLineDir = new Vector3(0, 0, -1);
                     _offsetZ *= -1;
                 }
+                _verticalAlign = 'bottom';
 
             } else {
                 //top 可见
                 if (_faceInfo.back.visible) {
                     origin = new Vector3(0, height, 0);
                     _tickLineDir = new Vector3(0, 0, 1);
+                   
                 } else {
                     origin = new Vector3(0, height, -depth);
                     _tickLineDir = new Vector3(0, 0, -1);
                     _offsetZ *= -1;
                 }
-                _verticalAlign = 'bottom';
+                _verticalAlign = 'top';
             }
 
             if (this._axisLine) {
@@ -22089,7 +23218,9 @@ var Chartx = (function () {
 
                 //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
                 this._tickText.drawStart(this._formatTextSection);
-                this.group.add(this._tickText.group);
+
+               this._root.labelGroup.add(this._tickText.group);
+                //this.group.add(this._tickText.group);
             }
         }
         _getName() {
@@ -22207,7 +23338,7 @@ var Chartx = (function () {
                 rotation: 0,
                 format: null,
                 offset: { x: 40, y: 0, z: 0 },
-                textAlign: "right",       //水平方向对齐: left  right center 
+                textAlign: "left",       //水平方向对齐: left  right center 
                 verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
                 lineHeight: 1,
                 //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
@@ -22270,7 +23401,7 @@ var Chartx = (function () {
         }
         init(opt, data) {
             let me = this;
-            // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+            // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
 
             // this.group.add(this.rulesGroup);
 
@@ -22485,7 +23616,8 @@ var Chartx = (function () {
 
                 //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
                 this._tickText.drawStart(this._formatTextSection);
-                this.group.add(this._tickText.group);
+                //this.group.add(this._tickText.group);
+                this._root.labelGroup.add(this._tickText.group);
 
             }
         }
@@ -22622,12 +23754,14 @@ var Chartx = (function () {
         }
         init() {
             let me = this;
-            this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
-            this.rightGroup = this._root.renderView.addGroup({ name: 'rightGroup' });
-            this.topGroup = this._root.renderView.addGroup({ name: 'topGroup' });
-            this.bottomGroup = this._root.renderView.addGroup({ name: 'bottomGroup' });
-            this.frontGroup = this._root.renderView.addGroup({ name: 'frontGroup' });
-            this.backGroup = this._root.renderView.addGroup({ name: 'backGroup' });
+            let app = this._root.app;
+
+            this.leftGroup = app.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
+            this.rightGroup = app.addGroup({ name: 'rightGroup' });
+            this.topGroup = app.addGroup({ name: 'topGroup' });
+            this.bottomGroup = app.addGroup({ name: 'bottomGroup' });
+            this.frontGroup = app.addGroup({ name: 'frontGroup' });
+            this.backGroup = app.addGroup({ name: 'backGroup' });
 
             this.group.add(this.leftGroup);
             this.group.add(this.rightGroup);
@@ -22876,7 +24010,7 @@ var Chartx = (function () {
         init(opt) {
 
             //多个Y轴单独构建一个组
-            this.yAxisGroup = this._root.renderView.addGroup({
+            this.yAxisGroup = this._root.app.addGroup({
                 name: 'yAxisGroup'
             });
 
@@ -23324,14 +24458,14 @@ var Chartx = (function () {
 
             this._coordUI = null;
 
-            this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
+            this.group = this._root.app.addGroup({ name: 'cartesian3dSystem' });
 
             this.init();
 
         }
         setDefaultOpts(opts) {
             var me = this;
-            this._zSection=[];
+            this._zSection = [];
             me.coord = {
                 xAxis: {
                     //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
@@ -23395,7 +24529,7 @@ var Chartx = (function () {
             if (opts.graphs) {
                 //有graphs的就要用找到这个graphs.field来设置coord.yAxis
                 for (var i = 0; i < opts.graphs.length; i++) {
-                   
+
                     var graphs = opts.graphs[i];
                     this._zSection.push(graphs.field.toString());
                     if (graphs.type == "bar") {
@@ -23461,7 +24595,7 @@ var Chartx = (function () {
                 if (_$1.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
                     opts.coord.yAxis.splice(i--, 1);
                 }
-                if(opts.coord.yAxis[i]){
+                if (opts.coord.yAxis[i]) {
                     delete opts.coord.yAxis[i]._used;
                 }
 
@@ -23489,7 +24623,7 @@ var Chartx = (function () {
                         arr.push(arr[0] * 2);
                     }                arr = arr.sort(function (a, b) { return a - b });
                     arr = DataSection.section(arr);
-                }
+                }            arr = _$1.uniq(arr);
                 this.xAxisAttribute.setOrgSection(arr);
                 //如果用户指定了dataSection,就采用用户自己的
                 if (opt.xAxis.dataSection) {
@@ -23558,7 +24692,7 @@ var Chartx = (function () {
                 maxSegment = maxSegmentUser === Infinity ? maxSegment : maxSegmentUser;
                 for (let _yAxisAttr in this.yAxisAttribute) {
                     let _section = this.yAxisAttribute[_yAxisAttr].getSection();
-                    let step = (_section[_section.length - 1] - _section[0]) / (maxSegment-1);
+                    let step = (_section[_section.length - 1] - _section[0]) / (maxSegment - 1);
                     if (step > 1) {
                         step = Math.ceil(step);
                     }
@@ -23574,18 +24708,32 @@ var Chartx = (function () {
                 }
                 //Z轴的计算
                 if (opt.zAxis.field) {
+                    //如果设定了z轴的具体字段,就把该州作为Z的具体值
                     this.zAxisAttribute.setField(opt.zAxis.field);
-                }
-                //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-                //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
-                // let _sectionZ = [];
-                // opt.graphs.forEach((yOps) => {
-                //     debugger
-                //     _sectionZ.push(yOps.field.toString());
-                // })
-                
+                    var arr = _$1.flatten(this.zAxisAttribute.data);
 
-                this.zAxisAttribute.setOrgSection(this._zSection);
+                    if (this.coord.zAxis.layoutType == "proportion") {
+                        if (arr.length == 1) {
+                            arr.push(0);
+                            arr.push(arr[0] * 2);
+                        }                    arr = arr.sort(function (a, b) { return a - b });
+                        arr = DataSection.section(arr);
+                    }                arr = _$1.uniq(arr);
+                    this.zAxisAttribute.setOrgSection(arr);
+
+                } else {
+                    //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+                    //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
+                    // let _sectionZ = [];
+                    // opt.graphs.forEach((yOps) => {
+                    //     debugger
+                    //     _sectionZ.push(yOps.field.toString());
+                    // })
+
+
+                    this.zAxisAttribute.setOrgSection(this._zSection);
+                }
+
 
 
                 if (opt.zAxis.dataSection) {
@@ -23937,13 +25085,26 @@ var Chartx = (function () {
             // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
             // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
             // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
+            if (this.coord.xAxis.layoutType == 'peak') {
+                ceil.setX(size.x / (dataLenX));
+            } else {
+                ceil.setX(size.x / (dataLenX + 1));
+            }
 
-            ceil.setX(size.x / (dataLenX + 1));
             ceil.setY(size.y / (dataLenY + 1));
-            ceil.setZ(size.z / (dataLenZ + 1));
+            if (this.coord.zAxis.layoutType == 'peak') {
+                ceil.setZ(size.z / (dataLenZ));
+            } else {
+                ceil.setZ(size.z / (dataLenZ + 1));
+            }
+
 
             return ceil;
 
+        }
+
+        positionToScreen(pos) {
+           return positionToScreen.call(this, pos);
         }
 
         dispose() {
@@ -23954,6 +25115,25 @@ var Chartx = (function () {
 
 
     }
+
+
+    let positionToScreen = (function () {
+        let matrix = new Matrix4();
+
+        return function (pos) {
+            let pCam = this._root.renderView._camera;
+            const widthHalf = 0.5 * this._root.width;
+            const heightHalf = 0.5 * this._root.height;
+
+            let target = this.group.localToWorld(pos);
+
+            target.project(pCam, matrix);
+
+            target.x = (target.x * widthHalf) + widthHalf;
+            target.y = (- (target.y * heightHalf) + heightHalf);
+            return target;
+        }
+    })();
 
     var coord = {
         // rect : Rect,

@@ -12,7 +12,7 @@ class Component extends Events {
         // //每一个组件存放在一个Group中
         // this.group = new Group();
         // this.name = '';
-        this.group = this._root.renderView.addGroup({
+        this.group = this._root.app.addGroup({
             name: this.constructor.name.toLowerCase() + '_root'
         });
     }

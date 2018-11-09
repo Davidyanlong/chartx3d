@@ -26,7 +26,7 @@ class InertialSystem extends Events {
             back: 0
         }
 
-        this.group = root.renderView.addGroup({ name: 'InertialSystem' });
+        this.group = root.app.addGroup({ name: 'InertialSystem' });
         _.extend(true, this, this.setDefaultOpts(opts));
     }
 

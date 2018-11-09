@@ -49,9 +49,9 @@ class XAxis extends Component {
             fontSize: 12,
             rotation: 0,
             format: null,
-            offset: { x: 0, y: 0, z: 40 },
+            offset: { x: 20, y: 0, z: 40 },
             textAlign: "center",       //水平方向对齐: left  right center 
-            verticalAlign: 'top',  //垂直方向对齐 top bottom middle
+            verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
             lineHeight: 1,
             evade: true  //是否开启逃避检测，目前的逃避只是隐藏
         };
@@ -111,7 +111,7 @@ class XAxis extends Component {
     }
     init(opt, data) {
         let me = this;
-        // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+        // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
 
         // this.group.add(this.rulesGroup);
 
@@ -219,18 +219,20 @@ class XAxis extends Component {
                 _tickLineDir = new Vector3(0, 0, -1);
                 _offsetZ *= -1;
             }
+            _verticalAlign = 'bottom';
 
         } else {
             //top 可见
             if (_faceInfo.back.visible) {
                 origin = new Vector3(0, height, 0);
                 _tickLineDir = new Vector3(0, 0, 1);
+               
             } else {
                 origin = new Vector3(0, height, -depth)
                 _tickLineDir = new Vector3(0, 0, -1);
                 _offsetZ *= -1;
             }
-            _verticalAlign = 'bottom';
+            _verticalAlign = 'top';
         }
 
         if (this._axisLine) {
@@ -282,7 +284,9 @@ class XAxis extends Component {
 
             //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
             this._tickText.drawStart(this._formatTextSection);
-            this.group.add(this._tickText.group);
+
+           this._root.labelGroup.add(this._tickText.group)
+            //this.group.add(this._tickText.group);
         }
     }
     _getName() {

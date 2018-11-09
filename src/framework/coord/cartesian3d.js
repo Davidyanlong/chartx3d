@@ -46,14 +46,14 @@ class Cartesian3D extends InertialSystem {
 
         this._coordUI = null;
 
-        this.group = this._root.renderView.addGroup({ name: 'cartesian3dSystem' });
+        this.group = this._root.app.addGroup({ name: 'cartesian3dSystem' });
 
         this.init();
 
     }
     setDefaultOpts(opts) {
         var me = this;
-        this._zSection=[];
+        this._zSection = [];
         me.coord = {
             xAxis: {
                 //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
@@ -117,7 +117,7 @@ class Cartesian3D extends InertialSystem {
         if (opts.graphs) {
             //有graphs的就要用找到这个graphs.field来设置coord.yAxis
             for (var i = 0; i < opts.graphs.length; i++) {
-               
+
                 var graphs = opts.graphs[i];
                 this._zSection.push(graphs.field.toString());
                 if (graphs.type == "bar") {
@@ -184,7 +184,7 @@ class Cartesian3D extends InertialSystem {
             if (_.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
                 opts.coord.yAxis.splice(i--, 1);
             }
-            if(opts.coord.yAxis[i]){
+            if (opts.coord.yAxis[i]) {
                 delete opts.coord.yAxis[i]._used;
             }
 
@@ -215,7 +215,7 @@ class Cartesian3D extends InertialSystem {
                 arr = arr.sort(function (a, b) { return a - b });
                 arr = DataSection.section(arr)
             };
-
+            arr = _.uniq(arr);
             this.xAxisAttribute.setOrgSection(arr);
             //如果用户指定了dataSection,就采用用户自己的
             if (opt.xAxis.dataSection) {
@@ -286,7 +286,7 @@ class Cartesian3D extends InertialSystem {
             maxSegment = maxSegmentUser === Infinity ? maxSegment : maxSegmentUser;
             for (let _yAxisAttr in this.yAxisAttribute) {
                 let _section = this.yAxisAttribute[_yAxisAttr].getSection();
-                let step = (_section[_section.length - 1] - _section[0]) / (maxSegment-1);
+                let step = (_section[_section.length - 1] - _section[0]) / (maxSegment - 1);
                 if (step > 1) {
                     step = Math.ceil(step);
                 }
@@ -302,18 +302,34 @@ class Cartesian3D extends InertialSystem {
             }
             //Z轴的计算
             if (opt.zAxis.field) {
+                //如果设定了z轴的具体字段,就把该州作为Z的具体值
                 this.zAxisAttribute.setField(opt.zAxis.field);
-            }
-            //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-            //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
-            // let _sectionZ = [];
-            // opt.graphs.forEach((yOps) => {
-            //     debugger
-            //     _sectionZ.push(yOps.field.toString());
-            // })
-            
+                var arr = _.flatten(this.zAxisAttribute.data);
 
-            this.zAxisAttribute.setOrgSection(this._zSection);
+                if (this.coord.zAxis.layoutType == "proportion") {
+                    if (arr.length == 1) {
+                        arr.push(0);
+                        arr.push(arr[0] * 2);
+                    };
+                    arr = arr.sort(function (a, b) { return a - b });
+                    arr = DataSection.section(arr)
+                };
+                arr = _.uniq(arr);
+                this.zAxisAttribute.setOrgSection(arr);
+
+            } else {
+                //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
+                //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
+                // let _sectionZ = [];
+                // opt.graphs.forEach((yOps) => {
+                //     debugger
+                //     _sectionZ.push(yOps.field.toString());
+                // })
+
+
+                this.zAxisAttribute.setOrgSection(this._zSection);
+            }
+
 
 
             if (opt.zAxis.dataSection) {
@@ -701,13 +717,26 @@ class Cartesian3D extends InertialSystem {
         // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
         // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
         // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
+        if (this.coord.xAxis.layoutType == 'peak') {
+            ceil.setX(size.x / (dataLenX));
+        } else {
+            ceil.setX(size.x / (dataLenX + 1));
+        }
 
-        ceil.setX(size.x / (dataLenX + 1));
         ceil.setY(size.y / (dataLenY + 1));
-        ceil.setZ(size.z / (dataLenZ + 1));
+        if (this.coord.zAxis.layoutType == 'peak') {
+            ceil.setZ(size.z / (dataLenZ));
+        } else {
+            ceil.setZ(size.z / (dataLenZ + 1));
+        }
+
 
         return ceil;
 
+    }
+
+    positionToScreen(pos) {
+       return positionToScreen.call(this, pos);
     }
 
     dispose() {
@@ -720,6 +749,23 @@ class Cartesian3D extends InertialSystem {
 }
 
 
+let positionToScreen = (function () {
+    let matrix = new Matrix4();
+
+    return function (pos) {
+        let pCam = this._root.renderView._camera;
+        const widthHalf = 0.5 * this._root.width;
+        const heightHalf = 0.5 * this._root.height;
+
+        let target = this.group.localToWorld(pos);
+
+        target.project(pCam, matrix);
+
+        target.x = (target.x * widthHalf) + widthHalf;
+        target.y = (- (target.y * heightHalf) + heightHalf);
+        return target;
+    }
+})();
 
 
 

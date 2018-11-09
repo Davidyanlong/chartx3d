@@ -253,7 +253,8 @@ class YAxis extends Component {
             this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
 
             this._tickText.drawStart(this._formatTextSection);
-            this.group.add(this._tickText.group);
+            //this.group.add(this._tickText.group);
+            this._root.labelGroup.add(this._tickText.group)
 
         }
 

@@ -37,16 +37,16 @@
                 //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
                 //第一行是表头。
                 var data= [
-                    ["xfield","uv" ,"pv" ,"click", "ppc"],
-                    [ 1      , 101 , 20  , 33    , 45],
-                    [ 2      , 67  , 51  , 26    , 76],
-                    [ 3      , 130 , 50  , 50    , 45],
-                    [ 4      , 101 , 60  , 33    , 64],
-                    [ 5      , 67  , 91  , 126   , 22 ],
-                    [ 6      , 30  , 50 , 90     , 45],
-                    [ 7      , 51  , 120 , 33    , 78],
-                    [ 8      , 67  , 51  , 86    , 234],
-                    [ 9      , 120 , 90  , 150   , 63 ]
+                    ["xfield","uv" ,"pv" ,"click", "ppc","ppd"],
+                    [ 1      , 101 , 20  , 33    , 45,  33],
+                    [ 2      , 67  , 51  , 26    , 76,54],
+                    [ 3      , 130 , 50  , 50    , 45,98],
+                    [ 4      , 101 , 60  , 33    , 64,355],
+                    [ 5      , 67  , 91  , 126   , 22,56 ],
+                    [ 6      , 30  , 50 , 90     , 45,98],
+                    [ 7      , 51  , 120 , 33    , 78,235],
+                    [ 8      , 67  , 51  , 86    , 234,123],
+                    [ 9      , 120 , 90  , 150   , 63, 234]
                 
                 ];
                 var options = {
@@ -87,7 +87,15 @@
                    tips : {
                         enabled : "true"
                     },
-                    graphs : [   
+                    graphs : [ 
+                        {
+                            type : "bar",
+                            field : ["ppc" ],
+                            node:{
+                            shapeType:'cone', //cube  cylinder cone
+                            materialType:'lambert' //phong lambert base
+                           }
+                        },
                         {
                             type : "bar",
                             field : ["uv",["click","pv"] ],
@@ -97,14 +105,14 @@
                             materialType:'phong' //phong lambert base
                            }
                         },
+
                         {
                             type : "bar",
-                            field : ["ppc" ],
-                            yAxisAlign : "left",
+                            field : ["ppd" ],
                             node:{
-                            shapeType:'cylinder', //cube  cylinder cone
-                            materialType:'phong' //phong lambert base
-                           }
+                            shapeType:'cube', //cube  cylinder cone
+                            materialType:'base' //phong lambert base
+                        }
                         }
                         
                     ]

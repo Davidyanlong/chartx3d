@@ -51,7 +51,7 @@ class ZAxis extends Component {
             rotation: 0,
             format: null,
             offset: { x: 40, y: 0, z: 0 },
-            textAlign: "right",       //水平方向对齐: left  right center 
+            textAlign: "left",       //水平方向对齐: left  right center 
             verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
             lineHeight: 1,
             //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
@@ -115,7 +115,7 @@ class ZAxis extends Component {
     }
     init(opt, data) {
         let me = this;
-        // this.rulesGroup = this._root.renderView.addGroup({ name: 'rulesSprite' });
+        // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
 
         // this.group.add(this.rulesGroup);
 
@@ -334,7 +334,8 @@ class ZAxis extends Component {
 
             //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
             this._tickText.drawStart(this._formatTextSection);
-            this.group.add(this._tickText.group);
+            //this.group.add(this._tickText.group);
+            this._root.labelGroup.add(this._tickText.group)
 
         }
     }

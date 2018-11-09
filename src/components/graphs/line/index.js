@@ -1,5 +1,5 @@
 import { Component, _ } from '../../Component';
-import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color } from 'mmgl/src/index';
+import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 100;
 
@@ -8,8 +8,34 @@ class Line extends Component {
         super(chart3d.currCoord);
         this.type = "line";
 
+        this.line = { //线
+            enabled: 1,
+            shapeType: "brokenLine",//折线
+            strokeStyle: '#ccc',
+            lineWidth: 2,
+            lineType: "solid",
+            smooth: true
+        };
+
+        this.icon = { //节点 
+            enabled     : 1, //是否有
+            shapeType   : "circle",
+            corner      : false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
+            radius      : 3, //半径 icon 圆点的半径
+            fillStyle   : '#ffffff',
+            strokeStyle : null,
+            lineWidth   : 2
+        };
+
+        this.area = { //填充
+//            shapeType : "path",
+            enabled   :1,
+            fillStyle : null,
+            alpha     : 0.3
+        };
+
+
         _.extend(true, this, opt);
-        this.materialMap = new Map();
         this.init();
 
     }
@@ -55,6 +81,8 @@ class Line extends Component {
         if (xDatas.length == 1) {
             xDatas = _.flatten(xDatas);
         }
+        //todo 三维数据这里会有问题,需要整理清楚
+
 
         let yValidData = [];
 
@@ -63,20 +91,7 @@ class Line extends Component {
             customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
         }
 
-        // zSection.forEach((zs, index) => {
-        //     fields.forEach(fd => {
 
-        //         if (zs == fd.toString()) {
-        //             yValidData.push(yDatas[index]);
-        //             if (zCustomSection.length > 0) {
-        //                 customField.push(zCustomSection[index]);
-        //             }
-
-        //         }
-        //     })
-        // })
-        //yDatas = _.flatten(yDatas);
-        //let dd = false;
         let lastArray = [];
 
         let DataOrg = function () {
@@ -111,60 +126,71 @@ class Line extends Component {
             return zCustomSection.length ? zCustomSection[index] : name;
         }
 
-        xDatas.forEach((xd, no) => {
-            lastArray = [];
-            yValidData.forEach((yda, index) => {
-                let _fd = fields[index];
-                let fieldName = fields.toString();
-                let zd = getZAxiaName(fieldName);
+        let generate = (zd) => {
+            xDatas.forEach((xd, no) => {
+                lastArray = [];
+                yValidData.forEach((yda, index) => {
+                    let _fd = fields[index];
+                    if (yda.length > 1) {
+                        yda.forEach((ydad, num) => {
 
-                if (yda.length > 1) {
-                    yda.forEach((ydad, num) => {
+                            let ydadd = _.flatten(ydad).slice(0);
+                            let _fdd = _fd[num];
+                            ydadd.forEach((yd, i) => {
+                                if (i === no) {
+                                    let _tmp = new DataOrg();
+                                    _tmp.floor = num;
+                                    _tmp.level = index + num;
+                                    _tmp.field = _fdd;
+                                    if (num > 0) {
+                                        _tmp.isStack = true;
+                                        _tmp.value = new Vector3(xd, yd, zd);
+                                        _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
 
-                        let ydadd = _.flatten(ydad).slice(0);
-                        let _fdd = _fd[num];
-                        ydadd.forEach((yd, i) => {
-                            if (i === no) {
-                                let _tmp = new DataOrg();
-                                _tmp.floor = num;
-                                _tmp.level = index + num;
-                                _tmp.field = _fdd;
-                                if (num > 0) {
-                                    _tmp.isStack = true;
-                                    _tmp.value = new Vector3(xd, yd, zd);
-                                    _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+                                    } else {
+                                        _tmp.isStack = true;
+                                        _tmp.stackValue = new Vector3(xd, 0, zd);
+                                        _tmp.value = new Vector3(xd, yd, zd);
 
-                                } else {
-                                    _tmp.isStack = true;
-                                    _tmp.stackValue = new Vector3(xd, 0, zd);
-                                    _tmp.value = new Vector3(xd, yd, zd);
-
+                                    }
+                                    me.drawPosData.push(_tmp);
                                 }
+
+                            })
+                            _.flatten(ydad).slice(0).forEach((t, y) => {
+                                lastArray[y] = (lastArray[y] || 0) + t;
+                            })
+                            //lastArray = _.flatten(ydad).slice(0);
+                        })
+
+                    } else {
+                        let _tmp = new DataOrg();
+                        _tmp.field = _fd;
+                        _.flatten(yda).slice(0).forEach((yd, i) => {
+                            if (i === no) {
+                                _tmp.value = new Vector3(xd, yd, zd);
                                 me.drawPosData.push(_tmp);
                             }
 
                         })
-                        _.flatten(ydad).slice(0).forEach((t, y) => {
-                            lastArray[y] = (lastArray[y] || 0) + t;
-                        })
-                        //lastArray = _.flatten(ydad).slice(0);
-                    })
-
-                } else {
-                    let _tmp = new DataOrg();
-                    _tmp.field = _fd;
-                    _.flatten(yda).slice(0).forEach((yd, i) => {
-                        if (i === no) {
-                            _tmp.value = new Vector3(xd, yd, zd);
-                            me.drawPosData.push(_tmp);
-                        }
-
-                    })
-                }
-
+                    }
+                })
             })
+        }
 
-        })
+
+        let fieldName = fields.toString();
+        if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+            let zd = getZAxiaName(fieldName);
+            generate(zd);
+        } else {
+
+            zSection.forEach(zd => {
+                generate(zd);
+            });
+        }
+
+
     }
     draw() {
         let me = this;
@@ -184,7 +210,13 @@ class Line extends Component {
             pos.setX(getXAxisPosition(dataOrg.value.x));
             pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
             pos.setZ(getZAxisPosition(dataOrg.value.z));
-            linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+
+            if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+            } else {
+                linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
+            }
+
             if (dataOrg.isStack) {
                 stack.setX(pos.x);
                 stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
@@ -197,31 +229,66 @@ class Line extends Component {
                 stack.setZ(-pos.z);
 
             }
-            linePoints[dataOrg.field].push(stack);
+
+
+            if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                linePoints[dataOrg.field].push(stack);
+            } else {
+                linePoints[dataOrg.value.z].push(stack);
+            }
+
         })
 
+        const DIVISONS = 200;
         for (let field in linePoints) {
-            let _color = this._getColor(null, { field: field });
-            let line = this._root.renderView.createBrokenLine(linePoints[field], 2, _color, false);
+            let _color = this._getColor(null, { field: field }) || "red";
+            
+            let points = null;
+           
+            if (me.line.smooth) {
+                let curve = new CatmullRomCurve3(linePoints[field]);
+                points = curve.getSpacedPoints(DIVISONS);
+            } else {
+                points = linePoints[field];
+            }
+
+
+            let line = this._root.renderView.createBrokenLine(points, 2, _color, true);
+
             this.group.add(line);
 
-        }
 
-        //绘制区域
-        // createPolygonPlane(points = [], faceStyle = {}, materials)
-
-        for (let field in linePoints) {
-            let points = [];
-            let _color = this._getColor(null, { field: field });
-            linePoints[field].forEach(point => {
-                points.push(point.toArray());
-
+            //绘制区域
+            let pointArr = [];
+            points.forEach(point => {
+                pointArr = pointArr.concat(point.toArray());
             });
-            points.unshift([points[0][0], 0, points[0][2]]);
-            points.push([points[points.length - 1][0], 0, points[points.length - 1][2]]);
-            let polygon = this._root.renderView.createPolygonPlane(_.flatten(points), { fillStyle: _color });
+            pointArr.unshift(pointArr[0], 0, pointArr[2]);
+            pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
+            let polygon = this._root.renderView.createPolygonPlane(pointArr, { fillStyle: _color });
             this.group.add(polygon);
+
+
+            //绘制node 点
+            linePoints[field].forEach(point=>{
+                
+                //let node = this._root.renderView.createSphere(10,{fillStyle:_color});
+                let node = this._root.renderView.createCirclePlane(10,{fillStyle:_color});
+                node.position.copy(point);
+                this.group.add(node);
+            });
+          
+
         }
+
+        // //绘制区域
+        // // createPolygonPlane(points = [], faceStyle = {}, materials)
+
+        // for (let field in linePoints) {
+        //     let points = [];
+        //     let _color = this._getColor(null, { field: field });
+
+        // }
 
         console.log(linePoints);
         //debugger

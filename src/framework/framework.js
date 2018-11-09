@@ -1,5 +1,5 @@
 
-import { WebGLRenderer, Events } from "mmgl/src/index"
+import { WebGLRenderer, Events, Group } from "mmgl/src/index"
 
 class Framework extends Events {
     constructor() {
@@ -10,6 +10,7 @@ class Framework extends Events {
         this.currTick = new Date().getTime();
         this.lastTick = null;
         this.renderer = null;
+        this._groups = [];
 
     }
 
@@ -53,9 +54,19 @@ class Framework extends Events {
 
         this.fire({ type: 'renderbefore' });
         if (redraw) {
-            this.layers.forEach(view => {
 
-                this.renderer.render(view._scene, view._camera)
+            this.layers.forEach((view,index) => {
+                if(this.layers.length>1 && index!==this.layers.length-1){
+                    this.renderer.autoClear = true
+                }else{
+                    this.renderer.autoClear = false;
+                }
+                // if(this.layers.length>1 && index!==this.layers.length-1){}
+                // else{
+                    
+                    this.renderer.render(view._scene, view._camera)
+                //}
+               
 
             });
             this.lastTick = new Date().getTime();
@@ -75,6 +86,7 @@ class Framework extends Events {
         window.cancelAnimationFrame(this.frameId);
         this.frameId = null;
     }
+
     addView(view) {
         this.layers.push(view);
     }
@@ -86,6 +98,21 @@ class Framework extends Events {
         if (index >= 0) {
             this.layers.splice(index, 1);
         }
+    }
+
+    addGroup(opt) {
+        let _group = new Group();
+        _group.on('removed', function () {
+            if (this.geometry) {
+                this.geometry.dispose();
+            }
+            if (this.material) {
+                this.material.dispose();
+            }
+        });
+        _group.name = (opt && opt.name) || '';
+        this._groups.push(_group); //todo 收集起来方便后期处理或查询使用
+        return _group;
     }
 
 

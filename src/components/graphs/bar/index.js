@@ -1,8 +1,8 @@
 
 import { Component, _ } from '../../Component';
-import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color } from 'mmgl/src/index';
+import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color,Box3 } from 'mmgl/src/index';
 
-let renderOrder = 100;
+//let renderOrder = 100;
 
 class Bar extends Component {
     constructor(chart3d, opt) {
@@ -70,7 +70,7 @@ class Bar extends Component {
 
     }
     init() {
-        this.barsGroup = this._root.renderView.addGroup({ name: 'bars_gruop' });
+        this.barsGroup = this._root.app.addGroup({ name: 'bars_gruop' });
 
     }
     computePos() {
@@ -169,6 +169,7 @@ class Bar extends Component {
                                 _tmp.floor = num;
                                 _tmp.level = index + num;
                                 _tmp.field = _fdd;
+                                _tmp.group = (index + 1);
                                 if (num > 0) {
                                     _tmp.isStack = true;
                                     _tmp.value = new Vector3(xd, yd, zd);
@@ -202,7 +203,7 @@ class Bar extends Component {
 
                     })
                 }
-
+               
             })
 
         })
@@ -255,23 +256,14 @@ class Bar extends Component {
         let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
         let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
         let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-        
-        let oneMaxWidth =  ceil.x * 0.7;
-        let boxWidth = ceil.x  / this.allGroupNum * 0.7;
-        
-        let allGap = Math.floor(boxWidth * 0.1) *( this.allGroupNum-1) ;
-        let oneGap = 0;
-        if(allGap>0){
-            oneGap = allGap /(this.allGroupNum-1);
-            boxWidth = boxWidth - oneGap;
-        }
-       
-        
-        
 
+        let boxWidth = ceil.x / this.allGroupNum * 0.7; //细分后柱子在单元格内的宽度
+        //boxWidth = Math.max(1,boxWidth);
         let boxDepth = ceil.z * 0.7;
         let boxHeight = 1;
-       
+
+        let scale = 0.9; //每个单元格柱子占用的百分比
+
         this.drawPosData.forEach(dataOrg => {
 
             let pos = new Vector3();
@@ -279,14 +271,18 @@ class Bar extends Component {
             pos.setX(getXAxisPosition(dataOrg.value.x));
             pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
             pos.setZ(getZAxisPosition(dataOrg.value.z));
-    
 
-            var disLeft = (ceil.x - boxWidth*dataOrg.group - oneGap*(dataOrg.group-1) ) / 2;
-        
-            disLeft += (oneGap + boxWidth) * (dataOrg.group-1);
-       
-            stack.setX(pos.x - ceil.x / 2 + disLeft + (boxWidth + oneGap)*(dataOrg.group-1));
-            stack.setZ(-pos.z + boxDepth * 0.5);
+            let span = ceil.x / (this.allGroupNum * 2) * scale;
+            let step = (dataOrg.group - 1) * 2 + 1;
+
+            stack.setX(pos.x + (span * step - ceil.x * 0.5 * scale) - boxWidth * 0.5);
+            if (this.node.shapeType == 'cylinder' || 'cone' ==this.node.shapeType) {
+               
+                stack.setZ(-pos.z + boxWidth * 0.5);
+            }else{
+                stack.setZ(-pos.z + boxDepth * 0.5);
+            }
+           
             if (dataOrg.isStack) {
                 stack.setY(getYAxisPosition(dataOrg.stackValue.y, yAxisAttribute));
 
@@ -294,28 +290,30 @@ class Bar extends Component {
                 stack.setY(0);
 
             }
-            boxHeight = Math.max(Math.abs(pos.y), 1);
+            boxHeight = Math.max(Math.abs(pos.y), 0.01);
             //console.log('boxHeight', boxHeight, dataOrg.value.y);
 
             // MeshLambertMaterial
             //MeshPhongMaterial
-            let _color = this._getColor(this.node.fillStyle, dataOrg);
-
 
             let material = me.getMaterial(dataOrg);
             let box = null;
 
             if (this.node.shapeType == 'cone') {
                 box = this._root.renderView.createCone(boxWidth, boxHeight, boxDepth, material);
+                let boundbox = new Box3().setFromObject(box);
+                stack.x+=boundbox.getCenter().x;
             } else if (this.node.shapeType == 'cylinder') {
                 box = this._root.renderView.createCylinder(boxWidth, boxHeight, boxDepth, material);
+                let boundbox = new Box3().setFromObject(box);
+                stack.x+=boundbox.getCenter().x;
             } else {
                 box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, material);
 
             }
 
-
-
+        
+          
 
             box.position.copy(stack);
             let { x, y, z } = dataOrg.value;
@@ -334,7 +332,7 @@ class Bar extends Component {
                 },
                 color: this._getColor(this.node.fillStyle, dataOrg)
             }
-            box.renderOrder = renderOrder++;
+            //box.renderOrder = renderOrder++;
             this.group.add(box);
 
 

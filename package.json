@@ -41,7 +41,7 @@
     "@babel/core": "^7.1.2",
     "der-server": "0.0.9",
     "gulp": "^3.9.1",
-    "mmgl": "0.0.33"
+    "mmgl": "0.0.38"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

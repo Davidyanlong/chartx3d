@@ -45,12 +45,14 @@ class Grid extends Component {
     }
     init() {
         let me = this;
-        this.leftGroup = this._root.renderView.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
-        this.rightGroup = this._root.renderView.addGroup({ name: 'rightGroup' });
-        this.topGroup = this._root.renderView.addGroup({ name: 'topGroup' });
-        this.bottomGroup = this._root.renderView.addGroup({ name: 'bottomGroup' });
-        this.frontGroup = this._root.renderView.addGroup({ name: 'frontGroup' });
-        this.backGroup = this._root.renderView.addGroup({ name: 'backGroup' });
+        let app = this._root.app;
+
+        this.leftGroup = app.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
+        this.rightGroup = app.addGroup({ name: 'rightGroup' });
+        this.topGroup = app.addGroup({ name: 'topGroup' });
+        this.bottomGroup = app.addGroup({ name: 'bottomGroup' });
+        this.frontGroup = app.addGroup({ name: 'frontGroup' });
+        this.backGroup = app.addGroup({ name: 'backGroup' });
 
         this.group.add(this.leftGroup);
         this.group.add(this.rightGroup);

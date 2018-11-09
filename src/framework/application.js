@@ -9,30 +9,41 @@ class Application {
         this._framework = new Framework();
         this._framework.init();
 
-        //默认值有一个view;
-        this.view = [];
-
-        this.createView();
-
     }
 
     launch() {
         this._framework.renderFrame();
     }
 
-    createView() {
-        this.view.push(new View(this._framework))
+    createView(viewName) {
+        let _view = new View(this._framework, viewName);
+        this._framework.addView(_view);
     }
+
+    getView(viewName) {
+        let target = null;
+        this._framework.layers.forEach(view => {
+            if (view.name === viewName) {
+                target = view;
+            }
+        });
+
+        return target;
+    }
+    addGroup(opt) {
+        return this._framework.addGroup(opt);
+    }
+
+
     dispose() {
 
-        this.view.forEach(vw => {
+        this._views.forEach(vw => {
             this._framework.removeView(vw);
             vw.dispose();
         })
         this._framework.stopRenderFrame();
         this._framework.renderer.dispose();
         this._framework.render = null;
-        this.view = [];
     }
 
 

@@ -3,12 +3,14 @@ import {
     Camera,
     Scene,
     BoxGeometry,
+    CircleBufferGeometry,
     BufferGeometry,
     Float32BufferAttribute,
     CylinderGeometry,
     Mesh,
     MeshBasicMaterial,
     MeshLambertMaterial,
+    MeshPhongMaterial,
     Matrix4,
     Group,
     OrthographicCamera,
@@ -34,8 +36,10 @@ import {
     Geometry,
     Line,
     LineBasicMaterial,
-    LineDashedMaterial
-
+    LineDashedMaterial,
+    SphereBufferGeometry,
+    InterleavedBuffer,
+    InterleavedBufferAttribute
 
 } from "mmgl/src/index"
 
@@ -44,14 +48,16 @@ import { RenderFont } from './renderFont';
 import earcut from "earcut";
 
 class View {
-    constructor(_frameWork) {
+    constructor(_frameWork, viewName) {
 
         this._scene = new Scene();
         this._camera = null;
 
+        this.name = viewName || "";
+
         this._frameWork = _frameWork;
         this.renderer = _frameWork.renderer;
-        _frameWork.addView(this);
+
         this.width = 0;
         this.height = 0;
 
@@ -78,30 +84,19 @@ class View {
     }
 
     setBackground(color) {
-
         this._scene.background = color;
     }
+    setControls(ops) {
+        this.controls = ops;
+    }
+
 
     addObject(obj) {
-
         this._scene.add(obj);
-
     }
 
-    addGroup(opt) {
-        let _group = new Group();
-        // _group.on('removed', function () {
-        //     debugger
-        //     if (this.geometry) {
-        //         this.geometry.dispose();
-        //     }
-        //     if (this.material) {
-        //         this.material.dispose();
-        //     }
-        // });
-        _group.name = (opt && opt.name) || '';
-        return _group;
-    }
+
+
 
     removeObject(obj) {
 
@@ -109,9 +104,9 @@ class View {
     }
 
     //mode: "ortho" || "perspective"    
-    project(controlsOpts, mode) {
+    project(mode) {
         this.mode = mode;
-        this.controls = controlsOpts;
+        let controlsOpts = this.controls;
 
         let aspect = this.aspect;
         let frustumSize = controlsOpts.boxHeight;
@@ -138,6 +133,12 @@ class View {
 
         // console.info("getVisableSize", this.getVisableSize());
 
+    }
+
+    createScreenProject() {
+        let distance = this.controls.distance;
+        this._camera = new OrthographicCamera(0, this.width, 0, -this.height, this.near, this.far);
+        this._camera.position.set(0, 0, distance);
     }
 
 
@@ -226,21 +227,23 @@ class View {
         // 初期把一个box 看作一个mesh  后期优化在渲染前做顶点合并
         let transMatrix = new Matrix4();
         //let radius = width * 0.5;
-        let geometry = new CylinderGeometry(1, 1, 1, 60);
+        let part = 60;
+        let geometry = new CylinderGeometry(1, 1, 1, part);
 
         let mesh = new Mesh(geometry, materials);
 
         //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
-
         geometry.vertices.forEach(vertice => {
 
             vertice.addScalar(0.5);
+
             //vertice.y -= 0.5;
             vertice.z *= -1;
         });
 
         //更加给定的得数据变换box
-        let radius = Math.min(width, width) * 0.5;
+        let radius = width * 0.5;
+
         transMatrix.makeScale(radius, height, radius);
 
         geometry.vertices.forEach(vertice => {
@@ -280,7 +283,7 @@ class View {
         });
 
         //更加给定的得数据变换box
-        let radius = Math.min(width, width) * 0.5;
+        let radius = width * 0.5;
         transMatrix.makeScale(radius, height, radius);
 
         geometry.vertices.forEach(vertice => {
@@ -350,7 +353,7 @@ class View {
     }
     //绘制普通线条
     createCommonLine(points = [], lineStyle) {
-        let group = this.addGroup({ name: 'commonLines' });
+        let group = this._frameWork.addGroup({ name: 'commonLines' });
 
         let material = new LineBasicMaterial({
             color: lineStyle.strokeStyle,
@@ -427,9 +430,8 @@ class View {
 
     }
 
-    //绘制折线(
-    createBrokenLine(points, lineWidth, lineColor, isSmooth) {
-
+    //绘制折线
+    createBrokenLine(points, lineWidth, lineColor) {
         let matLine = new LineMeshMaterial({
             color: lineColor,
             linewidth: lineWidth, // in pixels
@@ -440,14 +442,11 @@ class View {
         });
         let lineMeshGeometry = new LineGeometry();
 
-
-
         let triangleVertices = [];
         points.forEach(point => {
-            triangleVertices.push(point.toArray());
-        })
-
-        lineMeshGeometry.setPositions(_.flatten(triangleVertices));
+            triangleVertices = triangleVertices.concat(point.toArray());
+        });
+        lineMeshGeometry.setPositions(triangleVertices);
         let line = new Line2(lineMeshGeometry, matLine);
         line.drawMode = TrianglesDrawMode;
         line.computeLineDistances();
@@ -455,76 +454,123 @@ class View {
 
     }
 
-    creatSpriteText(texts, origins, fontStyle) {
+    createCirclePlane(r, faceStyle, materials) {
+        let geometry = new CircleBufferGeometry(r, 32);
+        if (!materials) {
+
+            materials = new SpriteMaterial({
+                color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                transparent: true,
+                opacity: faceStyle.alpha || 1,
+                // polygonOffset: true,
+                // polygonOffsetFactor: 1,
+                // polygonOffsetUnits: 0.1,
+                depthTest: true,
+                depthWrite: false
+
+            });
+        }
+
+        let sprite = new Sprite(materials);
+        sprite.geometry = geometry;
+
+        return sprite;
+
+    }
+
+    createSphere(r, faceStyle, materials) {
+        if (!materials) {
+
+            materials = new MeshBasicMaterial({
+                color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                transparent: true,
+                opacity: faceStyle.alpha || 1,
+                // polygonOffset: true,
+                // polygonOffsetFactor: 1,
+                // polygonOffsetUnits: 0.1,
+                depthTest: true,
+                depthWrite: false
+
+            });
+        }
+
+        let geometry = new SphereBufferGeometry(r);
+
+        let mesh = new Mesh(geometry, materials);
+
+        return mesh;
+
+    }
+
+
+
+    creatSpriteText(texts, fontStyle) {
         //相机变化距离,不改变大小
         //https://vouzamo.wordpress.com/2016/09/07/threejs-heads-up-display/
         //1、透视相机根据距离同时调整自己的缩放
         //2、或者在单独的场景使用正交投影渲染
 
-        let textGroup = new Group();
+        let labels = [];
 
-        let renderFont = new RenderFont({
-            verticalAlign: 'middle',
-            textAlign: 'right'
-        });
-        let maxWidth = -Infinity;
-        let maxHeight = -Infinity;
-        //todo  模糊需要解决
-        //label高度
-        let spriteHeight = 14 * 4;
+        let renderFont = new RenderFont(fontStyle);
 
-        fontStyle = {
-            enabled: 1,
-            fontColor: '#999',
-            fontSize: 12,
-            format: null,
-            rotation: 0,
-            marginToLine: 3 //和刻度线的距离
-        }
+
         if (!_.isArray(texts)) {
             texts = [texts];
         }
 
-        if (!_.isArray(origins)) {
-            origins = [origins];
-        }
 
-        renderFont.setStyle(fontStyle);
-        let maxSize = renderFont.drawTexts(texts);
+        let labelInfos = renderFont.drawTexts(texts);
 
-        let size = maxSize; //renderFont.measureText(text);
-        let spriteWidth = size.width / size.height * spriteHeight;
+        var position = new Float32Array([
+            - 0.5, - 0.5, 0,
+            0.5, - 0.5, 0,
+            0.5, 0.5, 0,
+            - 0.5, 0.5, 0,
+        ]);
 
+        let texture = new Texture();
+        texture.image = renderFont.canvas;
 
+        // texture.wrapS = RepeatWrapping;
+        // texture.wrapT = RepeatWrapping;
+        // texture.minFilter = LinearFilter;
+        // texture.magFilter = LinearFilter;
+        texture.needsUpdate = true;
+        let spriteMatrial = new SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false
+        });
 
         texts.forEach((text, index) => {
-
-            let texture = new Texture();
-            texture.image = renderFont.canvas;
-            texture.wrapS = RepeatWrapping;
-            texture.wrapT = RepeatWrapping;
-            texture.minFilter = LinearFilter;
-            texture.magFilter = LinearFilter;
-
-            texture.repeat.set(1 / texts.length, 1);
-            texture.offset.set(index / texts.length, 0);
-
-            texture.needsUpdate = true;
-
-            let spriteMatrial = new SpriteMaterial({
-                map: texture
-            });
-
+            let realSize = labelInfos.sizes[text];
+            //realSize==[width,height]
+            let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
+            scale.multiplyScalar(realSize[1]);
             let sprite = new Sprite(spriteMatrial);
-            sprite.scale.set(spriteWidth, spriteHeight, 1);
-            sprite.position.copy(origins[index]);
 
-            textGroup.add(sprite);
+
+            let geometry = new BufferGeometry();
+            geometry.setIndex([0, 1, 2, 0, 2, 3]);
+            geometry.addAttribute('position', new Float32BufferAttribute(position, 3, false))
+            geometry.addAttribute('uv', new Float32BufferAttribute(labelInfos.UVs[text], 2, false));
+
+            sprite.geometry = geometry;
+            sprite.scale.copy(scale);
+            sprite.userData = {
+                text: text,
+                size: realSize,
+                maxWidth: labelInfos.maxWidth,
+                maxHeight: labelInfos.maxHeight
+            }
+
+            labels.push(sprite);
 
         })
 
 
-        return textGroup;
+        return labels;
 
     }
 

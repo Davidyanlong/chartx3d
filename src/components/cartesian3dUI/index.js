@@ -65,7 +65,7 @@ class Cartesian3DUI extends Component {
     init(opt) {
 
         //多个Y轴单独构建一个组
-        this.yAxisGroup = this._root.renderView.addGroup({
+        this.yAxisGroup = this._root.app.addGroup({
             name: 'yAxisGroup'
         });
 

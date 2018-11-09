@@ -1,233 +1,236 @@
 import { Color, Math as _Math } from 'mmgl/src/index';
 
+const _computeCanvasContent = (function () {
+    let canvas = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
+    let context = canvas.getContext("2d");
+    return context;
+})();
+
+
 class RenderFont {
-    constructor(params = {}) {
-
-        this.chartInfos = {};
-        this.scale = params.scale || window.devicePixelRatio || 1;
+    constructor({
+        scale = 0,
+        color = '#333333',
+        fontSize = 14,
+        fontFamily = '微软雅黑,sans-serif',
+        isBold = false,
+        lineHeight = 1.2,
+        defaultTextureWidth = 128,
+        canvas = null
+    } = {}) {
+        this.scale = scale || window.devicePixelRatio || 1;
         this.style = {
-            color: params.color || new Color('#000'),
-            fontSize: params.fontSize || 14,
-            fontFamily: params.fontFamily || '微软雅黑,sans-serif',
-            isBold: params.isBold || false,
-            textAlign: params.textAlign || 'top',
-            textBaseline: params.textBaseline || 'top',
-            verticalAlign: params.verticalAlign || 'middle' // top , middle, bottom
-
+            color,
+            fontSize,
+            fontFamily,
+            isBold,
+            lineHeight,
         }
+        this.style.textAlign = 'left';     //写死不给用户设置,方便计算文本的定位
+        this.style.textBaseline = 'top';
+        this.defaultTextureWidth = defaultTextureWidth;
 
-        //根据传入的文字内容自动计算 纹理的大小
+        this._reNewline = /\r?\n/;
 
-        this.textureWidth = 2;
-        this.textureHeight = 2;
-
-        // this.rcpTextureWidth = 1 / this.textureWidth;
-        // this.rcpTextureHeight = 1 / this.textureHeight;
-
-        this.canvas = params.canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
+        this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
         this.context = this.canvas.getContext("2d");
 
+    }
+    getFont() {
+        return this.style.isBold ? 'bold ' : 'normal ' + this.style.fontSize + 'px ' + this.style.fontFamily;
+    }
+    getTextWidth(txt, font = "") {
+        let width = 0;
+        if (_computeCanvasContent) {
+            _computeCanvasContent.save();
+            _computeCanvasContent.font = font || this.getFont();
+            width = this._getTextWidth(_computeCanvasContent, this._getTextLines(txt))
+            _computeCanvasContent.restore();
+        };
+        return width;
+    }
+
+    getTextHeight(txt) {
+        return this._getTextHeight(this._getTextLines(txt));
+    }
+    _getTextWidth(ctx, textLines = []) {
+        var maxWidth = 0;
+
+        textLines.forEach(txt => {
+            let currentLineWidth = ctx.measureText(txt).width;
+            maxWidth = Math.max(maxWidth, currentLineWidth);
+        });
+
+        return maxWidth;
+    }
+
+    _getTextLines(txt) {
+        txt = txt + "";
+        return txt.split(this._reNewline);
+    }
+
+    _getTextHeight(textLines) {
+        return this.style.fontSize * textLines.length * this.style.lineHeight;
+    }
+
+    //遍历文字列表,找出最长的文字
+    computeUvsAndCanvasSize(texts) {
+        let maxWidth = 0,
+            maxHeight = 0,
+            canvasWidth = 0,
+            canvasHeight = 0,
+            uvs = {},
+            sizes = {};
+
+        let cw = 0;
+        let ch = 1;
+        //计算需要的canvas高度
+        texts.forEach(text => {
+            let width = this.getTextWidth(text);
+            maxWidth = Math.max(maxWidth, width);
+            maxHeight = Math.max(maxHeight, this.getTextHeight(text));
+            cw += width;
+            if (cw > this.defaultTextureWidth) {
+                ch++;
+                cw = width;
+            }
+        });
+        //一行就可以放得下
+        if (ch == 1) {
+            canvasWidth = _Math.ceilPowerOfTwo(cw);
+            canvasHeight = _Math.ceilPowerOfTwo(maxHeight);
+        } else {
+            //todo 单个文字超过默认宽度的不考虑
+            canvasWidth = this.defaultTextureWidth;
+            canvasHeight = _Math.ceilPowerOfTwo(maxHeight * ch);
+        }
+
+        let st = 0; //开始位置
+        cw = 0;
+        ch = 0;
+
+        //计算UV
+        texts.forEach((text, index) => {
+            let width = this.getTextWidth(text);
+            let height = this.getTextHeight(text);
+            sizes[text] = [width, height];
+            st = cw;
+            cw += width;
+            if (index == 0) {
+                ch = height;
+            }
+
+            if (cw < this.defaultTextureWidth) {
+
+            } else {
+                ch += height;
+                cw = width;
+                st = 0;
+            }
+
+            let _h = (canvasHeight - ch);
+            let _w = cw;
+            let _h2 = (canvasHeight - ch + height);
+            uvs[text] = [
+                st, _h,
+                _w, _h,
+                _w, _h2,
+                st, _h2
+            ];
+
+        })
+
+
+
+
+        return {
+            canvasWidth,
+            canvasHeight,
+            maxHeight,
+            maxWidth,
+            uvs,
+            sizes
+        }
 
     }
 
-    setStyle(style) {
-        //todo
-    }
 
-    drawText(text) {
-        let me = this;
-        let top = 0;
-        let left = 0;
-        let textMatric = me.measureText(text);
-        let size = textMatric; //me.resetCanvasSize(textMatric);
+    setCanvasSize(width, height) {
 
-        //调整文字在纹理中的位置
-        //垂直方向
-        let subWidth = size.height - textMatric.height;
-        if (me.style.verticalAlign.toLowerCase() == 'middle') {
-            if (subWidth) {
-                top = subWidth * 0.5;
-            }
-        } else if (me.style.verticalAlign.toLowerCase() == 'bottom') {
-            top = subWidth;
-        }
+        this.canvas.width = width * this.scale;
+        this.canvas.height = height * this.scale;
+        this.canvas.style.width = width + "px";
+        this.canvas.style.height = height + "px";
+        this.context.scale(this.scale, this.scale);
 
-        //水平方向
-        let subHeight = size.width - textMatric.width;
-        if (me.style.textAlign.toLowerCase() == 'center') {
+        this.width = width;
+        this.height = height;
 
-            if (subHeight) {
-                left = subHeight * 0.5 + textMatric.width * 0.5;
-            }
-        } else if (me.style.textAlign.toLowerCase() == 'right') {
-            left = size.width;
-        }
-
-
-        me.context.fillStyle = "#" + me.style.color.getHexString();
-        me.context.textAlign = me.style.textAlign;
-        me.context.textBaseline = me.style.textBaseline;
-        me.context.webkitImageSmoothingEnabled = true;
-        me.context.font = me.style.isBold ? 'bold ' : 'normal ' + (me.style.fontSize * me.scale * 4) + 'px ' + me.style.fontFamily;
-        // var offset = 0.8;
-        // me.context.fillStyle = "#222222";
-        // me.context.fillText(text, left - offset, top - offset);
-        // me.context.fillStyle = "#222222";
-        // me.context.fillText(text, left + offset, top - offset);
-        // me.context.fillStyle = "#222222";
-        // me.context.fillText(text, left - offset, top + offset);
-        // me.context.fillStyle = "#222222";
-        // me.context.fillText(text, left + offset, top + offset);
-        me.context.fillStyle = "#" + me.style.color.getHexString();
-        me.context.fillText(text, left, top);
-
-
-        // charInfo.width = textMatric.width;
-        // charInfo.height = textMatric.height;
-
-        // charInfo.texcoords_left = (charInfo.left) * rcpTextureWidth;
-        // charInfo.texcoords_right = (charInfo.left + charInfo.width) * rcpTextureWidth;
-        // charInfo.texcoords_top = (charInfo.top) * rcpTextureHeight;
-        // charInfo.texcoords_bottom = (charInfo.top + charInfo.height) * rcpTextureHeight;
-
+        //透明清屏
+        this.context.fillStyle = "rgba(0,0,0,0)";
+        this.context.clearRect(0, 0, width * this.scale, height * this.scale);
     }
 
     drawTexts(texts) {
         let me = this;
-        let maxWidth = -Infinity;
-        let maxHeight = -Infinity;
-        let top = 0;
-        let left = 0;
+        let UVs = {};
+
+        let { maxWidth, maxHeight, canvasWidth, canvasHeight, uvs, sizes } = this.computeUvsAndCanvasSize(texts);
+        this.setCanvasSize(canvasWidth, canvasHeight);
+
+        me.context.fillStyle = me.style.color;
+        me.context.textAlign = me.style.textAlign;
+        me.context.textBaseline = me.style.textBaseline;
+        me.context.webkitImageSmoothingEnabled = true;
+
+        me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize + 'px ' + me.style.fontFamily;
+
 
         texts.forEach(text => {
-            let size = me.measureText(text);
-            if (maxWidth < size.width) {
-                maxWidth = size.width;
-            }
-            if (maxHeight < size.height) {
-                maxHeight = size.height;
-            }
-        });
+            let uv = uvs[text];
 
-        let canvasSize = me.resetCanvasSize({
-            width: maxWidth * texts.length,
-            height: maxHeight
-        });
+            UVs[text] = new Float32Array([
+                uv[0] / canvasWidth, uv[1] / canvasHeight,
+                uv[2] / canvasWidth, uv[3] / canvasHeight,
+                uv[4] / canvasWidth, uv[5] / canvasHeight,
+                uv[6] / canvasWidth, uv[7] / canvasHeight,
+            ]);
 
-        texts.forEach((text, index) => {
-            let size = me.measureText(text);
-            //调整文字在纹理中的位置
-            //垂直方向
-            let subHeight = maxHeight - size.height;
-            if (me.style.verticalAlign.toLowerCase() == 'middle') {
-                //middle
-                if (subHeight) {
-                    top = subWidth * 0.5;
-                }
-            } else if (me.style.verticalAlign.toLowerCase() == 'bottom') {
-                //bottom
-                top = subHeight;
-            } else {
-                //top 
-            }
+            let txtArr = this._getTextLines(text);
 
-            //水平方向
-            let subWidth = maxWidth - size.width;
-            if (me.style.textAlign.toLowerCase() == 'center') {
-
-                if (subWidth > 0) {
-                    left = maxWidth * index + subWidth * 0.5 + size.width * 0.5;
-                }
-            } else if (me.style.textAlign.toLowerCase() == 'right') {
-                left = maxWidth * (index + 1);
-            }
-
-            me.context.fillStyle = "#" + me.style.color.getHexString();
-            me.context.textAlign = me.style.textAlign;
-            me.context.textBaseline = me.style.textBaseline;
-            me.context.webkitImageSmoothingEnabled = true;
-
-            me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize * me.scale + 'px ' + me.style.fontFamily;
-            // var offset = 0.1;
-            // me.context.fillStyle = "#222";
-            // me.context.fillText(text, left - offset, top - offset);
-            // me.context.fillStyle = "#222";
-            // me.context.fillText(text, left + offset, top - offset);
-            // me.context.fillStyle = "#222";
-            // me.context.fillText(text, left - offset, top + offset);
-            // me.context.fillStyle = "#222";
-            // me.context.fillText(text, left + offset, top + offset);
-            me.context.fillStyle = "#" + me.style.color.getHexString();
-
-            //me.context.fillText(text, left * this.scale, top*this.scale);
-            me.context.fillText(text, left , top);
-
-            window._debug = true;
-            if (window._debug) {
-                console.log('left,top', left, top, maxWidth, size.width);
-                document.body.appendChild(me.canvas);
-
-                me.canvas.style.position = "absolute";
-                me.canvas.style.left = "700px";
-                me.canvas.style.top = "100px";
-            }
-
+            txtArr.forEach((txt, line) => {
+                me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+            });
 
         })
-        return {
-            width: maxWidth,
-            height: maxHeight
+
+        window._debug = false;
+        if (window._debug) {
+            //console.log('left,top', left, top, maxWidth, size.width);
+            document.body.appendChild(me.canvas);
+
+            me.canvas.style.position = "absolute";
+            me.canvas.style.left = "700px";
+            me.canvas.style.top = "0";
+
         }
-    }
-
-    resetCanvasSize(size) {
-        let me = this;
-
-        let width = size.width;//_Math.ceilPowerOfTwo(size.width);
-        let height = size.height;//_Math.ceilPowerOfTwo(size.height);
-
-       
-
-        me.canvas.width = width * this.scale;
-        me.canvas.height = height * this.scale;
-
-        me.canvas.style.width = width + 'px';
-        me.canvas.style.height = height + 'px';
-
-        me.context.scale( this.scale, this.scale);
-
-
-        this.textureWidth = width;
-        this.textureHeight = height;
 
         return {
-            width,
-            height
-        }
-
+            UVs,
+            sizes,
+            maxWidth,
+            maxHeight
+        };
     }
 
-    measureText(text) {
-        let size = null;
-        let div = document.createElement("div");
-        div.innerHTML = text;
-        div.style.position = 'absolute';
-        div.style.top = '-9999px';
-        div.style.left = '-9999px';
-        div.style.fontFamily = this.style.fontFamily;
-        div.style.fontWeight = this.style.isBold ? 'bold' : 'normal';
-        div.style.fontSize = this.style.fontSize  + 'px'; // or 'px'
 
-        document.body.appendChild(div);
-        size = {
-            width: div.offsetWidth,
-            height: div.offsetHeight
+    measureText(txt) {
+        return {
+            width: this.getTextWidth(txt),
+            height: this.getTextHeight(txt)
         }
-        document.body.removeChild(div);
-        div = null;
-
-        return size;
     }
+
 
 }
 

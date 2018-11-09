@@ -11,13 +11,13 @@ import { theme } from './theme';
 import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
 import { Interaction } from './framework/interaction';
+import { Vector3 } from 'mmgl/src/index';
 
 
 let _cid = 0;
 class Chart3d extends Events {
     constructor(opt) {
         super();
-
 
         this.domSelector = opt.el;
         this.opt = opt.opts;
@@ -59,7 +59,7 @@ class Chart3d extends Events {
         this.renderer = this.app._framework.renderer;
 
         this.DefaultControls = {
-            autoRotate:true,
+            autoRotate: true,
             boxWidth: 1000,         //空间中X的最大值(最大宽度)  
             boxHeight: 1000,        //空间中Y的最大值(最大高度)  
             boxDepth: 1000,         //空间中Z的最大值(最大深度)
@@ -82,6 +82,8 @@ class Chart3d extends Events {
         this.inited = false;
         this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
 
+        this.mainViewName = "main_view";
+        this.labelViewName = "label_view";
 
         this.init();
 
@@ -131,6 +133,12 @@ class Chart3d extends Events {
 
         interaction.on('refresh', this._onChangeBind);
 
+        //同步主相机的位置和方向
+        // controls.on('change', (e) => {
+        //    this.labelView._camera.position.copy(e.target.object.position);
+        //    this.labelView._camera.lookAt(e.target.target);
+        // })
+
         //启动渲染进程
         this.app.launch();
         this._onWindowResizeBind = me.resize.bind(me);
@@ -172,6 +180,17 @@ class Chart3d extends Events {
     draw() {
         this.drawComponent();
         this.app._framework.isUpdate = true;
+
+        //test Text
+
+        // let lables = this.labelView.creatSpriteText(["测试label的展示", "第二个标签\n测试回车"]);
+        // let pp =  [new Vector3(10, 0, 0), new Vector3(400, 80, 0)];
+        // lables.forEach((label,i) => {
+        //     let pos = pp[i].clone();
+        //     label.position.copy(pos);
+        //     this.labelGroup.add(label);
+        // });
+
     }
 
     getComponent(name) {
@@ -260,22 +279,53 @@ class Chart3d extends Events {
     _initRenderer(rendererOpts) {
         let app = this.app;
         let renderView = null;
-        this.stageView.appendChild(this.renderer.domElement);
-
-        this.canvasDom = this.renderer.domElement;
-
-        if (app.view.length > 0) { //默认使用第0个view
-            renderView = this.renderView = app.view[0];
-        }
+        let labelView = null;
 
 
-        this.rootStage = renderView.addGroup({ name: 'rootStage' });
+        //正常绘制的view
+        app.createView(this.mainViewName);
+        //label 绘制的View
+        app.createView(this.labelViewName);
+
+        renderView = this.renderView = app.getView(this.mainViewName);
+
+        labelView = this.labelView = app.getView(this.labelViewName);
+
+
+
+        this.rootStage = app.addGroup({ name: 'rootStage' });
         renderView.addObject(this.rootStage);
         renderView.setSize(this.width, this.height);
         renderView.setBackground(0xFFFFFF);
 
         //默认透视投影
-        this.renderView.project(rendererOpts, 'perspective'); //'ortho' | 'perspective',
+        renderView.setControls(rendererOpts);
+        renderView.project('perspective'); //'ortho' | 'perspective',
+
+        //初始化labelView
+        this.labelGroup = app.addGroup({ name: 'labelsGroup' });
+       
+        //Y轴反转
+        let _modelMatrix = this.labelGroup.matrix.elements;
+        _modelMatrix[1] = - _modelMatrix[1];
+        _modelMatrix[5] = - _modelMatrix[5];
+        _modelMatrix[9] = - _modelMatrix[9];
+        _modelMatrix[13] = - _modelMatrix[13];
+        this.labelGroup.matrixAutoUpdate = false;
+
+        labelView.addObject(this.labelGroup);
+        labelView.setSize(this.width, this.height);
+        //labelView.setBackground("rgba(0,0,0,0)");
+        labelView.setControls(rendererOpts);
+        //labelView.project('ortho'); //'ortho' | 'perspective',
+        labelView.createScreenProject();
+
+        //todo  相机控制同步
+
+        this.stageView.appendChild(this.renderer.domElement);
+
+        this.canvasDom = this.renderer.domElement;
+
     }
     resize() {
         this.width = this.el.offsetWidth;
