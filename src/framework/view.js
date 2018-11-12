@@ -159,7 +159,6 @@ class View {
 
         this._scene = null;
         this._camera = null;
-
         this._frameWork = null;
         this.renderer = null;
     }

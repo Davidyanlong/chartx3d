@@ -32,6 +32,12 @@ class InertialSystem extends Events {
         chart.setCoord(this);
         _.extend(true, this, this.setDefaultOpts(opts));
 
+        //todo 启动index读取chart的部分信息
+        this.id = chart.id;
+        this.destroy = ()=>{
+            chart.dispose();
+            this.fire({ type: 'destroy' });
+        }
 
     }
 

@@ -38,7 +38,7 @@ class Application {
 
     dispose() {
 
-        this._views.forEach(vw => {
+        this._framework.layers.forEach(vw => {
             this._framework.removeView(vw);
             vw.dispose();
         })

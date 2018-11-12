@@ -372,11 +372,7 @@ class Chart3d extends Events {
     resetData() {
 
     }
-    destroy() {
-        this.dispose({ type: 'destroy' });
-    }
     dispose() {
-
         // function clearScene(obj) {
         //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
         //         if (obj.geometry) {

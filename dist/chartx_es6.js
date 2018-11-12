@@ -18180,7 +18180,6 @@ var Chartx = (function () {
 
             this._scene = null;
             this._camera = null;
-
             this._frameWork = null;
             this.renderer = null;
         }
@@ -19511,7 +19510,7 @@ var Chartx = (function () {
 
         dispose() {
 
-            this._views.forEach(vw => {
+            this._framework.layers.forEach(vw => {
                 this._framework.removeView(vw);
                 vw.dispose();
             });
@@ -21012,11 +21011,7 @@ var Chartx = (function () {
         resetData() {
 
         }
-        destroy() {
-            this.dispose({ type: 'destroy' });
-        }
         dispose() {
-
             // function clearScene(obj) {
             //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
             //         if (obj.geometry) {
@@ -21148,6 +21143,12 @@ var Chartx = (function () {
             chart.setCoord(this);
             _.extend(true, this, this.setDefaultOpts(opts));
 
+            //todo 启动index读取chart的部分信息
+            this.id = chart.id;
+            this.destroy = ()=>{
+                chart.dispose();
+                this.fire({ type: 'destroy' });
+            };
 
         }
 
