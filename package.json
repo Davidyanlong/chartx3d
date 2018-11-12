@@ -2,7 +2,7 @@
   "name": "chartx3d",
   "title": "chartx3D.js",
   "description": "Data Visualization Chart Library",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "https://thx.github.io/chartx/",
   "license": "MIT",
   "keywords": [
@@ -16,8 +16,8 @@
     "Visualization"
   ],
   "author": {
-    "name": "nickli",
-    "email": "252759102@qq.com"
+    "name": "david_yanlong",
+    "email": "87141611@qq.com"
   },
   "repository": "https://github.com/Davidyanlong/chartx3d",
   "main": "./dist/cjs/chartx.js",
@@ -35,13 +35,14 @@
     "rollup-plugin-commonjs": "^9.1.5",
     "rollup-plugin-json": "^3.0.0",
     "rollup-plugin-node-resolve": "^3.3.0",
-    "rollup-plugin-uglify": "^3.0.0"
+    "rollup-plugin-uglify": "^3.0.0",
+    "der-server": "0.0.9",
+    "gulp": "^3.9.1"
   },
   "dependencies": {
-    "@babel/core": "^7.1.2",
-    "der-server": "0.0.9",
-    "gulp": "^3.9.1",
-    "mmgl": "0.0.38"
+    "earcut": "2.1.3",
+    "mmgl": "0.0.38",
+    "mmvis": "0.0.2"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

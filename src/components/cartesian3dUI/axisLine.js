@@ -62,7 +62,7 @@ class AxisLine extends Component {
     }
 
     drawStart() {
-        this.axis = this._root.renderView.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color)
+        this.axis = this._root.app.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color)
     }
 
     update() {

@@ -1,10 +1,9 @@
 import $ from '../lib/dom';
-import _ from '../lib/underscore';
+import { _ ,dataFrame}from 'mmvis/src/index';
 import { parse2MatrixData } from "../utils/tools"
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Component } from './components/Component';
-import DataFrame from "../utils/dataframe";
 import theme from './theme';
 
 
@@ -54,7 +53,7 @@ class Chart3d extends Events {
         this._data = parse2MatrixData(opt.data);
 
         //三维引擎初始化
-        this.app = new Application();
+        this.app = new Application(this.width,this.height);
 
 
         //初始化渲染器
@@ -296,7 +295,7 @@ class Chart3d extends Events {
 
     _initData(data, opt) {
 
-        return DataFrame.call(this, data, opt);
+        return dataFrame.call(this, data, opt);
     }
 
     _initRenderer(rendererOpts) {

@@ -93,12 +93,13 @@ class TickTexts extends Component {
 
     drawStart(texts) {
         let me = this;
+        let app = me._root.app;
         texts = texts || [];
         let { fontSize, fontColor: color } = me;
         let zDir = new Vector3(0, 0, -1);
         this.texts = texts;
 
-        let labels = me._root.renderView.creatSpriteText(texts, { fontSize, color });
+        let labels = app.creatSpriteText(texts, { fontSize, color });
 
         labels.forEach((label, index) => {
             label.userData.position = me.origins[index].clone();
@@ -142,62 +143,6 @@ class TickTexts extends Component {
             }
             me._tickTextGroup.add(label);
         });
-
-
-
-        // texts.forEach((text, index) => {
-        //     let obj = me._root.renderView.createTextSprite(text.toString(), me.fontSize, me.fontColor)
-        //     //obj.userData.lastScale = new Vector3();
-        //     let oldFn = obj.onBeforeRender;
-        //     obj.onBeforeRender = function () {
-        //         oldFn.apply(obj, arguments);
-        //         // if (!this.scale.clone().floor().equals(obj.userData.lastScale)) {
-        //         // this.userData.lastScale.copy(this.scale.clone().floor());
-        //         me.updataOrigins();
-        //         obj.position.copy(me.origins[index]);
-        //         //obj.position.add(me.offset);
-
-        //         //todo 默认center 居中对齐
-        //         let camearDir = new Vector3();
-
-        //         me._root.renderView._camera.getWorldDirection(camearDir);
-        //         let isSameDir = new Vector3(0, 0, -1).dot(camearDir);
-
-
-        //         if (me.textAlign == 'right') {
-        //             let flag = isSameDir < 0 ? 1 : -1;
-        //             //console.log(text, 'right', isSameDir); //this.scale.x, obj.position.x,offsetX
-        //             obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
-        //         }
-        //         if (me.textAlign == 'left') {
-
-        //             let flag = isSameDir < 0 ? -1 : 1;
-
-        //             //console.log(text, 'left');
-        //             obj.position.add(new Vector3((this.scale.x) * 0.5 * flag, 0, 0));
-        //         }
-        //         if (me.verticalAlign == 'top') {
-        //             //console.log(text, 'top');
-        //             obj.position.add(new Vector3(0, -(this.scale.y) * 0.5, 0));
-        //         }
-        //         if (me.verticalAlign == 'bottom') {
-        //             //console.log(text, 'bottom');
-        //             obj.position.add(new Vector3(0, (this.scale.y) * 0.5, 0));
-        //         }
-
-        //         //console.log(`sprite ${this.id}`, maxSize, this.scale)
-        //         // }
-
-        //     }
-
-
-        //     me._tickTextGroup.add(obj);
-
-        // })
-
-
-
-
 
     }
     draw() {

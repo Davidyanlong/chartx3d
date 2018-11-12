@@ -1,6 +1,6 @@
 
 import { Events, Vector3, Box3, Object3D, _Math } from "mmgl/src/index";
-import _ from '../../../lib/underscore';
+import { _ } from 'mmvis/src/index';
 import { Chart3d } from '../../chart3d';
 
 
@@ -26,13 +26,13 @@ class InertialSystem extends Events {
         }
 
         //匹配2D接口,初始化在坐标系中完成
-        let chart = this._root = new Chart3d({ el, data, opts,graphs, components });
-       
+        let chart = this._root = new Chart3d({ el, data, opts, graphs, components });
+
         this.group = chart.app.addGroup({ name: 'InertialSystem' });
         chart.setCoord(this);
         _.extend(true, this, this.setDefaultOpts(opts));
-        
-        
+
+
     }
 
     setDefaultOpts(opts) {

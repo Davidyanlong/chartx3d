@@ -2,9 +2,8 @@
 import { InertialSystem } from './inertial';
 import { Vector3, Box3, Matrix3, Matrix4, Math as _Math, AmbientLight, PointLight, DirectionalLight } from 'mmgl/src/index'
 import { Cartesian3DUI } from '../../components/cartesian3dUI/index'
-import _ from '../../../lib/underscore';
+import { _, dataSection } from 'mmvis/src/index';
 import { AxisAttribute } from './model/axisAttribute';
-import DataSection from '../../../utils/datasection';
 
 
 /** note: 
@@ -213,7 +212,7 @@ class Cartesian3D extends InertialSystem {
                     arr.push(arr[0] * 2);
                 };
                 arr = arr.sort(function (a, b) { return a - b });
-                arr = DataSection.section(arr)
+                arr = dataSection.section(arr)
             };
             arr = _.uniq(arr);
             this.xAxisAttribute.setOrgSection(arr);
@@ -312,7 +311,7 @@ class Cartesian3D extends InertialSystem {
                         arr.push(arr[0] * 2);
                     };
                     arr = arr.sort(function (a, b) { return a - b });
-                    arr = DataSection.section(arr)
+                    arr = dataSection.section(arr)
                 };
                 arr = _.uniq(arr);
                 this.zAxisAttribute.setOrgSection(arr);
@@ -377,7 +376,7 @@ class Cartesian3D extends InertialSystem {
         )
 
         //如果指定了Z轴的宽度就不采用默认计算的宽度
-        if (_.isSafeObject(this._root.opt.coord, 'zAxis.depth')) {
+        if (this._root.opt.coord.zAxis && this._root.opt.coord.zAxis.depth) {
             this.boundbox.max.z = this._root.opt.coord.zAxis.depth;
         }
 

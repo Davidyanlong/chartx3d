@@ -194,6 +194,7 @@ class Line extends Component {
     }
     draw() {
         let me = this;
+        let app = this._root.app;
         let linePoints = {};
         this.computePos();
         let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
@@ -253,7 +254,7 @@ class Line extends Component {
             }
 
 
-            let line = this._root.renderView.createBrokenLine(points, 2, _color, true);
+            let line = app.createBrokenLine(points, 2, _color, true);
 
             this.group.add(line);
 
@@ -265,33 +266,21 @@ class Line extends Component {
             });
             pointArr.unshift(pointArr[0], 0, pointArr[2]);
             pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
-            let polygon = this._root.renderView.createPolygonPlane(pointArr, { fillStyle: _color });
+            let polygon = app.createPolygonPlane(pointArr, { fillStyle: _color });
             this.group.add(polygon);
 
 
             //绘制node 点
             linePoints[field].forEach(point=>{
                 
-                //let node = this._root.renderView.createSphere(10,{fillStyle:_color});
-                let node = this._root.renderView.createCirclePlane(10,{fillStyle:_color});
+                //let node = app.createSphere(10,{fillStyle:_color});
+                let node = app.createCirclePlane(10,{fillStyle:_color});
                 node.position.copy(point);
                 this.group.add(node);
             });
           
 
         }
-
-        // //绘制区域
-        // // createPolygonPlane(points = [], faceStyle = {}, materials)
-
-        // for (let field in linePoints) {
-        //     let points = [];
-        //     let _color = this._getColor(null, { field: field });
-
-        // }
-
-        console.log(linePoints);
-        //debugger
     }
 }
 

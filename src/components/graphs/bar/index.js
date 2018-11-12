@@ -250,6 +250,7 @@ class Bar extends Component {
     }
     draw() {
         let me = this;
+        let app = this._root.app;
         this.computePos();
         let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
         let ceil = this._coordSystem.getCeilSize();
@@ -300,15 +301,15 @@ class Bar extends Component {
             let box = null;
 
             if (this.node.shapeType == 'cone') {
-                box = this._root.renderView.createCone(boxWidth, boxHeight, boxDepth, material);
+                box = app.createCone(boxWidth, boxHeight, boxDepth, material);
                 let boundbox = new Box3().setFromObject(box);
                 stack.x+=boundbox.getCenter().x;
             } else if (this.node.shapeType == 'cylinder') {
-                box = this._root.renderView.createCylinder(boxWidth, boxHeight, boxDepth, material);
+                box = app.createCylinder(boxWidth, boxHeight, boxDepth, material);
                 let boundbox = new Box3().setFromObject(box);
                 stack.x+=boundbox.getCenter().x;
             } else {
-                box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, material);
+                box = app.createBox(boxWidth, boxHeight, boxDepth, material);
 
             }
 

@@ -1,5 +1,4 @@
-import DataSection from '../../../../utils/datasection';
-import _ from '../../../../lib/underscore';
+import {_,dataSection} from 'mmvis/src/index';
 
 class AxisAttribute {
     constructor(root) {
@@ -76,7 +75,7 @@ class AxisAttribute {
                 il--;
             }
         };
-        this._section = DataSection.section(arr);
+        this._section = dataSection.section(arr);
 
     }
     _setDataSection(yFields) {

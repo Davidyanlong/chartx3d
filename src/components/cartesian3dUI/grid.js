@@ -82,6 +82,7 @@ class Grid extends Component {
     drawFace() {
 
         let me = this;
+        let app = me._root.app;
         if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
         let _faceInfo = this._cartesionUI.getFaceInfo();
@@ -98,18 +99,19 @@ class Grid extends Component {
 
             //todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
             //todo view中构建 materail 通过fill 使用同一份material
-            this.leftFace = me._root.renderView.createPlane(depth, height, undefined, _faceInfo.left, me.leftGroup, this.fill);
-            this.rightFace = me._root.renderView.createPlane(depth, height, undefined, _faceInfo.right, me.rightGroup, this.fill);
-            this.topFace = me._root.renderView.createPlane(width, depth, undefined, _faceInfo.top, me.topGroup, this.fill);
-            this.bottomFace = me._root.renderView.createPlane(width, depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
-            this.frontFace = me._root.renderView.createPlane(width, height, undefined, _faceInfo.front, me.frontGroup, this.fill);
-            this.backFace = me._root.renderView.createPlane(width, height, undefined, _faceInfo.back, me.backGroup, this.fill);
+            this.leftFace = app.createPlane(depth, height, undefined, _faceInfo.left, me.leftGroup, this.fill);
+            this.rightFace = app.createPlane(depth, height, undefined, _faceInfo.right, me.rightGroup, this.fill);
+            this.topFace = app.createPlane(width, depth, undefined, _faceInfo.top, me.topGroup, this.fill);
+            this.bottomFace = app.createPlane(width, depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
+            this.frontFace = app.createPlane(width, height, undefined, _faceInfo.front, me.frontGroup, this.fill);
+            this.backFace = app.createPlane(width, height, undefined, _faceInfo.back, me.backGroup, this.fill);
         }
 
     }
     drawLine() {
         //todo 原生的线条会出现锯齿,需要该用三角面来绘制
         let me = this;
+        let app = me._root.app;
         if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
 
@@ -144,7 +146,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(0, 0, -posZ));
             LinesVectors.push(new Vector3(0, height, -posZ));
         })
-        let lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        let lines = app.createCommonLine(LinesVectors, this.line);
         me.leftGroup.add(lines);
 
         //绘制右面的线条
@@ -160,7 +162,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(width, 0, -posZ));
             LinesVectors.push(new Vector3(width, height, -posZ));
         })
-        lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        lines = app.createCommonLine(LinesVectors, this.line);
         me.rightGroup.add(lines);
 
         //绘制上面的线条
@@ -176,7 +178,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(0, height, -posZ));
             LinesVectors.push(new Vector3(width, height, -posZ));
         })
-        lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        lines = app.createCommonLine(LinesVectors, this.line);
         me.topGroup.add(lines);
 
 
@@ -193,7 +195,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(0, 0, -posZ));
             LinesVectors.push(new Vector3(width, 0, -posZ));
         })
-        lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        lines = app.createCommonLine(LinesVectors, this.line);
         me.bottomGroup.add(lines);
 
         //绘制前面的线条
@@ -210,7 +212,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(width, posY, 0));
         })
 
-        lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        lines = app.createCommonLine(LinesVectors, this.line);
         me.frontGroup.add(lines);
 
         //绘制后面的线条
@@ -226,7 +228,7 @@ class Grid extends Component {
             LinesVectors.push(new Vector3(0, posY, -depth));
             LinesVectors.push(new Vector3(width, posY, -depth));
         })
-        lines = me._root.renderView.createCommonLine(LinesVectors, this.line);
+        lines = app.createCommonLine(LinesVectors, this.line);
         me.backGroup.add(lines);
 
     }

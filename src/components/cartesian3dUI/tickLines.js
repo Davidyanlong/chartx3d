@@ -71,7 +71,7 @@ class TickLines extends Component {
         this.dir = dir;
     }
     drawStart() {
-        this._tickLine = this._root.renderView.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
+        this._tickLine = this._root.app.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
     }
     update() {
         let origins = this.origins;

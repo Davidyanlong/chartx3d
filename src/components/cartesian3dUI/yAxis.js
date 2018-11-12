@@ -322,17 +322,7 @@ class YAxis extends Component {
         me._textElements = [];
         _.each(me.dataSection, function (val, i) {
             me._formatTextSection[i] = me._getFormatText(val, i);
-            //从_formatTextSection中取出对应的格式化后的文本
-
-            // var txt = me._root.renderView.createTextSprite("" + me._formatTextSection[i], me.label.fontSize,me.label.fontColor)
-
-            // // var txt = new Canvax.Display.Text(me._formatTextSection[i], {
-            // //     context: {
-            // //         fontSize: me.label.fontSize
-            // //     }
-            // // });
-
-            // me._textElements[i] = txt;
+    
         });
 
         if (this.label.rotation != 0) {

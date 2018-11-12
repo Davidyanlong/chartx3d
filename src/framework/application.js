@@ -1,14 +1,16 @@
 
 import { Framework } from "./framework";
 import { View } from "./view";
+import { primitive } from './primitive';
 
 class Application {
 
-    constructor() {
+    constructor(viewWidth, viewHeight) {
 
         this._framework = new Framework();
         this._framework.init();
-
+        this.width = viewWidth;
+        this.height = viewHeight;
     }
 
     launch() {
@@ -34,7 +36,6 @@ class Application {
         return this._framework.addGroup(opt);
     }
 
-
     dispose() {
 
         this._views.forEach(vw => {
@@ -47,7 +48,8 @@ class Application {
     }
 
 
-
 }
+
+Object.assign(Application.prototype, primitive);
 
 export { Application };

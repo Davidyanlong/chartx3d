@@ -1,5 +1,5 @@
-import { Events, Group } from "mmgl/src/index";
-import _ from '../../lib/underscore';
+import { Events } from "mmgl/src/index";
+import { _ } from 'mmvis/src/index';
 
 //组件的标准
 class Component extends Events {
@@ -43,8 +43,8 @@ class Component extends Events {
 
         }
     }
-    draw(){
-       //基类不实现
+    draw() {
+        //基类不实现
     }
 
     //后续组件的公共部分可以提取到这里
