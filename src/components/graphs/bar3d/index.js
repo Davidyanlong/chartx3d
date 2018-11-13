@@ -4,11 +4,11 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 
 //let renderOrder = 100;
 
-class Bar extends Component {
+class Bar3d extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
 
-        this.type = "bar";
+        this.type = "bar3d";
 
 
         // this.field  = null;
@@ -424,5 +424,5 @@ class Bar extends Component {
 
 }
 
-export { Bar };
+export default Bar3d;
 

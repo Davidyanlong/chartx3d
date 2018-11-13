@@ -1,5 +1,5 @@
 import $ from '../lib/dom';
-import { _ ,dataFrame}from 'mmvis/src/index';
+import { _, dataFrame } from 'mmvis/src/index';
 import { parse2MatrixData } from "../utils/tools"
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
@@ -21,8 +21,10 @@ class Chart3d extends Events {
         this.domSelector = opt.el;
         this.opt = opt.opts;
         this.data = opt.data;
-        this.graphs = opt.graphs;
-        this.components = opt.components;
+        this.components = [];
+        this.graphMap = opt.graphs;
+        this.componentMap = opt.components;
+
 
         this.el = null;
         this.view = null;
@@ -53,7 +55,7 @@ class Chart3d extends Events {
         this._data = parse2MatrixData(opt.data);
 
         //三维引擎初始化
-        this.app = new Application(this.width,this.height);
+        this.app = new Application(this.width, this.height);
 
 
         //初始化渲染器
@@ -93,8 +95,8 @@ class Chart3d extends Events {
     init() {
         let me = this;
         let rendererOpts = _.extend({}, this.DefaultControls);
-        this.opt.controls = this.opt.controls || {};
-        let controlOpts = this.opt.controls = _.extend(rendererOpts, this.opt.controls);
+        this.opt.coord.controls = this.opt.coord.controls || {};
+        let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
         this._initRenderer(rendererOpts);
 
@@ -167,13 +169,13 @@ class Chart3d extends Events {
             if (p == 'graphs') {
                 for (var t = 0; t < opts.graphs.length; t++) {
                     let key = opts.graphs[t].type;
-                    if (this.graphs[key]) {
-                        this.addComponent(this.graphs[key], opts.graphs[t]);
+                    if (this.graphMap[key]) {
+                        this.addComponent(this.graphMap[key], opts.graphs[t]);
                     }
                 }
             }
-            if (this.components[p]) {
-                this.addComponent(this.components[p], opts[p]);
+            if (this.componentMap[p]) {
+                this.addComponent(this.componentMap[p], opts[p]);
             }
 
         }
@@ -182,7 +184,7 @@ class Chart3d extends Events {
     addComponent(cmp, opts) {
         //todo 图像是否要分开,目前没有分开共用Component一个基类
         if (cmp.prototype instanceof Component) {
-            
+
             let instance = new cmp(this, opts);
             this.components.push(instance);
         }
@@ -227,9 +229,10 @@ class Chart3d extends Events {
 
     bindEvent() {
 
+        const TipName = 'Tips3d';
 
         this.on('tipShow', (e) => {
-            let tips = this.getComponent('Tips');
+            let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
                 tips.show({
@@ -243,7 +246,7 @@ class Chart3d extends Events {
         })
         this.on('tipHide', (e) => {
 
-            let tips = this.getComponent('Tips');
+            let tips = this.getComponent(TipName);
             if (tips !== null) {
                 tips.hide();
             }
@@ -252,7 +255,7 @@ class Chart3d extends Events {
 
         this.on('tipMove', (e) => {
 
-            let tips = this.getComponent('Tips');
+            let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
                 tips.show({
@@ -352,7 +355,7 @@ class Chart3d extends Events {
     resize() {
         this.width = this.el.offsetWidth;
         this.height = this.el.offsetHeight;
-        this.renderView.resize(this.width, this.height, this.opt.controls.boxHeight);
+        this.renderView.resize(this.width, this.height, this.opt.coord.controls.boxHeight);
     }
 
     //ind 如果有就获取对应索引的具体颜色值

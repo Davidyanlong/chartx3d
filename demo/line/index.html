@@ -66,11 +66,8 @@ var data = [
 */
 
 var options = {
-    controls:{
-        autoRotate:false 
-    },
     coord : {
-        type : "cartesian3d",
+        type : "box",
         //横向的图表，是坐标系横向了
         //horizontal : true,
 
@@ -94,11 +91,14 @@ var options = {
         ],
         zAxis:{
             dataSection:["点击率","点击,成交","页面访问数"]
+        },
+        controls:{
+            autoRotate:false 
         }
     },
     graphs : [
         { 
-            type : "line",
+            type : "line3d",
             field : ["click"] , 
             yAxisName:"click" ,
             line : {
@@ -115,7 +115,7 @@ var options = {
                 enabled : true
             }
         },{ 
-            type : "line",
+            type : "line3d",
             field : [["uv","pv"]] , 
             yAxisName:"uv" ,
             line : {
@@ -132,7 +132,7 @@ var options = {
                 enabled : true
             }
         },{ 
-            type : "line",
+            type : "line3d",
             field : ["ppc"] , 
             yAxisName:"ppc" ,
             line : {

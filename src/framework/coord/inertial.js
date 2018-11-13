@@ -24,7 +24,7 @@ class InertialSystem extends Events {
             front: 0,
             back: 0
         }
-
+        
         //匹配2D接口,初始化在坐标系中完成
         let chart = this._root = new Chart3d({ el, data, opts, graphs, components });
 
@@ -49,7 +49,7 @@ class InertialSystem extends Events {
 
         let _boundbox = new Box3();
 
-        let _opt = this._root.opt.controls;
+        let _opt = this._root.opt.coord.controls;
         let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
         let _width = _opt.boxWidth;
         let _depth = _opt.boxDepth;

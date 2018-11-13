@@ -1,6 +1,6 @@
 import { Component, _ } from "../Component";
 
-class Tips extends Component {
+class Tips3d extends Component {
     constructor(chart3d, opt) {
 
         super(chart3d.currCoord);
@@ -209,7 +209,7 @@ class Tips extends Component {
             str += '<div><span style="margin-right:5px">- ' + key + ':</span><span>' + value + '</span></div>';
         })
 
-        str +=  "</div>";
+        str += "</div>";
 
         // _.each(info.nodes, function (node, i) {
         //     //value 是null 或者 undefined
@@ -438,4 +438,4 @@ class Tips extends Component {
 
 }
 
-export { Tips };
+export default Tips3d;

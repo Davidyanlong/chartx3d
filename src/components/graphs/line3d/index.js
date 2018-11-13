@@ -3,10 +3,10 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 
 let renderOrder = 100;
 
-class Line extends Component {
+class Line3d extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
-        this.type = "line";
+        this.type = "line3d";
 
         this.line = { //线
             enabled: 1,
@@ -18,20 +18,20 @@ class Line extends Component {
         };
 
         this.icon = { //节点 
-            enabled     : 1, //是否有
-            shapeType   : "circle",
-            corner      : false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
-            radius      : 3, //半径 icon 圆点的半径
-            fillStyle   : '#ffffff',
-            strokeStyle : null,
-            lineWidth   : 2
+            enabled: 1, //是否有
+            shapeType: "circle",
+            corner: false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
+            radius: 3, //半径 icon 圆点的半径
+            fillStyle: '#ffffff',
+            strokeStyle: null,
+            lineWidth: 2
         };
 
         this.area = { //填充
-//            shapeType : "path",
-            enabled   :1,
-            fillStyle : null,
-            alpha     : 0.3
+            //            shapeType : "path",
+            enabled: 1,
+            fillStyle: null,
+            alpha: 0.3
         };
 
 
@@ -243,9 +243,9 @@ class Line extends Component {
         const DIVISONS = 200;
         for (let field in linePoints) {
             let _color = this._getColor(null, { field: field }) || "red";
-            
+
             let points = null;
-           
+
             if (me.line.smooth) {
                 let curve = new CatmullRomCurve3(linePoints[field]);
                 points = curve.getSpacedPoints(DIVISONS);
@@ -271,17 +271,17 @@ class Line extends Component {
 
 
             //绘制node 点
-            linePoints[field].forEach(point=>{
-                
+            linePoints[field].forEach(point => {
+
                 //let node = app.createSphere(10,{fillStyle:_color});
-                let node = app.createCirclePlane(10,{fillStyle:_color});
+                let node = app.createCirclePlane(10, { fillStyle: _color });
                 node.position.copy(point);
                 this.group.add(node);
             });
-          
+
 
         }
     }
 }
 
-export { Line }
+export default Line3d;

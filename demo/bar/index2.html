@@ -46,24 +46,12 @@
         ];
         var options = {
             //theme : [],
-            controls: {
-
-                boxWidth: 1500,         //空间中X的最大值(最大宽度)  
-                boxHeight: 1000,        //空间中Y的最大值(最大高度)  
-                boxDepth: 500,         //空间中Z的最大值(最大深度)
-
-                distance: 900,        //默认相机距离
-                maxDistance: 5000,     //最大相机距离
-                minDistance: 300,      //最小相机距离 
-
-                alpha: 20,    //绕X轴旋转
-                beta: 40,      //绕Y轴旋转
-            },
+            
             tips:{
                 enabled:true
             },
             coord: {
-                type: "cartesian3d",
+                type: "box",
                 xAxis: {
                     field: "xfield",
                     title: {
@@ -111,12 +99,24 @@
                             }
                         }
                     }
-                ]
+                ],
+                controls: {
+                    boxWidth: 1500,         //空间中X的最大值(最大宽度)  
+                    boxHeight: 1000,        //空间中Y的最大值(最大高度)  
+                    boxDepth: 500,         //空间中Z的最大值(最大深度)
+
+                    distance: 900,        //默认相机距离
+                    maxDistance: 5000,     //最大相机距离
+                    minDistance: 300,      //最小相机距离 
+
+                    alpha: 20,    //绕X轴旋转
+                    beta: 40,      //绕Y轴旋转
+                }
             },
 
-            // tips : {
-            //     pointer : "region"
-            // },
+            tips3d : {
+                //pointer : "region"
+            },
             graphs: [
 
                 // {
@@ -128,7 +128,7 @@
                 //     }
                 //},
                 {
-                    type: "bar",
+                    type: "bar3d",
                     field: [['uv','click']],
                     yAxisName:'uv',
                     label: {
@@ -141,7 +141,7 @@
                     }
                 },
                 {
-                    type: "bar",
+                    type: "bar3d",
                     field: ['pv'],
                     yAxisName:'uv',
                     label: {

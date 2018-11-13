@@ -90,7 +90,7 @@
         let yAxisOp = [];
         let graphs = [];
         let gopts = {
-            type: "line",
+            type: "line3d",
             field: ["uv"],
             yAxisName: "uv"
         }
@@ -140,17 +140,8 @@
 
 
     var options = {
-        controls: {
-            autoRotate: false,
-            boxWidth:2000, 
-            distance:1800,        //默认相机距离
-            maxDistance:8000,     //最大相机距离
-            minDistance:300,      //最小相机距离
-            alpha: 15,    //绕X轴旋转
-            beta: 45,      //绕Y轴旋转
-        },
         coord: {
-            type: "cartesian3d",
+            type: "box",
             //横向的图表，是坐标系横向了
             //horizontal : true,
 
@@ -167,7 +158,16 @@
             zAxis: {
                 depth: 2000,
                 //dataSection: ["点击率", "点击,成交", "页面访问数"]
-            }
+            },
+            controls: {
+                autoRotate: false,
+                boxWidth:2000, 
+                distance:1800,        //默认相机距离
+                maxDistance:8000,     //最大相机距离
+                minDistance:300,      //最小相机距离
+                alpha: 15,    //绕X轴旋转
+                beta: 45,      //绕Y轴旋转
+        },
 
         },
         graphs: [
