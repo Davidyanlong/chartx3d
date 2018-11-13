@@ -4,7 +4,7 @@
         "command":{
             "cmd":[
                 "tnpm install", 
-                "npm run build", //这里的gulp build是项目原来的打包命令，请根据实际填写 (如果没有打包过程可以去掉这行命令)
+                "npm run build",
                 "mv ./dist $BUILD_DEST"
             ]
         }
