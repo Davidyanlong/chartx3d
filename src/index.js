@@ -8,11 +8,11 @@ import emptyCoord from './components/coord/index';
 import Box from './components/coord/box';
 
 //graphs
-import Bar3d from "./components/graphs/bar3d/index";
-import Line3d from "./components/graphs/line3d/index"
+import Bar from "./components/graphs/bar/index";
+import Line from "./components/graphs/line/index"
 
 // //components
-import Tips3d from "./components/tips3d/index"
+import Tip from "./components/tip/index"
 
 
 
@@ -22,13 +22,13 @@ var coord = {
 }
 
 var graphs = {
-    bar3d: Bar3d,
-    line3d: Line3d
+    bar: Bar,
+    line: Line
 
 }
 
 var components = {
-    tips3d: Tips3d,
+    tips: Tips,
 }
 
 

@@ -3,7 +3,7 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 
 let renderOrder = 100;
 
-class Line3d extends Component {
+class Line extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
         this.type = "line3d";
@@ -284,4 +284,4 @@ class Line3d extends Component {
     }
 }
 
-export default Line3d;
+export default Line;

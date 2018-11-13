@@ -1,6 +1,6 @@
 import { Component, _ } from "../Component";
 
-class Tips3d extends Component {
+class Tip extends Component {
     constructor(chart3d, opt) {
 
         super(chart3d.currCoord);
@@ -438,4 +438,4 @@ class Tips3d extends Component {
 
 }
 
-export default Tips3d;
+export default Tip;
