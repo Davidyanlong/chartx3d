@@ -86,9 +86,9 @@ rollup.rollup({
        // console.log(res.code);  // 
 
         fs.writeFileSync('dist/chartx.js', res.code);
-        // fs.unlink('dist/chartx_es6.js', ()=>{
-        //     console.log('\n\n 打包完毕\n\n');
-        // })
+        fs.unlink('dist/chartx_es6.js', ()=>{
+            console.log('\n\n 打包完毕\n\n');
+        })
 
     })
 

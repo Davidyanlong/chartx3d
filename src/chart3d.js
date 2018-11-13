@@ -371,9 +371,23 @@ class Chart3d extends Events {
     reset() {
 
     }
-
-    resetData() {
-
+    /*
+     * 只响应数据的变化，不涉及配置变化
+     * 
+     * @dataTrigger 一般是触发这个data reset的一些场景数据，
+     * 比如如果是 datazoom 触发的， 就会有 trigger数据{ name:'datazoom', left:1,right:1 }
+     */
+    resetData(data, dataTrigger) {
+        if (data) {
+            this._data = parse2MatrixData(data);
+            this.dataFrame = this._initData(this._data, this.opt);
+        };
+        this._resetData && this._resetData(dataTrigger);
+        this.fire("resetData");
+       
+        //todo 暂时不实现
+        this.dispose();
+        this.draw();
     }
     dispose() {
         // function clearScene(obj) {
