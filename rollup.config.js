@@ -74,7 +74,7 @@ rollup.rollup({
 
     bundle.write({
         format: 'iife',
-        name: 'Chartx',
+        name: 'Chartx3d',
         file: 'dist/chartx_es6.js',
         //sourceMap: 'inline'
     }).then(() => {
