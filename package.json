@@ -39,6 +39,9 @@
     "der-server": "0.0.10",
     "gulp": "^3.9.1"
   },
+  "magixCliConfig" : {
+    "cloudBuild": true
+  },
   "dependencies": {
     "earcut": "2.1.3",
     "mmgl": "0.0.38",
