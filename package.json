@@ -37,9 +37,10 @@
     "rollup-plugin-node-resolve": "^3.3.0",
     "rollup-plugin-uglify": "^3.0.0",
     "der-server": "0.0.10",
-    "gulp": "^3.9.1"
+    "gulp": "^3.9.1",
+    "terser": "^3.10.11"
   },
-  "magixCliConfig" : {
+  "magixCliConfig": {
     "cloudBuild": true
   },
   "dependencies": {
