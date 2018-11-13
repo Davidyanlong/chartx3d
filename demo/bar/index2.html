@@ -20,6 +20,7 @@
 
     <button onclick="run()">运行</button>
     <button onclick="destroy()">销毁</button>
+    <button onclick="resetData()">reset</button>
 
 
 </body>
@@ -28,10 +29,7 @@
 
 <script>
 
-    let run = function () {
-        //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
-        //第一行是表头。
-        var data = [
+var data = [
             ["xfield", "uv", "pv", "click", "ppc"],
             [1, 40, 20, 33, 45],
             [2, 60, 51, 26, 76],
@@ -44,6 +42,10 @@
             [9, 20, 90, 150, 63]
 
         ];
+    let run = function () {
+        //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
+        //第一行是表头。
+        
         var options = {
             //theme : [],
             
@@ -114,21 +116,12 @@
                 }
             },
 
-            tips3d : {
+            tips : {
                 //pointer : "region"
             },
             graphs: [
-
-                // {
-                //     type : "bar",
-                //     field : ["uv","click"],
-                //     yAxisAlign : "left",
-                //     label : {
-                //         enabled : true
-                //     }
-                //},
                 {
-                    type: "bar3d",
+                    type: "bar",
                     field: [['uv','click']],
                     yAxisName:'uv',
                     label: {
@@ -141,7 +134,7 @@
                     }
                 },
                 {
-                    type: "bar3d",
+                    type: "bar",
                     field: ['pv'],
                     yAxisName:'uv',
                     label: {
@@ -167,4 +160,8 @@
         bar.dispose();
     }
 
+    function resetData(){
+        data[1][2] = 1000;
+        bar.resetData(data,{});
+    }
 </script>

@@ -28,7 +28,8 @@ class Framework extends Events {
                 alpha: true,
                 depth: true,
                 antialias: true,
-                premultipliedAlpha: true
+                premultipliedAlpha: true,
+                preserveDrawingBuffer: true
             });
 
             //this.render._sortObjects=false;

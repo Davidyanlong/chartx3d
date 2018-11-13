@@ -38,8 +38,9 @@ class InertialSystem extends Events {
             chart.dispose();
             this.fire({ type: 'destroy' });
         }
+
         this.resetData = (data, dataTrigger)=>{
-            chart.resetData(data, dataTrigger);
+              //todo
         }
 
     }

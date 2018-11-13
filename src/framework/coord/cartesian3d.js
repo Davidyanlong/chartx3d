@@ -119,7 +119,7 @@ class Cartesian3D extends InertialSystem {
 
                 var graphs = opts.graphs[i];
                 this._zSection.push(graphs.field.toString());
-                if (graphs.type == "bar3d") {
+                if (graphs.type == "bar") {
                     //如果graphs里面有柱状图，那么就整个xAxis都强制使用 peak 的layoutType
                     me.coord.xAxis.layoutType = "peak";
                     me.coord.zAxis.layoutType = "peak";

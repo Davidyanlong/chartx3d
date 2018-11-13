@@ -12,9 +12,7 @@ import Bar from "./components/graphs/bar/index";
 import Line from "./components/graphs/line/index"
 
 // //components
-import Tip from "./components/tip/index"
-
-
+import Tips from "./components/tips/index"
 
 
 var coord = {
