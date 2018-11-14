@@ -7,10 +7,12 @@ var json = require('rollup-plugin-json');
 var babelCore = require("babel-core");
 
 var fs = require('fs');
-var  Terser = require('terser');
+var Terser = require('terser');
 // var earcut = require("earcut");
 // import earcut from  "earcut"
 
+
+console.log("NODE_ENV", process.env.NODE_ENV);
 
 function glsl() {
 
@@ -50,7 +52,7 @@ rollup.rollup({
             browser: true
         }),
 
-        commonjs({ include: 'node_modules/**'}),
+        commonjs({ include: 'node_modules/**' }),
         //babel()
         // babel({
         //     //babelrc: true,
@@ -71,27 +73,39 @@ rollup.rollup({
     // iife – 使用于<script> 标签引用的方式
     // umd – 适用于CommonJs和AMD风格通用模式
 
+    if (process.env.NODE_ENV == "production") {
+        bundle.write({
+            format: 'iife',
+            name: 'Chartx3d',
+            file: 'dist/chartx_es6.js',
+            //sourceMap: 'inline'
+        }).then(() => {
 
-    bundle.write({
-        format: 'iife',
-        name: 'Chartx3d',
-        file: 'dist/chartx_es6.js',
-        //sourceMap: 'inline'
-    }).then(() => {
-        let result = babelCore.transformFileSync("dist/chartx_es6.js", {
-            compact: true
-        });
-       //压缩
-       // var res = Terser.minify(result.code);
-       // console.log(res.error||""); // runtime error, or `undefined` if no error
-       // console.log(res.code);  // 
+            let result = babelCore.transformFileSync("dist/chartx_es6.js", {
+                compact: true
+            });
+            //压缩
+            // var res = Terser.minify(result.code);
+            // console.log(res.error||""); // runtime error, or `undefined` if no error
+            // console.log(res.code);  // 
 
-        fs.writeFileSync('dist/chartx.js', result.code);
-        fs.unlink('dist/chartx_es6.js', ()=>{
-            console.log('\n\n 打包完毕\n\n');
+            fs.writeFileSync('dist/chartx.js', result.code);
+            fs.unlink('dist/chartx_es6.js', () => {
+                console.log('\n\n 打包完毕\n\n');
+            })
+
         })
+    }
+    if (process.env.NODE_ENV == "dev") {
+        bundle.write({
+            format: 'iife',
+            name: 'Chartx3d',
+            file: 'dist/chartx.js',
+            //sourceMap: 'inline'
+        })
+    }
 
-    })
+
 
     // bundle.write({
     //     format: 'amd',

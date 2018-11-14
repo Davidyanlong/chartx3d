@@ -105,7 +105,6 @@ class Chart3d extends Events {
         let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
 
 
-
         controls.minDistance = controlOpts.minDistance;
         controls.maxDistance = controlOpts.maxDistance;
 

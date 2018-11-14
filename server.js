@@ -4,7 +4,7 @@ let gulp = require('gulp');
 const { exec } = require('child_process');
 
 gulp.watch('./src/**/*.js',function(){
-    exec('npm run build', (err, stdout, stderr) => {
+    exec('npm run dev', (err, stdout, stderr) => {
         if (err) {
           console.error(err);
           return;
