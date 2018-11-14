@@ -64,8 +64,8 @@ class Chart3d extends Events {
         this.DefaultControls = {
             autoRotate: true,
             boxWidth: 1000,         //空间中X的最大值(最大宽度)  
-            boxHeight: 1000,        //空间中Y的最大值(最大高度)  
-            boxDepth: 1000,         //空间中Z的最大值(最大深度)
+            boxHeight: 1500,        //空间中Y的最大值(最大高度)  
+            boxDepth: 500,         //空间中Z的最大值(最大深度)
 
             distance: 1100,        //默认相机距离
             maxDistance: 3000,     //最大相机距离
