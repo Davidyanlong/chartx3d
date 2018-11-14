@@ -81,11 +81,12 @@ rollup.rollup({
         let result = babelCore.transformFileSync("dist/chartx_es6.js", {
             compact: true
         });
-        var res = Terser.minify(result.code);
-        console.log(res.error||""); // runtime error, or `undefined` if no error
+       //压缩
+       // var res = Terser.minify(result.code);
+       // console.log(res.error||""); // runtime error, or `undefined` if no error
        // console.log(res.code);  // 
 
-        fs.writeFileSync('dist/chartx.js', res.code);
+        fs.writeFileSync('dist/chartx.js', result.code);
         fs.unlink('dist/chartx_es6.js', ()=>{
             console.log('\n\n 打包完毕\n\n');
         })
