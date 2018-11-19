@@ -21887,7 +21887,7 @@ var Chartx3d = (function () {
           this._framework.forceRender();
       }
       resetState(){
-          this._framework.reset();
+          this._framework.resetState();
       }
 
 

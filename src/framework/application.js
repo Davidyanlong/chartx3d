@@ -57,7 +57,7 @@ class Application {
         this._framework.forceRender();
     }
     resetState(){
-        this._framework.reset()
+        this._framework.resetState()
     }
 
 
