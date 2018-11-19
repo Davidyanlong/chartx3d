@@ -104,9 +104,9 @@ class ZAxis extends Component {
         this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
         _.extend(true, this, opt.zAxis);
 
-        // this.label.enabled = this.enabled && this.label.enabled;
-        // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
-        // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
+        this.label.enabled = this.enabled && this.label.enabled;
+        this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+        this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
         this.axisAttribute = this._coordSystem.zAxisAttribute;
 
