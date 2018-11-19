@@ -14,6 +14,7 @@ class Application {
     }
 
     launch() {
+        this.resetState();
         this._framework.renderFrame();
     }
 
@@ -54,6 +55,9 @@ class Application {
     }
     forceRender() {
         this._framework.forceRender();
+    }
+    resetState(){
+        this._framework.reset()
     }
 
 

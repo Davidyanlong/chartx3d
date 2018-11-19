@@ -423,7 +423,7 @@ class Chart3d extends Events {
         });
         this.components = [];
         //初始化渲染状态
-        this.renderer._state.reset();
+        this.app.resetState();
 
         //清理渲染数据
         this.renderer.dispose();
