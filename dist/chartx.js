@@ -25563,8 +25563,8 @@ var Chartx3d = (function () {
               minZoom: 0.2,           //正交投影缩小的最小值
               maxZoom: 1.5,           //正交投影放大的最大值
 
-              alpha: 40,    //绕X轴旋转
-              beta: 20,      //绕Y轴旋转
+              alpha: 10,    //绕X轴旋转
+              beta: 40,      //绕Y轴旋转
               gamma: 0      //绕Z轴旋转
           };
 
