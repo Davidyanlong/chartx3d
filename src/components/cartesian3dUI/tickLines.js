@@ -1,15 +1,5 @@
-import { Component,_ } from '../Component';
+import { Component, _ } from '../Component';
 import { Vector3 } from 'mmgl/src/index';
-
-// this.tickLine = {//刻度线
-//     enabled: 1,
-//     lineWidth: 1, //线宽
-//     lineLength: 4, //线长
-//     strokeStyle: '#cccccc',
-//     // distance: 2,
-//     offset: 2,
-// };
-
 
 class TickLines extends Component {
     constructor(_coordSystem, opts) {
@@ -36,14 +26,13 @@ class TickLines extends Component {
 
         this.group.visible = !!opts.enabled;
     }
-    initData(axis, attribute, fn) {
+    initData(axis, attribute) {
         let me = this;
         let _dir = new Vector3();
         let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
         this.origins = [];
-        attribute.getSection().forEach((num, index) => {
-            //起点
-            let val = fn.call(this._coordSystem, num,attribute)
+        attribute.dataSectionLayout.forEach(item => {
+            let val = item.pos;
             let startPoint = axis.dir.clone().multiplyScalar(val);
             startPoint.add(axis.origin);
             startPoint.add(_offset);
@@ -105,22 +94,6 @@ class TickLines extends Component {
     draw() {
         this.group.add(this._tickLine);
     }
-
-
-
-    // getBoundBox() {
-    //     let result = new Box3();
-    //     result.makeEmpty();
-    //     this._tickLine.traverse(function (mesh) {
-    //         if (mesh instanceof Mesh) {
-    //             mesh.geometry.computeBoundingBox();
-    //             result.expandByPoint(mesh.geometry.boundingBox.min);
-    //             result.expandByPoint(mesh.geometry.boundingBox.max);
-    //         }
-    //     });
-
-    //     return result;
-    // }
     dispose() {
         let remove = [];
         this.group.traverse((obj) => {
@@ -139,6 +112,14 @@ class TickLines extends Component {
             let obj = remove.pop();
             obj.parent.remove(obj);
         }
+
+    }
+    resetData(axis, attribute) {
+        this.initData(axis, attribute);
+        this.dispose();
+        this.drawStart();
+        this.update();
+        this.draw();
 
     }
 }

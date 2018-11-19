@@ -5,11 +5,6 @@ class AxisLine extends Component {
     constructor(_coordSystem, opts) {
         super(_coordSystem);
 
-        // enabled: 1,
-        // lineWidth: 1,
-        // strokeStyle: '#cccccc'
-
-
         //轴的起点
         this.origin = new Vector3(0, 0, 0);
 
@@ -99,37 +94,11 @@ class AxisLine extends Component {
         }
     }
 
-    // getBoundBox() {
-    //     let result = new Box3();
+    resetData(){
+        //dataOrg更改数据轴线暂时不需要更新
+    }
 
-    //     this.axis.traverse(function (mesh) {
-    //         if (mesh instanceof Mesh) {
-    //             mesh.geometry.computeBoundingBox();
-    //             result = mesh.geometry.boundingBox;
-    //         }
-    //     });
-
-    //     //根据绘制的线宽计算三维空间的宽带
-
-    //     let visableSize = this._root.renderView.getVisableSize();
-    //     let width = 0, height = 0;
-    //     //如果是y轴或者z轴计算轴的宽度
-    //     if (this.dir.equals(new Vector3(0, 1, 0)) || this.dir.equals(new Vector3(0, 0, -1))) {
-    //         width = visableSize.width / this._root.width
-    //     }
-    //     //如果x轴计算轴的高度
-    //     if (this.dir.equals(new Vector3(1, 0, 0))) {
-    //         height = visableSize.height / this._root.height;
-    //     }
-
-    //     result.min.x = result.min.x - width * 0.5;
-    //     result.max.x = result.max.x + width * 0.5;
-
-    //     result.min.y = result.min.y - height * 0.5;
-    //     result.max.y = result.max.y + height * 0.5;
-
-    //     return result;
-    // }
+   
 
 }
 

@@ -14,14 +14,6 @@ class Grid extends Component {
         let opt = this._opt = this._coordSystem.coord.grid;
         this.coord = this._coordSystem.coord;
 
-        // this.width = 0;
-        // this.height = 0;
-
-        // this.pos = {
-        //     x: 0,
-        //     y: 0
-        // };
-
         this._cartesionUI = _cartesionUI;
 
         this.enabled = true;
@@ -74,6 +66,10 @@ class Grid extends Component {
         };
         this._root.orbitControls.on('change', this._onChangeBind);
 
+        this.width = this._coordSystem.xAxisAttribute.axisLength;
+        this.height = this._coordSystem.getYAxis().attr.axisLength;
+        this.depth = this._coordSystem.zAxisAttribute.axisLength;
+
 
     }
 
@@ -86,25 +82,18 @@ class Grid extends Component {
         if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
         let _faceInfo = this._cartesionUI.getFaceInfo();
+  
 
-        let coordBoundBox = _coordSystem.getBoundbox();
-        let _size = new Vector3(); //空间盒子的大小
-        coordBoundBox.getSize(_size);
-        let {
-            x: width,
-            y: height,
-            z: depth
-        } = _size;
         if (me.fill.enabled) {
 
             //todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
             //todo view中构建 materail 通过fill 使用同一份material
-            this.leftFace = app.createPlane(depth, height, undefined, _faceInfo.left, me.leftGroup, this.fill);
-            this.rightFace = app.createPlane(depth, height, undefined, _faceInfo.right, me.rightGroup, this.fill);
-            this.topFace = app.createPlane(width, depth, undefined, _faceInfo.top, me.topGroup, this.fill);
-            this.bottomFace = app.createPlane(width, depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
-            this.frontFace = app.createPlane(width, height, undefined, _faceInfo.front, me.frontGroup, this.fill);
-            this.backFace = app.createPlane(width, height, undefined, _faceInfo.back, me.backGroup, this.fill);
+            this.leftFace = app.createPlane(this.depth, this.height, undefined, _faceInfo.left, me.leftGroup, this.fill);
+            this.rightFace = app.createPlane(this.depth, this.height, undefined, _faceInfo.right, me.rightGroup, this.fill);
+            this.topFace = app.createPlane(this.width, this.depth, undefined, _faceInfo.top, me.topGroup, this.fill);
+            this.bottomFace = app.createPlane(this.width, this.depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
+            this.frontFace = app.createPlane(this.width, this.height, undefined, _faceInfo.front, me.frontGroup, this.fill);
+            this.backFace = app.createPlane(this.width, this.height, undefined, _faceInfo.back, me.backGroup, this.fill);
         }
 
     }
@@ -113,70 +102,59 @@ class Grid extends Component {
         let me = this;
         let app = me._root.app;
         if (!me.enabled) return;
-        const _coordSystem = this._coordSystem;
 
-        let coordBoundBox = _coordSystem.getBoundbox();
-        let _size = new Vector3(); //空间盒子的大小
-
-        coordBoundBox.getSize(_size);
-        let {
-            x: width,
-            y: height,
-            z: depth
-        } = _size;
-
-        let xSection = me._coordSystem.xAxisAttribute.getSection();
+        let xSection = me._coordSystem.xAxisAttribute.dataSectionLayout;
         let yAttribute = me._coordSystem.getYAxis().attr;
-        let ySection = yAttribute.getSection();
-        let zSection = me._coordSystem.zAxisAttribute.getSection();
+        let ySection = yAttribute.dataSectionLayout;
+        let zSection = me._coordSystem.zAxisAttribute.dataSectionLayout;
 
         if (!me.line.enabled) {
             return;
         }
         //绘制左面的线条
         let LinesVectors = [];
-        ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
+        ySection.forEach(item => {
+            let posY = item.pos;
             LinesVectors.push(new Vector3(0, posY, 0));
-            LinesVectors.push(new Vector3(0, posY, -depth));
+            LinesVectors.push(new Vector3(0, posY, -this.depth));
         })
 
-        zSection.forEach(num => {
-            let posZ = me._coordSystem.getZAxisPosition(num);
+        zSection.forEach(item => {
+            let posZ = item.pos;
             LinesVectors.push(new Vector3(0, 0, -posZ));
-            LinesVectors.push(new Vector3(0, height, -posZ));
+            LinesVectors.push(new Vector3(0, this.height, -posZ));
         })
         let lines = app.createCommonLine(LinesVectors, this.line);
         me.leftGroup.add(lines);
 
         //绘制右面的线条
         LinesVectors = [];
-        ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-            LinesVectors.push(new Vector3(width, posY, 0));
-            LinesVectors.push(new Vector3(width, posY, -depth));
+        ySection.forEach(item => {
+            let posY = item.pos;
+            LinesVectors.push(new Vector3(this.width, posY, 0));
+            LinesVectors.push(new Vector3(this.width, posY,-this.depth));
         })
 
-        zSection.forEach(num => {
-            let posZ = me._coordSystem.getZAxisPosition(num);
-            LinesVectors.push(new Vector3(width, 0, -posZ));
-            LinesVectors.push(new Vector3(width, height, -posZ));
+        zSection.forEach(item => {
+            let posZ = item.pos;
+            LinesVectors.push(new Vector3(this.width, 0, -posZ));
+            LinesVectors.push(new Vector3(this.width, this.height, -posZ));
         })
         lines = app.createCommonLine(LinesVectors, this.line);
         me.rightGroup.add(lines);
 
         //绘制上面的线条
         LinesVectors = [];
-        xSection.forEach(num => {
-            let posX = me._coordSystem.getXAxisPosition(num);
-            LinesVectors.push(new Vector3(posX, height, 0));
-            LinesVectors.push(new Vector3(posX, height, -depth));
+        xSection.forEach(item => {
+            let posX = item.pos;
+            LinesVectors.push(new Vector3(posX, this.height, 0));
+            LinesVectors.push(new Vector3(posX, this.height,-this.depth));
         })
 
-        zSection.forEach(num => {
-            let posZ = me._coordSystem.getZAxisPosition(num);
-            LinesVectors.push(new Vector3(0, height, -posZ));
-            LinesVectors.push(new Vector3(width, height, -posZ));
+        zSection.forEach(item => {
+            let posZ = item.pos;
+            LinesVectors.push(new Vector3(0, this.height, -posZ));
+            LinesVectors.push(new Vector3(this.width, this.height, -posZ));
         })
         lines = app.createCommonLine(LinesVectors, this.line);
         me.topGroup.add(lines);
@@ -184,32 +162,32 @@ class Grid extends Component {
 
         //绘制下面的线条
         LinesVectors = [];
-        xSection.forEach(num => {
-            let posX = me._coordSystem.getXAxisPosition(num);
+        xSection.forEach(item => {
+            let posX =item.pos;
             LinesVectors.push(new Vector3(posX, 0, 0));
-            LinesVectors.push(new Vector3(posX, 0, -depth));
+            LinesVectors.push(new Vector3(posX, 0,-this.depth));
         })
 
-        zSection.forEach(num => {
-            let posZ = me._coordSystem.getZAxisPosition(num);
+        zSection.forEach(item => {
+            let posZ = item.pos;
             LinesVectors.push(new Vector3(0, 0, -posZ));
-            LinesVectors.push(new Vector3(width, 0, -posZ));
+            LinesVectors.push(new Vector3(this.width, 0, -posZ));
         })
         lines = app.createCommonLine(LinesVectors, this.line);
         me.bottomGroup.add(lines);
 
         //绘制前面的线条
         LinesVectors = [];
-        xSection.forEach(num => {
-            let posX = me._coordSystem.getXAxisPosition(num);
+        xSection.forEach(item => {
+            let posX = item.pos;
             LinesVectors.push(new Vector3(posX, 0, 0));
-            LinesVectors.push(new Vector3(posX, height, 0));
+            LinesVectors.push(new Vector3(posX, this.height, 0));
         })
 
-        ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
+        ySection.forEach(item => {
+            let posY = item.pos;
             LinesVectors.push(new Vector3(0, posY, 0));
-            LinesVectors.push(new Vector3(width, posY, 0));
+            LinesVectors.push(new Vector3(this.width, posY, 0));
         })
 
         lines = app.createCommonLine(LinesVectors, this.line);
@@ -217,16 +195,16 @@ class Grid extends Component {
 
         //绘制后面的线条
         LinesVectors = [];
-        xSection.forEach(num => {
-            let posX = me._coordSystem.getXAxisPosition(num);
-            LinesVectors.push(new Vector3(posX, 0, -depth));
-            LinesVectors.push(new Vector3(posX, height, -depth));
+        xSection.forEach(item => {
+            let posX = item.pos;
+            LinesVectors.push(new Vector3(posX, 0,-this.depth));
+            LinesVectors.push(new Vector3(posX, this.height,-this.depth));
         })
 
-        ySection.forEach(num => {
-            let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-            LinesVectors.push(new Vector3(0, posY, -depth));
-            LinesVectors.push(new Vector3(width, posY, -depth));
+        ySection.forEach(item => {
+            let posY = item.pos;
+            LinesVectors.push(new Vector3(0, posY,-this.depth));
+            LinesVectors.push(new Vector3(this.width, posY,-this.depth));
         })
         lines = app.createCommonLine(LinesVectors, this.line);
         me.backGroup.add(lines);
@@ -241,6 +219,15 @@ class Grid extends Component {
         super.dispose();
         this._root.orbitControls.off('change', this._onChangeBind);
         this._onChangeBind = null;
+    }
+
+    resetData(){
+        this.dispose();
+
+        this.width = this._coordSystem.xAxisAttribute.axisLength;
+        this.height = this._coordSystem.getYAxis().attr.axisLength;
+        this.depth = this._coordSystem.zAxisAttribute.axisLength;
+        this.draw();
     }
 
 }

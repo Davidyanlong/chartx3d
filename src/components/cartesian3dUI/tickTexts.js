@@ -1,17 +1,7 @@
 
 import { Component, _ } from '../Component';
-import { Vector3, TextTexture, Box3, Matrix4 } from 'mmgl/src/index';
+import { Vector3 } from 'mmgl/src/index';
 
-// {
-//     enabled: 1,
-//     fontColor: '#999',
-//     fontSize: 16,
-//     format: null,
-//     rotation: 0,
-//     textAlign: null,//"right",
-//     lineHeight: 1,
-//     offset: 2     //和刻度线的距离
-// }
 class TickTexts extends Component {
     constructor(_coordSystem, opts) {
         super(_coordSystem);
@@ -45,16 +35,13 @@ class TickTexts extends Component {
     }
 
 
-    initData(axis, attribute, fn) {
+    initData(axis, attribute) {
         let me = this;
-        let _dir = me.dir.clone();
-        //let _offset = _dir.multiplyScalar(this.offset);
         let _offset = this.offset;
         me.origins = [];
 
-        attribute.getSection().forEach((num, index) => {
-            //起点
-            let val = fn.call(this._coordSystem, num, attribute)
+        attribute.dataSectionLayout.forEach(item => {
+            let val = item.pos;
             let startPoint = axis.dir.clone().multiplyScalar(val);
             startPoint.add(axis.origin);
             startPoint.add(_offset);
@@ -62,7 +49,7 @@ class TickTexts extends Component {
 
         });
 
-        me.updataOrigins = this._updataOrigins(axis, attribute, fn)
+        me.updataOrigins = this._updataOrigins(axis, attribute)
     }
 
     setDir(dir) {
@@ -75,12 +62,11 @@ class TickTexts extends Component {
         this.verticalAlign = align;
     }
 
-    _updataOrigins(axis, attribute, fn) {
+    _updataOrigins(axis, attribute) {
         let _axis = axis;
         let _attribute = attribute;
-        let _fn = fn;
         return function () {
-            this.initData(_axis, _attribute, _fn);
+            this.initData(_axis, _attribute);
         }
     }
     getTextPos(text) {
@@ -88,16 +74,15 @@ class TickTexts extends Component {
         if (index != -1) {
             return this.origins[index];
         }
-        return null;
+        return new Vector3();
     }
 
-    drawStart(texts) {
+    drawStart(texts = []) {
         let me = this;
         let app = me._root.app;
-        texts = texts || [];
         let { fontSize, fontColor: color } = me;
         let zDir = new Vector3(0, 0, -1);
-        this.texts = texts;
+        this.texts = texts || this.texts;
 
         let labels = app.creatSpriteText(texts, { fontSize, color });
 
@@ -108,7 +93,7 @@ class TickTexts extends Component {
                 me.updataOrigins();
 
                 //更新坐标后的位置
-                
+
                 let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
                 //屏幕的位置
                 let textSize = this.userData.size;
@@ -153,34 +138,11 @@ class TickTexts extends Component {
     update() {
         //文字需要实时更新
     }
-    // getBoundBox() {
-    //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
-    //     //没有计算文本旋转后的长度
-    //     let result = new Box3();
-    //     result.makeEmpty();
-    //     this._tickTexts.traverse(function (sprite) {
-    //         if (sprite instanceof Sprite) {
-    //             let min = new Vector3();
-    //             let max = new Vector3();
-    //             let halfScale = new Vector3();
-    //             halfScale.copy(sprite.scale);
-    //             halfScale.multiplyScalar(0.5);
-    //             min.copy(sprite.position);
-    //             max.copy(sprite.position);
 
-    //             min.sub(halfScale);
-    //             max.add(halfScale);
-
-    //             result.expandByPoint(min);
-    //             result.expandByPoint(max);
-    //         }
-    //     });
-    //     return result;
-    // }
     dispose() {
         let remove = [];
         this.group.traverse((obj) => {
-            if (obj.isTextSprite) {
+            if (obj.isSprite) {
                 if (obj.geometry) {
                     obj.geometry.dispose();
                 }
@@ -198,6 +160,14 @@ class TickTexts extends Component {
             let obj = remove.pop();
             obj.parent.remove(obj);
         }
+
+    }
+    resetData(axis, attribute, texts) {
+        this.initData(axis, attribute);
+        this.dispose();
+        this.drawStart(texts);
+        //this.update();
+        this.draw();
 
     }
 

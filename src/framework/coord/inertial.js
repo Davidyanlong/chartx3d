@@ -1,16 +1,17 @@
 
-import { Events, Vector3, Box3, Object3D, _Math } from "mmgl/src/index";
+import { Events, Vector3, Box3, _Math } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
-import { Chart3d } from '../../chart3d';
 
 
 //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
 //惯性坐标系
 class InertialSystem extends Events {
-    constructor(el, data, opts, graphs, components) {
+    constructor(root) {
         super();
-        //let opts = _.clone(this._root.opt);
+
+        this._root = root;
         this.coord = {};
+
         //坐标原点
         this.origin = new Vector3(0, 0, 0);
         //中心的
@@ -24,29 +25,19 @@ class InertialSystem extends Events {
             front: 0,
             back: 0
         }
-        
-        //匹配2D接口,初始化在坐标系中完成
-        let chart = this._root = new Chart3d({ el, data, opts, graphs, components });
-
-        this.group = chart.app.addGroup({ name: 'InertialSystem' });
-        chart.setCoord(this);
-        _.extend(true, this, this.setDefaultOpts(opts));
-
-        //todo 启动index读取chart的部分信息
-        this.id = chart.id;
-        this.destroy = ()=>{
-            chart.dispose();
-            this.fire({ type: 'destroy' });
-        }
-
-        this.resetData = (data, dataTrigger)=>{
-              //todo
-        }
+      
+        this.fieldMap={};
+        this.group = root.app.addGroup({ name: 'InertialSystem' });
+        _.extend(true, this, this.setDefaultOpts(root.opt));
 
     }
 
     setDefaultOpts(opts) {
         return opts;
+    }
+
+    getColor(field) {
+        return this.fieldMap[field] && this.fieldMap[field].color;
     }
 
     getBoundbox() {
@@ -108,7 +99,21 @@ class InertialSystem extends Events {
     dispose() {
 
     }
+    resetData(){
 
+    }
+
+    getAxisDataFrame(fields) {
+        let dataFrame = this._root.dataFrame;
+
+        return dataFrame.getDataOrg(fields, function (val) {
+            if (val === undefined || val === null || val == "") {
+                return val;
+            }
+            return (isNaN(Number(val)) ? val : Number(val))
+        })
+
+    }
 
 
 }

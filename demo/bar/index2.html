@@ -12,15 +12,15 @@
 
 <body>
 
-    <div id="target" style="position:absolute;left:0;top:0;z-index:100;width:50px;height:50px;border: 1px solid red;color:black">测试鼠标位置</div>
+    <button onclick="run()">运行</button>
+    <button onclick="destroy()">销毁</button>
+    <button onclick="reset()">reset</button>
 
     <div class="test-c">
         <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
     </div>
 
-    <button onclick="run()">运行</button>
-    <button onclick="destroy()">销毁</button>
-    <button onclick="resetData()">reset</button>
+   
 
 
 </body>
@@ -42,10 +42,16 @@ var data = [
             [9, 20, 90, 150, 63]
 
         ];
-    let run = function () {
-        //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
-        //第一行是表头。
-        
+
+ var data1 = [
+            ["xfield", "uv", "pv", "click", "ppc"],
+            [1, 140, 230, 353, 455],
+            [2, 260, 1541, 256, 76],
+            [3, 820, 50, 510, 45],
+            [4, 1200, 650, 33, 164],
+            [5, 120, 91, 126, 22]
+        ];       
+
         var options = {
             //theme : [],
             
@@ -150,6 +156,11 @@ var data = [
             ]
 
         };
+    let run = function () {
+        //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
+        //第一行是表头。
+        
+        
         window.bar = Chartx3d.create("canvasTest", data, options)
 
     }
@@ -157,11 +168,10 @@ var data = [
     run();
 
     function destroy() {
-        bar.dispose();
+        bar.destroy();
     }
 
-    function resetData(){
-        data[1][2] = 1000;
-        bar.resetData(data,{});
+    function reset(){
+        bar.resetData(data1);
     }
 </script>
