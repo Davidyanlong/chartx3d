@@ -46,7 +46,7 @@
   "dependencies": {
     "earcut": "2.1.3",
     "mmgl": "0.0.38",
-    "mmvis": "0.0.5"
+    "mmvis": "0.0.10"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

@@ -541,7 +541,7 @@ var Chartx3d = (function () {
           classCallCheck(this, axis);
 
           //super();
-          this.layoutType = "proportion"; // rule , peak, proportion
+          this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
 
           //源数据
           //这个是一个一定会有两层数组的数据结构，是一个标准的dataFrame数据
@@ -554,6 +554,7 @@ var Chartx3d = (function () {
           //        [1,2,3] 
           //    ]   
           // ]
+          this._opt = _.clone(opt);
           this.dataOrg = dataOrg || [];
           this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
           this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
@@ -609,6 +610,12 @@ var Chartx3d = (function () {
               this._cellLength = null;
           }
       }, {
+          key: "setAxisLength",
+          value: function setAxisLength(length) {
+              this.axisLength = length;
+              this.calculateProps();
+          }
+      }, {
           key: "calculateProps",
           value: function calculateProps() {
 
@@ -654,12 +661,18 @@ var Chartx3d = (function () {
               });
           }
       }, {
+          key: "getDataSection",
+          value: function getDataSection() {
+              //对外返回的dataSection
+              return this.dataSection;
+          }
+      }, {
           key: "setDataSection",
-          value: function setDataSection() {
+          value: function setDataSection(_dataSection) {
               var me = this;
 
               //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
-              if (!this._opt.dataSection || this._opt.dataSection && !this._opt.dataSection.length) {
+              if (_.isEmpty(_dataSection) && _.isEmpty(this._opt.dataSection)) {
                   if (this.layoutType == "proportion") {
 
                       var arr = this._getDataSection();
@@ -716,7 +729,7 @@ var Chartx3d = (function () {
                       this.dataSection = _.flatten(this.dataOrg); //this._getDataSection();
                       this.dataSectionGroup = [this.dataSection];
                   }            } else {
-                  this.dataSection = this._opt.dataSection;
+                  this.dataSection = _dataSection || this._opt.dataSection;
                   this.dataSectionGroup = [this.dataSection];
               }        }
       }, {
