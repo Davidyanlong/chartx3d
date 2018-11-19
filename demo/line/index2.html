@@ -4,7 +4,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
-    <title>xChart demo -- bar</title>
+    <title>xChart demo -- line</title>
 
     <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="../../dist/chartx.js"></script>
@@ -23,6 +23,7 @@
         <label style="margin-right:10px"><input type="radio" value="cost" name="item">消耗</label>
         <label style="margin-right:10px"><input type="radio" value="order" name="item">成交订单量</label>
     </div>
+    <button onclick="reset()">reset</button>
 
 
     <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
@@ -44,6 +45,16 @@
         [7, 51, 120, 33, 0.91, 334, 0.9, 43663, 436345],
         [8, 67, 51, 86, 0.1, 463, 0.98, 44535, 565553],
         [9, 120, 90, 150, 0.34, 974, 4.1, 84565, 875445]
+
+    ];
+
+    var data2 = [
+        ["xfield", "uv", "pv", "click", "ppc", "ecpm", "ecpc", "cost", "order"],
+        [1, 1012, 300, 33, 0.2, 456, 3.1, 4252432, 4353],
+        [2, 67, 512, 26, 0.5, 646, 1.2, 35353, 5445],
+        [3, 130, 50, 502, 1.8, 6541, 14.3, 464127, 36163],
+        [4, 101, 60, 33, 0.4, 463, 3.9, 43553, 46365],
+        [5, 67, 91, 126, 0.22, 364, 4.6, 364788, 557546]
 
     ];
 
@@ -90,7 +101,7 @@
         let yAxisOp = [];
         let graphs = [];
         let gopts = {
-            type: "line3d",
+            type: "line",
             field: ["uv"],
             yAxisName: "uv"
         }
@@ -135,7 +146,7 @@
         options.coord.yAxis = yAxisOp;
         options.coord.zAxis.dataSection = dataSection;
         options.graphs = graphs;
-        window.line = Chartx.create("canvasTest", data, options)
+        window.line = Chartx3d.create("canvasTest", data, options)
     }
 
 
@@ -161,13 +172,13 @@
             },
             controls: {
                 autoRotate: false,
-                boxWidth:2000, 
-                distance:1800,        //默认相机距离
-                maxDistance:8000,     //最大相机距离
-                minDistance:300,      //最小相机距离
+                boxWidth: 2000,
+                distance: 1800,        //默认相机距离
+                maxDistance: 8000,     //最大相机距离
+                minDistance: 300,      //最小相机距离
                 alpha: 15,    //绕X轴旋转
                 beta: 45,      //绕Y轴旋转
-        },
+            },
 
         },
         graphs: [
@@ -175,5 +186,9 @@
 
     };
     onChange();
+
+    function reset() {
+        line.resetData(data2);
+    }
     //window.line = Chartx.create("canvasTest", data, options)
 </script>

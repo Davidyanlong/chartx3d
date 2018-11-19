@@ -20,6 +20,7 @@ class Application {
     createView(viewName) {
         let _view = new View(this._framework, viewName);
         this._framework.addView(_view);
+        return _view;
     }
 
     getView(viewName) {
@@ -44,7 +45,15 @@ class Application {
         })
         this._framework.stopRenderFrame();
         this._framework.renderer.dispose();
-        this._framework.render = null;
+        this._framework.renderer = null;
+    }
+    resize(width, height, frustumSize) {
+        this._framework.layers.forEach(vw => {
+            vw.resize(width, height, frustumSize);
+        })
+    }
+    forceRender() {
+        this._framework.forceRender();
     }
 
 

@@ -108,7 +108,9 @@ class ZAxis extends Component {
         // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
         // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
-        this.init(opt, this._coordSystem.zAxisAttribute);
+        this.axisAttribute = this._coordSystem.zAxisAttribute;
+
+        this.init(opt, this.axisAttribute);
 
         this.group.visible = !!this.enabled;
 
@@ -119,7 +121,7 @@ class ZAxis extends Component {
 
         // this.group.add(this.rulesGroup);
 
-        this._initHandle(data);
+        this._initData(data);
 
         this._onChangeBind = () => {
             me._initModules();
@@ -128,26 +130,19 @@ class ZAxis extends Component {
         this._root.orbitControls.on('change', this._onChangeBind);
         me._initModules();
     }
-    _initHandle(data) {
+    _initData(data) {
         var me = this;
 
         if (data && data.field) {
             this.field = data.field;
         }
 
-        // if (data && data.data) {
-        //     this.dataOrg = _.flatten(data.data);
-        // };
-        // if (!this._opt.dataSection && this.dataOrg) {
-        //     //如果没有传入指定的dataSection，才需要计算dataSection
-        //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
-        // };
-
-        this.dataSection = data.getSection();
-
+        this.dataSection = data.getDataSection();
+        let zCustomSection = data._opt.dataSection||[];
         me._formatTextSection = [];
         me._textElements = [];
         _.each(me.dataSection, function (val, i) {
+            val = zCustomSection[i]||val;
             me._formatTextSection[i] = me._getFormatText(val, i);
         });
 
@@ -276,7 +271,7 @@ class ZAxis extends Component {
             //二次绘制
             // this._tickLine.dispose();
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
             this._tickLine.update();
             // this._tickLine.drawStart();
             // this._tickLine.draw();
@@ -284,7 +279,7 @@ class ZAxis extends Component {
             //this._tickText.dispose();
 
             this._tickText.setDir(_tickLineDir);
-            this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
             this._tickText.setTextAlign(_textAlign);
             this._tickText.offset.setX(_offsetX);
             // this._tickText.drawStart(this._formatTextSection);
@@ -294,9 +289,8 @@ class ZAxis extends Component {
         } else {
             this._axisLine = new AxisLine(_coordSystem, this.axisLine);
             this._axisLine.setDir(_axisDir);
-
             this._axisLine.setOrigin(origin);
-            this._axisLine.setLength(depth);
+            this._axisLine.setLength(this.axisAttribute.axisLength);
             this._axisLine.setGroupName('zAxisLine')
             this._axisLine.drawStart();
 
@@ -307,7 +301,7 @@ class ZAxis extends Component {
 
             this._tickLine = new TickLines(_coordSystem, this.tickLine);
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
             this._tickLine.drawStart();
 
             this.group.add(this._tickLine.group);
@@ -319,7 +313,7 @@ class ZAxis extends Component {
             this._tickText.offset.x = _offsetX;
 
             this._tickText.setDir(_tickLineDir);
-            this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
+            this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
 
             //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
             this._tickText.drawStart(this._formatTextSection);
@@ -420,6 +414,14 @@ class ZAxis extends Component {
         this._tickText.dispose();
         this._root.orbitControls.off('change', this._onChangeBind);
         this._onChangeBind = null;
+    }
+    resetData(){
+        this._initData(this.axisAttribute);
+        //this.getOrigin();
+
+        this._axisLine.resetData();
+        this._tickLine.resetData(this._axisLine, this.axisAttribute);
+        this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
     }
 }
 

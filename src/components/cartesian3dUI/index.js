@@ -101,7 +101,7 @@ class Cartesian3DUI extends Component {
 
 
         this.group.add(this.yAxisGroup);
-        
+
     }
 
     draw() {
@@ -110,9 +110,9 @@ class Cartesian3DUI extends Component {
         this._yAxis.forEach(_yAxis => {
             _yAxis.draw();
         })
-         this._xAxis.draw();
-         this._zAxis.draw();
-         this._grid.draw();
+        this._xAxis.draw();
+        this._zAxis.draw();
+        this._grid.draw();
 
     }
 
@@ -190,6 +190,14 @@ class Cartesian3DUI extends Component {
         this._xAxis.dispose();
         this._zAxis.dispose();
         this._grid.dispose();
+    }
+    resetData() {
+        this._yAxis.forEach(_yAxis => {
+            _yAxis.resetData();
+        })
+         this._xAxis.resetData();
+         this._zAxis.resetData();
+         this._grid.resetData();
     }
 
 }

@@ -103,7 +103,9 @@ class XAxis extends Component {
         // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
         // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
-        this.init(opt, this._coordSystem.xAxisAttribute);
+        this.axisAttribute = this._coordSystem.xAxisAttribute;
+
+        this.init(opt, this.axisAttribute);
         //xAxis的field只有一个值,
         //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
         this.group.visible = !!this.enabled;
@@ -115,7 +117,7 @@ class XAxis extends Component {
 
         // this.group.add(this.rulesGroup);
 
-        this._initHandle(data);
+        this._initData(data);
 
         this._onChangeBind = () => {
             me._initModules();
@@ -123,21 +125,14 @@ class XAxis extends Component {
         this._root.orbitControls.on('change', this._onChangeBind);
         me._initModules();
     }
-    _initHandle(data) {
+    _initData(data) {
         var me = this;
 
         if (data && data.field) {
             this.field = data.field;
         }
 
-        // if (data && data.data) {
-        //     this.dataOrg = _.flatten(data.data);
-        // };
-        // if (!this._opt.dataSection && this.dataOrg) {
-        //     //如果没有传入指定的dataSection，才需要计算dataSection
-        //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
-        // };
-        this.dataSection = data.getSection();
+        this.dataSection = data.dataSection;
 
         me._formatTextSection = [];
         me._textElements = [];
@@ -161,8 +156,6 @@ class XAxis extends Component {
         };
 
         this._getName();
-
-        this._setXAxisHeight();
     }
     _getFormatText(val, i) {
         var res;
@@ -181,6 +174,8 @@ class XAxis extends Component {
         return res;
     }
     _initModules() {
+        //todo 这个方法后续重构
+
         //初始化轴线
         const _axisDir = new Vector3(1, 0, 0);
         const _coordSystem = this._coordSystem;
@@ -233,12 +228,12 @@ class XAxis extends Component {
 
             //二次绘制
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+            this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
             this._tickLine.update();
 
             this._tickText.setDir(_tickLineDir);
             this._tickText.offset.setZ(_offsetZ);
-            this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+            this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
             this._tickText.setVerticalAlign(_verticalAlign);
 
 
@@ -247,7 +242,7 @@ class XAxis extends Component {
             this._axisLine = new AxisLine(_coordSystem, this.axisLine);
             this._axisLine.setDir(_axisDir);
             this._axisLine.setOrigin(origin);
-            this._axisLine.setLength(coordBoundBox.max.x);
+            this._axisLine.setLength(this.axisAttribute.axisLength);
             this._axisLine.setGroupName('xAxisLine')
             this._axisLine.drawStart();
             
@@ -256,7 +251,7 @@ class XAxis extends Component {
             //初始化tickLine
             this._tickLine = new TickLines(_coordSystem, this.tickLine);
             this._tickLine.setDir(_tickLineDir);
-            this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+            this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
             this._tickLine.drawStart();
 
             this.group.add(this._tickLine.group);
@@ -269,9 +264,9 @@ class XAxis extends Component {
 
             this._tickText.setVerticalAlign(_verticalAlign);
             this._tickText.setDir(_tickLineDir);
-            this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
+            this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
 
-            //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
+            //this._tickText.initData(this._axisLine,this.axisAttribute);
             this._tickText.drawStart(this._formatTextSection);
 
            this._root.labelGroup.add(this._tickText.group)
@@ -298,38 +293,8 @@ class XAxis extends Component {
         // }
     }
 
-    updateAxis() {
-        //这里可能需要重构
-        //todo 根据相机移动计算tickLine & tickText的位置 
-    }
 
-    _setXAxisHeight() { //检测下文字的高等
-        var me = this;
-        const _coordSystem = me._coordSystem;
-        if (!me.enabled) {
-            me.height = 0;
-        } else {
-            var _maxTextHeight = 0;
-
-            if (this.label.enabled) {
-                let height = this.label.fontSize * 1.2;
-                _maxTextHeight = Math.max(_maxTextHeight, height);
-
-            };
-
-            let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
-            this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
-            this._maxTextHeight = _maxTextHeight;
-            // if (this._title) {
-            //     this.height += this._title.getTextHeight()
-            // };
-
-        }
-    }
-    //设置布局
-    setLayout(opt) {
-
-    }
+    
     draw() {
 
         this._axisLine.draw();
@@ -347,6 +312,14 @@ class XAxis extends Component {
         this._tickText.dispose();
         this._root.orbitControls.off('change', this._onChangeBind);
         this._onChangeBind = null;
+    }
+    resetData(){
+        this._initData(this.axisAttribute);
+        //this.getOrigin();
+
+        this._axisLine.resetData();
+        this._tickLine.resetData(this._axisLine, this.axisAttribute);
+        this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
     }
 }
 

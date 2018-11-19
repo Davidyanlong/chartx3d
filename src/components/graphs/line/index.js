@@ -44,8 +44,7 @@ class Line extends Component {
     }
     _getColor(c, dataOrg) {
 
-        let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
-        var color = yAxisAttribute.getColor(dataOrg.field);
+        var color = this._coordSystem.getColor(dataOrg.field);
 
         //field对应的索引，， 取颜色这里不要用i
         if (_.isString(c)) {
@@ -69,14 +68,14 @@ class Line extends Component {
         } else {
             fields = this.field.slice(0);
         }
-        let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
-        let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
+        let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+        let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
         this.drawPosData = [];
-        let xDatas = this._coordSystem.xAxisAttribute.data;
+        let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
         let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
         let yAxisAttribute = yAxisInfo.attr;
 
-        let yDatas = yAxisAttribute.data;
+        let yDatas = yAxisAttribute.dataOrg;
         //x轴返回的数据是单列
         if (xDatas.length == 1) {
             xDatas = _.flatten(xDatas);
@@ -86,7 +85,7 @@ class Line extends Component {
 
         let yValidData = [];
 
-        yValidData = yAxisAttribute.getData(this.field);
+        yValidData = yAxisAttribute.getPartDataOrg(this.field);
         if (this._coordSystem.coord.zAxis.dataSection) {
             customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
         }
@@ -113,18 +112,6 @@ class Line extends Component {
         };
 
         //let ceil = this.getCeilSize();
-        let getZAxiaName = (fieldName) => {
-            let index = -1;
-            let name = '';
-            _.each(zSection, (section = "", num) => {
-                let ind = section.indexOf(fieldName);
-                if (ind !== -1) {
-                    index = num;
-                    name = zSection[num];
-                }
-            });
-            return zCustomSection.length ? zCustomSection[index] : name;
-        }
 
         let generate = (zd) => {
             xDatas.forEach((xd, no) => {
@@ -181,12 +168,11 @@ class Line extends Component {
 
         let fieldName = fields.toString();
         if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-            let zd = getZAxiaName(fieldName);
-            generate(zd);
+            generate(fieldName);
         } else {
 
             zSection.forEach(zd => {
-                generate(zd);
+                generate(fieldName);
             });
         }
 
@@ -281,6 +267,10 @@ class Line extends Component {
 
 
         }
+    }
+    resetData(){
+        this.dispose();
+        this.draw();    
     }
 }
 

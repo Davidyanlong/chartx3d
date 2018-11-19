@@ -8,6 +8,8 @@ import {
 
 } from "mmgl/src/index"
 
+import { LabelView } from '../constants';
+
 class View {
     constructor(_frameWork, viewName) {
 
@@ -55,8 +57,6 @@ class View {
     addObject(obj) {
         this._scene.add(obj);
     }
-
-
 
 
     removeObject(obj) {
@@ -142,15 +142,24 @@ class View {
     }
     resize(_width, _height, frustumSize) {
         this.setSize(_width, _height);
+
         if (this.mode == 'perspective') {
             this._camera.aspect = this.aspect;
         } else {
 
-            this._camera.left = frustumSize * aspect / -2;
-            this._camera.right = frustumSize * aspect / 2;
+            this._camera.left = frustumSize * this.aspect / -2;
+            this._camera.right = frustumSize * this.aspect / 2;
             this._camera.top = frustumSize / 2
             this._camera.bottom = frustumSize / - 2;
 
+        }
+        //labelView的特殊更新
+        if (this.name === LabelView) {
+
+            this._camera.left = 0;
+            this._camera.right = this.width;
+            this._camera.top = 0
+            this._camera.bottom = -this.height;
         }
         this._camera.updateProjectionMatrix();
     }

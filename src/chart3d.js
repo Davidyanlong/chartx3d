@@ -3,6 +3,7 @@ import { _, dataFrame } from 'mmvis/src/index';
 import { parse2MatrixData } from "../utils/tools"
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
+import { Cartesian3D } from './framework/coord/cartesian3d';
 import { Component } from './components/Component';
 import theme from './theme';
 
@@ -11,6 +12,7 @@ import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
 import { Interaction } from './framework/interaction';
 import { Vector3 } from 'mmgl/src/index';
+import { MainView, LabelView } from './constants';
 
 
 let _cid = 0;
@@ -21,7 +23,7 @@ class Chart3d extends Events {
         this.domSelector = opt.el;
         this.opt = opt.opts;
         this.data = opt.data;
-        this.components = [];
+
         this.graphMap = opt.graphs;
         this.componentMap = opt.components;
 
@@ -62,9 +64,9 @@ class Chart3d extends Events {
         this.renderer = this.app._framework.renderer;
 
         this.DefaultControls = {
-            autoRotate: true,
-            boxWidth: 1000,         //空间中X的最大值(最大宽度)  
-            boxHeight: 1500,        //空间中Y的最大值(最大高度)  
+            autoRotate: false,       //默认不自动旋转
+            boxWidth: 1200,         //空间中X的最大值(最大宽度)  
+            boxHeight: 1200,        //空间中Y的最大值(最大高度)  
             boxDepth: 500,         //空间中Z的最大值(最大深度)
 
             distance: 1100,        //默认相机距离
@@ -83,10 +85,8 @@ class Chart3d extends Events {
         this.components = [];
 
         this.inited = false;
-        this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
+        this.dataFrame = this._initData(this._data, {}); //每个图表的数据集合 都 存放在dataFrame中。
 
-        this.mainViewName = "main_view";
-        this.labelViewName = "label_view";
 
         this.init();
 
@@ -154,6 +154,7 @@ class Chart3d extends Events {
         //初始化物体的惯性坐标(放在具体的坐标系下)
         // if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
         // this.currCoord = new _Coord(this);
+
         this.currCoord = _Coord;
         this.rootStage.add(this.currCoord.group);
         // }
@@ -163,6 +164,7 @@ class Chart3d extends Events {
 
     initComponent() {
         let opts = this.opt;
+        this.components = [];
         for (var p in opts) {
             if (p == 'coord') continue;
             if (p == 'graphs') {
@@ -202,17 +204,7 @@ class Chart3d extends Events {
     draw() {
         this.currCoord.initCoordUI();
         this.drawComponent();
-        this.app._framework.isUpdate = true;
-
-        //test Text
-
-        // let lables = this.labelView.creatSpriteText(["测试label的展示", "第二个标签\n测试回车"]);
-        // let pp =  [new Vector3(10, 0, 0), new Vector3(400, 80, 0)];
-        // lables.forEach((label,i) => {
-        //     let pos = pp[i].clone();
-        //     label.position.copy(pos);
-        //     this.labelGroup.add(label);
-        // });
+        this.app.forceRender();
 
     }
 
@@ -273,7 +265,7 @@ class Chart3d extends Events {
 
         let viewObj = null;
 
-        this._cid = "chartx3d_" + _cid++;;
+        this._cid = "chartx3d_" + _cid++;
 
         this.el = $.query(_domSelector);
 
@@ -302,19 +294,14 @@ class Chart3d extends Events {
 
     _initRenderer(rendererOpts) {
         let app = this.app;
-        let renderView = null;
-        let labelView = null;
-
 
         //正常绘制的view
-        app.createView(this.mainViewName);
+        let renderView = this.renderView = app.createView(MainView);
         //label 绘制的View
-        app.createView(this.labelViewName);
+        let labelView = this.labelView = app.createView(LabelView);
 
-        renderView = this.renderView = app.getView(this.mainViewName);
-
-        labelView = this.labelView = app.getView(this.labelViewName);
-
+        // let renderView = this.renderView = app.getView(MainView);
+        // let labelView = this.labelView = app.getView(LabelView);
 
 
         this.rootStage = app.addGroup({ name: 'rootStage' });
@@ -327,15 +314,7 @@ class Chart3d extends Events {
         renderView.project('perspective'); //'ortho' | 'perspective',
 
         //初始化labelView
-        this.labelGroup = app.addGroup({ name: 'labelsGroup' });
-
-        //Y轴反转
-        let _modelMatrix = this.labelGroup.matrix.elements;
-        _modelMatrix[1] = - _modelMatrix[1];
-        _modelMatrix[5] = - _modelMatrix[5];
-        _modelMatrix[9] = - _modelMatrix[9];
-        _modelMatrix[13] = - _modelMatrix[13];
-        this.labelGroup.matrixAutoUpdate = false;
+        this.labelGroup = app.addGroup({ name: 'labelsGroup', flipY: true });
 
         labelView.addObject(this.labelGroup);
         labelView.setSize(this.width, this.height);
@@ -344,9 +323,14 @@ class Chart3d extends Events {
         //labelView.project('ortho'); //'ortho' | 'perspective',
         labelView.createScreenProject();
 
-        //todo  相机控制同步
+
+        if (this.canvasDom) {
+            this.stageView.removeChild(this.canvasDom)
+            this.canvasDom = null;
+        }
 
         this.stageView.appendChild(this.renderer.domElement);
+
 
         this.canvasDom = this.renderer.domElement;
 
@@ -354,7 +338,7 @@ class Chart3d extends Events {
     resize() {
         this.width = this.el.offsetWidth;
         this.height = this.el.offsetHeight;
-        this.renderView.resize(this.width, this.height, this.opt.coord.controls.boxHeight);
+        this.app.resize(this.width, this.height, this.opt.coord.controls.boxHeight);
     }
 
     //ind 如果有就获取对应索引的具体颜色值
@@ -367,7 +351,41 @@ class Chart3d extends Events {
     }
 
     //数据变更后调用reset
-    reset() {
+    reset(opt, data) {
+
+        !opt && (opt = {});
+
+        //配置初始化
+        _.extend(true, this.opt, opt);
+        //数据初始化
+        if (data) {
+            this._data = parse2MatrixData(data);
+            this.dataFrame = this._initData(this._data, {});
+        };
+
+
+        this.dispose();
+
+        //三维引擎初始化
+        this.app = new Application(this.width, this.height);
+        //初始化渲染器
+        this.renderer = this.app._framework.renderer;
+
+        this.init();
+
+        //坐标系重新初始化
+        let coord = null;
+        if (this.opt.coord.type == 'box') {
+            coord = new Cartesian3D(this);
+        }
+        this.setCoord(coord);
+
+        //组件重新初始化
+        this.components = [];
+
+        this.initComponent();
+
+        this.draw();
 
     }
     /*
@@ -381,63 +399,29 @@ class Chart3d extends Events {
             this._data = parse2MatrixData(data);
             this.dataFrame = this._initData(this._data, this.opt);
         };
-        this._resetData && this._resetData(dataTrigger);
-        this.fire("resetData");
-       
-        //todo 暂时不实现
-        this.dispose();
-        this.draw();
+        this.currCoord.resetData();
+        this.components.forEach(cmp => {
+            cmp.resetData();
+        })
+        this.fire({ type: 'resetData' });
+
+        this.app.forceRender();
     }
+    destroy() {
+        //外部调用适配
+        this.dispose();
+        this.fire({ type: 'destroy' });
+    }
+
     dispose() {
-        // function clearScene(obj) {
-        //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
-        //         if (obj.geometry) {
-        //             obj.geometry.dispose();
-        //             //obj.geometry = null;
-        //         }
-        //         if (obj.material) {
-        //             if (Array.isArray(obj.material)) {
-        //                 obj.material.forEach(ma => {
-        //                     if (ma.map) {
-        //                         ma.map.dispose();
-        //                     }
-        //                     ma.dispose();
-        //                 })
-        //             } else {
-        //                 if (obj.material.map) {
-        //                     obj.material.map.dispose();
-        //                 }
-        //                 obj.material.dispose();
-
-        //             }
-
-        //             //obj.material = null;
-        //         }
-
-        //         obj = null;
-        //     }
-        //     else if (obj.isLight) {
-        //         if (obj.parent) {
-        //             // obj.parent.remove(obj);
-        //         }
-        //     } else {
-        //         if (obj.children !== undefined) {
-        //             while (obj.children.length > 0) {
-        //                 clearScene(obj.children[0]);
-        //                 obj.remove(obj.children[0]);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // clearScene(this.renderView._scene);
 
         //先销毁坐标系统
         this.currCoord.dispose();
         //销毁组件
         this.components.forEach(cmp => {
             cmp.dispose();
-        })
+        });
+        this.components = [];
         //初始化渲染状态
         this.renderer._state.reset();
 
@@ -464,7 +448,13 @@ class Chart3d extends Events {
         this.interaction.dispose();
         this.orbitControls.dispose();
 
-        this.app.dispose()
+        this.app.dispose();
+
+        this.app = null;
+        this.renderer = null;
+        this.currCoord = null;
+
+
 
         //todo 内存对象清除优化
 
@@ -478,7 +468,7 @@ function onStart() {
 };
 
 function onChange(e) {
-    this.app._framework.isUpdate = true;
+    this.app.forceRender();
 }
 
 function onRenderBefore() {

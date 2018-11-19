@@ -541,7 +541,7 @@ var Chartx3d = (function () {
           classCallCheck(this, axis);
 
           //super();
-          this.layoutType = "proportion"; // rule , peak, proportion
+          this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
 
           //源数据
           //这个是一个一定会有两层数组的数据结构，是一个标准的dataFrame数据
@@ -554,6 +554,7 @@ var Chartx3d = (function () {
           //        [1,2,3] 
           //    ]   
           // ]
+          this._opt = _.clone(opt);
           this.dataOrg = dataOrg || [];
           this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
           this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
@@ -609,6 +610,12 @@ var Chartx3d = (function () {
               this._cellLength = null;
           }
       }, {
+          key: "setAxisLength",
+          value: function setAxisLength(length) {
+              this.axisLength = length;
+              this.calculateProps();
+          }
+      }, {
           key: "calculateProps",
           value: function calculateProps() {
 
@@ -654,12 +661,18 @@ var Chartx3d = (function () {
               });
           }
       }, {
+          key: "getDataSection",
+          value: function getDataSection() {
+              //对外返回的dataSection
+              return this.dataSection;
+          }
+      }, {
           key: "setDataSection",
-          value: function setDataSection() {
+          value: function setDataSection(_dataSection) {
               var me = this;
 
               //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
-              if (!this._opt.dataSection || this._opt.dataSection && !this._opt.dataSection.length) {
+              if (_.isEmpty(_dataSection) && _.isEmpty(this._opt.dataSection)) {
                   if (this.layoutType == "proportion") {
 
                       var arr = this._getDataSection();
@@ -716,7 +729,7 @@ var Chartx3d = (function () {
                       this.dataSection = _.flatten(this.dataOrg); //this._getDataSection();
                       this.dataSectionGroup = [this.dataSection];
                   }            } else {
-                  this.dataSection = this._opt.dataSection;
+                  this.dataSection = _dataSection || this._opt.dataSection;
                   this.dataSectionGroup = [this.dataSection];
               }        }
       }, {
@@ -18605,6 +18618,664 @@ var Chartx3d = (function () {
 
   //TODO 所有的get xxx OfVal 在非proportion下面如果数据有相同的情况，就会有风险
 
+  class axis$1 {
+      constructor(opt, dataOrg) {
+          //super();
+          this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
+
+          //源数据
+          //这个是一个一定会有两层数组的数据结构，是一个标准的dataFrame数据
+          // [ 
+          //    [   
+          //        [1,2,3],  
+          //        [1,2,3]    //这样有堆叠的数据只会出现在proportion的axis里，至少目前是这样
+          //    ] 
+          //   ,[    
+          //        [1,2,3] 
+          //    ]   
+          // ]
+          this._opt = _$1.clone(opt);
+          this.dataOrg = dataOrg || [];
+          this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
+          this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
+
+          //轴总长
+          this.axisLength = 1;
+
+          this._cellCount = null;
+          this._cellLength = null; //数据变动的时候要置空
+
+          //下面三个目前yAxis中实现了，后续统一都会实现
+
+          //水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值
+          //这个值主要用于第三方的markline等组件， 自己的y值超过了yaxis的范围的时候，需要纳入来修复yaxis的section区间
+          this.waterLine = null;
+          //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
+          this.dataSectionGroup = [];
+          //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
+          this.middleweight = null;
+
+          this.symmetric = false; //proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要
+
+          //1，如果数据中又正数和负数，则默认为0，
+          //2，如果dataSection最小值小于0，则baseNumber为最小值，
+          //3，如果dataSection最大值大于0，则baseNumber为最大值
+          //也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值
+          this.origin = null;
+          this.originPos = 0; //value为 origin 对应的pos位置
+          this._originTrans = 0;//当设置的 origin 和datasection的min不同的时候，
+
+          //min,max不需要外面配置，没意义
+          this._min = null;
+          this._max = null;
+
+          //"asc" 排序，默认从小到大, desc为从大到小
+          //之所以不设置默认值为asc，是要用 null 来判断用户是否进行了配置
+          this.sort = null;
+
+          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+
+      }
+
+      resetDataOrg(dataOrg) {
+          //配置和数据变化
+
+          this.dataSection = [];
+          this.dataSectionGroup = [];
+
+          this.dataOrg = dataOrg;
+
+          this._cellCount = null;
+          this._cellLength = null;
+
+      }
+
+      setAxisLength(length) {
+          this.axisLength = length;
+          this.calculateProps();
+      }
+
+      calculateProps() {
+
+          var me = this;
+
+          if (this.layoutType == "proportion") {
+
+              if (this._min == null) {
+                  this._min = _$1.min(this.dataSection);
+              }            if (this._max == null) {
+                  this._max = _$1.max(this.dataSection);
+              }
+              //默认情况下 origin 就是datasection的最小值
+              //如果用户设置了origin，那么就已用户的设置为准
+              if (!("origin" in this._opt)) {
+                  this.origin = 0;//this.dataSection[0];//_.min( this.dataSection );
+                  if (_$1.max(this.dataSection) < 0) {
+                      this.origin = _$1.max(this.dataSection);
+                  }                if (_$1.min(this.dataSection) > 0) {
+                      this.origin = _$1.min(this.dataSection);
+                  }            }
+              this._originTrans = this._getOriginTrans(this.origin);
+              this.originPos = this.getPosOfVal(this.origin);
+
+          }
+
+
+          //get xxx OfPos的时候，要先来这里做一次寻找
+          this.dataSectionLayout = [];
+          _$1.each(this.dataSection, function (val, i) {
+
+              var ind = i;
+              if (me.layoutType == "proportion") {
+                  ind = me.getIndexOfVal(val);
+              }
+              var pos = parseInt(me.getPosOf({
+                  ind: i,
+                  val: val
+              }), 10);
+
+              me.dataSectionLayout.push({
+                  val: val,
+                  ind: ind,
+                  pos: pos
+              });
+
+          });
+
+      }
+      getDataSection() {
+          //对外返回的dataSection
+          return this.dataSection;
+      }
+      setDataSection(_dataSection) {
+          var me = this;
+
+          //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
+          if (_$1.isEmpty(_dataSection) &&  _$1.isEmpty(this._opt.dataSection)) {
+              if (this.layoutType == "proportion") {
+
+                  var arr = this._getDataSection();
+
+                  if (this.waterLine) {
+                      arr.push(this.waterLine);
+                  }
+                  if ("origin" in me._opt) {
+                      arr.push(me._opt.origin);
+                  }
+                  if (arr.length == 1) {
+                      arr.push(arr[0] * 2);
+                  }
+                  if (this.symmetric) {
+                      //如果需要处理为对称数据
+                      var _min = _$1.min(arr);
+                      var _max = _$1.max(arr);
+                      if (Math.abs(_min) > Math.abs(_max)) {
+                          arr.push(Math.abs(_min));
+                      } else {
+                          arr.push(-Math.abs(_max));
+                      }                }
+                  for (var ai = 0, al = arr.length; ai < al; ai++) {
+                      arr[ai] = Number(arr[ai]);
+                      if (isNaN(arr[ai])) {
+                          arr.splice(ai, 1);
+                          ai--;
+                          al--;
+                      }                }
+                  this.dataSection = dataSection$1.section(arr, 3);
+
+                  if (this.symmetric) {
+                      //可能得到的区间是偶数， 非对称，强行补上
+                      var _min = _$1.min(this.dataSection);
+                      var _max = _$1.max(this.dataSection);
+                      if (Math.abs(_min) > Math.abs(_max)) {
+                          this.dataSection.push(Math.abs(_min));
+                      } else {
+                          this.dataSection.unshift(-Math.abs(_max));
+                      }                }
+                  //如果还是0
+                  if (this.dataSection.length == 0) {
+                      this.dataSection = [0];
+                  }
+                  //如果有 middleweight 设置，就会重新设置dataSectionGroup
+                  this.dataSectionGroup = [_$1.clone(this.dataSection)];
+
+                  this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
+
+                  this._sort();
+
+              } else {
+
+                  //非proportion 也就是 rule peak 模式下面
+                  this.dataSection = _$1.flatten(this.dataOrg);//this._getDataSection();
+                  this.dataSectionGroup = [this.dataSection];
+
+              }        } else {
+              this.dataSection = _dataSection || this._opt.dataSection;
+              this.dataSectionGroup = [this.dataSection];
+          }
+      }
+      _getDataSection() {
+          //如果有堆叠，比如[ ["uv","pv"], "click" ]
+          //那么这个 this.dataOrg， 也是个对应的结构
+          //vLen就会等于2
+          var vLen = 1;
+
+          _$1.each(this.dataOrg, function (arr) {
+              vLen = Math.max(arr.length, vLen);
+          });
+
+          if (vLen == 1) {
+              return this._oneDimensional();
+          }        if (vLen > 1) {
+              return this._twoDimensional();
+          }
+      }
+      _oneDimensional() {
+          var arr = _$1.flatten(this.dataOrg); //_.flatten( data.org );
+
+          for (var i = 0, il = arr.length; i < il; i++) {
+              arr[i] = arr[i] || 0;
+          }
+          return arr;
+      }
+      //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
+      _twoDimensional() {
+          var d = this.dataOrg;
+          var arr = [];
+          var min;
+          _$1.each(d, function (d, i) {
+              if (!d.length) {
+                  return
+              }
+              //有数据的情况下 
+              if (!_$1.isArray(d[0])) {
+                  arr.push(d);
+                  return;
+              }
+              var varr = [];
+              var len = d[0].length;
+              var vLen = d.length;
+
+              for (var i = 0; i < len; i++) {
+                  var up_count = 0;
+                  var up_i = 0;
+
+                  var down_count = 0;
+                  var down_i = 0;
+
+                  for (var ii = 0; ii < vLen; ii++) {
+
+                      var _val = d[ii][i];
+                      if (!_val && _val !== 0) {
+                          continue;
+                      }
+                      min == undefined && (min = _val);
+                      min = Math.min(min, _val);
+
+                      if (_val >= 0) {
+                          up_count += _val;
+                          up_i++;
+                      } else {
+                          down_count += _val;
+                          down_i++;
+                      }
+                  }
+                  up_i && varr.push(up_count);
+                  down_i && varr.push(down_count);
+              }            arr.push(varr);
+          });
+          arr.push(min);
+          return _$1.flatten(arr);
+      }
+
+      //val 要被push到datasection 中去的 值
+      //主要是用在markline等组件中，当自己的y值超出了yaxis的范围
+      setWaterLine(val) {
+          if (val <= this.waterLine) return;
+          this.waterLine = val;
+          if (val < _$1.min(this.dataSection) || val > _$1.max(this.dataSection)) {
+              //waterLine不再当前section的区间内，需要重新计算整个datasection    
+              this.setDataSection();
+              this.calculateProps();
+          }    }
+
+      _sort() {
+          if (this.sort) {
+              var sort = this._getSortType();
+              if (sort == "desc") {
+
+                  this.dataSection.reverse();
+
+                  //dataSectionGroup 从里到外全部都要做一次 reverse， 这样就可以对应上 dataSection.reverse()
+                  _$1.each(this.dataSectionGroup, function (dsg, i) {
+                      dsg.reverse();
+                  });
+                  this.dataSectionGroup.reverse();
+                  //dataSectionGroup reverse end
+              }        }    }
+
+      _getSortType() {
+          var _sort;
+          if (_$1.isString(this.sort)) {
+              _sort = this.sort;
+          }
+          if (!_sort) {
+              _sort = "asc";
+          }
+          return _sort;
+      }
+
+      _middleweight() {
+          if (this.middleweight) {
+              //支持多个量级的设置
+
+              if (!_$1.isArray(this.middleweight)) {
+                  this.middleweight = [this.middleweight];
+              }
+              //拿到dataSection中的min和 max 后，用middleweight数据重新设置一遍dataSection
+              var dMin = _$1.min(this.dataSection);
+              var dMax = _$1.max(this.dataSection);
+              var newDS = [dMin];
+              var newDSG = [];
+
+              for (var i = 0, l = this.middleweight.length; i < l; i++) {
+                  var preMiddleweight = dMin;
+                  if (i > 0) {
+                      preMiddleweight = this.middleweight[i - 1];
+                  }                var middleVal = preMiddleweight + parseInt((this.middleweight[i] - preMiddleweight) / 2);
+
+                  newDS.push(middleVal);
+                  newDS.push(this.middleweight[i]);
+
+                  newDSG.push([
+                      preMiddleweight,
+                      middleVal,
+                      this.middleweight[i]
+                  ]);
+              }            var lastMW = this.middleweight.slice(-1)[0];
+
+              if (dMax > lastMW) {
+                  newDS.push(lastMW + (dMax - lastMW) / 2);
+                  newDS.push(dMax);
+                  newDSG.push([
+                      lastMW,
+                      lastMW + (dMax - lastMW) / 2,
+                      dMax
+                  ]);
+              }
+
+              //好了。 到这里用简单的规则重新拼接好了新的 dataSection
+              this.dataSection = newDS;
+              this.dataSectionGroup = newDSG;
+
+          }    }
+
+      //origin 对应 this.origin 的值
+      _getOriginTrans(origin) {
+          var pos = 0;
+
+          var dsgLen = this.dataSectionGroup.length;
+          var groupLength = this.axisLength / dsgLen;
+
+          for (var i = 0, l = dsgLen; i < l; i++) {
+
+              var ds = this.dataSectionGroup[i];
+
+              if (this.layoutType == "proportion") {
+                  var min = _$1.min(ds);
+                  var max = _$1.max(ds);
+
+                  var amountABS = Math.abs(max - min);
+
+                  if (origin >= min && origin <= max) {
+                      pos = ((origin - min) / amountABS * groupLength + i * groupLength);
+                      break;
+                  }
+
+              }
+          }
+          if (this.sort == "desc") {
+              //如果是倒序的
+              pos = -(groupLength - pos);
+          }
+          return parseInt(pos);
+      }
+
+      //opt { val ind pos } 一次只能传一个
+      _getLayoutDataOf(opt) {
+          var props = ["val", "ind", "pos"];
+          var prop;
+          _$1.each(props, function (_p) {
+              if (_p in opt) {
+                  prop = _p;
+              }
+          });
+
+          var layoutData;
+          _$1.each(this.dataSectionLayout, function (item) {
+              if (item[prop] === opt[prop]) {
+                  layoutData = item;
+              }        });
+
+          return layoutData || {};
+      }
+
+      getPosOfVal(val) {
+
+          /* val可能会重复，so 这里得到的会有问题，先去掉
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _pos = this._getLayoutDataOf({ val : val }).pos;
+          if( _pos != undefined ){
+              return _pos;
+          };
+          */
+
+          return this.getPosOf({
+              val: val
+          });
+      }
+      getPosOfInd(ind) {
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _pos = this._getLayoutDataOf({ ind: ind }).pos;
+          if (_pos != undefined) {
+              return _pos;
+          }
+          return this.getPosOf({
+              ind: ind
+          });
+      }
+
+      //opt {val, ind} val 或者ind 一定有一个
+      getPosOf(opt) {
+          var pos;
+
+          var cellCount = this._getCellCount(); //dataOrg上面的真实数据节点数，把轴分成了多少个节点
+
+          if (this.layoutType == "proportion") {
+              var dsgLen = this.dataSectionGroup.length;
+              var groupLength = this.axisLength / dsgLen;
+              for (var i = 0, l = dsgLen; i < l; i++) {
+                  var ds = this.dataSectionGroup[i];
+                  var min = _$1.min(ds);
+                  var max = _$1.max(ds);
+                  var val = "val" in opt ? opt.val : this.getValOfInd(opt.ind);
+                  if (val >= min && val <= max) {
+                      var _origin = this.origin;
+                      //如果 origin 并不在这个区间
+                      if (_origin < min || _origin > max) {
+                          _origin = min;
+                      }                    var maxGroupDisABS = Math.max(Math.abs(max - _origin), Math.abs(_origin - min));
+                      var amountABS = Math.abs(max - min);
+                      var h = (maxGroupDisABS / amountABS) * groupLength;
+                      pos = (val - _origin) / maxGroupDisABS * h + i * groupLength;
+
+                      if (isNaN(pos)) {
+                          pos = parseInt(i * groupLength);
+                      }
+                      break;
+                  }
+              }
+          } else {
+
+              if (cellCount == 1) {
+                  //如果只有一数据，那么就全部默认在正中间
+                  pos = this.axisLength / 2;
+              } else {
+                  //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
+                  //因为可能有多个数据的val一样
+
+                  var valInd = "ind" in opt ? opt.ind : this.getIndexOfVal(opt.val);
+                  if (valInd != -1) {
+                      if (this.layoutType == "rule") {
+                          //line 的xaxis就是 rule
+                          pos = valInd / (cellCount - 1) * this.axisLength;
+                      }                    if (this.layoutType == "peak") {
+                          //bar的xaxis就是 peak
+                          /*
+                          pos = (this.axisLength/cellCount) 
+                                * (valInd+1) 
+                                - (this.axisLength/cellCount)/2;
+                          */
+                          var _cellLength = this.getCellLength();
+                          pos = _cellLength * (valInd + 1) - _cellLength / 2;
+                      }                }            }
+          }
+          !pos && (pos = 0);
+
+          pos = Number(pos.toFixed(1)) + this._originTrans;
+
+          return Math.abs(pos);
+      }
+
+      getValOfPos(pos) {
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _val = this._getLayoutDataOf({ pos: pos }).val;
+          if (_val != undefined) {
+              return _val;
+          }
+          return this._getValOfInd(this.getIndexOfPos(pos));
+      }
+
+      //ds可选
+      getValOfInd(ind, ds) {
+
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _val = this._getLayoutDataOf({ ind: ind }).val;
+          if (_val != undefined) {
+              return _val;
+          }
+          //这里的index是直接的对应dataOrg的索引
+          var org = ds ? ds : _$1.flatten(this.dataOrg);
+          return org[ind];
+
+      }
+
+      //这里的ind
+      _getValOfInd(ind, ds) {
+          var me = this;
+
+          var org = ds ? ds : _$1.flatten(this.dataOrg);
+          var val;
+
+          if (this.layoutType == "proportion") {
+
+              var groupLength = this.axisLength / this.dataSectionGroup.length;
+              _$1.each(this.dataSectionGroup, function (ds, i) {
+                  if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
+                      var min = _$1.min(ds);
+                      var max = _$1.max(ds);
+                      val = min + (max - min) / groupLength * (ind - groupLength * i);
+                      return false;
+                  }
+              });
+
+          } else {
+              val = org[ind];
+          }        return val;
+      }
+
+      getIndexOfPos(pos) {
+
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _ind = this._getLayoutDataOf({ pos: pos }).ind;
+          if (_ind != undefined) {
+              return _ind;
+          }
+          var ind = 0;
+
+          var cellLength = this.getCellLengthOfPos(pos);
+          var cellCount = this._getCellCount();
+
+          if (this.layoutType == "proportion") {
+              //proportion中的index以像素为单位 所以，传入的像素值就是index
+              return pos;
+          } else {
+
+              if (this.layoutType == "peak") {
+                  ind = parseInt(pos / cellLength);
+                  if (ind == cellCount) {
+                      ind = cellCount - 1;
+                  }
+              }
+              if (this.layoutType == "rule") {
+                  ind = parseInt((pos + (cellLength / 2)) / cellLength);
+                  if (cellCount == 1) {
+                      //如果只有一个数据
+                      ind = 0;
+                  }
+              }        }
+          return ind
+      }
+
+      getIndexOfVal(val) {
+
+          var valInd = -1;
+          if (this.layoutType == "proportion") {
+
+              //先检查下 dataSectionLayout 中有没有对应的记录
+              var _ind = this._getLayoutDataOf({ val: val }).ind;
+              if (_ind != undefined) {
+                  return _ind;
+              }
+              //因为在proportion中index 就是 pos
+              //所以这里要返回pos
+              valInd = this.getPosOfVal(val);
+          } else {
+              _$1.each(this.dataOrg, function (arr) {
+                  _$1.each(arr, function (list) {
+                      var _ind = _$1.indexOf(list, val);
+                      if (_ind != -1) {
+                          valInd = _ind;
+                      }                });
+              });
+          }
+
+
+          return valInd;
+      }
+
+      getCellLength() {
+
+          if (this._cellLength !== null) {
+              return this._cellLength;
+          }
+          //ceilWidth默认按照peak算, 而且不能按照dataSection的length来做分母
+          var axisLength = this.axisLength;
+          var cellLength = axisLength;
+          var cellCount = this._getCellCount();
+
+          if (cellCount) {
+
+              if (this.layoutType == "proportion") {
+                  cellLength = 1;
+              } else {
+
+                  //默认按照 peak 也就是柱状图的需要的布局方式
+                  cellLength = axisLength / cellCount;
+                  if (this.layoutType == "rule") {
+                      if (cellCount == 1) {
+                          cellLength = axisLength / 2;
+                      } else {
+                          cellLength = axisLength / (cellCount - 1);
+                      }                }
+                  if (this.posParseToInt) {
+                      cellLength = parseInt(cellLength);
+                  }            }
+          }
+          this._cellLength = cellLength;
+
+          return cellLength;
+
+      }
+
+      //这个getCellLengthOfPos接口主要是给tips用，因为tips中只有x信息
+      getCellLengthOfPos(pos) {
+          return this.getCellLength();
+      }
+
+      //pos目前没用到，给后续的高级功能预留接口
+      getCellLengthOfInd(pos) {
+          return this.getCellLength();
+      }
+
+      _getCellCount() {
+
+          if (this._cellCount !== null) {
+              return this._cellCount;
+          }
+          //总共有几个数据节点，默认平铺整个dataOrg，和x轴的需求刚好契合，而y轴目前不怎么需要用到这个
+          var cellCount = 0;
+          if (this.layoutType == "proportion") {
+              cellCount = this.axisLength;
+          } else {
+              if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
+                  cellCount = this.dataOrg[0][0].length;
+              }        }        this._cellCount = cellCount;
+          return cellCount;
+      }
+
+  }
+
   /**
   * 把原始的数据
   * field1 field2 field3
@@ -18946,6 +19617,121 @@ var Chartx3d = (function () {
   //图表皮肤
 
   //十六进制颜色值的正则表达式
+
+  //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
+  //惯性坐标系
+  class InertialSystem extends Events {
+      constructor(root) {
+          super();
+
+          this._root = root;
+          this.coord = {};
+
+          //坐标原点
+          this.origin = new Vector3(0, 0, 0);
+          //中心的
+          this.center = new Vector3(0, 0, 0);
+
+          this.padding = {
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0,
+              front: 0,
+              back: 0
+          };
+        
+          this.fieldMap={};
+          this.group = root.app.addGroup({ name: 'InertialSystem' });
+          _$1.extend(true, this, this.setDefaultOpts(root.opt));
+
+      }
+
+      setDefaultOpts(opts) {
+          return opts;
+      }
+
+      getColor(field) {
+          return this.fieldMap[field] && this.fieldMap[field].color;
+      }
+
+      getBoundbox() {
+
+          let _boundbox = new Box3();
+
+          let _opt = this._root.opt.coord.controls;
+          let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
+          let _width = _opt.boxWidth;
+          let _depth = _opt.boxDepth;
+
+          //斜边
+          let _hypotenuse = _opt.distance || (new Vector3(_width, 0, _depth)).length();
+
+          let _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
+
+          let minX = - _width * 0.5 + this.padding.left * _ratio;
+          let minY = - _frustumSize * 0.5 + this.padding.bottom * _ratio;
+          let minZ = this.padding.front - _hypotenuse * 0.5 - _depth;
+
+          let maxX = _width * 0.5 - this.padding.right * _ratio;
+          let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+          let maxZ = - _hypotenuse * 0.5 + this.padding.back;
+
+          _boundbox.min.set(minX, minY, minZ);
+          _boundbox.max.set(maxX, maxY, maxZ);
+          return _boundbox;
+      }
+
+      _getWorldPos(pos) {
+          let posWorld = pos.clone();
+
+          this.group.updateMatrixWorld();
+          posWorld.applyMatrix4(this.group.matrixWorld);
+          return posWorld;
+      }
+
+
+      dataToPoint(data, dir) {
+
+      }
+
+
+      pointToData() {
+
+      }
+
+      initCoordUI() {
+          //什么都不做
+          return null;
+      }
+      drawUI() {
+          this._root.initComponent();
+      }
+
+      draw() {
+          this._root.draw();
+      }
+      dispose() {
+
+      }
+      resetData(){
+
+      }
+
+      getAxisDataFrame(fields) {
+          let dataFrame = this._root.dataFrame;
+
+          return dataFrame.getDataOrg(fields, function (val) {
+              if (val === undefined || val === null || val == "") {
+                  return val;
+              }
+              return (isNaN(Number(val)) ? val : Number(val))
+          })
+
+      }
+
+
+  }
 
   var _$2 = {};
   var breaker$2 = {};
@@ -19355,7 +20141,7 @@ var Chartx3d = (function () {
     return result;
   };
 
-  var $$1 = {
+  var $ = {
 
       // dom操作相关代码
       query(el) {
@@ -19493,25 +20279,25 @@ var Chartx3d = (function () {
 
           let redraw = this.isUpdate;
 
-          if (this.lastTick - this.currTick > 1000 * 5) {
+          if (this.lastTick - this.currTick > 1000) {
               this.isUpdate = false;
           }
 
           this.fire({ type: 'renderbefore' });
           if (redraw) {
 
-              this.layers.forEach((view,index) => {
-                  if(this.layers.length>1 && index!==this.layers.length-1){
+              this.layers.forEach((view, index) => {
+                  if (this.layers.length > 1 && index !== this.layers.length - 1) {
                       this.renderer.autoClear = true;
-                  }else{
+                  } else {
                       this.renderer.autoClear = false;
                   }
                   // if(this.layers.length>1 && index!==this.layers.length-1){}
                   // else{
-                      
-                      this.renderer.render(view._scene, view._camera);
+
+                  this.renderer.render(view._scene, view._camera);
                   //}
-                 
+
 
               });
               this.lastTick = new Date().getTime();
@@ -19526,6 +20312,7 @@ var Chartx3d = (function () {
               me.renderFrame();
           });
       }
+
 
       stopRenderFrame() {
           window.cancelAnimationFrame(this.frameId);
@@ -19544,8 +20331,11 @@ var Chartx3d = (function () {
               this.layers.splice(index, 1);
           }
       }
-
-      addGroup(opt) {
+      /**
+       * 
+       * @param {name:"名称",flipY:"是否Y轴反转"}  
+       */
+      addGroup({ name = '', flipY = false }) {
           let _group = new Group();
           _group.on('removed', function () {
               if (this.geometry) {
@@ -19555,14 +20345,35 @@ var Chartx3d = (function () {
                   this.material.dispose();
               }
           });
-          _group.name = (opt && opt.name) || '';
+          _group.name = name;
+
+          //是否Y轴反转
+          if (flipY) {
+              let _modelMatrix = _group.matrix.elements;
+              _modelMatrix[1] = - _modelMatrix[1];
+              _modelMatrix[5] = - _modelMatrix[5];
+              _modelMatrix[9] = - _modelMatrix[9];
+              _modelMatrix[13] = - _modelMatrix[13];
+              _group.matrixAutoUpdate = false;
+          }
+
+
           this._groups.push(_group); //todo 收集起来方便后期处理或查询使用
           return _group;
       }
 
+      forceRender() {
+          //强行开启绘制
+          this.isUpdate = true;
+      }
 
 
   }
+
+  //viewName 
+
+  const MainView = 'main_view';
+  const LabelView = 'label_view';
 
   class View {
       constructor(_frameWork, viewName) {
@@ -19611,8 +20422,6 @@ var Chartx3d = (function () {
       addObject(obj) {
           this._scene.add(obj);
       }
-
-
 
 
       removeObject(obj) {
@@ -19698,15 +20507,24 @@ var Chartx3d = (function () {
       }
       resize(_width, _height, frustumSize) {
           this.setSize(_width, _height);
+
           if (this.mode == 'perspective') {
               this._camera.aspect = this.aspect;
           } else {
 
-              this._camera.left = frustumSize * aspect / -2;
-              this._camera.right = frustumSize * aspect / 2;
+              this._camera.left = frustumSize * this.aspect / -2;
+              this._camera.right = frustumSize * this.aspect / 2;
               this._camera.top = frustumSize / 2;
               this._camera.bottom = frustumSize / - 2;
 
+          }
+          //labelView的特殊更新
+          if (this.name === LabelView) {
+
+              this._camera.left = 0;
+              this._camera.right = this.width;
+              this._camera.top = 0;
+              this._camera.bottom = -this.height;
           }
           this._camera.updateProjectionMatrix();
       }
@@ -21027,6 +21845,7 @@ var Chartx3d = (function () {
       createView(viewName) {
           let _view = new View(this._framework, viewName);
           this._framework.addView(_view);
+          return _view;
       }
 
       getView(viewName) {
@@ -21051,7 +21870,15 @@ var Chartx3d = (function () {
           });
           this._framework.stopRenderFrame();
           this._framework.renderer.dispose();
-          this._framework.render = null;
+          this._framework.renderer = null;
+      }
+      resize(width, height, frustumSize) {
+          this._framework.layers.forEach(vw => {
+              vw.resize(width, height, frustumSize);
+          });
+      }
+      forceRender() {
+          this._framework.forceRender();
       }
 
 
@@ -21081,7 +21908,7 @@ var Chartx3d = (function () {
       dispose() {
           let removes = [];
           this.group.traverse(obj => {
-              if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isTextSprite) {
+              if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite) {
                   if (obj.geometry) {
                       obj.geometry.dispose();
                   }
@@ -21104,10 +21931,2476 @@ var Chartx3d = (function () {
       draw() {
           //基类不实现
       }
-
+      resetData(){
+          
+      }
       //后续组件的公共部分可以提取到这里
 
   }
+
+  class AxisLine extends Component {
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
+
+          //轴的起点
+          this.origin = new Vector3(0, 0, 0);
+
+          //轴的方向
+          this.dir = new Vector3(1, 0, 0);
+
+          //轴的长度
+          this.length = 1;
+
+          //轴线的宽带
+          this.lineWidth = opts.lineWidth || 2;
+
+          //轴线的颜色 (默认黑色)
+          this.color = opts.strokeStyle;
+
+          this.axis = null;
+
+          //不可见    
+          this.group.visible = !!opts.enabled;
+
+
+      }
+
+      defaultStyle() {
+          //todo
+      }
+
+      setStyle() {
+          //todo
+      }
+
+      setOrigin(pos) {
+          this.origin.copy(pos);
+      }
+      getOrigin() {
+          return this.origin.clone();
+      }
+
+      setDir(dir) {
+          this.dir.copy(dir);
+      }
+
+      setLength(length) {
+
+          this.length = length;
+      }
+
+      setGroupName(name) {
+          this.group.name = name;
+      }
+
+      drawStart() {
+          this.axis = this._root.app.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color);
+      }
+
+      update() {
+          let pos = this.getOrigin();
+          this.axis.traverse(obj => {
+              if (obj.isLine2) {
+                  obj.position.copy(pos);
+              }
+          });
+      }
+
+      draw() {
+
+          this.group.add(this.axis);
+
+      }
+      dispose() {
+          let remove = [];
+          this.group.traverse((obj) => {
+              if (obj.isLine2) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                  }
+                  remove.push(obj);
+
+              }
+          });
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
+      }
+
+      resetData(){
+          //dataOrg更改数据轴线暂时不需要更新
+      }
+
+     
+
+  }
+
+  class TickLines extends Component {
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
+
+          //点的起点位置集合
+          this.origins = [];
+
+          //刻度线的绘制方向
+          this.dir = new Vector3();
+
+          //刻度线的宽带
+          this.lineWidth = opts.lineWidth;
+
+          //刻度线的长度
+          //todo 轴线的长度是个数组 通过像素值转换
+          this.length = opts.lineLength;
+
+          this.color = opts.strokeStyle;
+
+          this.offset = opts.offset;
+
+          this._tickLine = null;
+
+          this.group.visible = !!opts.enabled;
+      }
+      initData(axis, attribute) {
+          let me = this;
+          let _dir = new Vector3();
+          let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
+          this.origins = [];
+          attribute.dataSectionLayout.forEach(item => {
+              let val = item.pos;
+              let startPoint = axis.dir.clone().multiplyScalar(val);
+              startPoint.add(axis.origin);
+              startPoint.add(_offset);
+              me.origins.push(startPoint);
+
+          });
+      }
+      set length(len) {
+
+          this._length = len;
+      }
+      get length() {
+          return this._length;
+      }
+
+      set offset(_offset) {
+          this._offset = _offset;
+      }
+
+      get offset() {
+          return this._offset;
+      }
+
+      setDir(dir) {
+          this.dir = dir;
+      }
+      drawStart() {
+          this._tickLine = this._root.app.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
+      }
+      update() {
+          let origins = this.origins;
+          let triangleVertices = [];
+          let endPoint = null;
+          let direction = this.dir.clone();
+          let length = this._length;
+
+
+          let i = 0;
+          this._tickLine.traverse(obj => {
+              if (obj.isLine2) {
+                  triangleVertices = [];
+                  triangleVertices.push([0, 0, 0]);
+
+                  endPoint = new Vector3();
+                  endPoint.copy(direction);
+                  endPoint.multiplyScalar(length);
+
+                  triangleVertices.push(endPoint.toArray());
+
+                  obj.geometry.setPositions(_$1.flatten(triangleVertices));
+                  obj.position.copy(origins[i]);
+                  i++;
+              }
+          });
+
+
+      }
+
+      draw() {
+          this.group.add(this._tickLine);
+      }
+      dispose() {
+          let remove = [];
+          this.group.traverse((obj) => {
+              if (obj.isLine2) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                  }
+                  remove.push(obj);
+
+              }
+          });
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
+
+      }
+      resetData(axis, attribute) {
+          this.initData(axis, attribute);
+          this.dispose();
+          this.drawStart();
+          this.update();
+          this.draw();
+
+      }
+  }
+
+  class TickTexts extends Component {
+      constructor(_coordSystem, opts) {
+          super(_coordSystem);
+
+          //起点位置集合
+          this.origins = [];
+          this.texts = [];
+
+          this.fontColor = opts.fontColor || '#333';
+
+          this.fontSize = opts.fontSize || 12;
+
+          this.rotation = 0;
+
+          this.origin = null;
+
+          this.textAlign = opts.textAlign;
+
+          this.verticalAlign = opts.verticalAlign;
+
+          this.dir = new Vector3();
+
+          this.offset = new Vector3(...Object.values(opts.offset)) || new Vector3();
+
+          this._tickTextGroup = null;
+
+          this._tickTextGroup = this._root.app.addGroup({ name: 'tickTexts' });
+
+          this.group.visible = !!opts.enabled;
+          this.group.add(this._tickTextGroup);
+      }
+
+
+      initData(axis, attribute) {
+          let me = this;
+          let _offset = this.offset;
+          me.origins = [];
+
+          attribute.dataSectionLayout.forEach(item => {
+              let val = item.pos;
+              let startPoint = axis.dir.clone().multiplyScalar(val);
+              startPoint.add(axis.origin);
+              startPoint.add(_offset);
+              me.origins.push(startPoint);
+
+          });
+
+          me.updataOrigins = this._updataOrigins(axis, attribute);
+      }
+
+      setDir(dir) {
+          this.dir = dir;
+      }
+      setTextAlign(align) {
+          this.textAlign = align;
+      }
+      setVerticalAlign(align) {
+          this.verticalAlign = align;
+      }
+
+      _updataOrigins(axis, attribute) {
+          let _axis = axis;
+          let _attribute = attribute;
+          return function () {
+              this.initData(_axis, _attribute);
+          }
+      }
+      getTextPos(text) {
+          let index = _$1.indexOf(this.texts, text);
+          if (index != -1) {
+              return this.origins[index];
+          }
+          return new Vector3();
+      }
+
+      drawStart(texts = []) {
+          let me = this;
+          let app = me._root.app;
+          let { fontSize, fontColor: color } = me;
+          let zDir = new Vector3(0, 0, -1);
+          this.texts = texts || this.texts;
+
+          let labels = app.creatSpriteText(texts, { fontSize, color });
+
+          labels.forEach((label, index) => {
+              label.userData.position = me.origins[index].clone();
+              label.matrixWorldNeedsUpdate = false;
+              label.onBeforeRender = function (render, scene, camera) {
+                  me.updataOrigins();
+
+                  //更新坐标后的位置
+
+                  let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+                  //屏幕的位置
+                  let textSize = this.userData.size;
+                  let halfwidth = textSize[0] * 0.5;
+                  let halfHeight = textSize[1] * 0.5;
+
+                  let camearDir = new Vector3();
+                  camera.getWorldDirection(camearDir);
+                  let isSameDir = zDir.dot(camearDir);
+
+                  if (me.textAlign == 'right') {
+                      let flag = isSameDir < 0 ? 1 : -1;
+                      pos.setX(pos.x + halfwidth * flag);
+                      label.position.copy(pos);
+                  }
+                  if (me.textAlign == 'left') {
+                      let flag = isSameDir < 0 ? -1 : 1;
+                      pos.setX(pos.x + halfwidth * flag);
+                      label.position.copy(pos);
+                  }
+                  if (me.verticalAlign == 'top') {
+                      pos.setY(pos.y - halfHeight);
+                      label.position.copy(pos);
+                  }
+                  if (me.verticalAlign == 'bottom') {
+                      pos.setY(pos.y + halfHeight);
+                      label.position.copy(pos);
+                  }
+
+                  this.position.copy(pos);
+                  this.updateMatrixWorld(true);
+              };
+              me._tickTextGroup.add(label);
+          });
+
+      }
+      draw() {
+
+          this.group.add(this._tickTextGroup);
+      }
+
+      update() {
+          //文字需要实时更新
+      }
+
+      dispose() {
+          let remove = [];
+          this.group.traverse((obj) => {
+              if (obj.isSprite) {
+                  if (obj.geometry) {
+                      obj.geometry.dispose();
+                  }
+                  if (obj.material) {
+                      obj.material.dispose();
+                      if (obj.material.map) {
+                          obj.material.map.dispose();
+                      }
+                  }
+                  remove.push(obj);
+
+              }
+          });
+          while (remove.length) {
+              let obj = remove.pop();
+              obj.parent.remove(obj);
+          }
+
+      }
+      resetData(axis, attribute, texts) {
+          this.initData(axis, attribute);
+          this.dispose();
+          this.drawStart(texts);
+          //this.update();
+          this.draw();
+
+      }
+
+
+  }
+
+  class YAxis extends Component {
+      constructor(_cartesionUI, opt) {
+          super(_cartesionUI._coordSystem);
+
+          this._opt = opt;
+          this._coord = this._coordSystem.coord || {};
+          this._cartesionUI = _cartesionUI;
+          this.name = opt.name;
+
+          //this.width = null; //第一次计算后就会有值
+          //this.yMaxHeight = 0; //y轴最大高
+          //this.height = 0; //y轴第一条线到原点的高
+
+          // this.maxW = 0;    //最大文本的 width
+          this.field = opt.field || [];   //这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
+
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.label对应的文本对象
+
+          this.enabled = true;
+          this.tickLine = {//刻度线
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0, //空间单位
+          };
+          this.axisLine = {//轴线
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              strokeStyle: '#333'
+          };
+          this.label = {
+              enabled: 1,
+              fontColor: '#333',
+              fontSize: 12,
+              format: null,
+              rotation: 0,
+              textAlign: "right",       //水平方向对齐: left  right center 
+              verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
+              lineHeight: 1,
+              offset: { x: 0, y: 0, z: 40 }    //和刻度线的距离
+          };
+
+          this.origin = new Vector3();
+          this.boundboxSize = new Vector3();
+          this.axisAttribute = this._coordSystem.yAxisAttribute[this.name];
+
+          
+          _$1.extend(true, this, opt);
+
+          this.init(opt);
+
+          this.group.visible = !!this.enabled;
+          this._getName();
+
+      }
+
+      init(opt) {
+          let me = this;
+          //extend会设置好this.field
+          //先要矫正子啊field确保一定是个array
+          if (!_$1.isArray(this.field)) {
+              this.field = [this.field];
+          }
+          this._initData(this.axisAttribute);
+
+          this.getOrigin();
+
+          this._onChangeBind = () => {
+              me._initModules();
+          };
+
+          this._root.orbitControls.on('change', this._onChangeBind);
+          me._initModules();
+
+      }
+      _initModules() {
+          if (!this.enabled) return;
+          const _axisDir = new Vector3(0, 1, 0);
+          const _coordSystem = this._coordSystem;
+          const coordBoundBox = _coordSystem.getBoundbox();
+
+          let {
+              x: width,
+              z: depth
+          } = this.boundboxSize;
+
+          let origin = this.origin.clone();
+
+          let _tickLineDir = new Vector3(0, 0, 1);
+          let _faceInfo = this._cartesionUI.getFaceInfo();
+          let _textAlign = this.label.textAlign;
+          let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
+
+          if (_faceInfo.left.visible) {
+              if (_faceInfo.back.visible) {
+                  //默认计算的原单origin
+                  _tickLineDir = new Vector3(0, 0, 1);
+                  _textAlign = 'right';
+
+              } else {
+                  //默认计算的原单origin
+                  if (_coordSystem.coord.yAxis.length == 1) {
+                      origin = new Vector3(0, 0, -depth);
+                  }
+                  _tickLineDir = new Vector3(0, 0, -1);
+                  _textAlign = 'left';
+                  _offsetZ *= -1;
+              }
+          } else {
+              if (_faceInfo.back.visible) {
+                  origin.setX(width);
+                  _tickLineDir = new Vector3(0, 0, 1);
+                  _textAlign = 'left';
+              } else {
+                  origin.setX(width);
+                  if (_coordSystem.coord.yAxis.length == 1) {
+                      origin = new Vector3(width, 0, -depth);
+                  }
+                  _tickLineDir = new Vector3(0, 0, -1);
+                  _textAlign = 'right';
+                  _offsetZ *= -1;
+              }
+          }
+
+
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+
+              this._axisLine.setOrigin(origin);
+              this._axisLine.update();
+
+
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getYAxisPosition);
+              this._tickLine.update();
+
+
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getYAxisPosition);
+              this._tickText.setTextAlign(_textAlign);
+              this._tickText.offset.setZ(_offsetZ);
+
+
+          } else {
+              //初始化轴线
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(this.axisAttribute.axisLength);
+              this._axisLine.setGroupName('yAxisLine');
+              this._axisLine.drawStart();
+
+              this.group.add(this._axisLine.group);
+
+
+              //初始化tickLine
+
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute);
+              this._tickLine.drawStart();
+              this.group.add(this._tickLine.group);
+
+
+
+              // 初始化tickText
+              this._tickText = new TickTexts(_coordSystem, this.label);
+              this._tickText.offset.z = _offsetZ;
+
+              this._tickText.setTextAlign(_textAlign);
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, this.axisAttribute);
+
+              this._tickText.drawStart(this._formatTextSection);
+              //this.group.add(this._tickText.group);
+              this._root.labelGroup.add(this._tickText.group);
+
+          }
+
+      }
+      getOrigin() {
+
+          //todo  后续可以通过mmvis生成,该方法放到坐标系,针对多轴给出不同的原点
+          let _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          this.boundboxSize = _size.clone();
+          let {
+              z: depth
+          } = _size;
+          let origin = _coordSystem.getOrigin();
+
+
+          let segment = _coordSystem.coord.yAxis.length;
+          let index = _$1.indexOf(_coordSystem.coord.yAxis, this._opt);
+          let step = 0;
+          if (segment == 1) {
+              step = 0;
+          } else {
+              step = index / (segment - 1);
+          }
+          origin.setZ(depth * -step);
+
+          this.origin = origin;
+
+      }
+      updateAxis() {
+          //这里可能需要重构
+          //todo 根据相机移动计算tickLine & tickText的位置 
+      }
+      _getName() {
+
+      }
+      _initData(data) {
+          var me = this;
+
+          this.dataSection = data.getDataSection();
+
+          me._formatTextSection = [];
+          me._textElements = [];
+          _$1.each(me.dataSection, function (val, i) {
+              me._formatTextSection[i] = me._getFormatText(val, i);
+
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+
+
+      }
+
+      _getFormatText(val, i) {
+          var res;
+          if (_$1.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_$1.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+
+      draw() {
+          //this._initModules();
+          if (!this.enabled) return;
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+          // console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
+      }
+
+      dispose() {
+
+          this._axisLine.dispose();
+          this._tickLine.dispose();
+          this._tickText.dispose();
+          this._root.orbitControls.off('change', this._onChangeBind);
+          this._onChangeBind = null;
+
+      }
+
+      resetData() {
+          this._initData(this.axisAttribute);
+          this.getOrigin();
+
+          this._axisLine.resetData();
+          this._tickLine.resetData(this._axisLine, this.axisAttribute);
+          this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+      }
+
+
+
+  }
+
+  class XAxis extends Component {
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+          let opt = this._opt = this._coordSystem.coord.xAxis;
+
+          this._cartesionUI = _cartesionUI;
+          this.width = 0;
+          this.height = 0;
+
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.title对应的文本对象
+
+          this.enabled = true;
+          this.axisLine = {
+              enabled: 1, //是否有轴线
+              lineWidth: 1,
+              strokeStyle: '#333'
+          };
+
+          this.tickLine = {
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0, //空间单位
+          };
+
+          this.label = {
+              enabled: 1,
+              fontColor: '#333',
+              fontSize: 12,
+              rotation: 0,
+              format: null,
+              offset: { x: 20, y: 0, z: 40 },
+              textAlign: "center",       //水平方向对齐: left  right center 
+              verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
+              lineHeight: 1,
+              evade: true  //是否开启逃避检测，目前的逃避只是隐藏
+          };
+          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+              //如果是横向直角坐标系图
+              this.label.rotation = 90;
+          }
+          this.maxTxtH = 0;
+
+          this.pos = {
+              x: 0,
+              y: 0
+          };
+
+          // this.dataOrg = []; //源数据
+          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
+
+          this.layoutData = []; //{x:100, value:'1000',visible:true}
+
+          this.sprite = null;
+
+          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+          this.filter = null; //function(params){}; 
+
+          this.isH = false; //是否为横向转向的x轴
+
+          this.animation = false;
+
+          //layoutType == "proportion"的时候才有效
+          this.maxVal = null;
+          this.minVal = null;
+
+          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
+
+          this.layoutType = "rule"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+
+          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
+          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
+          //function
+          this.trimLayout = null;
+
+          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+
+          _$1.extend(true, this, opt.xAxis);
+
+          // this.label.enabled = this.enabled && this.label.enabled;
+          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
+
+          this.axisAttribute = this._coordSystem.xAxisAttribute;
+
+          this.init(opt, this.axisAttribute);
+          //xAxis的field只有一个值,
+          //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
+          this.group.visible = !!this.enabled;
+
+      }
+      init(opt, data) {
+          let me = this;
+          // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
+
+          // this.group.add(this.rulesGroup);
+
+          this._initData(data);
+
+          this._onChangeBind = () => {
+              me._initModules();
+          };
+          this._root.orbitControls.on('change', this._onChangeBind);
+          me._initModules();
+      }
+      _initData(data) {
+          var me = this;
+
+          if (data && data.field) {
+              this.field = data.field;
+          }
+
+          this.dataSection = data.dataSection;
+
+          me._formatTextSection = [];
+          me._textElements = [];
+          _$1.each(me.dataSection, function (val, i) {
+              me._formatTextSection[i] = me._getFormatText(val, i);
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+      }
+      _getFormatText(val, i) {
+          var res;
+          if (_$1.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_$1.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+      _initModules() {
+          //todo 这个方法后续重构
+
+          //初始化轴线
+          const _axisDir = new Vector3(1, 0, 0);
+          const _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+
+          let _size = new Vector3(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+          let origin = _coordSystem.getOrigin();
+          let _tickLineDir = new Vector3(0, 0, 1);
+          let _faceInfo = this._cartesionUI.getFaceInfo();
+          let _verticalAlign = this.label.verticalAlign;
+          let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
+
+          if (_faceInfo.bottom.visible) {
+              if (_faceInfo.back.visible) {
+                  origin = _coordSystem.getOrigin();
+                  _tickLineDir = new Vector3(0, 0, 1);
+              } else {
+                  origin = new Vector3(0, 0, -depth);
+                  _tickLineDir = new Vector3(0, 0, -1);
+                  _offsetZ *= -1;
+              }
+              _verticalAlign = 'bottom';
+
+          } else {
+              //top 可见
+              if (_faceInfo.back.visible) {
+                  origin = new Vector3(0, height, 0);
+                  _tickLineDir = new Vector3(0, 0, 1);
+                 
+              } else {
+                  origin = new Vector3(0, height, -depth);
+                  _tickLineDir = new Vector3(0, 0, -1);
+                  _offsetZ *= -1;
+              }
+              _verticalAlign = 'top';
+          }
+
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+              this._axisLine.setOrigin(origin);
+              this._axisLine.update();
+
+              //二次绘制
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
+              this._tickLine.update();
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.offset.setZ(_offsetZ);
+              this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
+              this._tickText.setVerticalAlign(_verticalAlign);
+
+
+          } else {
+
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(this.axisAttribute.axisLength);
+              this._axisLine.setGroupName('xAxisLine');
+              this._axisLine.drawStart();
+              
+              this.group.add(this._axisLine.group);
+
+              //初始化tickLine
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
+              this._tickLine.drawStart();
+
+              this.group.add(this._tickLine.group);
+
+
+              //初始化tickText
+              this._tickText = new TickTexts(_coordSystem, this.label);
+
+              this._tickText.offset.z += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset;
+
+              this._tickText.setVerticalAlign(_verticalAlign);
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getXAxisPosition);
+
+              //this._tickText.initData(this._axisLine,this.axisAttribute);
+              this._tickText.drawStart(this._formatTextSection);
+
+             this._root.labelGroup.add(this._tickText.group);
+              //this.group.add(this._tickText.group);
+          }
+      }
+      _getName() {
+          // if ( this.title.content ) {
+          //     if( !this._title ){
+          //         this._title = new Canvax.Display.Text(this.title.content, {
+          //             context: {
+          //                 fontSize: this.title.fontSize,
+          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+          //                 fillStyle: this.title.fontColor,
+          //                 strokeStyle: this.title.strokeStyle,
+          //                 lineWidth : this.title.lineWidth,
+          //                 rotation: this.isH ? -180 : 0
+          //             }
+          //         });
+          //     } else {
+          //         this._title.resetText( this.title.content );
+          //     }
+          // }
+      }
+
+
+      
+      draw() {
+
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+
+          //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
+
+
+      }
+      dispose() {
+
+          this._axisLine.dispose();
+          this._tickLine.dispose();
+          this._tickText.dispose();
+          this._root.orbitControls.off('change', this._onChangeBind);
+          this._onChangeBind = null;
+      }
+      resetData(){
+          this._initData(this.axisAttribute);
+          //this.getOrigin();
+
+          this._axisLine.resetData();
+          this._tickLine.resetData(this._axisLine, this.axisAttribute);
+          this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+      }
+  }
+
+  class ZAxis extends Component {
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+
+          let opt = this._opt = this._coordSystem.coord.zAxis;
+          this._cartesionUI = _cartesionUI;
+          this._coord = this._coordSystem.coord || {};
+
+          this.width = 0;
+          this.height = 0;
+
+          this.title = {
+              content: "",
+              shapeType: "text",
+              fontColor: '#999',
+              fontSize: 12,
+              offset: 2,
+              textAlign: "center",
+              textBaseline: "middle",
+              strokeStyle: null,
+              lineHeight: 0
+          };
+          this._title = null; //this.title对应的文本对象
+
+          this.enabled = true;
+          this.tickLine = {
+              enabled: 1,
+              lineWidth: 1, //线宽像素
+              lineLength: 20, //线长(空间单位)
+              strokeStyle: '#333',
+              offset: 0, //空间单位
+          };
+          this.axisLine = {
+              enabled: 1, //是否有轴线
+              lineWidth: 1,
+              strokeStyle: '#333'
+          };
+          this.label = {
+              enabled: 1,
+              fontColor: '#333',
+              fontSize: 12,
+              rotation: 0,
+              format: null,
+              offset: { x: 40, y: 0, z: 0 },
+              textAlign: "left",       //水平方向对齐: left  right center 
+              verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
+              lineHeight: 1,
+              //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
+          };
+          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
+              //如果是横向直角坐标系图
+              this.label.rotation = 90;
+          }
+          // this.depth = 500;
+          this.maxTxtH = 0;
+
+          this.pos = {
+              x: 0,
+              y: 0
+          };
+
+          //this.dataOrg = []; //源数据
+          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
+
+          this.layoutData = []; //{x:100, value:'1000',visible:true}
+
+          this.sprite = null;
+
+          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
+          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+          this.filter = null; //function(params){}; 
+
+          this.isH = false; //是否为横向转向的x轴
+
+          this.animation = false;
+
+          //layoutType == "proportion"的时候才有效
+          this.maxVal = null;
+          this.minVal = null;
+
+          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
+
+          this.layoutType = "peak"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
+
+          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
+          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
+          //function
+          this.trimLayout = null;
+
+          // if (!opt._coord.zAxisAttribute.section.length) {
+          //     this.depth = 50;
+          // }
+
+          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+          _$1.extend(true, this, opt.zAxis);
+
+          // this.label.enabled = this.enabled && this.label.enabled;
+          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
+          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
+
+          this.axisAttribute = this._coordSystem.zAxisAttribute;
+
+          this.init(opt, this.axisAttribute);
+
+          this.group.visible = !!this.enabled;
+
+      }
+      init(opt, data) {
+          let me = this;
+          // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
+
+          // this.group.add(this.rulesGroup);
+
+          this._initData(data);
+
+          this._onChangeBind = () => {
+              me._initModules();
+          };
+
+          this._root.orbitControls.on('change', this._onChangeBind);
+          me._initModules();
+      }
+      _initData(data) {
+          var me = this;
+
+          if (data && data.field) {
+              this.field = data.field;
+          }
+
+          this.dataSection = data.getDataSection();
+          let zCustomSection = data._opt.dataSection||[];
+          me._formatTextSection = [];
+          me._textElements = [];
+          _$1.each(me.dataSection, function (val, i) {
+              val = zCustomSection[i]||val;
+              me._formatTextSection[i] = me._getFormatText(val, i);
+          });
+
+          if (this.label.rotation != 0) {
+              //如果是旋转的文本，那么以右边为旋转中心点
+              this.label.textAlign = "right";
+          }
+          //取第一个数据来判断xaxis的刻度值类型是否为 number
+          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
+          if (isNaN(this.minVal) || this.minVal == Infinity) {
+              this.minVal = 0;
+          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
+          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
+              this.maxVal = 1;
+          }
+          this._getName();
+
+          this._setZAxisWidth();
+      }
+      _getFormatText(val, i) {
+          var res;
+          if (_$1.isFunction(this.label.format)) {
+              res = this.label.format.apply(this, arguments);
+          } else {
+              res = val;
+          }
+
+          if (_$1.isArray(res)) {
+              res = numAddSymbol(res);
+          }
+          if (!res) {
+              res = val;
+          }        return res;
+      }
+      _initModules() {
+
+          //初始化轴线
+          const _axisDir = new Vector3(0, 0, -1);
+          const _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3();
+          coordBoundBox.getSize(_size);
+
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+
+          let origin = new Vector3(width, 0, 0);
+          let _tickLineDir = new Vector3(1, 0, 0);
+          let _faceInfo = this._cartesionUI.getFaceInfo();
+
+          let _textAlign = this.label.textAlign;
+          let _offsetX = this.label.offset.x + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
+
+          if (_faceInfo.bottom.visible) {
+
+              if (_faceInfo.left.visible) {
+                  origin = new Vector3(width, 0, 0);
+                  _tickLineDir = new Vector3(1, 0, 0);
+
+              } else {
+                  origin = new Vector3(0, 0, 0);
+                  _tickLineDir = new Vector3(-1, 0, 0);
+              }
+
+              if (_faceInfo.front.visible) {
+                  if (_faceInfo.left.visible) {
+                      _textAlign = 'right';
+                  } else {
+                      _textAlign = 'left';
+                      _offsetX = -_offsetX;
+                  }
+              } else {
+                  if (_faceInfo.left.visible) {
+                      _textAlign = 'left';
+                  } else {
+                      _textAlign = 'right';
+                      _offsetX = -_offsetX;
+                  }
+              }
+
+          } else {
+              //top 可见
+              if (_faceInfo.left.visible) {
+                  origin = new Vector3(width, height, 0);
+                  _tickLineDir = new Vector3(1, 0, 0);
+
+              } else {
+                  origin = new Vector3(0, height, 0);
+                  _tickLineDir = new Vector3(-1, 0, 0);
+
+              }
+              if (_faceInfo.front.visible) {
+                  if (_faceInfo.left.visible) {
+                      _textAlign = 'right';
+                  } else {
+                      _textAlign = 'left';
+                      _offsetX = -_offsetX;
+                  }
+              } else {
+                  if (_faceInfo.left.visible) {
+                      _textAlign = 'left';
+                  } else {
+                      _textAlign = 'right';
+                      _offsetX = -_offsetX;
+                  }
+              }
+          }
+
+          if (this._axisLine) {
+              if (this._axisLine.getOrigin().equals(origin)) {
+                  return;
+              }
+              //this._axisLine.dispose();
+              this._axisLine.setOrigin(origin);
+              this._axisLine.update();
+              // this._axisLine.drawStart();
+              // this._axisLine.draw();
+
+              //二次绘制
+              // this._tickLine.dispose();
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
+              this._tickLine.update();
+              // this._tickLine.drawStart();
+              // this._tickLine.draw();
+
+              //this._tickText.dispose();
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
+              this._tickText.setTextAlign(_textAlign);
+              this._tickText.offset.setX(_offsetX);
+              // this._tickText.drawStart(this._formatTextSection);
+              // this._tickText.draw();
+
+
+          } else {
+              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
+              this._axisLine.setDir(_axisDir);
+              this._axisLine.setOrigin(origin);
+              this._axisLine.setLength(this.axisAttribute.axisLength);
+              this._axisLine.setGroupName('zAxisLine');
+              this._axisLine.drawStart();
+
+              this.group.add(this._axisLine.group);
+
+
+              //初始化tickLine
+
+              this._tickLine = new TickLines(_coordSystem, this.tickLine);
+              this._tickLine.setDir(_tickLineDir);
+              this._tickLine.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
+              this._tickLine.drawStart();
+
+              this.group.add(this._tickLine.group);
+
+
+              //初始化tickText
+
+              this._tickText = new TickTexts(_coordSystem, this.label);
+              this._tickText.offset.x = _offsetX;
+
+              this._tickText.setDir(_tickLineDir);
+              this._tickText.initData(this._axisLine, this.axisAttribute, _coordSystem.getZAxisPosition);
+
+              //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
+              this._tickText.drawStart(this._formatTextSection);
+              //this.group.add(this._tickText.group);
+              this._root.labelGroup.add(this._tickText.group);
+
+          }
+      }
+      _getName() {
+          // if ( this.title.content ) {
+          //     if( !this._title ){
+          //         this._title = new Canvax.Display.Text(this.title.content, {
+          //             context: {
+          //                 fontSize: this.title.fontSize,
+          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+          //                 fillStyle: this.title.fontColor,
+          //                 strokeStyle: this.title.strokeStyle,
+          //                 lineWidth : this.title.lineWidth,
+          //                 rotation: this.isH ? -180 : 0
+          //             }
+          //         });
+          //     } else {
+          //         this._title.resetText( this.title.content );
+          //     }
+          // }
+      }
+
+      _setZAxisWidth() { //检测下文字的宽度
+          var me = this;
+          const _coordSystem = me._coordSystem;
+          if (!me.enabled) {
+              me.width = 0;
+          } else {
+              var _maxTextWidth = 0;
+
+              if (this.label.enabled) {
+
+                  //me._formatTextSection.forEach((val)=>{
+                  let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '));
+                  _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //})
+                  // _.each(me.dataSection, function (val, i) {
+
+                  //     //从_formatTextSection中取出对应的格式化后的文本
+                  //     let txt = me._textElements[i];
+                  //     let scale = me._root.renderView.getObjectScale(txt);
+
+                  //     let textWidth = scale.x;
+                  //     let textHeight = scale.y;
+
+                  //     let width = textWidth; //文本在外接矩形width
+                  //     let height = textHeight;//文本在外接矩形height
+
+                  //     if (!!me.label.rotation) {
+                  //         //有设置旋转
+                  //         if (me.label.rotation == 90) {
+                  //             width = textHeight;
+                  //             height = textWidth;
+                  //         } else {
+                  //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
+                  //             height = parseInt(sinR * textWidth);
+                  //             width = parseInt(cosR * textWidth);
+                  //         };
+                  //     };
+
+                  //     _maxTextWidth = Math.max(_maxTextWidth, width);
+                  //     console.log('width',width);
+                  // });
+              }            this._maxTextWidth = _maxTextWidth;
+              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
+              this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
+              //this.width+=10;
+              // if (this._title) {
+              //     this.height += this._title.getTextHeight()
+              // };
+
+          }
+      }
+      //设置布局
+      setLayout(opt) {
+
+      }
+      draw() {
+
+          this._axisLine.draw();
+          this._tickLine.draw();
+          this._tickText.draw();
+
+          // console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
+      }
+      dispose() {
+
+          this._axisLine.dispose();
+          this._tickLine.dispose();
+          this._tickText.dispose();
+          this._root.orbitControls.off('change', this._onChangeBind);
+          this._onChangeBind = null;
+      }
+      resetData(){
+          this._initData(this.axisAttribute);
+          //this.getOrigin();
+
+          this._axisLine.resetData();
+          this._tickLine.resetData(this._axisLine, this.axisAttribute);
+          this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+      }
+  }
+
+  class Grid extends Component {
+      constructor(_cartesionUI) {
+          super(_cartesionUI._coordSystem);
+
+
+          let opt = this._opt = this._coordSystem.coord.grid;
+          this.coord = this._coordSystem.coord;
+
+          this._cartesionUI = _cartesionUI;
+
+          this.enabled = true;
+
+          this.line = {                                //x方向上的线
+              enabled: true,
+              lineType: 'solid',                //线条类型(dashed = 虚线 | solid = 实线)
+              strokeStyle: '#e5e5e5',
+          };
+
+          this.fill = {
+              enabled: false,
+              fillStyle: '#ccc',
+              alpha: 0.1
+          };
+
+
+          _$1.extend(true, this, opt);
+
+          this.init();
+      }
+      init() {
+          let me = this;
+          let app = this._root.app;
+
+          this.leftGroup = app.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
+          this.rightGroup = app.addGroup({ name: 'rightGroup' });
+          this.topGroup = app.addGroup({ name: 'topGroup' });
+          this.bottomGroup = app.addGroup({ name: 'bottomGroup' });
+          this.frontGroup = app.addGroup({ name: 'frontGroup' });
+          this.backGroup = app.addGroup({ name: 'backGroup' });
+
+          this.group.add(this.leftGroup);
+          this.group.add(this.rightGroup);
+          this.group.add(this.topGroup);
+          this.group.add(this.bottomGroup);
+          this.group.add(this.frontGroup);
+          this.group.add(this.backGroup);
+
+          this.group.renderOrder = -1;
+
+
+          this._onChangeBind = () => {
+              if (!me.enabled) return;
+              let _faceInfo = me._cartesionUI.getFaceInfo();
+              _$1.each(_faceInfo, (value, key) => {
+                  me[key + 'Group'].visible = value.visible;
+              });
+
+          };
+          this._root.orbitControls.on('change', this._onChangeBind);
+
+          this.width = this._coordSystem.xAxisAttribute.axisLength;
+          this.height = this._coordSystem.getYAxis().attr.axisLength;
+          this.depth = this._coordSystem.zAxisAttribute.axisLength;
+
+
+      }
+
+
+
+      drawFace() {
+
+          let me = this;
+          let app = me._root.app;
+          if (!me.enabled) return;
+          const _coordSystem = this._coordSystem;
+          let _faceInfo = this._cartesionUI.getFaceInfo();
+    
+
+          if (me.fill.enabled) {
+
+              //todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
+              //todo view中构建 materail 通过fill 使用同一份material
+              this.leftFace = app.createPlane(this.depth, this.height, undefined, _faceInfo.left, me.leftGroup, this.fill);
+              this.rightFace = app.createPlane(this.depth, this.height, undefined, _faceInfo.right, me.rightGroup, this.fill);
+              this.topFace = app.createPlane(this.width, this.depth, undefined, _faceInfo.top, me.topGroup, this.fill);
+              this.bottomFace = app.createPlane(this.width, this.depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
+              this.frontFace = app.createPlane(this.width, this.height, undefined, _faceInfo.front, me.frontGroup, this.fill);
+              this.backFace = app.createPlane(this.width, this.height, undefined, _faceInfo.back, me.backGroup, this.fill);
+          }
+
+      }
+      drawLine() {
+          //todo 原生的线条会出现锯齿,需要该用三角面来绘制
+          let me = this;
+          let app = me._root.app;
+          if (!me.enabled) return;
+
+          let xSection = me._coordSystem.xAxisAttribute.dataSectionLayout;
+          let yAttribute = me._coordSystem.getYAxis().attr;
+          let ySection = yAttribute.dataSectionLayout;
+          let zSection = me._coordSystem.zAxisAttribute.dataSectionLayout;
+
+          if (!me.line.enabled) {
+              return;
+          }
+          //绘制左面的线条
+          let LinesVectors = [];
+          ySection.forEach(item => {
+              let posY = item.pos;
+              LinesVectors.push(new Vector3(0, posY, 0));
+              LinesVectors.push(new Vector3(0, posY, -this.depth));
+          });
+
+          zSection.forEach(item => {
+              let posZ = item.pos;
+              LinesVectors.push(new Vector3(0, 0, -posZ));
+              LinesVectors.push(new Vector3(0, this.height, -posZ));
+          });
+          let lines = app.createCommonLine(LinesVectors, this.line);
+          me.leftGroup.add(lines);
+
+          //绘制右面的线条
+          LinesVectors = [];
+          ySection.forEach(item => {
+              let posY = item.pos;
+              LinesVectors.push(new Vector3(this.width, posY, 0));
+              LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+          });
+
+          zSection.forEach(item => {
+              let posZ = item.pos;
+              LinesVectors.push(new Vector3(this.width, 0, -posZ));
+              LinesVectors.push(new Vector3(this.width, this.height, -posZ));
+          });
+          lines = app.createCommonLine(LinesVectors, this.line);
+          me.rightGroup.add(lines);
+
+          //绘制上面的线条
+          LinesVectors = [];
+          xSection.forEach(item => {
+              let posX = item.pos;
+              LinesVectors.push(new Vector3(posX, this.height, 0));
+              LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+          });
+
+          zSection.forEach(item => {
+              let posZ = item.pos;
+              LinesVectors.push(new Vector3(0, this.height, -posZ));
+              LinesVectors.push(new Vector3(this.width, this.height, -posZ));
+          });
+          lines = app.createCommonLine(LinesVectors, this.line);
+          me.topGroup.add(lines);
+
+
+          //绘制下面的线条
+          LinesVectors = [];
+          xSection.forEach(item => {
+              let posX =item.pos;
+              LinesVectors.push(new Vector3(posX, 0, 0));
+              LinesVectors.push(new Vector3(posX, 0,-this.depth));
+          });
+
+          zSection.forEach(item => {
+              let posZ = item.pos;
+              LinesVectors.push(new Vector3(0, 0, -posZ));
+              LinesVectors.push(new Vector3(this.width, 0, -posZ));
+          });
+          lines = app.createCommonLine(LinesVectors, this.line);
+          me.bottomGroup.add(lines);
+
+          //绘制前面的线条
+          LinesVectors = [];
+          xSection.forEach(item => {
+              let posX = item.pos;
+              LinesVectors.push(new Vector3(posX, 0, 0));
+              LinesVectors.push(new Vector3(posX, this.height, 0));
+          });
+
+          ySection.forEach(item => {
+              let posY = item.pos;
+              LinesVectors.push(new Vector3(0, posY, 0));
+              LinesVectors.push(new Vector3(this.width, posY, 0));
+          });
+
+          lines = app.createCommonLine(LinesVectors, this.line);
+          me.frontGroup.add(lines);
+
+          //绘制后面的线条
+          LinesVectors = [];
+          xSection.forEach(item => {
+              let posX = item.pos;
+              LinesVectors.push(new Vector3(posX, 0,-this.depth));
+              LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+          });
+
+          ySection.forEach(item => {
+              let posY = item.pos;
+              LinesVectors.push(new Vector3(0, posY,-this.depth));
+              LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+          });
+          lines = app.createCommonLine(LinesVectors, this.line);
+          me.backGroup.add(lines);
+
+      }
+
+      draw() {
+          this.drawFace();
+          this.drawLine();
+      }
+      dispose() {
+          super.dispose();
+          this._root.orbitControls.off('change', this._onChangeBind);
+          this._onChangeBind = null;
+      }
+
+      resetData(){
+          this.dispose();
+
+          this.width = this._coordSystem.xAxisAttribute.axisLength;
+          this.height = this._coordSystem.getYAxis().attr.axisLength;
+          this.depth = this._coordSystem.zAxisAttribute.axisLength;
+          this.draw();
+      }
+
+  }
+
+  class Cartesian3DUI extends Component {
+      constructor(_coordSystem) {
+          super(_coordSystem);
+
+          //坐标轴实例
+          this._xAxis = null;
+          this._yAxis = [];
+
+          this._zAxis = null;
+          this._grid = null;
+
+          let opt = _coordSystem.coord;
+
+          this.type = "cartesian3d";
+
+          this.horizontal = false;
+
+          //配置信息
+          this.xAxis = opt.xAxis || {};
+          this.yAxis = opt.yAxis || [];
+          this.zAxis = opt.zAxis || {};
+          this.grid = opt.grid || {};
+
+          _$1.extend(true, this, opt);
+
+          if (opt.horizontal) {
+              this.xAxis.isH = true;
+              this.zAxis.isH = true;
+              _$1.each(this.yAxis, function (yAxis) {
+                  yAxis.isH = true;
+              });
+          }
+
+          if ("enabled" in opt) {
+              //如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
+              _$1.extend(true, this.xAxis, {
+                  enabled: opt.enabled
+              });
+              _$1.each(this.yAxis, function (yAxis) {
+                  _$1.extend(true, yAxis, {
+                      enabled: opt.enabled
+                  });
+              });
+
+              _$1.extend(true, this.zAxis, {
+                  enabled: opt.enabled
+              });
+
+              this.grid.enabled = opt.enabled;
+          }
+          this.init(opt);
+
+      }
+
+
+      init(opt) {
+
+          //多个Y轴单独构建一个组
+          this.yAxisGroup = this._root.app.addGroup({
+              name: 'yAxisGroup'
+          });
+
+          this._initModules();
+
+          //todo z轴的宽度没有计算在内
+          //todo  是否要计算offset值去更改最终原点的位置
+          // let offset = new Vector3(this._yAxisLeft.width, this._xAxis.height, 0);
+          //todo 三维空间中不需要考虑原点的移动 
+          this._coordSystem.updateOrigin(new Vector3(0, 0, 0));
+
+
+
+
+      }
+      _initModules() {
+          this._grid = new Grid(this);
+          this.group.add(this._grid.group);
+
+          this._xAxis = new XAxis(this);
+          this.group.add(this._xAxis.group);
+
+
+          this._zAxis = new ZAxis(this);
+          this.group.add(this._zAxis.group);
+
+
+          this.yAxis.forEach((opt) => {
+              let _yAxis = new YAxis(this, opt);
+              this._yAxis.push(_yAxis);
+              this.yAxisGroup.add(_yAxis.group);
+          });
+
+
+          this.group.add(this.yAxisGroup);
+
+      }
+
+      draw() {
+
+          // this._yAxisLeft.draw();
+          this._yAxis.forEach(_yAxis => {
+              _yAxis.draw();
+          });
+          this._xAxis.draw();
+          this._zAxis.draw();
+          this._grid.draw();
+
+      }
+
+      getFaceInfo() {
+          //todo 待优化
+          let _coordSystem = this._coordSystem;
+          let coordBoundBox = _coordSystem.getBoundbox();
+          let _size = new Vector3(); //空间盒子的大小
+          coordBoundBox.getSize(_size);
+          let {
+              x: width,
+              y: height,
+              z: depth
+          } = _size;
+
+          let lfb = new Vector3(0, 0, 0),            //左前下
+              lft = new Vector3(0, height, 0),       //左前上  
+              lbb = new Vector3(0, 0, -depth),       //左后下 
+              lbt = new Vector3(0, height, -depth),  //左后上
+
+              rfb = new Vector3(width, 0, 0),            //左前下
+              rft = new Vector3(width, height, 0),       //左前上  
+              rbb = new Vector3(width, 0, -depth),       //左后下 
+              rbt = new Vector3(width, height, -depth);  //左后上
+
+
+
+          let zDir = new Vector3(0, 0, 1);
+          let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
+          let cameraPos = coordCenter.clone();
+          this._root.renderView._camera.getWorldPosition(cameraPos);
+
+          let result = {
+              left: {
+                  dir: new Vector3(1, 0, 0),     //法线方向
+                  center: new Box3().setFromPoints([lft, lft, lbb, lbt]).getCenter(),
+                  visible: cameraPos.clone().cross(zDir).y <= 0
+              },
+              right: {
+                  dir: new Vector3(-1, 0, 0),     //法线方向
+                  center: new Box3().setFromPoints([rft, rft, rbb, rbt]).getCenter(),
+                  visible: cameraPos.clone().cross(zDir).y > 0
+              },
+              top: {
+                  dir: new Vector3(0, -1, 0),     //法线方向
+                  center: new Box3().setFromPoints([lft, rft, lbt, rbt]).getCenter(),
+                  visible: cameraPos.clone().cross(zDir).x < 0
+              },
+              bottom: {
+                  dir: new Vector3(0, 1, 0),     //法线方向
+                  center: new Box3().setFromPoints([lfb, rfb, lbb, rbb]).getCenter(),
+                  visible: cameraPos.clone().cross(zDir).x >= 0
+              },
+              front: {
+                  dir: new Vector3(0, 0, -1),
+                  center: new Box3().setFromPoints([lfb, rfb, rft, lft]).getCenter(),
+                  visible: cameraPos.dot(zDir) < 0
+              },
+              back: {
+                  dir: new Vector3(0, 0, 1),
+                  center: new Box3().setFromPoints([lbb, rbb, rbt, lbt]).getCenter(),
+                  visible: cameraPos.dot(zDir) >= 0
+              }
+
+          };
+
+          return result;
+
+      }
+      dispose() {
+
+          this._yAxis.forEach(_yAxis => {
+              _yAxis.dispose();
+          });
+          this._xAxis.dispose();
+          this._zAxis.dispose();
+          this._grid.dispose();
+      }
+      resetData() {
+          this._yAxis.forEach(_yAxis => {
+              _yAxis.resetData();
+          });
+           this._xAxis.resetData();
+           this._zAxis.resetData();
+           this._grid.resetData();
+      }
+
+  }
+
+  class AxisAttribute extends axis$1 {
+      constructor(opt, dataOrg) {
+          super(opt, dataOrg);
+      }
+
+      getPartDataOrg(fields) {
+          let result = [];
+          let map = this._opt.field.map(item => {
+              return item.toString();
+          });
+          fields.forEach(field=>{
+              let index = _$1.indexOf(map, field.toString());
+              result.push(this.dataOrg[index]);
+          });
+          return result;
+          
+      }
+      //多轴重新计算数据集
+      static resetDataSection(_axisAttributeDs) {
+          let maxSegment = 0;
+          let minSegmentUser = Infinity;
+
+          //如果用户制定了某个轴的dataSection,就采用用户制定的最短dataSection的个数定义Y轴的数据
+          //否则则采用自动计算后最多的段,重新计算其他的坐标轴
+
+          //先计算一下,需要划分的段数
+          for (let key in _axisAttributeDs) {
+              let _axisAtt = _axisAttributeDs[key];
+              let _currSection = _axisAtt.getDataSection();            //用户设置了dataSection
+
+              if (!_$1.isEmpty(_axisAtt._opt.dataSection)) {
+                  minSegmentUser = Math.min(minSegmentUser, _currSection.length);
+              } else {
+                  maxSegment = Math.max(maxSegment, _currSection.length);
+              }
+          }
+          let segment = minSegmentUser !== Infinity ? minSegmentUser : maxSegment;
+          for (let key in _axisAttributeDs) {
+              let _axisAtt = _axisAttributeDs[key];
+              let _section = _axisAtt.getDataSection();
+              if (_section.length !== segment) {
+                  let step = (_section[_section.length - 1] - _section[0]) / (segment - 1);
+                  let newSection = [];
+
+                  for (let i = 0; i < segment; i++) {
+                      if (i == segment - 1) {
+                          newSection.push(_section[_section.length - 1]);
+                      } else {
+                          //这里默认数据保留两位小数,后期通过坐标轴配置中的format进行自定义的格式化
+                          let val = _section[0] + step * i;
+                          if (val.toString().split(".")[1] && val.toString().split(".")[1].length > 2) {
+                              newSection.push(+val.toFixed(2));
+                          } else {
+                              newSection.push(val);
+                          }
+
+                      }
+                  }
+                  _axisAtt.setDataSection(newSection);
+                  _axisAtt.calculateProps();
+
+              }
+
+
+          }
+
+
+      }
+  }
+
+  /** note: 
+   * 获取所有的配置信息,取去配置中影响布局的相关参数
+   * coord{
+   *    xAsix:{}
+   *    yAxis:[] 
+   *    zAxis:{} 
+   * }
+   * 
+   * graphs{}
+   * 
+   * makeline其他组件
+   * 
+   * 通过Data和相关的配置,给出各个坐标轴的DataSection,计算出各个轴上数据点对应的位置
+   * 
+   * ***/
+  const DEFAULT_AXIS = 'default_axis_for_Y';
+
+  class Cartesian3D extends InertialSystem {
+      constructor(root) {
+          super(root);
+
+          //相对与世界坐标的原点位置
+
+          this.origin = new Vector3(0, 0, 0);
+          this.center = new Vector3(0, 0, 0);
+
+          this.offset = new Vector3(0, 0, 0);
+
+          this.boundbox = new Box3();
+
+          this._coordUI = null;
+
+          this.group.name = 'cartesian3dSystem';
+
+          this.init();
+
+      }
+      setDefaultOpts(opts) {
+          var me = this;
+          this._zSection = [];
+          me.coord = {
+              xAxis: {
+                  //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
+                  layoutType: "rule", //"peak",  
+                  //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
+                  //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
+                  posParseToInt: false
+              },
+              yAxis: [], //y轴至少有一个
+              zAxis: {
+                  enabled: true,
+                  field: '',
+                  layoutType: "rule",
+                  //   depth: 50     //最大深度是1000
+              }
+          };
+
+          opts = _$1.clone(opts);
+
+          //规范Y轴的定义,采用数组形式,如果没有定义就初始化为空数组
+          if (opts.coord.yAxis) {
+              var _nyarr = [];
+              _$1.each(_$1.flatten([opts.coord.yAxis]), function (yopt, index) {
+                  //标记定义的Y轴信息是否在绘图中使用
+                  yopt._used = false;
+                  //如果坐标轴没有置顶名称,第一个为默认坐标轴,其余的将被舍弃
+                  if (_$1.isEmpty(yopt.name)) {
+                      if (index == 0) {
+                          yopt.name = DEFAULT_AXIS;
+                      } else {
+                          return;
+                      }
+                  }
+                  _nyarr.push(_$1.clone(yopt));
+
+
+              });
+              opts.coord.yAxis = _nyarr;
+          } else {
+              opts.coord.yAxis = [];
+          }
+
+
+
+          let getYaxisInfo = (name) => {
+              let _opt = null;
+              if (opts.coord.yAxis) {
+                  _$1.each(_$1.flatten([opts.coord.yAxis]), function (yopt) {
+                      if (yopt.name == name) {
+                          yopt._used = true;
+                          _opt = yopt;
+                      }
+                  });
+              }
+              return _opt;
+          };
+
+
+
+          //根据opt中得Graphs配置，来设置 coord.yAxis
+          if (opts.graphs) {
+              //有graphs的就要用找到这个graphs.field来设置coord.yAxis
+              for (var i = 0; i < opts.graphs.length; i++) {
+
+                  var graphs = opts.graphs[i];
+                  this._zSection.push(graphs.field.toString());
+                  if (graphs.type == "bar") {
+                      //如果graphs里面有柱状图，那么就整个xAxis都强制使用 peak 的layoutType
+                      me.coord.xAxis.layoutType = "peak";
+                      me.coord.zAxis.layoutType = "peak";
+                  }
+                  if (graphs.field) {
+                      //没有配置field的话就不绘制这个 graphs了
+                      //根据graphs中的数据整理y轴的数据
+                      let _axisName = graphs.yAxisName;
+                      if (!graphs.yAxisName) {
+                          //没有指定坐标轴的名称,取默认轴
+                          _axisName = DEFAULT_AXIS;
+                      }
+                      //增加Y轴
+                      let _tAxis = getYaxisInfo(_axisName);
+                      if (!_tAxis) {
+                          let _yAxisNew = {
+                              field: [],
+                              name: _axisName,
+                              _used: true
+                          };
+                          if (_$1.isArray(graphs.field)) {
+                              _yAxisNew.field = _yAxisNew.field.concat(graphs.field);
+                          } else {
+                              _yAxisNew.field.push(graphs.field);
+                          }
+                          opts.coord.yAxis.push(_yAxisNew);
+                      } else {
+
+                          if (_$1.isEmpty(_tAxis.field)) {
+                              _tAxis.field = [];
+                          }
+                          if (_$1.isArray(_tAxis.field)) {
+                              if (_$1.isArray(graphs.field)) {
+                                  _tAxis.field = _tAxis.field.concat(graphs.field);
+                              } else {
+                                  _tAxis.field.push(graphs.field);
+                              }
+                          } else {
+                              if (_$1.isArray(graphs.field)) {
+                                  _tAxis.field = [_tAxis.field].concat(graphs.field);
+                              } else {
+                                  _tAxis.field = [_tAxis.field].push(graphs.field);
+                              }
+                          }
+                      }
+
+                  } else {
+                      //在，直角坐标系中，每个graphs一定要有一个field设置，如果没有，就去掉这个graphs
+                      opts.graphs.splice(i--, 1);
+                  }
+              }
+
+
+          }        //初始化Y轴的相关参数
+          for (var i = 0; i < opts.coord.yAxis.length; i++) {
+              if (!opts.coord.yAxis[i].layoutType) {
+                  opts.coord.yAxis[i].layoutType = 'proportion'; //默认布局
+              }
+              //没有field的Y轴是无效的配置
+              if (_$1.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
+                  opts.coord.yAxis.splice(i--, 1);
+              }
+              if (opts.coord.yAxis[i]) {
+                  delete opts.coord.yAxis[i]._used;
+              }
+
+          }        return opts;
+      }
+
+      init() {
+
+          //先计算一次空间范围供计算坐标轴宽高使用
+          this.getBoundbox();
+          let { x: widith, y: height, z: depth } = this.boundbox.getSize();
+
+          let opt = _$1.clone(this.coord);
+          this.xAxisAttribute = new AxisAttribute(opt.xAxis, this.getAxisDataFrame(opt.xAxis.field)); //new AxisAttribute(this._root);
+          this.xAxisAttribute.setDataSection();
+          this.xAxisAttribute.setAxisLength(widith);
+
+          //默认Y轴
+          this.yAxisAttribute = Object.create(null);
+          let axisCount = 0;
+          opt.yAxis.forEach((yopt) => {
+              let _yAxisAttr = this.yAxisAttribute[yopt.name];
+              if (!_yAxisAttr) {
+                  _yAxisAttr = new AxisAttribute(yopt, this.getAxisDataFrame(yopt.field)); //new AxisAttribute(this._root);
+                  this.yAxisAttribute[yopt.name] = _yAxisAttr;
+                  _yAxisAttr.setDataSection();
+                  _yAxisAttr.setAxisLength(height);
+                  axisCount++;
+              } else {
+                  console.error('Y轴设置报错了');
+              }
+          });
+
+          //如果是多Y轴的情况
+          if (axisCount > 1) {
+              AxisAttribute.resetDataSection(this.yAxisAttribute);
+          }
+
+
+
+
+          //Z轴如果设置了filed,按照数据轴的正常逻辑进行,否则Z轴按照Graphs配置中
+          //的索引显示对应的名称 
+          if (_$1.isEmpty(opt.zAxis.field)) {
+              let _sectionZ = [];
+              this._root.opt.graphs.forEach((yOps) => {
+                  _sectionZ.push(yOps.field.toString());
+              });
+
+              this.zAxisAttribute = new AxisAttribute(opt.zAxis, [[_sectionZ]]);
+              // this.zAxisAttribute.setDataSection();
+              //  this.zAxisAttribute.calculateProps();
+
+
+          } else {
+              this.zAxisAttribute = new AxisAttribute(opt.zAxis, this.getAxisDataFrame(opt.zAxis.field));
+          }
+          this.zAxisAttribute.setDataSection();
+          this.zAxisAttribute.setAxisLength(depth);
+
+
+          //y轴的颜色值先预设好
+          let _allField = [];
+          opt.yAxis.forEach(yx => {
+              yx.field.forEach(fd => {
+                  if (_$1.isArray(fd)) {
+                      fd.forEach(fname => {
+                          _allField.push(fname);
+                      });
+                  } else {
+                      _allField.push(fd);
+                  }
+              });
+          });
+
+
+          let getTheme = this._root.getTheme.bind(this._root);
+          _allField.forEach((v, i) => {
+
+              this.fieldMap[v] = this.fieldMap[v] || {};
+              this.fieldMap[v].color = getTheme(i);
+          });
+
+
+          this.addLights();
+      }
+
+
+
+      getYAxis(name = DEFAULT_AXIS) {
+          let yAxisAttr = this.yAxisAttribute[name];
+          //如果没有指定名称,通知默认名称不存在,取第一个配置的Name
+          if (!yAxisAttr) {
+              name = this.coord.yAxis[0].name;
+              yAxisAttr = this.yAxisAttribute[name];
+          }
+
+          let yOpts = _$1.clone(yAxisAttr._opt);
+          return {
+              attr: yAxisAttr,
+              opts: yOpts
+          }
+      }
+
+      getBoundbox() {
+          //笛卡尔坐标的原点默认为左下方
+
+          let baseBoundbox = super.getBoundbox();
+          let offset = this.offset.clone();
+          this.baseBoundbox = baseBoundbox;
+          this.boundbox.min.set(0, 0, 0);
+          this.boundbox.max.set(baseBoundbox.max.x - baseBoundbox.min.x - offset.x,
+              baseBoundbox.max.y - baseBoundbox.min.y - offset.y,
+              baseBoundbox.max.z - baseBoundbox.min.z - offset.z
+          );
+
+          //如果指定了Z轴的宽度就不采用默认计算的宽度
+          if (this._root.opt.coord.zAxis && this._root.opt.coord.zAxis.depth) {
+              this.boundbox.max.z = this._root.opt.coord.zAxis.depth;
+          }
+
+          this.center = this.boundbox.getCenter();
+          this.center.setZ(-this.center.z);
+          return this.boundbox;
+
+      }
+      //粗略计算在原点位置的世界线段的长度与屏幕像素的长度比
+      getRatioPixelToWorldByOrigin(_origin) {
+          let baseBoundbox = super.getBoundbox();
+          if (_origin === undefined) {
+              _origin = baseBoundbox.min.clone();
+              _origin.setZ(baseBoundbox.max.z);
+          }
+          let ratio = this._root.renderView.getVisableSize(_origin).ratio;
+          return ratio;
+      }
+
+
+      //更新坐标原点
+      updateOrigin(offset) {
+
+          this.offset = offset.clone();
+
+          this.boundbox = this.getBoundbox();
+
+          this.setWorldOrigin();
+
+          this.updatePosition();
+
+      }
+
+      updatePosition() {
+
+          //更新相机姿态
+          let center = this.center.clone();
+          center = this._getWorldPos(center);
+          let _renderView = this._root.renderView;
+          let _camera = _renderView._camera;
+
+          //相机默认的旋转角度
+          let dist = _camera.position.distanceTo(center);
+          let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
+          let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
+
+          let y = dist * Math.sin(phi);
+          let temp = dist * Math.cos(phi);
+          let x = temp * Math.sin(theta);
+          let z = temp * Math.cos(theta);
+          //平移实现以中心点为圆心的旋转结果
+          let newPos = new Vector3(x, y, z);
+          newPos.add(center);
+          _camera.position.copy(newPos);
+          //相机朝向中心点 
+          _camera.lookAt(center);
+
+
+          //orbite target position
+          this._root.orbitControls.target.copy(center);
+
+
+          //测试中心点的位置
+          // let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
+          // let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
+          // this._root.renderView._scene.add(helpLine);
+          // this._root.renderView._scene.add(helpLine2);
+
+      }
+
+      addLights() {
+          //加入灯光
+
+          var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+
+          this._root.rootStage.add(ambientlight);
+
+          let center = this.center.clone();
+          center = this._getWorldPos(center);
+          //center.setY(0);
+
+          let dirLights = [];
+          let intensity = 0.8;
+          let lightColor = 0xcccccc;
+          let position = new Vector3(-1, -1, 1);
+
+          dirLights[0] = new DirectionalLight(lightColor, intensity);
+          position.multiplyScalar(10000);
+          dirLights[0].position.copy(position);
+          dirLights[0].target.position.copy(center);
+          this._root.rootStage.add(dirLights[0]);
+
+
+          dirLights[1] = new DirectionalLight(lightColor, intensity);
+          position = new Vector3(1, -1, 1);
+          position.multiplyScalar(10000);
+          dirLights[1].position.copy(position);
+          dirLights[1].target.position.copy(center);
+          this._root.rootStage.add(dirLights[1]);
+
+          // pointLight[0] = new PointLight(lightColor, intensity);
+          // position = new Vector3(-1, -1, 1);
+          // position.multiplyScalar(10000);
+          // pointLight[0].position.copy(position);
+          // this._root.rootStage.add(pointLight[0]);
+
+
+          // pointLight[1] = new PointLight(lightColor, intensity);
+          // position = new Vector3(1, -1, 1);
+          // position.multiplyScalar(10000);
+          // pointLight[1].position.copy(position);
+          // this._root.rootStage.add(pointLight[1]);
+
+
+          // pointLight[2] = new PointLight(lightColor, intensity);
+          // position = new Vector3(-1, -1, -1);
+          // position.multiplyScalar(10000);
+          // pointLight[2].position.copy(position);
+          // this._root.rootStage.add(pointLight[2]);
+
+
+          // pointLight[3] = new PointLight('#fff', 1);
+          // position = new Vector3(1, -1, -1);
+          // position.multiplyScalar(1000);
+          // pointLight[3].position.copy(position);
+          // this._root.rootStage.add(pointLight[3]);
+
+
+
+
+      }
+
+      setWorldOrigin() {
+          let baseBoundbox = super.getBoundbox();
+          let offset = this.offset.clone();
+          let pos = baseBoundbox.min.clone();
+          pos.setZ(baseBoundbox.max.z);
+          pos.add(offset);
+          this.group.position.copy(pos);
+      }
+      getOrigin() {
+          return this.origin.clone();
+      }
+
+      initCoordUI() {
+
+          this._coordUI = new Cartesian3DUI(this);
+          this.group.add(this._coordUI.group);
+
+      }
+
+      drawUI() {
+          super.drawUI();
+          this._coordUI.draw();
+
+      }
+
+      getXAxisPosition(data) {
+          return this.xAxisAttribute.getPosOfVal(data);
+      }
+      getYAxisPosition(data, yAxisAttribute) {
+          return yAxisAttribute.getPosOfVal(data);
+      }
+      getZAxisPosition(data) {
+          return this.zAxisAttribute.getPosOfVal(data);
+      }
+
+      getCeilSize() {
+
+          let ceil = new Vector3();
+          let size = this.boundbox.getSize();
+          let dataLenX = this.xAxisAttribute.getDataSection().length;
+          let dataLenY = this.getYAxis().attr.getDataSection().length;
+          let dataLenZ = this.zAxisAttribute.getDataSection().length;
+
+          // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
+          // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
+          // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
+          if (this.coord.xAxis.layoutType == 'peak') {
+              ceil.setX(size.x / (dataLenX));
+          } else {
+              ceil.setX(size.x / (dataLenX + 1));
+          }
+
+          ceil.setY(size.y / (dataLenY + 1));
+          if (this.coord.zAxis.layoutType == 'peak') {
+              ceil.setZ(size.z / (dataLenZ));
+          } else {
+              ceil.setZ(size.z / (dataLenZ + 1));
+          }
+
+
+          return ceil;
+
+      }
+
+      positionToScreen(pos) {
+          return positionToScreen.call(this, pos);
+      }
+
+      dispose() {
+
+          this._coordUI.dispose();
+      }
+      resetData() {
+          let opt = _$1.clone(this.coord);
+          this.xAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.xAxis.field));
+          this.xAxisAttribute.setDataSection();
+          this.xAxisAttribute.calculateProps();
+
+          opt.yAxis.forEach((yopt) => {
+              let _yAxisAttr = this.yAxisAttribute[yopt.name];
+              if (_yAxisAttr) {
+                  _yAxisAttr.resetDataOrg(this.getAxisDataFrame(yopt.field));
+                  _yAxisAttr.setDataSection();
+                  _yAxisAttr.calculateProps();
+              }
+          });
+
+
+          if (_$1.isEmpty(opt.zAxis.field)) {
+              let _sectionZ = [];
+              this._root.opt.graphs.forEach((yOps) => {
+                  _sectionZ.push(yOps.field.toString());
+              });
+
+              this.zAxisAttribute.resetDataOrg([[_sectionZ]]);
+
+          } else {
+              this.zAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.zAxis.field));
+          }
+         
+          this.zAxisAttribute.setDataSection();
+          this.zAxisAttribute.calculateProps();
+
+          //UI组件resetData
+          this._coordUI.resetData();
+      }
+  }
+
+
+  let positionToScreen = (function () {
+      let matrix = new Matrix4();
+
+      return function (pos) {
+          let pCam = this._root.renderView._camera;
+          const widthHalf = 0.5 * this._root.width;
+          const heightHalf = 0.5 * this._root.height;
+
+          let target = this.group.localToWorld(pos);
+
+          target.project(pCam, matrix);
+
+          target.x = (target.x * widthHalf) + widthHalf;
+          target.y = (- (target.y * heightHalf) + heightHalf);
+          return target;
+      }
+  })();
 
   const _colors$2 = ["#ff8533","#73ace6","#82d982","#e673ac","#cd6bed","#8282d9","#c0e650","#e6ac73","#6bcded","#73e6ac","#ed6bcd","#9966cc"];
   var theme = {
@@ -22209,7 +25502,7 @@ var Chartx3d = (function () {
           this.domSelector = opt.el;
           this.opt = opt.opts;
           this.data = opt.data;
-          this.components = [];
+
           this.graphMap = opt.graphs;
           this.componentMap = opt.components;
 
@@ -22250,9 +25543,9 @@ var Chartx3d = (function () {
           this.renderer = this.app._framework.renderer;
 
           this.DefaultControls = {
-              autoRotate: true,
-              boxWidth: 1000,         //空间中X的最大值(最大宽度)  
-              boxHeight: 1500,        //空间中Y的最大值(最大高度)  
+              autoRotate: false,       //默认不自动旋转
+              boxWidth: 1200,         //空间中X的最大值(最大宽度)  
+              boxHeight: 1200,        //空间中Y的最大值(最大高度)  
               boxDepth: 500,         //空间中Z的最大值(最大深度)
 
               distance: 1100,        //默认相机距离
@@ -22271,10 +25564,8 @@ var Chartx3d = (function () {
           this.components = [];
 
           this.inited = false;
-          this.dataFrame = this._initData(this._data, opt.opts); //每个图表的数据集合 都 存放在dataFrame中。
+          this.dataFrame = this._initData(this._data, {}); //每个图表的数据集合 都 存放在dataFrame中。
 
-          this.mainViewName = "main_view";
-          this.labelViewName = "label_view";
 
           this.init();
 
@@ -22342,6 +25633,7 @@ var Chartx3d = (function () {
           //初始化物体的惯性坐标(放在具体的坐标系下)
           // if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
           // this.currCoord = new _Coord(this);
+
           this.currCoord = _Coord;
           this.rootStage.add(this.currCoord.group);
           // }
@@ -22351,6 +25643,7 @@ var Chartx3d = (function () {
 
       initComponent() {
           let opts = this.opt;
+          this.components = [];
           for (var p in opts) {
               if (p == 'coord') continue;
               if (p == 'graphs') {
@@ -22390,17 +25683,7 @@ var Chartx3d = (function () {
       draw() {
           this.currCoord.initCoordUI();
           this.drawComponent();
-          this.app._framework.isUpdate = true;
-
-          //test Text
-
-          // let lables = this.labelView.creatSpriteText(["测试label的展示", "第二个标签\n测试回车"]);
-          // let pp =  [new Vector3(10, 0, 0), new Vector3(400, 80, 0)];
-          // lables.forEach((label,i) => {
-          //     let pos = pp[i].clone();
-          //     label.position.copy(pos);
-          //     this.labelGroup.add(label);
-          // });
+          this.app.forceRender();
 
       }
 
@@ -22462,12 +25745,13 @@ var Chartx3d = (function () {
           let viewObj = null;
 
           this._cid = "chartx3d_" + _cid++;
-          this.el = $$1.query(_domSelector);
+
+          this.el = $.query(_domSelector);
 
           this.width = this.el.offsetWidth;
           this.height = this.el.offsetHeight;
 
-          viewObj = $$1.createView(this.width, this.height, this._cid);
+          viewObj = $.createView(this.width, this.height, this._cid);
 
           this.view = viewObj.view;
           this.stageView = viewObj.stageView;
@@ -22489,19 +25773,14 @@ var Chartx3d = (function () {
 
       _initRenderer(rendererOpts) {
           let app = this.app;
-          let renderView = null;
-          let labelView = null;
-
 
           //正常绘制的view
-          app.createView(this.mainViewName);
+          let renderView = this.renderView = app.createView(MainView);
           //label 绘制的View
-          app.createView(this.labelViewName);
+          let labelView = this.labelView = app.createView(LabelView);
 
-          renderView = this.renderView = app.getView(this.mainViewName);
-
-          labelView = this.labelView = app.getView(this.labelViewName);
-
+          // let renderView = this.renderView = app.getView(MainView);
+          // let labelView = this.labelView = app.getView(LabelView);
 
 
           this.rootStage = app.addGroup({ name: 'rootStage' });
@@ -22514,15 +25793,7 @@ var Chartx3d = (function () {
           renderView.project('perspective'); //'ortho' | 'perspective',
 
           //初始化labelView
-          this.labelGroup = app.addGroup({ name: 'labelsGroup' });
-
-          //Y轴反转
-          let _modelMatrix = this.labelGroup.matrix.elements;
-          _modelMatrix[1] = - _modelMatrix[1];
-          _modelMatrix[5] = - _modelMatrix[5];
-          _modelMatrix[9] = - _modelMatrix[9];
-          _modelMatrix[13] = - _modelMatrix[13];
-          this.labelGroup.matrixAutoUpdate = false;
+          this.labelGroup = app.addGroup({ name: 'labelsGroup', flipY: true });
 
           labelView.addObject(this.labelGroup);
           labelView.setSize(this.width, this.height);
@@ -22531,9 +25802,14 @@ var Chartx3d = (function () {
           //labelView.project('ortho'); //'ortho' | 'perspective',
           labelView.createScreenProject();
 
-          //todo  相机控制同步
+
+          if (this.canvasDom) {
+              this.stageView.removeChild(this.canvasDom);
+              this.canvasDom = null;
+          }
 
           this.stageView.appendChild(this.renderer.domElement);
+
 
           this.canvasDom = this.renderer.domElement;
 
@@ -22541,7 +25817,7 @@ var Chartx3d = (function () {
       resize() {
           this.width = this.el.offsetWidth;
           this.height = this.el.offsetHeight;
-          this.renderView.resize(this.width, this.height, this.opt.coord.controls.boxHeight);
+          this.app.resize(this.width, this.height, this.opt.coord.controls.boxHeight);
       }
 
       //ind 如果有就获取对应索引的具体颜色值
@@ -22553,7 +25829,40 @@ var Chartx3d = (function () {
       }
 
       //数据变更后调用reset
-      reset() {
+      reset(opt, data) {
+
+          !opt && (opt = {});
+
+          //配置初始化
+          _$1.extend(true, this.opt, opt);
+          //数据初始化
+          if (data) {
+              this._data = parse2MatrixData$2(data);
+              this.dataFrame = this._initData(this._data, {});
+          }
+
+          this.dispose();
+
+          //三维引擎初始化
+          this.app = new Application(this.width, this.height);
+          //初始化渲染器
+          this.renderer = this.app._framework.renderer;
+
+          this.init();
+
+          //坐标系重新初始化
+          let coord = null;
+          if (this.opt.coord.type == 'box') {
+              coord = new Cartesian3D(this);
+          }
+          this.setCoord(coord);
+
+          //组件重新初始化
+          this.components = [];
+
+          this.initComponent();
+
+          this.draw();
 
       }
       /*
@@ -22566,56 +25875,21 @@ var Chartx3d = (function () {
           if (data) {
               this._data = parse2MatrixData$2(data);
               this.dataFrame = this._initData(this._data, this.opt);
-          }        this._resetData && this._resetData(dataTrigger);
-          this.fire("resetData");
-         
-          //todo 暂时不实现
-          this.dispose();
-          this.draw();
+          }        this.currCoord.resetData();
+          this.components.forEach(cmp => {
+              cmp.resetData();
+          });
+          this.fire({ type: 'resetData' });
+
+          this.app.forceRender();
       }
+      destroy() {
+          //外部调用适配
+          this.dispose();
+          this.fire({ type: 'destroy' });
+      }
+
       dispose() {
-          // function clearScene(obj) {
-          //     if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite || obj.isTextSprite) {
-          //         if (obj.geometry) {
-          //             obj.geometry.dispose();
-          //             //obj.geometry = null;
-          //         }
-          //         if (obj.material) {
-          //             if (Array.isArray(obj.material)) {
-          //                 obj.material.forEach(ma => {
-          //                     if (ma.map) {
-          //                         ma.map.dispose();
-          //                     }
-          //                     ma.dispose();
-          //                 })
-          //             } else {
-          //                 if (obj.material.map) {
-          //                     obj.material.map.dispose();
-          //                 }
-          //                 obj.material.dispose();
-
-          //             }
-
-          //             //obj.material = null;
-          //         }
-
-          //         obj = null;
-          //     }
-          //     else if (obj.isLight) {
-          //         if (obj.parent) {
-          //             // obj.parent.remove(obj);
-          //         }
-          //     } else {
-          //         if (obj.children !== undefined) {
-          //             while (obj.children.length > 0) {
-          //                 clearScene(obj.children[0]);
-          //                 obj.remove(obj.children[0]);
-          //             }
-          //         }
-          //     }
-          // }
-
-          // clearScene(this.renderView._scene);
 
           //先销毁坐标系统
           this.currCoord.dispose();
@@ -22623,6 +25897,7 @@ var Chartx3d = (function () {
           this.components.forEach(cmp => {
               cmp.dispose();
           });
+          this.components = [];
           //初始化渲染状态
           this.renderer._state.reset();
 
@@ -22651,6 +25926,12 @@ var Chartx3d = (function () {
 
           this.app.dispose();
 
+          this.app = null;
+          this.renderer = null;
+          this.currCoord = null;
+
+
+
           //todo 内存对象清除优化
 
 
@@ -22662,7 +25943,7 @@ var Chartx3d = (function () {
       this.autoRotate = false;
   }
   function onChange(e) {
-      this.app._framework.isUpdate = true;
+      this.app.forceRender();
   }
 
   function onRenderBefore() {
@@ -22677,3102 +25958,19 @@ var Chartx3d = (function () {
       this.update();
   }
 
-  //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点
-  //惯性坐标系
-  class InertialSystem extends Events {
-      constructor(el, data, opts, graphs, components) {
-          super();
-          //let opts = _.clone(this._root.opt);
-          this.coord = {};
-          //坐标原点
-          this.origin = new Vector3(0, 0, 0);
-          //中心的
-          this.center = new Vector3(0, 0, 0);
+  /**
+   * 为了输入便捷,3D的笛卡尔坐标系,在配置中为Box
+   */
 
-          this.padding = {
-              left: 0,
-              top: 0,
-              right: 0,
-              bottom: 0,
-              front: 0,
-              back: 0
-          };
+  class Box extends Chart3d{
+      constructor(el, data, opts, graphs, components){
+          super({el, data, opts, graphs, components});
           
-          //匹配2D接口,初始化在坐标系中完成
-          let chart = this._root = new Chart3d({ el, data, opts, graphs, components });
-
-          this.group = chart.app.addGroup({ name: 'InertialSystem' });
-          chart.setCoord(this);
-          _$1.extend(true, this, this.setDefaultOpts(opts));
-
-          //todo 启动index读取chart的部分信息
-          this.id = chart.id;
-          this.destroy = ()=>{
-              chart.dispose();
-              this.fire({ type: 'destroy' });
-          };
-
-          this.resetData = (data, dataTrigger)=>{
-                //todo
-          };
-
-      }
-
-      setDefaultOpts(opts) {
-          return opts;
-      }
-
-      getBoundbox() {
-
-          let _boundbox = new Box3();
-
-          let _opt = this._root.opt.coord.controls;
-          let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
-          let _width = _opt.boxWidth;
-          let _depth = _opt.boxDepth;
-
-          //斜边
-          let _hypotenuse = _opt.distance || (new Vector3(_width, 0, _depth)).length();
-
-          let _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
-
-          let minX = - _width * 0.5 + this.padding.left * _ratio;
-          let minY = - _frustumSize * 0.5 + this.padding.bottom * _ratio;
-          let minZ = this.padding.front - _hypotenuse * 0.5 - _depth;
-
-          let maxX = _width * 0.5 - this.padding.right * _ratio;
-          let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
-          let maxZ = - _hypotenuse * 0.5 + this.padding.back;
-
-          _boundbox.min.set(minX, minY, minZ);
-          _boundbox.max.set(maxX, maxY, maxZ);
-          return _boundbox;
-      }
-
-      _getWorldPos(pos) {
-          let posWorld = pos.clone();
-
-          this.group.updateMatrixWorld();
-          posWorld.applyMatrix4(this.group.matrixWorld);
-          return posWorld;
-      }
-
-
-      dataToPoint(data, dir) {
-
-      }
-
-
-      pointToData() {
-
-      }
-
-      initCoordUI() {
-          //什么都不做
-          return null;
-      }
-      drawUI() {
-          this._root.initComponent();
-      }
-
-      draw() {
-          this._root.draw();
-      }
-      dispose() {
-
-      }
-
-
-
-  }
-
-  class AxisLine extends Component {
-      constructor(_coordSystem, opts) {
-          super(_coordSystem);
-
-          // enabled: 1,
-          // lineWidth: 1,
-          // strokeStyle: '#cccccc'
-
-
-          //轴的起点
-          this.origin = new Vector3(0, 0, 0);
-
-          //轴的方向
-          this.dir = new Vector3(1, 0, 0);
-
-          //轴的长度
-          this.length = 1;
-
-          //轴线的宽带
-          this.lineWidth = opts.lineWidth || 2;
-
-          //轴线的颜色 (默认黑色)
-          this.color = opts.strokeStyle;
-
-          this.axis = null;
-
-          //不可见    
-          this.group.visible = !!opts.enabled;
-
-
-      }
-
-      defaultStyle() {
-          //todo
-      }
-
-      setStyle() {
-          //todo
-      }
-
-      setOrigin(pos) {
-          this.origin.copy(pos);
-      }
-      getOrigin() {
-          return this.origin.clone();
-      }
-
-      setDir(dir) {
-          this.dir.copy(dir);
-      }
-
-      setLength(length) {
-
-          this.length = length;
-      }
-
-      setGroupName(name) {
-          this.group.name = name;
-      }
-
-      drawStart() {
-          this.axis = this._root.app.createLine(this.origin, this.dir, this.length, this.lineWidth, this.color);
-      }
-
-      update() {
-          let pos = this.getOrigin();
-          this.axis.traverse(obj => {
-              if (obj.isLine2) {
-                  obj.position.copy(pos);
-              }
-          });
-      }
-
-      draw() {
-
-          this.group.add(this.axis);
-
-      }
-      dispose() {
-          let remove = [];
-          this.group.traverse((obj) => {
-              if (obj.isLine2) {
-                  if (obj.geometry) {
-                      obj.geometry.dispose();
-                  }
-                  if (obj.material) {
-                      obj.material.dispose();
-                  }
-                  remove.push(obj);
-
-              }
-          });
-          while (remove.length) {
-              let obj = remove.pop();
-              obj.parent.remove(obj);
-          }
-      }
-
-      // getBoundBox() {
-      //     let result = new Box3();
-
-      //     this.axis.traverse(function (mesh) {
-      //         if (mesh instanceof Mesh) {
-      //             mesh.geometry.computeBoundingBox();
-      //             result = mesh.geometry.boundingBox;
-      //         }
-      //     });
-
-      //     //根据绘制的线宽计算三维空间的宽带
-
-      //     let visableSize = this._root.renderView.getVisableSize();
-      //     let width = 0, height = 0;
-      //     //如果是y轴或者z轴计算轴的宽度
-      //     if (this.dir.equals(new Vector3(0, 1, 0)) || this.dir.equals(new Vector3(0, 0, -1))) {
-      //         width = visableSize.width / this._root.width
-      //     }
-      //     //如果x轴计算轴的高度
-      //     if (this.dir.equals(new Vector3(1, 0, 0))) {
-      //         height = visableSize.height / this._root.height;
-      //     }
-
-      //     result.min.x = result.min.x - width * 0.5;
-      //     result.max.x = result.max.x + width * 0.5;
-
-      //     result.min.y = result.min.y - height * 0.5;
-      //     result.max.y = result.max.y + height * 0.5;
-
-      //     return result;
-      // }
-
-  }
-
-  // this.tickLine = {//刻度线
-  //     enabled: 1,
-  //     lineWidth: 1, //线宽
-  //     lineLength: 4, //线长
-  //     strokeStyle: '#cccccc',
-  //     // distance: 2,
-  //     offset: 2,
-  // };
-
-
-  class TickLines extends Component {
-      constructor(_coordSystem, opts) {
-          super(_coordSystem);
-
-          //点的起点位置集合
-          this.origins = [];
-
-          //刻度线的绘制方向
-          this.dir = new Vector3();
-
-          //刻度线的宽带
-          this.lineWidth = opts.lineWidth;
-
-          //刻度线的长度
-          //todo 轴线的长度是个数组 通过像素值转换
-          this.length = opts.lineLength;
-
-          this.color = opts.strokeStyle;
-
-          this.offset = opts.offset;
-
-          this._tickLine = null;
-
-          this.group.visible = !!opts.enabled;
-      }
-      initData(axis, attribute, fn) {
-          let me = this;
-          let _dir = new Vector3();
-          let _offset = _dir.copy(me.dir).multiplyScalar(this._offset);
-          this.origins = [];
-          attribute.getSection().forEach((num, index) => {
-              //起点
-              let val = fn.call(this._coordSystem, num,attribute);
-              let startPoint = axis.dir.clone().multiplyScalar(val);
-              startPoint.add(axis.origin);
-              startPoint.add(_offset);
-              me.origins.push(startPoint);
-
-          });
-      }
-      set length(len) {
-
-          this._length = len;
-      }
-      get length() {
-          return this._length;
-      }
-
-      set offset(_offset) {
-          this._offset = _offset;
-      }
-
-      get offset() {
-          return this._offset;
-      }
-
-      setDir(dir) {
-          this.dir = dir;
-      }
-      drawStart() {
-          this._tickLine = this._root.app.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
-      }
-      update() {
-          let origins = this.origins;
-          let triangleVertices = [];
-          let endPoint = null;
-          let direction = this.dir.clone();
-          let length = this._length;
-
-
-          let i = 0;
-          this._tickLine.traverse(obj => {
-              if (obj.isLine2) {
-                  triangleVertices = [];
-                  triangleVertices.push([0, 0, 0]);
-
-                  endPoint = new Vector3();
-                  endPoint.copy(direction);
-                  endPoint.multiplyScalar(length);
-
-                  triangleVertices.push(endPoint.toArray());
-
-                  obj.geometry.setPositions(_$1.flatten(triangleVertices));
-                  obj.position.copy(origins[i]);
-                  i++;
-              }
-          });
-
-
-      }
-
-      draw() {
-          this.group.add(this._tickLine);
-      }
-
-
-
-      // getBoundBox() {
-      //     let result = new Box3();
-      //     result.makeEmpty();
-      //     this._tickLine.traverse(function (mesh) {
-      //         if (mesh instanceof Mesh) {
-      //             mesh.geometry.computeBoundingBox();
-      //             result.expandByPoint(mesh.geometry.boundingBox.min);
-      //             result.expandByPoint(mesh.geometry.boundingBox.max);
-      //         }
-      //     });
-
-      //     return result;
-      // }
-      dispose() {
-          let remove = [];
-          this.group.traverse((obj) => {
-              if (obj.isLine2) {
-                  if (obj.geometry) {
-                      obj.geometry.dispose();
-                  }
-                  if (obj.material) {
-                      obj.material.dispose();
-                  }
-                  remove.push(obj);
-
-              }
-          });
-          while (remove.length) {
-              let obj = remove.pop();
-              obj.parent.remove(obj);
-          }
-
+          //box 就是Cartesian3D坐标系,直接指定
+          let _cartesian3D = new Cartesian3D(this);
+          this.setCoord(_cartesian3D);
       }
   }
-
-  // {
-  //     enabled: 1,
-  //     fontColor: '#999',
-  //     fontSize: 16,
-  //     format: null,
-  //     rotation: 0,
-  //     textAlign: null,//"right",
-  //     lineHeight: 1,
-  //     offset: 2     //和刻度线的距离
-  // }
-  class TickTexts extends Component {
-      constructor(_coordSystem, opts) {
-          super(_coordSystem);
-
-          //起点位置集合
-          this.origins = [];
-          this.texts = [];
-
-          this.fontColor = opts.fontColor || '#333';
-
-          this.fontSize = opts.fontSize || 12;
-
-          this.rotation = 0;
-
-          this.origin = null;
-
-          this.textAlign = opts.textAlign;
-
-          this.verticalAlign = opts.verticalAlign;
-
-          this.dir = new Vector3();
-
-          this.offset = new Vector3(...Object.values(opts.offset)) || new Vector3();
-
-          this._tickTextGroup = null;
-
-          this._tickTextGroup = this._root.app.addGroup({ name: 'tickTexts' });
-
-          this.group.visible = !!opts.enabled;
-          this.group.add(this._tickTextGroup);
-      }
-
-
-      initData(axis, attribute, fn) {
-          let me = this;
-          let _dir = me.dir.clone();
-          //let _offset = _dir.multiplyScalar(this.offset);
-          let _offset = this.offset;
-          me.origins = [];
-
-          attribute.getSection().forEach((num, index) => {
-              //起点
-              let val = fn.call(this._coordSystem, num, attribute);
-              let startPoint = axis.dir.clone().multiplyScalar(val);
-              startPoint.add(axis.origin);
-              startPoint.add(_offset);
-              me.origins.push(startPoint);
-
-          });
-
-          me.updataOrigins = this._updataOrigins(axis, attribute, fn);
-      }
-
-      setDir(dir) {
-          this.dir = dir;
-      }
-      setTextAlign(align) {
-          this.textAlign = align;
-      }
-      setVerticalAlign(align) {
-          this.verticalAlign = align;
-      }
-
-      _updataOrigins(axis, attribute, fn) {
-          let _axis = axis;
-          let _attribute = attribute;
-          let _fn = fn;
-          return function () {
-              this.initData(_axis, _attribute, _fn);
-          }
-      }
-      getTextPos(text) {
-          let index = _$1.indexOf(this.texts, text);
-          if (index != -1) {
-              return this.origins[index];
-          }
-          return null;
-      }
-
-      drawStart(texts) {
-          let me = this;
-          let app = me._root.app;
-          texts = texts || [];
-          let { fontSize, fontColor: color } = me;
-          let zDir = new Vector3(0, 0, -1);
-          this.texts = texts;
-
-          let labels = app.creatSpriteText(texts, { fontSize, color });
-
-          labels.forEach((label, index) => {
-              label.userData.position = me.origins[index].clone();
-              label.matrixWorldNeedsUpdate = false;
-              label.onBeforeRender = function (render, scene, camera) {
-                  me.updataOrigins();
-
-                  //更新坐标后的位置
-                  
-                  let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
-                  //屏幕的位置
-                  let textSize = this.userData.size;
-                  let halfwidth = textSize[0] * 0.5;
-                  let halfHeight = textSize[1] * 0.5;
-
-                  let camearDir = new Vector3();
-                  camera.getWorldDirection(camearDir);
-                  let isSameDir = zDir.dot(camearDir);
-
-                  if (me.textAlign == 'right') {
-                      let flag = isSameDir < 0 ? 1 : -1;
-                      pos.setX(pos.x + halfwidth * flag);
-                      label.position.copy(pos);
-                  }
-                  if (me.textAlign == 'left') {
-                      let flag = isSameDir < 0 ? -1 : 1;
-                      pos.setX(pos.x + halfwidth * flag);
-                      label.position.copy(pos);
-                  }
-                  if (me.verticalAlign == 'top') {
-                      pos.setY(pos.y - halfHeight);
-                      label.position.copy(pos);
-                  }
-                  if (me.verticalAlign == 'bottom') {
-                      pos.setY(pos.y + halfHeight);
-                      label.position.copy(pos);
-                  }
-
-                  this.position.copy(pos);
-                  this.updateMatrixWorld(true);
-              };
-              me._tickTextGroup.add(label);
-          });
-
-      }
-      draw() {
-
-          this.group.add(this._tickTextGroup);
-      }
-
-      update() {
-          //文字需要实时更新
-      }
-      // getBoundBox() {
-      //     //todo 需要重构底层绘图引擎的Sprite的绘制,将Geometry转移到Sprite类中
-      //     //没有计算文本旋转后的长度
-      //     let result = new Box3();
-      //     result.makeEmpty();
-      //     this._tickTexts.traverse(function (sprite) {
-      //         if (sprite instanceof Sprite) {
-      //             let min = new Vector3();
-      //             let max = new Vector3();
-      //             let halfScale = new Vector3();
-      //             halfScale.copy(sprite.scale);
-      //             halfScale.multiplyScalar(0.5);
-      //             min.copy(sprite.position);
-      //             max.copy(sprite.position);
-
-      //             min.sub(halfScale);
-      //             max.add(halfScale);
-
-      //             result.expandByPoint(min);
-      //             result.expandByPoint(max);
-      //         }
-      //     });
-      //     return result;
-      // }
-      dispose() {
-          let remove = [];
-          this.group.traverse((obj) => {
-              if (obj.isTextSprite) {
-                  if (obj.geometry) {
-                      obj.geometry.dispose();
-                  }
-                  if (obj.material) {
-                      obj.material.dispose();
-                      if (obj.material.map) {
-                          obj.material.map.dispose();
-                      }
-                  }
-                  remove.push(obj);
-
-              }
-          });
-          while (remove.length) {
-              let obj = remove.pop();
-              obj.parent.remove(obj);
-          }
-
-      }
-
-
-  }
-
-  class YAxis extends Component {
-      constructor(_cartesionUI, opt) {
-          super(_cartesionUI._coordSystem);
-
-          this._opt = opt;
-          this._coord = this._coordSystem.coord || {};
-          this._cartesionUI = _cartesionUI;
-          this.name = opt.name;
-
-          //this.width = null; //第一次计算后就会有值
-          //this.yMaxHeight = 0; //y轴最大高
-          //this.height = 0; //y轴第一条线到原点的高
-
-          // this.maxW = 0;    //最大文本的 width
-          this.field = opt.field || [];   //这个 轴 上面的 field 不需要主动配置。可以从graphs中拿
-
-          this.title = {
-              content: "",
-              shapeType: "text",
-              fontColor: '#999',
-              fontSize: 12,
-              offset: 2,
-              textAlign: "center",
-              textBaseline: "middle",
-              strokeStyle: null,
-              lineHeight: 0
-          };
-          this._title = null; //this.label对应的文本对象
-
-          this.enabled = true;
-          this.tickLine = {//刻度线
-              enabled: 1,
-              lineWidth: 1, //线宽像素
-              lineLength: 20, //线长(空间单位)
-              strokeStyle: '#333',
-              offset: 0, //空间单位
-          };
-          this.axisLine = {//轴线
-              enabled: 1,
-              lineWidth: 1, //线宽像素
-              strokeStyle: '#333'
-          };
-          this.label = {
-              enabled: 1,
-              fontColor: '#333',
-              fontSize: 12,
-              format: null,
-              rotation: 0,
-              textAlign: "right",       //水平方向对齐: left  right center 
-              verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
-              lineHeight: 1,
-              offset: { x: 0, y: 0, z: 40 }    //和刻度线的距离
-          };
-
-          this.origin = new Vector3();
-          this.boundboxSize = new Vector3();
-          this.yAxisAttribute = this._coordSystem.yAxisAttribute[this.name];
-
-          // if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
-          //     //如果是横向直角坐标系图
-          //     this.label.rotation = 90;
-          // };
-
-
-          // this.pos = {
-          //     x: 0,
-          //     y: 0
-          // };
-          // this.align = "left"; //yAxis轴默认是再左边，但是再双轴的情况下，可能会right
-
-          //this.layoutData = []; //dataSection 对应的layout数据{y:-100, value:'1000'}
-          // this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
-          // this.waterLine = null; //水位data，需要混入 计算 dataSection， 如果有设置waterLineData， dataSection的最高水位不会低于这个值
-
-          //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
-          //this.dataSectionGroup = [];
-
-          //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
-          // this.middleweight = null;
-
-          //this.dataOrg = data.org || []; //源数据
-
-
-          // this.baseNumber = null; //默认为0，如果dataSection最小值小于0，则baseNumber为最小值，如果dataSection最大值大于0，则baseNumber为最大值
-          // this.basePoint = null; //value为 baseNumber 的point {x,y}
-          // this.min = null;
-          // this.max = null; //后面加的，目前还没用
-
-          // this._yOriginTrans = 0;//当设置的 baseNumber 和datasection的min不同的时候，
-
-
-          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
-          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-          //this.filter = null; //function(params){}; 
-
-          //this.isH = false; //是否横向
-
-          //this.animation = false;
-
-          //this.sort = null; //"asc" //排序，默认从小到大, desc为从大到小，之所以不设置默认值为asc，是要用null来判断用户是否进行了配置
-
-          //this.layoutType = "proportion"; // rule , peak, proportion
-
-          _$1.extend(true, this, opt);
-
-          // this.label.enabled = this.enabled && this.label.enabled;
-          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
-          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-
-          this.init(opt);
-
-          this.group.visible = !!this.enabled;
-          this._getName();
-
-      }
-
-      init(opt) {
-          let me = this;
-          //extend会设置好this.field
-          //先要矫正子啊field确保一定是个array
-          if (!_$1.isArray(this.field)) {
-              this.field = [this.field];
-          }
-          this._initData(this.yAxisAttribute);
-
-          this.getOrigin();
-
-          this._onChangeBind = () => {
-              me._initModules();
-          };
-
-          this._root.orbitControls.on('change', this._onChangeBind);
-          me._initModules();
-
-      }
-      _initModules() {
-          if (!this.enabled) return;
-          const _axisDir = new Vector3(0, 1, 0);
-          const _coordSystem = this._coordSystem;
-          const coordBoundBox = _coordSystem.getBoundbox();
-
-          let {
-              x: width,
-              z: depth
-          } = this.boundboxSize;
-
-          let origin = this.origin.clone();
-
-          let _tickLineDir = new Vector3(0, 0, 1);
-          let _faceInfo = this._cartesionUI.getFaceInfo();
-          let _textAlign = this.label.textAlign;
-          let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
-
-          if (_faceInfo.left.visible) {
-              if (_faceInfo.back.visible) {
-                  //默认计算的原单origin
-                  _tickLineDir = new Vector3(0, 0, 1);
-                  _textAlign = 'right';
-
-              } else {
-                   //默认计算的原单origin
-                  if(_coordSystem.coord.yAxis.length==1){
-                      origin = new Vector3(0, 0, -depth);
-                  }
-                  _tickLineDir = new Vector3(0, 0, -1);
-                  _textAlign = 'left';
-                  _offsetZ *= -1;
-              }
-          } else {
-              if (_faceInfo.back.visible) {
-                  origin.setX(width);
-                  _tickLineDir = new Vector3(0, 0, 1);
-                  _textAlign = 'left';
-              } else {
-                  origin.setX(width);
-                  if(_coordSystem.coord.yAxis.length==1){
-                      origin = new Vector3(width, 0, -depth);
-                  }
-                  _tickLineDir = new Vector3(0, 0, -1);
-                  _textAlign = 'right';
-                  _offsetZ *= -1;
-              }
-          }
-
-
-          if (this._axisLine) {
-              if (this._axisLine.getOrigin().equals(origin)) {
-                  return;
-              }
-
-              // this._axisLine.dispose();
-              this._axisLine.setOrigin(origin);
-              this._axisLine.update();
-              // this._axisLine.drawStart();
-              // this._axisLine.draw();
-
-              //二次绘制
-              //this._tickLine.dispose();
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
-              this._tickLine.update();
-              // this._tickLine.drawStart();
-              // this._tickLine.draw();
-
-
-              //this._tickText.dispose();
-
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
-              this._tickText.setTextAlign(_textAlign);
-              this._tickText.offset.setZ(_offsetZ);
-              // this._tickText.drawStart(this._formatTextSection);
-              // this._tickText.draw();
-
-
-          } else {
-              //初始化轴线
-              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-              this._axisLine.setDir(_axisDir);
-              this._axisLine.setOrigin(origin);
-              this._axisLine.setLength(coordBoundBox.max.y);
-              this._axisLine.setGroupName('yAxisLine');
-              this._axisLine.drawStart();
-
-              this.group.add(this._axisLine.group);
-
-
-              //初始化tickLine
-
-              this._tickLine = new TickLines(_coordSystem, this.tickLine);
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
-              this._tickLine.drawStart();
-              this.group.add(this._tickLine.group);
-
-
-
-              // 初始化tickText
-              this._tickText = new TickTexts(_coordSystem, this.label);
-              this._tickText.offset.z = _offsetZ;
-
-              this._tickText.setTextAlign(_textAlign);
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.initData(this._axisLine, this.yAxisAttribute, _coordSystem.getYAxisPosition);
-
-              this._tickText.drawStart(this._formatTextSection);
-              //this.group.add(this._tickText.group);
-              this._root.labelGroup.add(this._tickText.group);
-
-          }
-
-      }
-      getOrigin() {
-          let _coordSystem = this._coordSystem;
-          let coordBoundBox = _coordSystem.getBoundbox();
-          let _size = new Vector3(); //空间盒子的大小
-          coordBoundBox.getSize(_size);
-          this.boundboxSize = _size.clone();
-          let {
-              z: depth
-          } = _size;
-          let origin = _coordSystem.getOrigin();
-
-
-          let segment = _coordSystem.coord.yAxis.length;
-          let index = _$1.indexOf(_coordSystem.coord.yAxis, this._opt);
-          let step = 0;
-          if (segment == 1) {
-              step = 0;
-          } else {
-              step = index / (segment - 1);
-          }
-          origin.setZ(depth * -step);
-
-          this.origin = origin;
-
-      }
-      updateAxis() {
-          //这里可能需要重构
-          //todo 根据相机移动计算tickLine & tickText的位置 
-      }
-      _getName() {
-
-      }
-      _initData(data) {
-          var me = this;
-
-          this.dataSection = data.getSection();
-
-
-          // //如果还是0
-          // if (this.dataSection.length == 0) {
-          //     this.dataSection = [0]
-          // };
-
-          // // if( _.min(this.dataSection) < this._opt.min ){
-          // //     var minDiss = me._opt.min - _.min(me.dataSection);
-          // //     //如果用户有硬性要求min，而且计算出来的dataSection还是比min小的话
-          // //     _.each( this.dataSection, function( num, i ){
-          // //         me.dataSection[i] += minDiss;
-          // //     } );
-          // // };
-
-          // //如果有 middleweight 设置，就会重新设置dataSectionGroup
-          // this.dataSectionGroup = [_.clone(this.dataSection)];
-
-          // this._sort();
-          // this._setBottomAndBaseNumber();
-
-          // this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
-
-          me._formatTextSection = [];
-          me._textElements = [];
-          _$1.each(me.dataSection, function (val, i) {
-              me._formatTextSection[i] = me._getFormatText(val, i);
-      
-          });
-
-          if (this.label.rotation != 0) {
-              //如果是旋转的文本，那么以右边为旋转中心点
-              this.label.textAlign = "right";
-          }
-          //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
-          if (isNaN(this.minVal) || this.minVal == Infinity) {
-              this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
-          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
-              this.maxVal = 1;
-          }
-          this._getName();
-
-          //this._setYAxisWidth();
-
-
-      }
-
-      _getFormatText(val, i) {
-          var res;
-          if (_$1.isFunction(this.label.format)) {
-              res = this.label.format.apply(this, arguments);
-          } else {
-              res = val;
-          }
-
-          if (_$1.isArray(res)) {
-              res = numAddSymbol(res);
-          }
-          if (!res) {
-              res = val;
-          }        return res;
-      }
-
-      //设置布局
-      setLayout(opt) {
-
-      }
-
-      draw() {
-          //this._initModules();
-          if (!this.enabled) return;
-          this._axisLine.draw();
-          this._tickLine.draw();
-          this._tickText.draw();
-         // console.log('y axis 100 pos: ', this._root.currCoord.getYAxisPosition(100));
-      }
-
-      getBoundbox() {
-          let result = new Box3();
-
-          //轴线的boundBox
-          let _axisLineBoundBox = this.axisLine.getBoundBox();
-
-          //刻度线的boundBox
-          let tickLineBoundBox = this.tickLine.getBoundBox();
-
-          //刻度文本的boundBox
-          let _axisTextBoundBox = this.tickText.getBoundBox();
-
-          result.union(_axisLineBoundBox);
-          result.union(tickLineBoundBox);
-          result.union(_axisTextBoundBox);
-
-
-          return result;
-
-      }
-      // _setYAxisWidth() { //检测下文字的宽度
-      //     var me = this;
-      //     const _coordSystem = me._coordSystem;
-      //     if (!me.enabled) {
-      //         me.width = 0;
-      //     } else {
-      //         var _maxTextWidth = 0;
-
-      //         if (this.label.enabled) {
-
-      //             //me._formatTextSection.forEach((val)=>{
-      //             let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '))
-      //             _maxTextWidth = Math.max(_maxTextWidth, width);
-      //             //})
-      //             // _.each(me.dataSection, function (val, i) {
-
-      //             //     //从_formatTextSection中取出对应的格式化后的文本
-      //             //     let txt = me._textElements[i];
-      //             //     let scale = me._root.renderView.getObjectScale(txt);
-
-      //             //     let textWidth = scale.x;
-      //             //     let textHeight = scale.y;
-
-      //             //     let width = textWidth; //文本在外接矩形width
-      //             //     let height = textHeight;//文本在外接矩形height
-
-      //             //     if (!!me.label.rotation) {
-      //             //         //有设置旋转
-      //             //         if (me.label.rotation == 90) {
-      //             //             width = textHeight;
-      //             //             height = textWidth;
-      //             //         } else {
-      //             //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
-      //             //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
-      //             //             height = parseInt(sinR * textWidth);
-      //             //             width = parseInt(cosR * textWidth);
-      //             //         };
-      //             //     };
-
-      //             //     _maxTextWidth = Math.max(_maxTextWidth, width);
-      //             //     console.log('width',width);
-      //             // });
-      //         };
-
-      //         //这里的计算宽度流出需要考虑一下
-      //         this._maxTextWidth = _maxTextWidth;
-      //         let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
-      //         this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
-      //         //this.width+=10;
-      //         // if (this._title) {
-      //         //     this.height += this._title.getTextHeight()
-      //         // };
-
-      //     }
-      // }
-
-      dispose() {
-
-          this._axisLine.dispose();
-          this._tickLine.dispose();
-          this._tickText.dispose();
-          this._root.orbitControls.off('change', this._onChangeBind);
-          this._onChangeBind = null;
-
-      }
-
-
-
-  }
-
-  class XAxis extends Component {
-      constructor(_cartesionUI) {
-          super(_cartesionUI._coordSystem);
-          let opt = this._opt = this._coordSystem.coord.xAxis;
-
-          this._cartesionUI = _cartesionUI;
-          this.width = 0;
-          this.height = 0;
-
-          this.title = {
-              content: "",
-              shapeType: "text",
-              fontColor: '#999',
-              fontSize: 12,
-              offset: 2,
-              textAlign: "center",
-              textBaseline: "middle",
-              strokeStyle: null,
-              lineHeight: 0
-          };
-          this._title = null; //this.title对应的文本对象
-
-          this.enabled = true;
-          this.axisLine = {
-              enabled: 1, //是否有轴线
-              lineWidth: 1,
-              strokeStyle: '#333'
-          };
-
-          this.tickLine = {
-              enabled: 1,
-              lineWidth: 1, //线宽像素
-              lineLength: 20, //线长(空间单位)
-              strokeStyle: '#333',
-              offset: 0, //空间单位
-          };
-
-          this.label = {
-              enabled: 1,
-              fontColor: '#333',
-              fontSize: 12,
-              rotation: 0,
-              format: null,
-              offset: { x: 20, y: 0, z: 40 },
-              textAlign: "center",       //水平方向对齐: left  right center 
-              verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
-              lineHeight: 1,
-              evade: true  //是否开启逃避检测，目前的逃避只是隐藏
-          };
-          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
-              //如果是横向直角坐标系图
-              this.label.rotation = 90;
-          }
-          this.maxTxtH = 0;
-
-          this.pos = {
-              x: 0,
-              y: 0
-          };
-
-          // this.dataOrg = []; //源数据
-          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
-
-          this.layoutData = []; //{x:100, value:'1000',visible:true}
-
-          this.sprite = null;
-
-          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
-          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-          this.filter = null; //function(params){}; 
-
-          this.isH = false; //是否为横向转向的x轴
-
-          this.animation = false;
-
-          //layoutType == "proportion"的时候才有效
-          this.maxVal = null;
-          this.minVal = null;
-
-          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
-
-          this.layoutType = "rule"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
-
-          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
-          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
-          //function
-          this.trimLayout = null;
-
-          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-
-          _$1.extend(true, this, opt.xAxis);
-
-          // this.label.enabled = this.enabled && this.label.enabled;
-          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
-          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-
-          this.init(opt, this._coordSystem.xAxisAttribute);
-          //xAxis的field只有一个值,
-          //this.field = _.flatten([this._coord.xAxisAttribute.field])[0];
-          this.group.visible = !!this.enabled;
-
-      }
-      init(opt, data) {
-          let me = this;
-          // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
-
-          // this.group.add(this.rulesGroup);
-
-          this._initHandle(data);
-
-          this._onChangeBind = () => {
-              me._initModules();
-          };
-          this._root.orbitControls.on('change', this._onChangeBind);
-          me._initModules();
-      }
-      _initHandle(data) {
-          var me = this;
-
-          if (data && data.field) {
-              this.field = data.field;
-          }
-
-          // if (data && data.data) {
-          //     this.dataOrg = _.flatten(data.data);
-          // };
-          // if (!this._opt.dataSection && this.dataOrg) {
-          //     //如果没有传入指定的dataSection，才需要计算dataSection
-          //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
-          // };
-          this.dataSection = data.getSection();
-
-          me._formatTextSection = [];
-          me._textElements = [];
-          _$1.each(me.dataSection, function (val, i) {
-              me._formatTextSection[i] = me._getFormatText(val, i);
-          });
-
-          if (this.label.rotation != 0) {
-              //如果是旋转的文本，那么以右边为旋转中心点
-              this.label.textAlign = "right";
-          }
-          //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
-          if (isNaN(this.minVal) || this.minVal == Infinity) {
-              this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
-          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
-              this.maxVal = 1;
-          }
-          this._getName();
-
-          this._setXAxisHeight();
-      }
-      _getFormatText(val, i) {
-          var res;
-          if (_$1.isFunction(this.label.format)) {
-              res = this.label.format.apply(this, arguments);
-          } else {
-              res = val;
-          }
-
-          if (_$1.isArray(res)) {
-              res = numAddSymbol(res);
-          }
-          if (!res) {
-              res = val;
-          }        return res;
-      }
-      _initModules() {
-          //初始化轴线
-          const _axisDir = new Vector3(1, 0, 0);
-          const _coordSystem = this._coordSystem;
-          let coordBoundBox = _coordSystem.getBoundbox();
-
-          let _size = new Vector3(); //空间盒子的大小
-          coordBoundBox.getSize(_size);
-          let {
-              x: width,
-              y: height,
-              z: depth
-          } = _size;
-          let origin = _coordSystem.getOrigin();
-          let _tickLineDir = new Vector3(0, 0, 1);
-          let _faceInfo = this._cartesionUI.getFaceInfo();
-          let _verticalAlign = this.label.verticalAlign;
-          let _offsetZ = this.label.offset.z + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
-
-          if (_faceInfo.bottom.visible) {
-              if (_faceInfo.back.visible) {
-                  origin = _coordSystem.getOrigin();
-                  _tickLineDir = new Vector3(0, 0, 1);
-              } else {
-                  origin = new Vector3(0, 0, -depth);
-                  _tickLineDir = new Vector3(0, 0, -1);
-                  _offsetZ *= -1;
-              }
-              _verticalAlign = 'bottom';
-
-          } else {
-              //top 可见
-              if (_faceInfo.back.visible) {
-                  origin = new Vector3(0, height, 0);
-                  _tickLineDir = new Vector3(0, 0, 1);
-                 
-              } else {
-                  origin = new Vector3(0, height, -depth);
-                  _tickLineDir = new Vector3(0, 0, -1);
-                  _offsetZ *= -1;
-              }
-              _verticalAlign = 'top';
-          }
-
-          if (this._axisLine) {
-              if (this._axisLine.getOrigin().equals(origin)) {
-                  return;
-              }
-              this._axisLine.setOrigin(origin);
-              this._axisLine.update();
-
-              //二次绘制
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-              this._tickLine.update();
-
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.offset.setZ(_offsetZ);
-              this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-              this._tickText.setVerticalAlign(_verticalAlign);
-
-
-          } else {
-
-              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-              this._axisLine.setDir(_axisDir);
-              this._axisLine.setOrigin(origin);
-              this._axisLine.setLength(coordBoundBox.max.x);
-              this._axisLine.setGroupName('xAxisLine');
-              this._axisLine.drawStart();
-              
-              this.group.add(this._axisLine.group);
-
-              //初始化tickLine
-              this._tickLine = new TickLines(_coordSystem, this.tickLine);
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-              this._tickLine.drawStart();
-
-              this.group.add(this._tickLine.group);
-
-
-              //初始化tickText
-              this._tickText = new TickTexts(_coordSystem, this.label);
-
-              this._tickText.offset.z += this.axisLine.lineWidth + this.tickLine.lineWidth + this.tickLine.offset;
-
-              this._tickText.setVerticalAlign(_verticalAlign);
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute, _coordSystem.getXAxisPosition);
-
-              //this._tickText.initData(this._axisLine, _coordSystem.xAxisAttribute);
-              this._tickText.drawStart(this._formatTextSection);
-
-             this._root.labelGroup.add(this._tickText.group);
-              //this.group.add(this._tickText.group);
-          }
-      }
-      _getName() {
-          // if ( this.title.content ) {
-          //     if( !this._title ){
-          //         this._title = new Canvax.Display.Text(this.title.content, {
-          //             context: {
-          //                 fontSize: this.title.fontSize,
-          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
-          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
-          //                 fillStyle: this.title.fontColor,
-          //                 strokeStyle: this.title.strokeStyle,
-          //                 lineWidth : this.title.lineWidth,
-          //                 rotation: this.isH ? -180 : 0
-          //             }
-          //         });
-          //     } else {
-          //         this._title.resetText( this.title.content );
-          //     }
-          // }
-      }
-
-      updateAxis() {
-          //这里可能需要重构
-          //todo 根据相机移动计算tickLine & tickText的位置 
-      }
-
-      _setXAxisHeight() { //检测下文字的高等
-          var me = this;
-          const _coordSystem = me._coordSystem;
-          if (!me.enabled) {
-              me.height = 0;
-          } else {
-              var _maxTextHeight = 0;
-
-              if (this.label.enabled) {
-                  let height = this.label.fontSize * 1.2;
-                  _maxTextHeight = Math.max(_maxTextHeight, height);
-
-              }
-              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
-              this.height = (_maxTextHeight + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
-              this._maxTextHeight = _maxTextHeight;
-              // if (this._title) {
-              //     this.height += this._title.getTextHeight()
-              // };
-
-          }
-      }
-      //设置布局
-      setLayout(opt) {
-
-      }
-      draw() {
-
-          this._axisLine.draw();
-          this._tickLine.draw();
-          this._tickText.draw();
-
-          //console.log('x axis 2 pos: ',this._root.currCoord.getXAxisPosition(2));
-
-
-      }
-      dispose() {
-
-          this._axisLine.dispose();
-          this._tickLine.dispose();
-          this._tickText.dispose();
-          this._root.orbitControls.off('change', this._onChangeBind);
-          this._onChangeBind = null;
-      }
-  }
-
-  class ZAxis extends Component {
-      constructor(_cartesionUI) {
-          super(_cartesionUI._coordSystem);
-
-          let opt = this._opt = this._coordSystem.coord.zAxis;
-          this._cartesionUI = _cartesionUI;
-          this._coord = this._coordSystem.coord || {};
-
-          this.width = 0;
-          this.height = 0;
-
-          this.title = {
-              content: "",
-              shapeType: "text",
-              fontColor: '#999',
-              fontSize: 12,
-              offset: 2,
-              textAlign: "center",
-              textBaseline: "middle",
-              strokeStyle: null,
-              lineHeight: 0
-          };
-          this._title = null; //this.title对应的文本对象
-
-          this.enabled = true;
-          this.tickLine = {
-              enabled: 1,
-              lineWidth: 1, //线宽像素
-              lineLength: 20, //线长(空间单位)
-              strokeStyle: '#333',
-              offset: 0, //空间单位
-          };
-          this.axisLine = {
-              enabled: 1, //是否有轴线
-              lineWidth: 1,
-              strokeStyle: '#333'
-          };
-          this.label = {
-              enabled: 1,
-              fontColor: '#333',
-              fontSize: 12,
-              rotation: 0,
-              format: null,
-              offset: { x: 40, y: 0, z: 0 },
-              textAlign: "left",       //水平方向对齐: left  right center 
-              verticalAlign: 'middle',  //垂直方向对齐 top bottom middle
-              lineHeight: 1,
-              //  evade: true  //是否开启逃避检测，目前的逃避只是隐藏
-          };
-          if (opt.isH && (!opt.label || opt.label.rotaion === undefined)) {
-              //如果是横向直角坐标系图
-              this.label.rotation = 90;
-          }
-          // this.depth = 500;
-          this.maxTxtH = 0;
-
-          this.pos = {
-              x: 0,
-              y: 0
-          };
-
-          //this.dataOrg = []; //源数据
-          this.dataSection = []; //默认就等于源数据,也可以用户自定义传入来指定
-
-          this.layoutData = []; //{x:100, value:'1000',visible:true}
-
-          this.sprite = null;
-
-          //过滤器，可以用来过滤哪些yaxis 的 节点是否显示已经颜色之类的
-          //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
-          this.filter = null; //function(params){}; 
-
-          this.isH = false; //是否为横向转向的x轴
-
-          this.animation = false;
-
-          //layoutType == "proportion"的时候才有效
-          this.maxVal = null;
-          this.minVal = null;
-
-          this.ceilWidth = 0; //x方向一维均分长度, layoutType == peak 的时候要用到
-
-          this.layoutType = "peak"; // rule（均分，起点在0） , peak（均分，起点在均分单位的中心）, proportion（实际数据真实位置，数据一定是number）
-
-          //如果用户有手动的 trimLayout ，那么就全部visible为true，然后调用用户自己的过滤程序
-          //trimLayout就事把arr种的每个元素的visible设置为true和false的过程
-          //function
-          this.trimLayout = null;
-
-          // if (!opt._coord.zAxisAttribute.section.length) {
-          //     this.depth = 50;
-          // }
-
-          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-          _$1.extend(true, this, opt.zAxis);
-
-          // this.label.enabled = this.enabled && this.label.enabled;
-          // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
-          // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
-
-          this.init(opt, this._coordSystem.zAxisAttribute);
-
-          this.group.visible = !!this.enabled;
-
-      }
-      init(opt, data) {
-          let me = this;
-          // this.rulesGroup = this._root.app.addGroup({ name: 'rulesSprite' });
-
-          // this.group.add(this.rulesGroup);
-
-          this._initHandle(data);
-
-          this._onChangeBind = () => {
-              me._initModules();
-          };
-
-          this._root.orbitControls.on('change', this._onChangeBind);
-          me._initModules();
-      }
-      _initHandle(data) {
-          var me = this;
-
-          if (data && data.field) {
-              this.field = data.field;
-          }
-
-          // if (data && data.data) {
-          //     this.dataOrg = _.flatten(data.data);
-          // };
-          // if (!this._opt.dataSection && this.dataOrg) {
-          //     //如果没有传入指定的dataSection，才需要计算dataSection
-          //     this.dataSection = data.section;// this._initDataSection(this.dataOrg);
-          // };
-
-          this.dataSection = data.getSection();
-
-          me._formatTextSection = [];
-          me._textElements = [];
-          _$1.each(me.dataSection, function (val, i) {
-              me._formatTextSection[i] = me._getFormatText(val, i);
-          });
-
-          if (this.label.rotation != 0) {
-              //如果是旋转的文本，那么以右边为旋转中心点
-              this.label.textAlign = "right";
-          }
-          //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$1.min(this.dataSection));
-          if (isNaN(this.minVal) || this.minVal == Infinity) {
-              this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$1.max(this.dataSection));
-          if (isNaN(this.maxVal) || this.maxVal == Infinity) {
-              this.maxVal = 1;
-          }
-          this._getName();
-
-          this._setZAxisWidth();
-      }
-      _getFormatText(val, i) {
-          var res;
-          if (_$1.isFunction(this.label.format)) {
-              res = this.label.format.apply(this, arguments);
-          } else {
-              res = val;
-          }
-
-          if (_$1.isArray(res)) {
-              res = numAddSymbol(res);
-          }
-          if (!res) {
-              res = val;
-          }        return res;
-      }
-      _initModules() {
-
-          //初始化轴线
-          const _axisDir = new Vector3(0, 0, -1);
-          const _coordSystem = this._coordSystem;
-          let coordBoundBox = _coordSystem.getBoundbox();
-          let _size = new Vector3();
-          coordBoundBox.getSize(_size);
-
-          let {
-              x: width,
-              y: height,
-              z: depth
-          } = _size;
-
-          let origin = new Vector3(width, 0, 0);
-          let _tickLineDir = new Vector3(1, 0, 0);
-          let _faceInfo = this._cartesionUI.getFaceInfo();
-
-          let _textAlign = this.label.textAlign;
-          let _offsetX = this.label.offset.x + this.axisLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset;
-
-          if (_faceInfo.bottom.visible) {
-
-              if (_faceInfo.left.visible) {
-                  origin = new Vector3(width, 0, 0);
-                  _tickLineDir = new Vector3(1, 0, 0);
-
-              } else {
-                  origin = new Vector3(0, 0, 0);
-                  _tickLineDir = new Vector3(-1, 0, 0);
-              }
-
-              if (_faceInfo.front.visible) {
-                  if (_faceInfo.left.visible) {
-                      _textAlign = 'right';
-                  } else {
-                      _textAlign = 'left';
-                      _offsetX = -_offsetX;
-                  }
-              } else {
-                  if (_faceInfo.left.visible) {
-                      _textAlign = 'left';
-                  } else {
-                      _textAlign = 'right';
-                      _offsetX = -_offsetX;
-                  }
-              }
-
-          } else {
-              //top 可见
-              if (_faceInfo.left.visible) {
-                  origin = new Vector3(width, height, 0);
-                  _tickLineDir = new Vector3(1, 0, 0);
-
-              } else {
-                  origin = new Vector3(0, height, 0);
-                  _tickLineDir = new Vector3(-1, 0, 0);
-
-              }
-              if (_faceInfo.front.visible) {
-                  if (_faceInfo.left.visible) {
-                      _textAlign = 'right';
-                  } else {
-                      _textAlign = 'left';
-                      _offsetX = -_offsetX;
-                  }
-              } else {
-                  if (_faceInfo.left.visible) {
-                      _textAlign = 'left';
-                  } else {
-                      _textAlign = 'right';
-                      _offsetX = -_offsetX;
-                  }
-              }
-          }
-
-          if (this._axisLine) {
-              if (this._axisLine.getOrigin().equals(origin)) {
-                  return;
-              }
-              //this._axisLine.dispose();
-              this._axisLine.setOrigin(origin);
-              this._axisLine.update();
-              // this._axisLine.drawStart();
-              // this._axisLine.draw();
-
-              //二次绘制
-              // this._tickLine.dispose();
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-              this._tickLine.update();
-              // this._tickLine.drawStart();
-              // this._tickLine.draw();
-
-              //this._tickText.dispose();
-
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-              this._tickText.setTextAlign(_textAlign);
-              this._tickText.offset.setX(_offsetX);
-              // this._tickText.drawStart(this._formatTextSection);
-              // this._tickText.draw();
-
-
-          } else {
-              this._axisLine = new AxisLine(_coordSystem, this.axisLine);
-              this._axisLine.setDir(_axisDir);
-
-              this._axisLine.setOrigin(origin);
-              this._axisLine.setLength(depth);
-              this._axisLine.setGroupName('zAxisLine');
-              this._axisLine.drawStart();
-
-              this.group.add(this._axisLine.group);
-
-
-              //初始化tickLine
-
-              this._tickLine = new TickLines(_coordSystem, this.tickLine);
-              this._tickLine.setDir(_tickLineDir);
-              this._tickLine.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-              this._tickLine.drawStart();
-
-              this.group.add(this._tickLine.group);
-
-
-              //初始化tickText
-
-              this._tickText = new TickTexts(_coordSystem, this.label);
-              this._tickText.offset.x = _offsetX;
-
-              this._tickText.setDir(_tickLineDir);
-              this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute, _coordSystem.getZAxisPosition);
-
-              //this._tickText.initData(this._axisLine, _coordSystem.zAxisAttribute);
-              this._tickText.drawStart(this._formatTextSection);
-              //this.group.add(this._tickText.group);
-              this._root.labelGroup.add(this._tickText.group);
-
-          }
-      }
-      _getName() {
-          // if ( this.title.content ) {
-          //     if( !this._title ){
-          //         this._title = new Canvax.Display.Text(this.title.content, {
-          //             context: {
-          //                 fontSize: this.title.fontSize,
-          //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
-          //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
-          //                 fillStyle: this.title.fontColor,
-          //                 strokeStyle: this.title.strokeStyle,
-          //                 lineWidth : this.title.lineWidth,
-          //                 rotation: this.isH ? -180 : 0
-          //             }
-          //         });
-          //     } else {
-          //         this._title.resetText( this.title.content );
-          //     }
-          // }
-      }
-
-      _setZAxisWidth() { //检测下文字的宽度
-          var me = this;
-          const _coordSystem = me._coordSystem;
-          if (!me.enabled) {
-              me.width = 0;
-          } else {
-              var _maxTextWidth = 0;
-
-              if (this.label.enabled) {
-
-                  //me._formatTextSection.forEach((val)=>{
-                  let width = TextTexture.getTextWidth(me._formatTextSection, ['normal', 'normal', this.label.fontColor, this.label.fontSize].join(' '));
-                  _maxTextWidth = Math.max(_maxTextWidth, width);
-                  //})
-                  // _.each(me.dataSection, function (val, i) {
-
-                  //     //从_formatTextSection中取出对应的格式化后的文本
-                  //     let txt = me._textElements[i];
-                  //     let scale = me._root.renderView.getObjectScale(txt);
-
-                  //     let textWidth = scale.x;
-                  //     let textHeight = scale.y;
-
-                  //     let width = textWidth; //文本在外接矩形width
-                  //     let height = textHeight;//文本在外接矩形height
-
-                  //     if (!!me.label.rotation) {
-                  //         //有设置旋转
-                  //         if (me.label.rotation == 90) {
-                  //             width = textHeight;
-                  //             height = textWidth;
-                  //         } else {
-                  //             let sinR = Math.sin(Math.abs(me.label.rotation) * Math.PI / 180);
-                  //             let cosR = Math.cos(Math.abs(me.label.rotation) * Math.PI / 180);
-                  //             height = parseInt(sinR * textWidth);
-                  //             width = parseInt(cosR * textWidth);
-                  //         };
-                  //     };
-
-                  //     _maxTextWidth = Math.max(_maxTextWidth, width);
-                  //     console.log('width',width);
-                  // });
-              }            this._maxTextWidth = _maxTextWidth;
-              let ratio = _coordSystem.getRatioPixelToWorldByOrigin();
-              this.width = (_maxTextWidth + this.tickLine.lineLength + this.tickLine.offset + this.label.offset + this.axisLine.lineWidth) * ratio;
-              //this.width+=10;
-              // if (this._title) {
-              //     this.height += this._title.getTextHeight()
-              // };
-
-          }
-      }
-      //设置布局
-      setLayout(opt) {
-
-      }
-      draw() {
-
-          this._axisLine.draw();
-          this._tickLine.draw();
-          this._tickText.draw();
-
-          // console.log('z axis 项目三 pos: ',this._root.currCoord.getZAxisPosition('项目三'));
-      }
-      dispose() {
-
-          this._axisLine.dispose();
-          this._tickLine.dispose();
-          this._tickText.dispose();
-          this._root.orbitControls.off('change', this._onChangeBind);
-          this._onChangeBind = null;
-      }
-  }
-
-  class Grid extends Component {
-      constructor(_cartesionUI) {
-          super(_cartesionUI._coordSystem);
-
-
-          let opt = this._opt = this._coordSystem.coord.grid;
-          this.coord = this._coordSystem.coord;
-
-          // this.width = 0;
-          // this.height = 0;
-
-          // this.pos = {
-          //     x: 0,
-          //     y: 0
-          // };
-
-          this._cartesionUI = _cartesionUI;
-
-          this.enabled = true;
-
-          this.line = {                                //x方向上的线
-              enabled: true,
-              lineType: 'solid',                //线条类型(dashed = 虚线 | solid = 实线)
-              strokeStyle: '#e5e5e5',
-          };
-
-          this.fill = {
-              enabled: false,
-              fillStyle: '#ccc',
-              alpha: 0.1
-          };
-
-
-          _$1.extend(true, this, opt);
-
-          this.init();
-      }
-      init() {
-          let me = this;
-          let app = this._root.app;
-
-          this.leftGroup = app.addGroup({ name: 'leftGroup' });                     //x轴上的线集合
-          this.rightGroup = app.addGroup({ name: 'rightGroup' });
-          this.topGroup = app.addGroup({ name: 'topGroup' });
-          this.bottomGroup = app.addGroup({ name: 'bottomGroup' });
-          this.frontGroup = app.addGroup({ name: 'frontGroup' });
-          this.backGroup = app.addGroup({ name: 'backGroup' });
-
-          this.group.add(this.leftGroup);
-          this.group.add(this.rightGroup);
-          this.group.add(this.topGroup);
-          this.group.add(this.bottomGroup);
-          this.group.add(this.frontGroup);
-          this.group.add(this.backGroup);
-
-          this.group.renderOrder = -1;
-
-
-          this._onChangeBind = () => {
-              if (!me.enabled) return;
-              let _faceInfo = me._cartesionUI.getFaceInfo();
-              _$1.each(_faceInfo, (value, key) => {
-                  me[key + 'Group'].visible = value.visible;
-              });
-
-          };
-          this._root.orbitControls.on('change', this._onChangeBind);
-
-
-      }
-
-
-
-      drawFace() {
-
-          let me = this;
-          let app = me._root.app;
-          if (!me.enabled) return;
-          const _coordSystem = this._coordSystem;
-          let _faceInfo = this._cartesionUI.getFaceInfo();
-
-          let coordBoundBox = _coordSystem.getBoundbox();
-          let _size = new Vector3(); //空间盒子的大小
-          coordBoundBox.getSize(_size);
-          let {
-              x: width,
-              y: height,
-              z: depth
-          } = _size;
-          if (me.fill.enabled) {
-
-              //todo: 多次调用 group可能会重复加入,这里需要销毁以前的数据 reset统一处理吧
-              //todo view中构建 materail 通过fill 使用同一份material
-              this.leftFace = app.createPlane(depth, height, undefined, _faceInfo.left, me.leftGroup, this.fill);
-              this.rightFace = app.createPlane(depth, height, undefined, _faceInfo.right, me.rightGroup, this.fill);
-              this.topFace = app.createPlane(width, depth, undefined, _faceInfo.top, me.topGroup, this.fill);
-              this.bottomFace = app.createPlane(width, depth, undefined, _faceInfo.bottom, me.bottomGroup, this.fill);
-              this.frontFace = app.createPlane(width, height, undefined, _faceInfo.front, me.frontGroup, this.fill);
-              this.backFace = app.createPlane(width, height, undefined, _faceInfo.back, me.backGroup, this.fill);
-          }
-
-      }
-      drawLine() {
-          //todo 原生的线条会出现锯齿,需要该用三角面来绘制
-          let me = this;
-          let app = me._root.app;
-          if (!me.enabled) return;
-          const _coordSystem = this._coordSystem;
-
-          let coordBoundBox = _coordSystem.getBoundbox();
-          let _size = new Vector3(); //空间盒子的大小
-
-          coordBoundBox.getSize(_size);
-          let {
-              x: width,
-              y: height,
-              z: depth
-          } = _size;
-
-          let xSection = me._coordSystem.xAxisAttribute.getSection();
-          let yAttribute = me._coordSystem.getYAxis().attr;
-          let ySection = yAttribute.getSection();
-          let zSection = me._coordSystem.zAxisAttribute.getSection();
-
-          if (!me.line.enabled) {
-              return;
-          }
-          //绘制左面的线条
-          let LinesVectors = [];
-          ySection.forEach(num => {
-              let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-              LinesVectors.push(new Vector3(0, posY, 0));
-              LinesVectors.push(new Vector3(0, posY, -depth));
-          });
-
-          zSection.forEach(num => {
-              let posZ = me._coordSystem.getZAxisPosition(num);
-              LinesVectors.push(new Vector3(0, 0, -posZ));
-              LinesVectors.push(new Vector3(0, height, -posZ));
-          });
-          let lines = app.createCommonLine(LinesVectors, this.line);
-          me.leftGroup.add(lines);
-
-          //绘制右面的线条
-          LinesVectors = [];
-          ySection.forEach(num => {
-              let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-              LinesVectors.push(new Vector3(width, posY, 0));
-              LinesVectors.push(new Vector3(width, posY, -depth));
-          });
-
-          zSection.forEach(num => {
-              let posZ = me._coordSystem.getZAxisPosition(num);
-              LinesVectors.push(new Vector3(width, 0, -posZ));
-              LinesVectors.push(new Vector3(width, height, -posZ));
-          });
-          lines = app.createCommonLine(LinesVectors, this.line);
-          me.rightGroup.add(lines);
-
-          //绘制上面的线条
-          LinesVectors = [];
-          xSection.forEach(num => {
-              let posX = me._coordSystem.getXAxisPosition(num);
-              LinesVectors.push(new Vector3(posX, height, 0));
-              LinesVectors.push(new Vector3(posX, height, -depth));
-          });
-
-          zSection.forEach(num => {
-              let posZ = me._coordSystem.getZAxisPosition(num);
-              LinesVectors.push(new Vector3(0, height, -posZ));
-              LinesVectors.push(new Vector3(width, height, -posZ));
-          });
-          lines = app.createCommonLine(LinesVectors, this.line);
-          me.topGroup.add(lines);
-
-
-          //绘制下面的线条
-          LinesVectors = [];
-          xSection.forEach(num => {
-              let posX = me._coordSystem.getXAxisPosition(num);
-              LinesVectors.push(new Vector3(posX, 0, 0));
-              LinesVectors.push(new Vector3(posX, 0, -depth));
-          });
-
-          zSection.forEach(num => {
-              let posZ = me._coordSystem.getZAxisPosition(num);
-              LinesVectors.push(new Vector3(0, 0, -posZ));
-              LinesVectors.push(new Vector3(width, 0, -posZ));
-          });
-          lines = app.createCommonLine(LinesVectors, this.line);
-          me.bottomGroup.add(lines);
-
-          //绘制前面的线条
-          LinesVectors = [];
-          xSection.forEach(num => {
-              let posX = me._coordSystem.getXAxisPosition(num);
-              LinesVectors.push(new Vector3(posX, 0, 0));
-              LinesVectors.push(new Vector3(posX, height, 0));
-          });
-
-          ySection.forEach(num => {
-              let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-              LinesVectors.push(new Vector3(0, posY, 0));
-              LinesVectors.push(new Vector3(width, posY, 0));
-          });
-
-          lines = app.createCommonLine(LinesVectors, this.line);
-          me.frontGroup.add(lines);
-
-          //绘制后面的线条
-          LinesVectors = [];
-          xSection.forEach(num => {
-              let posX = me._coordSystem.getXAxisPosition(num);
-              LinesVectors.push(new Vector3(posX, 0, -depth));
-              LinesVectors.push(new Vector3(posX, height, -depth));
-          });
-
-          ySection.forEach(num => {
-              let posY = me._coordSystem.getYAxisPosition(num,yAttribute);
-              LinesVectors.push(new Vector3(0, posY, -depth));
-              LinesVectors.push(new Vector3(width, posY, -depth));
-          });
-          lines = app.createCommonLine(LinesVectors, this.line);
-          me.backGroup.add(lines);
-
-      }
-
-      draw() {
-          this.drawFace();
-          this.drawLine();
-      }
-      dispose() {
-          super.dispose();
-          this._root.orbitControls.off('change', this._onChangeBind);
-          this._onChangeBind = null;
-      }
-
-  }
-
-  class Cartesian3DUI extends Component {
-      constructor(_coordSystem) {
-          super(_coordSystem);
-
-          //坐标轴实例
-          this._xAxis = null;
-          this._yAxis = [];
-
-          this._zAxis = null;
-          this._grid = null;
-
-          let opt = _coordSystem.coord;
-
-          this.type = "cartesian3d";
-
-          this.horizontal = false;
-
-          //配置信息
-          this.xAxis = opt.xAxis || {};
-          this.yAxis = opt.yAxis || [];
-          this.zAxis = opt.zAxis || {};
-          this.grid = opt.grid || {};
-
-          _$1.extend(true, this, opt);
-
-          if (opt.horizontal) {
-              this.xAxis.isH = true;
-              this.zAxis.isH = true;
-              _$1.each(this.yAxis, function (yAxis) {
-                  yAxis.isH = true;
-              });
-          }
-
-          if ("enabled" in opt) {
-              //如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
-              _$1.extend(true, this.xAxis, {
-                  enabled: opt.enabled
-              });
-              _$1.each(this.yAxis, function (yAxis) {
-                  _$1.extend(true, yAxis, {
-                      enabled: opt.enabled
-                  });
-              });
-
-              _$1.extend(true, this.zAxis, {
-                  enabled: opt.enabled
-              });
-
-              this.grid.enabled = opt.enabled;
-          }
-          this.init(opt);
-
-      }
-
-
-      init(opt) {
-
-          //多个Y轴单独构建一个组
-          this.yAxisGroup = this._root.app.addGroup({
-              name: 'yAxisGroup'
-          });
-
-          this._initModules();
-
-          //todo z轴的宽度没有计算在内
-          //todo  是否要计算offset值去更改最终原点的位置
-          // let offset = new Vector3(this._yAxisLeft.width, this._xAxis.height, 0);
-          //todo 三维空间中不需要考虑原点的移动 
-          this._coordSystem.updateOrigin(new Vector3(0, 0, 0));
-
-
-
-
-      }
-      _initModules() {
-          this._grid = new Grid(this);
-          this.group.add(this._grid.group);
-
-          this._xAxis = new XAxis(this);
-          this.group.add(this._xAxis.group);
-
-
-          this._zAxis = new ZAxis(this);
-          this.group.add(this._zAxis.group);
-
-
-          this.yAxis.forEach((opt) => {
-              let _yAxis = new YAxis(this, opt);
-              this._yAxis.push(_yAxis);
-              this.yAxisGroup.add(_yAxis.group);
-          });
-
-
-          this.group.add(this.yAxisGroup);
-          
-      }
-
-      draw() {
-
-          // this._yAxisLeft.draw();
-          this._yAxis.forEach(_yAxis => {
-              _yAxis.draw();
-          });
-           this._xAxis.draw();
-           this._zAxis.draw();
-           this._grid.draw();
-
-      }
-
-      getFaceInfo() {
-          //todo 待优化
-          let _coordSystem = this._coordSystem;
-          let coordBoundBox = _coordSystem.getBoundbox();
-          let _size = new Vector3(); //空间盒子的大小
-          coordBoundBox.getSize(_size);
-          let {
-              x: width,
-              y: height,
-              z: depth
-          } = _size;
-
-          let lfb = new Vector3(0, 0, 0),            //左前下
-              lft = new Vector3(0, height, 0),       //左前上  
-              lbb = new Vector3(0, 0, -depth),       //左后下 
-              lbt = new Vector3(0, height, -depth),  //左后上
-
-              rfb = new Vector3(width, 0, 0),            //左前下
-              rft = new Vector3(width, height, 0),       //左前上  
-              rbb = new Vector3(width, 0, -depth),       //左后下 
-              rbt = new Vector3(width, height, -depth);  //左后上
-
-
-
-          let zDir = new Vector3(0, 0, 1);
-          let coordCenter = this._coordSystem._getWorldPos(this._coordSystem.center);
-          let cameraPos = coordCenter.clone();
-          this._root.renderView._camera.getWorldPosition(cameraPos);
-
-          let result = {
-              left: {
-                  dir: new Vector3(1, 0, 0),     //法线方向
-                  center: new Box3().setFromPoints([lft, lft, lbb, lbt]).getCenter(),
-                  visible: cameraPos.clone().cross(zDir).y <= 0
-              },
-              right: {
-                  dir: new Vector3(-1, 0, 0),     //法线方向
-                  center: new Box3().setFromPoints([rft, rft, rbb, rbt]).getCenter(),
-                  visible: cameraPos.clone().cross(zDir).y > 0
-              },
-              top: {
-                  dir: new Vector3(0, -1, 0),     //法线方向
-                  center: new Box3().setFromPoints([lft, rft, lbt, rbt]).getCenter(),
-                  visible: cameraPos.clone().cross(zDir).x < 0
-              },
-              bottom: {
-                  dir: new Vector3(0, 1, 0),     //法线方向
-                  center: new Box3().setFromPoints([lfb, rfb, lbb, rbb]).getCenter(),
-                  visible: cameraPos.clone().cross(zDir).x >= 0
-              },
-              front: {
-                  dir: new Vector3(0, 0, -1),
-                  center: new Box3().setFromPoints([lfb, rfb, rft, lft]).getCenter(),
-                  visible: cameraPos.dot(zDir) < 0
-              },
-              back: {
-                  dir: new Vector3(0, 0, 1),
-                  center: new Box3().setFromPoints([lbb, rbb, rbt, lbt]).getCenter(),
-                  visible: cameraPos.dot(zDir) >= 0
-              }
-
-          };
-
-          return result;
-
-      }
-      dispose() {
-
-          this._yAxis.forEach(_yAxis => {
-              _yAxis.dispose();
-          });
-          this._xAxis.dispose();
-          this._zAxis.dispose();
-          this._grid.dispose();
-      }
-
-  }
-
-  class AxisAttribute {
-      constructor(root) {
-          this._root = root;
-          this.field = '';
-          this.data = null;
-
-          this._section = [];
-          this._userSection = [];
-
-          this.colors = []; //y轴需要颜色
-          this._colorMap = {};
-      }
-      setField(val) {
-          this.field = val;
-          this.data = this.getAxisDataFrame(this.field);
-      }
-      setColors(_colorMap) {
-          let fields = _$1.flatten(this.field);
-          this.colors = [];
-          this._colorMap = {};
-          fields.forEach((v, i) => {
-              let _c = _colorMap[v];
-              if (_c) {
-                  this.colors.push(_c);
-                  this._colorMap[v] = _c;
-              }
-          });
-          this.colors.forEach((color$$1, i) => {
-              //自定义Section
-              if (this._userSection[i]) {
-                  this._colorMap[this._userSection[i]] = color$$1;
-              }
-          });
-
-
-      }
-      getColor(field) {
-          return this._colorMap[field];
-      }
-
-      setData(data) {
-          this.data = data;
-      }
-
-      getData(field) {
-          return this.getAxisDataFrame(field);
-      }
-      setOrgSection(section) {
-          this._section = section;
-      }
-
-      setCustomSection(section) {
-          this._userSection = section;
-      }
-      getSection() {
-          return this._userSection.length ? this._userSection : this._section;
-      }
-      getOrgSection() {
-          return this._section;
-      }
-      getCustomSection() {
-          return this._userSection;
-      }
-      computeDataSection(joinArr = []) {
-          let scetion = this._setDataSection(this.field);
-          joinArr = joinArr.concat(scetion);
-          let arr = _$1.flatten(joinArr);
-          for (var i = 0, il = arr.length; i < il; i++) {
-              arr[i] = Number(arr[i] || 0);
-              if (isNaN(arr[i])) {
-                  arr.splice(i, 1);
-                  i--;
-                  il--;
-              }
-          }        this._section = dataSection$1.section(arr);
-
-      }
-      _setDataSection(yFields) {
-          //如果有堆叠，比如[ ["uv","pv"], "click" ]
-          //那么这个 this.dataOrg， 也是个对应的结构
-          //vLen就会等于2
-          var vLen = 1;
-
-          _$1.each(yFields, function (f) {
-              if (_$1.isArray(f) && f.length > 1) {
-                  vLen = 2;
-              }
-          });
-
-          if (vLen == 1) {
-              return this._oneDimensional(yFields);
-          }        if (vLen == 2) {
-              return this._twoDimensional(yFields);
-          }
-      }
-
-      _oneDimensional(yFields) {
-          let dataOrg = this.getAxisDataFrame(yFields);
-          var arr = _$1.flatten(dataOrg); //_.flatten( data.org );
-
-          for (var i = 0, il = arr.length; i < il; i++) {
-              arr[i] = arr[i] || 0;
-          }
-          return arr;
-      }
-
-      //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
-      _twoDimensional(yFields) {
-          let d = this.getAxisDataFrame(yFields);
-          var arr = [];
-          var min;
-          _$1.each(d, function (d, i) {
-              if (!d.length) {
-                  return
-              }
-              //有数据的情况下 
-              if (!_$1.isArray(d[0])) {
-                  arr.push(d);
-                  return;
-              }
-              var varr = [];
-              var len = d[0].length;
-              var vLen = d.length;
-
-              for (var i = 0; i < len; i++) {
-                  var up_count = 0;
-                  var up_i = 0;
-
-                  var down_count = 0;
-                  var down_i = 0;
-
-                  for (var ii = 0; ii < vLen; ii++) {
-                      !min && (min = d[ii][i]);
-                      min = Math.min(min, d[ii][i]);
-
-                      if (d[ii][i] >= 0) {
-                          up_count += d[ii][i];
-                          up_i++;
-                      } else {
-                          down_count += d[ii][i];
-                          down_i++;
-                      }
-                  }
-                  up_i && varr.push(up_count);
-                  down_i && varr.push(down_count);
-              }            arr.push(varr);
-          });
-          arr.push(min);
-          return _$1.flatten(arr);
-      }
-      getAxisDataFrame(fields) {
-          let dataFrame = this._root.dataFrame;
-
-          return dataFrame.getDataOrg(fields, function (val) {
-              if (val === undefined || val === null || val == "") {
-                  return val;
-              }
-              return (isNaN(Number(val)) ? val : Number(val))
-          })
-
-      }
-
-  }
-
-  /** note: 
-   * 获取所有的配置信息,取去配置中影响布局的相关参数
-   * coord{
-   *    xAsix:{}
-   *    yAxis:[] 
-   *    zAxis:{} 
-   * }
-   * 
-   * graphs{}
-   * 
-   * makeline其他组件
-   * 
-   * 通过Data和相关的配置,给出各个坐标轴的DataSection,计算出各个轴上数据点对应的位置
-   * 
-   * ***/
-  const DEFAULT_AXIS = 'default_axis_for_Y';
-  const cartesian_wm = new WeakMap();
-
-  class Cartesian3D extends InertialSystem {
-      constructor(el, data, opts, graphs, components) {
-          super(el, data, opts, graphs, components);
-
-          //相对与世界坐标的原点位置
-
-          this.origin = new Vector3(0, 0, 0);
-          this.center = new Vector3(0, 0, 0);
-
-          this.offset = new Vector3(0, 0, 0);
-
-          this.boundbox = new Box3();
-
-          this.xAxisAttribute = new AxisAttribute(this._root);
-          //默认Y轴
-          this.yAxisAttribute = {};
-
-          this.zAxisAttribute = new AxisAttribute(this._root);
-
-          this._coordUI = null;
-
-          this.group.name = 'cartesian3dSystem';
-
-          this.init();
-
-      }
-      setDefaultOpts(opts) {
-          var me = this;
-          this._zSection = [];
-          me.coord = {
-              xAxis: {
-                  //波峰波谷布局模型，默认是柱状图的，折线图种需要做覆盖
-                  layoutType: "rule", //"peak",  
-                  //默认为false，x轴的计量是否需要取整， 这样 比如某些情况下得柱状图的柱子间隔才均匀。
-                  //比如一像素间隔的柱状图，如果需要精确的绘制出来每个柱子的间距是1px， 就必须要把这里设置为true
-                  posParseToInt: false
-              },
-              yAxis: [], //y轴至少有一个
-              zAxis: {
-                  enabled: true,
-                  field: '',
-                  layoutType: "rule",
-                  //   depth: 50     //最大深度是1000
-              }
-          };
-
-          opts = _$1.clone(opts);
-
-          //规范Y轴的定义,采用数组形式,如果没有定义就初始化为空数组
-          if (opts.coord.yAxis) {
-              var _nyarr = [];
-              _$1.each(_$1.flatten([opts.coord.yAxis]), function (yopt, index) {
-                  //标记定义的Y轴信息是否在绘图中使用
-                  yopt._used = false;
-                  //如果坐标轴没有置顶名称,第一个为默认坐标轴,其余的将被舍弃
-                  if (_$1.isEmpty(yopt.name)) {
-                      if (index == 0) {
-                          yopt.name = DEFAULT_AXIS;
-                      } else {
-                          return;
-                      }
-                  }
-                  _nyarr.push(_$1.clone(yopt));
-
-
-              });
-              opts.coord.yAxis = _nyarr;
-          } else {
-              opts.coord.yAxis = [];
-          }
-
-
-
-          let getYaxisInfo = (name) => {
-              let _opt = null;
-              if (opts.coord.yAxis) {
-                  _$1.each(_$1.flatten([opts.coord.yAxis]), function (yopt) {
-                      if (yopt.name == name) {
-                          yopt._used = true;
-                          _opt = yopt;
-                      }
-                  });
-              }
-              return _opt;
-          };
-
-
-
-          //根据opt中得Graphs配置，来设置 coord.yAxis
-          if (opts.graphs) {
-              //有graphs的就要用找到这个graphs.field来设置coord.yAxis
-              for (var i = 0; i < opts.graphs.length; i++) {
-
-                  var graphs = opts.graphs[i];
-                  this._zSection.push(graphs.field.toString());
-                  if (graphs.type == "bar") {
-                      //如果graphs里面有柱状图，那么就整个xAxis都强制使用 peak 的layoutType
-                      me.coord.xAxis.layoutType = "peak";
-                      me.coord.zAxis.layoutType = "peak";
-                  }
-                  if (graphs.field) {
-                      //没有配置field的话就不绘制这个 graphs了
-                      //根据graphs中的数据整理y轴的数据
-                      let _axisName = graphs.yAxisName;
-                      if (!graphs.yAxisName) {
-                          //没有指定坐标轴的名称,取默认轴
-                          _axisName = DEFAULT_AXIS;
-                      }
-                      //增加Y轴
-                      let _tAxis = getYaxisInfo(_axisName);
-                      if (!_tAxis) {
-                          let _yAxisNew = {
-                              field: [],
-                              name: _axisName,
-                              _used: true
-                          };
-                          if (_$1.isArray(graphs.field)) {
-                              _yAxisNew.field = _yAxisNew.field.concat(graphs.field);
-                          } else {
-                              _yAxisNew.field.push(graphs.field);
-                          }
-                          opts.coord.yAxis.push(_yAxisNew);
-                      } else {
-
-                          if (_$1.isEmpty(_tAxis.field)) {
-                              _tAxis.field = [];
-                          }
-                          if (_$1.isArray(_tAxis.field)) {
-                              if (_$1.isArray(graphs.field)) {
-                                  _tAxis.field = _tAxis.field.concat(graphs.field);
-                              } else {
-                                  _tAxis.field.push(graphs.field);
-                              }
-                          } else {
-                              if (_$1.isArray(graphs.field)) {
-                                  _tAxis.field = [_tAxis.field].concat(graphs.field);
-                              } else {
-                                  _tAxis.field = [_tAxis.field].push(graphs.field);
-                              }
-                          }
-                      }
-
-                  } else {
-                      //在，直角坐标系中，每个graphs一定要有一个field设置，如果没有，就去掉这个graphs
-                      opts.graphs.splice(i--, 1);
-                  }
-              }
-
-
-          }        //初始化Y轴的相关参数
-          for (var i = 0; i < opts.coord.yAxis.length; i++) {
-              if (!opts.coord.yAxis[i].layoutType) {
-                  opts.coord.yAxis[i].layoutType = 'proportion'; //默认布局
-              }
-              //没有field的Y轴是无效的配置
-              if (_$1.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
-                  opts.coord.yAxis.splice(i--, 1);
-              }
-              if (opts.coord.yAxis[i]) {
-                  delete opts.coord.yAxis[i]._used;
-              }
-
-          }        return opts;
-      }
-
-      init() {
-
-
-          let opt = _$1.clone(this.coord);
-          try {
-
-              //X轴数据集初始化
-              if (opt.xAxis.field) {
-                  this.xAxisAttribute.setField(opt.xAxis.field);
-              } else {
-                  console.error('没有配置X轴对应的字段field,请配置coord.xAxis.field');
-              }
-
-              var arr = _$1.flatten(this.xAxisAttribute.data);
-
-              if (this.coord.xAxis.layoutType == "proportion") {
-                  if (arr.length == 1) {
-                      arr.push(0);
-                      arr.push(arr[0] * 2);
-                  }                arr = arr.sort(function (a, b) { return a - b });
-                  arr = dataSection$1.section(arr);
-              }            arr = _$1.uniq(arr);
-              this.xAxisAttribute.setOrgSection(arr);
-              //如果用户指定了dataSection,就采用用户自己的
-              if (opt.xAxis.dataSection) {
-                  this.xAxisAttribute.setCustomSection(opt.xAxis.dataSection);
-              }
-
-              //y轴的颜色值先预设好
-              let _allField = [];
-              opt.yAxis.forEach(yx => {
-                  yx.field.forEach(fd => {
-                      if (_$1.isArray(fd)) {
-                          fd.forEach(fname => {
-                              _allField.push(fname);
-                          });
-                      } else {
-                          _allField.push(fd);
-                      }
-                  });
-              });
-              let _colorMap = {};
-              let getTheme = this._root.getTheme.bind(this._root);
-              _allField.forEach((v, i) => {
-                  let color$$1 = getTheme(i);
-                  _colorMap[v] = color$$1;
-              });
-
-
-              //Y轴数据集初始化
-              //初步计算坐标轴的dataSection
-              let maxSegment = 0;
-              let maxSegmentUser = Infinity;
-              opt.yAxis.forEach((yopt) => {
-                  let _yAxisAttr = this.yAxisAttribute[yopt.name];
-                  if (!_yAxisAttr) {
-                      _yAxisAttr = new AxisAttribute(this._root);
-                      this.yAxisAttribute[yopt.name] = _yAxisAttr;
-                      cartesian_wm.set(this.yAxisAttribute[yopt.name], yopt);
-                  }
-                  _yAxisAttr.setField(yopt.field);
-                  let dataOrg = _yAxisAttr.data;
-
-                  let joinArr = [];
-                  if (dataOrg.length == 1 && !_$1.isArray(dataOrg[0])) {
-                      joinArr.push(dataOrg[0] * 2);
-                  }
-
-                  if (yopt.layoutType == 'proportion') {
-                      _yAxisAttr.computeDataSection(joinArr);
-                  } else {
-                      var arr = _$1.flatten(_yAxisAttr.data);
-                      _yAxisAttr.setOrgSection(arr);
-                  }
-
-                  //如果用户制定了某个轴的dataSection,就采用用户制定的最短dataSection的个数定义Y轴的数据
-                  //否则则采用自动计算后最多的段,重新计算其他的坐标轴
-
-                  if (yopt.dataSection) {
-                      maxSegmentUser = Math.min(maxSegmentUser, yopt.dataSection.length);
-                      _yAxisAttr.setCustomSection(yopt.dataSection);
-                  }
-                  _yAxisAttr.setColors(_colorMap);
-                  maxSegment = Math.max(maxSegment, _yAxisAttr.getSection().length);
-              });
-
-              //根据最多段重新计算dataSection
-              maxSegment = maxSegmentUser === Infinity ? maxSegment : maxSegmentUser;
-              for (let _yAxisAttr in this.yAxisAttribute) {
-                  let _section = this.yAxisAttribute[_yAxisAttr].getSection();
-                  let step = (_section[_section.length - 1] - _section[0]) / (maxSegment - 1);
-                  if (step > 1) {
-                      step = Math.ceil(step);
-                  }
-                  //如果不相等,按照固定的段重新计算
-                  if (_section.length !== maxSegment) {
-                      let arr = [];
-                      for (var i = 0; i < maxSegment; i++) {
-                          arr.push(_section[0] + i * step);
-                      }
-                      this.yAxisAttribute[_yAxisAttr].setCustomSection(arr);
-                  }
-
-              }
-              //Z轴的计算
-              if (opt.zAxis.field) {
-                  //如果设定了z轴的具体字段,就把该州作为Z的具体值
-                  this.zAxisAttribute.setField(opt.zAxis.field);
-                  var arr = _$1.flatten(this.zAxisAttribute.data);
-
-                  if (this.coord.zAxis.layoutType == "proportion") {
-                      if (arr.length == 1) {
-                          arr.push(0);
-                          arr.push(arr[0] * 2);
-                      }                    arr = arr.sort(function (a, b) { return a - b });
-                      arr = dataSection$1.section(arr);
-                  }                arr = _$1.uniq(arr);
-                  this.zAxisAttribute.setOrgSection(arr);
-
-              } else {
-                  //todo:没有指定具体的field,用Y轴的分组来作为z轴的scetion
-                  //有多少个Y轴,Z轴上就有多少个点,默认显示轴对应字段的名称
-                  // let _sectionZ = [];
-                  // opt.graphs.forEach((yOps) => {
-                  //     debugger
-                  //     _sectionZ.push(yOps.field.toString());
-                  // })
-
-
-                  this.zAxisAttribute.setOrgSection(this._zSection);
-              }
-
-
-
-              if (opt.zAxis.dataSection) {
-                  this.zAxisAttribute.setCustomSection(opt.zAxis.dataSection);
-              }
-
-
-
-
-
-
-
-          } catch (e) {
-              console.error('配置出错啦!', e);
-          }
-          //先计算一次空间范围供计算坐标轴宽高使用
-          this.getBoundbox();
-          this.addLights();
-      }
-      getYAxis(name = DEFAULT_AXIS) {
-          let yAxisAttr = this.yAxisAttribute[name];
-          //如果没有指定名称,通知默认名称不存在,取第一个配置的Name
-          if (!yAxisAttr) {
-              name = this.coord.yAxis[0].name;
-              yAxisAttr = this.yAxisAttribute[name];
-          }
-
-          let yOpts = cartesian_wm.get(yAxisAttr);
-          return {
-              attr: yAxisAttr,
-              opts: yOpts
-          }
-      }
-
-      getBoundbox() {
-          //笛卡尔坐标的原点默认为左下方
-
-          let baseBoundbox = super.getBoundbox();
-          let offset = this.offset.clone();
-          this.baseBoundbox = baseBoundbox;
-          this.boundbox.min.set(0, 0, 0);
-          this.boundbox.max.set(baseBoundbox.max.x - baseBoundbox.min.x - offset.x,
-              baseBoundbox.max.y - baseBoundbox.min.y - offset.y,
-              baseBoundbox.max.z - baseBoundbox.min.z - offset.z
-          );
-
-          //如果指定了Z轴的宽度就不采用默认计算的宽度
-          if (this._root.opt.coord.zAxis && this._root.opt.coord.zAxis.depth) {
-              this.boundbox.max.z = this._root.opt.coord.zAxis.depth;
-          }
-
-          this.center = this.boundbox.getCenter();
-          this.center.setZ(-this.center.z);
-          return this.boundbox;
-
-      }
-      //粗略计算在原点位置的世界线段的长度与屏幕像素的长度比
-      getRatioPixelToWorldByOrigin(_origin) {
-          let baseBoundbox = super.getBoundbox();
-          if (_origin === undefined) {
-              _origin = baseBoundbox.min.clone();
-              _origin.setZ(baseBoundbox.max.z);
-          }
-          let ratio = this._root.renderView.getVisableSize(_origin).ratio;
-          return ratio;
-      }
-
-
-      //更新坐标原点
-      updateOrigin(offset) {
-
-          this.offset = offset.clone();
-
-          this.boundbox = this.getBoundbox();
-
-          this.setWorldOrigin();
-
-          this.updatePosition();
-
-      }
-
-      updatePosition() {
-
-          //更新相机姿态
-          let center = this.center.clone();
-          center = this._getWorldPos(center);
-          let _renderView = this._root.renderView;
-          let _camera = _renderView._camera;
-
-          //相机默认的旋转角度
-          let dist = _camera.position.distanceTo(center);
-          let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
-          let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
-
-          let y = dist * Math.sin(phi);
-          let temp = dist * Math.cos(phi);
-          let x = temp * Math.sin(theta);
-          let z = temp * Math.cos(theta);
-          //平移实现以中心点为圆心的旋转结果
-          let newPos = new Vector3(x, y, z);
-          newPos.add(center);
-          _camera.position.copy(newPos);
-          //相机朝向中心点 
-          _camera.lookAt(center);
-
-
-          //orbite target position
-          this._root.orbitControls.target.copy(center);
-
-
-          //测试中心点的位置
-          // let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
-          // let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
-          // this._root.renderView._scene.add(helpLine);
-          // this._root.renderView._scene.add(helpLine2);
-
-      }
-
-      addLights() {
-          //加入灯光
-
-          var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
-
-          this._root.rootStage.add(ambientlight);
-
-          let center = this.center.clone();
-          center = this._getWorldPos(center);
-          //center.setY(0);
-
-          let dirLights = [];
-          let intensity = 0.8;
-          let lightColor = 0xcccccc;
-          let position = new Vector3(-1, -1, 1);
-
-          dirLights[0] = new DirectionalLight(lightColor, intensity);
-          position.multiplyScalar(10000);
-          dirLights[0].position.copy(position);
-          dirLights[0].target.position.copy(center);
-          this._root.rootStage.add(dirLights[0]);
-
-
-          dirLights[1] = new DirectionalLight(lightColor, intensity);
-          position = new Vector3(1, -1, 1);
-          position.multiplyScalar(10000);
-          dirLights[1].position.copy(position);
-          dirLights[1].target.position.copy(center);
-          this._root.rootStage.add(dirLights[1]);
-
-          // pointLight[0] = new PointLight(lightColor, intensity);
-          // position = new Vector3(-1, -1, 1);
-          // position.multiplyScalar(10000);
-          // pointLight[0].position.copy(position);
-          // this._root.rootStage.add(pointLight[0]);
-
-
-          // pointLight[1] = new PointLight(lightColor, intensity);
-          // position = new Vector3(1, -1, 1);
-          // position.multiplyScalar(10000);
-          // pointLight[1].position.copy(position);
-          // this._root.rootStage.add(pointLight[1]);
-
-
-          // pointLight[2] = new PointLight(lightColor, intensity);
-          // position = new Vector3(-1, -1, -1);
-          // position.multiplyScalar(10000);
-          // pointLight[2].position.copy(position);
-          // this._root.rootStage.add(pointLight[2]);
-
-
-          // pointLight[3] = new PointLight('#fff', 1);
-          // position = new Vector3(1, -1, -1);
-          // position.multiplyScalar(1000);
-          // pointLight[3].position.copy(position);
-          // this._root.rootStage.add(pointLight[3]);
-
-
-
-
-      }
-
-      setWorldOrigin() {
-          let baseBoundbox = super.getBoundbox();
-          let offset = this.offset.clone();
-          let pos = baseBoundbox.min.clone();
-          pos.setZ(baseBoundbox.max.z);
-          pos.add(offset);
-          this.group.position.copy(pos);
-      }
-      getOrigin() {
-          return this.origin.clone();
-      }
-
-      initCoordUI() {
-
-          this._coordUI = new Cartesian3DUI(this);
-          this.group.add(this._coordUI.group);
-
-      }
-
-      drawUI() {
-          super.drawUI();
-          this._coordUI.draw();
-
-          //测试
-          // let ceil = this.getCeilSize();
-          // let pos = new Vector3();
-          // pos.setX(this.getXAxisPosition(2));
-          // pos.setY(this.getYAxisPosition(100));
-          // pos.setZ(this.getZAxisPosition('页面访问数'));
-          // let boxWidth = ceil.x * 0.8;
-          // let boxDepth = ceil.z * 0.8;
-          // let boxHeight = Math.max(Math.abs(pos.y), 1);
-          // let metaril = new MeshBasicMaterial({
-          //     color: 'blue',
-          //     transparent:true,
-          //     opacity:1
-          //     // polygonOffset:true,
-          //     // polygonOffsetFactor:1,
-          //     // polygonOffsetUnits:0.1
-          // })
-          // let box = this._root.renderView.createBox(boxWidth, boxHeight, boxDepth, metaril);
-          // box.position.set(pos.x - boxWidth * 0.5, 0, -pos.z + boxDepth * 0.5);
-          // box.renderOrder = 100;
-          // this.group.add(box);
-
-      }
-
-      getXAxisPosition(data) {
-          let _val = 0;
-          let _range = this.boundbox.max.x - this.boundbox.min.x;
-          let dataLen = this.xAxisAttribute.getSection().length;
-          let ind = _$1.indexOf(this.xAxisAttribute.getSection(), data);//先不考虑不存在的值
-          var layoutType = this.coord.xAxis.layoutType;
-          if (dataLen == 1) {
-              _val = _range / 2;
-
-          } else {
-              if (layoutType == "rule") {
-                  //折线图的xyaxis就是 rule
-                  _val = ind / (dataLen - 1) * _range;
-              }            if (layoutType == "proportion") {
-                  //按照数据真实的值在minVal - maxVal 区间中的比例值
-                  // if (val == undefined) {
-                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
-                  // };
-                  // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                  _val = _range * ((data - minVal) / (maxVal - minVal));
-
-              }            if (layoutType == "peak") {
-                  //柱状图的就是peak
-                  var _ceilWidth = _range / dataLen;
-                  // if (this.posParseToInt) {
-                  //     _ceilWidth = parseInt(_ceilWidth);
-                  // };
-                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
-              }        }
-          if (isNaN(_val)) {
-              _val = 0;
-          }
-          return _val;
-
-
-      }
-      getYAxisPosition(data, yAxisAttribute) {
-          let _val = 0;
-          let _range = this.boundbox.max.y - this.boundbox.min.y;
-          let dataLen = yAxisAttribute.getSection().length;
-          let ind = _$1.indexOf(yAxisAttribute.getSection(), data);//先不考虑不存在的值
-
-          let _yAxisLeft = _$1.find(this.coord.yAxis, yaxis => {
-              return !yaxis.align || yaxis.align == 'left';
-          });
-          let layoutType = _yAxisLeft.layoutType;
-
-          let maxVal = Math.max.apply(null, yAxisAttribute.getSection());
-          let minVal = Math.min.apply(null, yAxisAttribute.getSection());
-
-          if (dataLen == 1) {
-              _val = _range / 2;
-
-          } else {
-              if (layoutType == "rule") {
-                  //折线图的xyaxis就是 rule
-                  _val = ind / (dataLen - 1) * _range;
-              }            if (layoutType == "proportion") {
-                  //按照数据真实的值在minVal - maxVal 区间中的比例值
-                  // if (val == undefined) {
-                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
-                  // };
-                  _val = _range * ((data - minVal) / (maxVal - minVal));
-              }            if (layoutType == "peak") {
-                  //柱状图的就是peak
-                  var _ceilWidth = _range / dataLen;
-                  // if (this.posParseToInt) {
-                  //     _ceilWidth = parseInt(_ceilWidth);
-                  // };
-
-                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
-              }        }
-          if (isNaN(_val)) {
-              _val = 0;
-          }
-          return _val;
-
-      }
-      getZAxisPosition(data) {
-          let _val = 0;
-          let _range = this.boundbox.max.z - this.boundbox.min.z;
-          let dataLen = this.zAxisAttribute.getSection().length;
-          let ind = _$1.indexOf(this.zAxisAttribute.getSection(), data);//先不考虑不存在的值
-          var layoutType = this.coord.zAxis.layoutType;
-
-          if (dataLen == 1) {
-              _val = _range / 2;
-
-          } else {
-              if (layoutType == "rule") {
-                  //折线图的xyaxis就是 rule
-                  _val = ind / (dataLen - 1) * _range;
-              }            if (layoutType == "proportion") {
-                  //按照数据真实的值在minVal - maxVal 区间中的比例值
-                  // if (val == undefined) {
-                  //     val = (ind * (this.maxVal - this.minVal) / (dataLen - 1)) + this.minVal;
-                  // };
-                  // x = _range * ((val - this.minVal) / (this.maxVal - this.minVal));
-                  _val = _range * ((data - minVal) / (maxVal - minVal));
-              }            if (layoutType == "peak") {
-                  //柱状图的就是peak
-                  var _ceilWidth = _range / dataLen;
-                  // if (this.posParseToInt) {
-                  //     _ceilWidth = parseInt(_ceilWidth);
-                  // };
-
-                  _val = _ceilWidth * (ind + 1) - _ceilWidth / 2;
-              }        }
-          if (isNaN(_val)) {
-              _val = 0;
-          }
-          return _val;
-      }
-
-      getCeilSize() {
-
-          let ceil = new Vector3();
-          let size = this.boundbox.getSize();
-          let dataLenX = this.xAxisAttribute.getSection().length;
-          let dataLenY = this.getYAxis().attr.getSection().length;
-          let dataLenZ = this.zAxisAttribute.getSection().length;
-
-          // dataLenX = dataLenX - 1 > 0 ? dataLenX : 3;
-          // dataLenY = dataLenY - 1 > 0 ? dataLenY : 3;
-          // dataLenZ = dataLenZ - 1 > 0 ? dataLenZ : 3;
-          if (this.coord.xAxis.layoutType == 'peak') {
-              ceil.setX(size.x / (dataLenX));
-          } else {
-              ceil.setX(size.x / (dataLenX + 1));
-          }
-
-          ceil.setY(size.y / (dataLenY + 1));
-          if (this.coord.zAxis.layoutType == 'peak') {
-              ceil.setZ(size.z / (dataLenZ));
-          } else {
-              ceil.setZ(size.z / (dataLenZ + 1));
-          }
-
-
-          return ceil;
-
-      }
-
-      positionToScreen(pos) {
-          return positionToScreen.call(this, pos);
-      }
-
-      dispose() {
-
-          this._coordUI.dispose();
-      }
-
-
-
-  }
-
-
-  let positionToScreen = (function () {
-      let matrix = new Matrix4();
-
-      return function (pos) {
-          let pCam = this._root.renderView._camera;
-          const widthHalf = 0.5 * this._root.width;
-          const heightHalf = 0.5 * this._root.height;
-
-          let target = this.group.localToWorld(pos);
-
-          target.project(pCam, matrix);
-
-          target.x = (target.x * widthHalf) + widthHalf;
-          target.y = (- (target.y * heightHalf) + heightHalf);
-          return target;
-      }
-  })();
 
   //let renderOrder = 100;
 
@@ -25781,17 +25979,6 @@ var Chartx3d = (function () {
           super(chart3d.currCoord);
 
           this.type = "bar3d";
-
-
-          // this.field  = null;
-          // this.enabledField = null;
-
-          // this.yAxisAlign = "left"; //默认设置为左y轴
-          // this._xAxis = this.root._coord._xAxis;
-
-          //trimGraphs的时候是否需要和其他的 bar graphs一起并排计算，true的话这个就会和别的重叠
-          //和css中得absolute概念一致，脱离文档流的绝对定位
-          // this.absolute = false; 
 
           this.node = {
               shapeType: 'cube',  //'cube'立方体  'cylinder'圆柱体  ,'cone'圆锥体 
@@ -25854,14 +26041,14 @@ var Chartx3d = (function () {
               fields = this.field.slice(0);
           }
           this.allGroupNum = fields.length;
-          let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
-          let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
           this.drawPosData = [];
-          let xDatas = this._coordSystem.xAxisAttribute.data;
+          let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
           let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
           let yAxisAttribute = yAxisInfo.attr;
 
-          let yDatas = yAxisAttribute.data;
+          let yDatas = yAxisAttribute.dataOrg;
           //x轴返回的数据是单列
           if (xDatas.length == 1) {
               xDatas = _$1.flatten(xDatas);
@@ -25869,7 +26056,7 @@ var Chartx3d = (function () {
 
           let yValidData = [];
 
-          yValidData = yAxisAttribute.getData(this.field);
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
           if (this._coordSystem.coord.zAxis.dataSection) {
               customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
           }
@@ -25911,16 +26098,14 @@ var Chartx3d = (function () {
 
           //let ceil = this.getCeilSize();
           let getZAxiaName = (fieldName) => {
-              let index = -1;
               let name = '';
               _$1.each(zSection, (section = "", num) => {
                   let ind = section.indexOf(fieldName);
                   if (ind !== -1) {
-                      index = num;
                       name = zSection[num];
                   }
               });
-              return zCustomSection.length ? zCustomSection[index] : name;
+              return  name;
           };
 
           xDatas.forEach((xd, no) => {
@@ -26149,7 +26334,6 @@ var Chartx3d = (function () {
           this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
       }
       onMouseOut() {
-          $('#target').hide();
           this.material.setValues({ color: this.userData.color });
       }
       onClick(e) {
@@ -26158,9 +26342,7 @@ var Chartx3d = (function () {
 
       _getColor(c, dataOrg) {
 
-
-          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
-          var color = yAxisAttribute.getColor(dataOrg.field);
+          var color = this._coordSystem.getColor(dataOrg.field);
           //field对应的索引，， 取颜色这里不要用i
           if (_$1.isString(c)) {
               color = c;
@@ -26189,6 +26371,10 @@ var Chartx3d = (function () {
 
           super.dispose();
 
+      }
+      resetData(){
+          this.dispose();
+          this.draw();    
       }
 
   }
@@ -26234,8 +26420,7 @@ var Chartx3d = (function () {
       }
       _getColor(c, dataOrg) {
 
-          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
-          var color = yAxisAttribute.getColor(dataOrg.field);
+          var color = this._coordSystem.getColor(dataOrg.field);
 
           //field对应的索引，， 取颜色这里不要用i
           if (_$1.isString(c)) {
@@ -26256,14 +26441,14 @@ var Chartx3d = (function () {
           } else {
               fields = this.field.slice(0);
           }
-          let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
-          let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
           this.drawPosData = [];
-          let xDatas = this._coordSystem.xAxisAttribute.data;
+          let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
           let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
           let yAxisAttribute = yAxisInfo.attr;
 
-          let yDatas = yAxisAttribute.data;
+          let yDatas = yAxisAttribute.dataOrg;
           //x轴返回的数据是单列
           if (xDatas.length == 1) {
               xDatas = _$1.flatten(xDatas);
@@ -26273,7 +26458,7 @@ var Chartx3d = (function () {
 
           let yValidData = [];
 
-          yValidData = yAxisAttribute.getData(this.field);
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
           if (this._coordSystem.coord.zAxis.dataSection) {
               customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
           }
@@ -26300,18 +26485,6 @@ var Chartx3d = (function () {
           };
 
           //let ceil = this.getCeilSize();
-          let getZAxiaName = (fieldName) => {
-              let index = -1;
-              let name = '';
-              _$1.each(zSection, (section = "", num) => {
-                  let ind = section.indexOf(fieldName);
-                  if (ind !== -1) {
-                      index = num;
-                      name = zSection[num];
-                  }
-              });
-              return zCustomSection.length ? zCustomSection[index] : name;
-          };
 
           let generate = (zd) => {
               xDatas.forEach((xd, no) => {
@@ -26368,12 +26541,11 @@ var Chartx3d = (function () {
 
           let fieldName = fields.toString();
           if (_$1.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-              let zd = getZAxiaName(fieldName);
-              generate(zd);
+              generate(fieldName);
           } else {
 
               zSection.forEach(zd => {
-                  generate(zd);
+                  generate(fieldName);
               });
           }
 
@@ -26467,6 +26639,10 @@ var Chartx3d = (function () {
 
 
           }
+      }
+      resetData(){
+          this.dispose();
+          this.draw();    
       }
   }
 
@@ -26894,7 +27070,7 @@ var Chartx3d = (function () {
   }
 
   var coord = {
-      box: Cartesian3D
+      box: Box
   };
 
   var graphs = {

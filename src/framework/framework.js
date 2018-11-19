@@ -49,25 +49,25 @@ class Framework extends Events {
 
         let redraw = this.isUpdate;
 
-        if (this.lastTick - this.currTick > 1000 * 5) {
+        if (this.lastTick - this.currTick > 1000) {
             this.isUpdate = false;
         }
 
         this.fire({ type: 'renderbefore' });
         if (redraw) {
 
-            this.layers.forEach((view,index) => {
-                if(this.layers.length>1 && index!==this.layers.length-1){
+            this.layers.forEach((view, index) => {
+                if (this.layers.length > 1 && index !== this.layers.length - 1) {
                     this.renderer.autoClear = true
-                }else{
+                } else {
                     this.renderer.autoClear = false;
                 }
                 // if(this.layers.length>1 && index!==this.layers.length-1){}
                 // else{
-                    
-                    this.renderer.render(view._scene, view._camera)
+
+                this.renderer.render(view._scene, view._camera)
                 //}
-               
+
 
             });
             this.lastTick = new Date().getTime();
@@ -82,6 +82,7 @@ class Framework extends Events {
             me.renderFrame();
         })
     }
+
 
     stopRenderFrame() {
         window.cancelAnimationFrame(this.frameId);
@@ -100,8 +101,11 @@ class Framework extends Events {
             this.layers.splice(index, 1);
         }
     }
-
-    addGroup(opt) {
+    /**
+     * 
+     * @param {name:"名称",flipY:"是否Y轴反转"}  
+     */
+    addGroup({ name = '', flipY = false }) {
         let _group = new Group();
         _group.on('removed', function () {
             if (this.geometry) {
@@ -111,11 +115,27 @@ class Framework extends Events {
                 this.material.dispose();
             }
         });
-        _group.name = (opt && opt.name) || '';
+        _group.name = name;
+
+        //是否Y轴反转
+        if (flipY) {
+            let _modelMatrix = _group.matrix.elements;
+            _modelMatrix[1] = - _modelMatrix[1];
+            _modelMatrix[5] = - _modelMatrix[5];
+            _modelMatrix[9] = - _modelMatrix[9];
+            _modelMatrix[13] = - _modelMatrix[13];
+            _group.matrixAutoUpdate = false;
+        }
+
+
         this._groups.push(_group); //todo 收集起来方便后期处理或查询使用
         return _group;
     }
 
+    forceRender() {
+        //强行开启绘制
+        this.isUpdate = true;
+    }
 
 
 }

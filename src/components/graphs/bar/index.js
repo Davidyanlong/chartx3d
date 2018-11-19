@@ -10,17 +10,6 @@ class Bar extends Component {
 
         this.type = "bar3d";
 
-
-        // this.field  = null;
-        // this.enabledField = null;
-
-        // this.yAxisAlign = "left"; //默认设置为左y轴
-        // this._xAxis = this.root._coord._xAxis;
-
-        //trimGraphs的时候是否需要和其他的 bar graphs一起并排计算，true的话这个就会和别的重叠
-        //和css中得absolute概念一致，脱离文档流的绝对定位
-        // this.absolute = false; 
-
         this.node = {
             shapeType: 'cube',  //'cube'立方体  'cylinder'圆柱体  ,'cone'圆锥体 
             materialType: 'phong', //'lambert' 'phong' 'base'  作色方式
@@ -82,14 +71,14 @@ class Bar extends Component {
             fields = this.field.slice(0);
         }
         this.allGroupNum = fields.length;
-        let zSection = this._coordSystem.zAxisAttribute.getOrgSection();
-        let zCustomSection = this._coordSystem.zAxisAttribute.getCustomSection();
+        let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+        let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
         this.drawPosData = [];
-        let xDatas = this._coordSystem.xAxisAttribute.data;
+        let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
         let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
         let yAxisAttribute = yAxisInfo.attr;
 
-        let yDatas = yAxisAttribute.data;
+        let yDatas = yAxisAttribute.dataOrg;
         //x轴返回的数据是单列
         if (xDatas.length == 1) {
             xDatas = _.flatten(xDatas);
@@ -97,7 +86,7 @@ class Bar extends Component {
 
         let yValidData = [];
 
-        yValidData = yAxisAttribute.getData(this.field);
+        yValidData = yAxisAttribute.getPartDataOrg(this.field);
         if (this._coordSystem.coord.zAxis.dataSection) {
             customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
         }
@@ -148,7 +137,7 @@ class Bar extends Component {
                     name = zSection[num];
                 }
             });
-            return zCustomSection.length ? zCustomSection[index] : name;
+            return  name;
         }
 
         xDatas.forEach((xd, no) => {
@@ -377,7 +366,6 @@ class Bar extends Component {
         this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
     }
     onMouseOut() {
-        $('#target').hide()
         this.material.setValues({ color: this.userData.color });
     }
     onClick(e) {
@@ -386,9 +374,7 @@ class Bar extends Component {
 
     _getColor(c, dataOrg) {
 
-
-        let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
-        var color = yAxisAttribute.getColor(dataOrg.field);
+        var color = this._coordSystem.getColor(dataOrg.field);
         //field对应的索引，， 取颜色这里不要用i
         if (_.isString(c)) {
             color = c
@@ -420,6 +406,10 @@ class Bar extends Component {
 
         super.dispose();
 
+    }
+    resetData(){
+        this.dispose();
+        this.draw();    
     }
 
 }
