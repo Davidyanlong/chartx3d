@@ -22739,7 +22739,7 @@ var Chartx3d = (function () {
 
           this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-          _$1.extend(true, this, opt.xAxis);
+          _$1.extend(true, this, opt);
 
           // this.label.enabled = this.enabled && this.label.enabled;
           // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
@@ -26051,7 +26051,7 @@ var Chartx3d = (function () {
           }
           this.allGroupNum = fields.length;
           let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
+          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
           this.drawPosData = [];
           let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
           let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
@@ -26114,7 +26114,7 @@ var Chartx3d = (function () {
                       name = zSection[num];
                   }
               });
-              return  name;
+              return name;
           };
 
           xDatas.forEach((xd, no) => {
@@ -26169,7 +26169,7 @@ var Chartx3d = (function () {
 
                       });
                   }
-                 
+
               });
 
           });
@@ -26227,6 +26227,8 @@ var Chartx3d = (function () {
           let boxWidth = ceil.x / this.allGroupNum * 0.7; //细分后柱子在单元格内的宽度
           //boxWidth = Math.max(1,boxWidth);
           let boxDepth = ceil.z * 0.7;
+          //todo 这里考虑如果优化  防止柱子太宽
+          boxDepth = boxDepth > boxWidth ? boxWidth : boxDepth;
           let boxHeight = 1;
 
           let scale = 0.9; //每个单元格柱子占用的百分比
@@ -26243,13 +26245,13 @@ var Chartx3d = (function () {
               let step = (dataOrg.group - 1) * 2 + 1;
 
               stack.setX(pos.x + (span * step - ceil.x * 0.5 * scale) - boxWidth * 0.5);
-              if (this.node.shapeType == 'cylinder' || 'cone' ==this.node.shapeType) {
-                 
+              if (this.node.shapeType == 'cylinder' || 'cone' == this.node.shapeType) {
+
                   stack.setZ(-pos.z + boxWidth * 0.5);
-              }else{
+              } else {
                   stack.setZ(-pos.z + boxDepth * 0.5);
               }
-             
+
               if (dataOrg.isStack) {
                   stack.setY(getYAxisPosition(dataOrg.stackValue.y, yAxisAttribute));
 
@@ -26269,18 +26271,18 @@ var Chartx3d = (function () {
               if (this.node.shapeType == 'cone') {
                   box = app.createCone(boxWidth, boxHeight, boxDepth, material);
                   let boundbox = new Box3().setFromObject(box);
-                  stack.x+=boundbox.getCenter().x;
+                  stack.x += boundbox.getCenter().x;
               } else if (this.node.shapeType == 'cylinder') {
                   box = app.createCylinder(boxWidth, boxHeight, boxDepth, material);
                   let boundbox = new Box3().setFromObject(box);
-                  stack.x+=boundbox.getCenter().x;
+                  stack.x += boundbox.getCenter().x;
               } else {
                   box = app.createBox(boxWidth, boxHeight, boxDepth, material);
 
               }
 
-          
-            
+
+
 
               box.position.copy(stack);
               let { x, y, z } = dataOrg.value;
@@ -26381,9 +26383,9 @@ var Chartx3d = (function () {
           super.dispose();
 
       }
-      resetData(){
+      resetData() {
           this.dispose();
-          this.draw();    
+          this.draw();
       }
 
   }
