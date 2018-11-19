@@ -136,6 +136,11 @@ class Framework extends Events {
         //强行开启绘制
         this.isUpdate = true;
     }
+    resetState() {
+        if (this.renderer) {
+            this.renderer._state.reset()
+        }
+    }
 
 
 }
