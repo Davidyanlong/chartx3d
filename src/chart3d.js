@@ -69,7 +69,7 @@ class Chart3d extends Events {
             boxHeight: 1200,        //空间中Y的最大值(最大高度)  
             boxDepth: 500,         //空间中Z的最大值(最大深度)
 
-            distance: 1100,        //默认相机距离
+            distance: 1500,        //默认相机距离
             maxDistance: 3000,     //最大相机距离
             minDistance: 600,      //最小相机距离 
             minZoom: 0.2,           //正交投影缩小的最小值
