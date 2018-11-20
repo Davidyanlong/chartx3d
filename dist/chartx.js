@@ -25708,7 +25708,7 @@ var Chartx3d = (function () {
 
       bindEvent() {
 
-          const TipName = 'Tips3d';
+          const TipName = 'Tips';
 
           this.on('tipShow', (e) => {
               let tips = this.getComponent(TipName);
