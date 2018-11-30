@@ -27,20 +27,12 @@ class Cartesian3D extends InertialSystem {
     constructor(root) {
         super(root);
 
-        //相对与世界坐标的原点位置
-
-        this.origin = new Vector3(0, 0, 0);
-        this.center = new Vector3(0, 0, 0);
-
         this.offset = new Vector3(0, 0, 0);
-
-        this.boundbox = new Box3();
 
         this._coordUI = null;
 
         this.group.name = 'cartesian3dSystem';
 
-        this.init();
 
     }
     setDefaultOpts(opts) {
@@ -462,7 +454,7 @@ class Cartesian3D extends InertialSystem {
     }
 
     initCoordUI() {
-
+        debugger
         this._coordUI = new Cartesian3DUI(this);
         this.group.add(this._coordUI.group);
 
@@ -513,10 +505,6 @@ class Cartesian3D extends InertialSystem {
 
     }
 
-    positionToScreen(pos) {
-        return positionToScreen.call(this, pos);
-    }
-
     dispose() {
 
         this._coordUI.dispose();
@@ -558,23 +546,7 @@ class Cartesian3D extends InertialSystem {
 }
 
 
-let positionToScreen = (function () {
-    let matrix = new Matrix4();
 
-    return function (pos) {
-        let pCam = this._root.renderView._camera;
-        const widthHalf = 0.5 * this._root.width;
-        const heightHalf = 0.5 * this._root.height;
-
-        let target = this.group.localToWorld(pos);
-
-        target.project(pCam, matrix);
-
-        target.x = (target.x * widthHalf) + widthHalf;
-        target.y = (- (target.y * heightHalf) + heightHalf);
-        return target;
-    }
-})();
 
 
 

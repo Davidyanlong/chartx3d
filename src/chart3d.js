@@ -17,15 +17,17 @@ import { MainView, LabelView } from './constants';
 
 let _cid = 0;
 class Chart3d extends Events {
-    constructor(opt) {
+    constructor(node, data, opt, componentModules) {
         super();
 
-        this.domSelector = opt.el;
-        this.opt = opt.opts;
-        this.data = opt.data;
+        this.domSelector = node;
+        this.opt = opt;
+        this.data = data;
 
-        this.graphMap = opt.graphs;
-        this.componentMap = opt.components;
+        this.componentModules = componentModules;
+
+        // this.graphMap = opt.graphs;
+        // this.componentMap = opt.components;
 
 
         this.el = null;
@@ -46,7 +48,7 @@ class Chart3d extends Events {
         this._theme = theme.colors.slice(0);
 
         //初始化画布
-        this._createDomContainer(opt.el);
+        this._createDomContainer(node);
 
         //初始化数据
         //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
@@ -54,7 +56,7 @@ class Chart3d extends Events {
         //通过parse2MatrixData最终转换的是data = [ ['xfield','yfield'] , ['2016', 111]] 这样 chartx的数据格式
         //后面有些地方比如 一些graphs中会使用dataFrame.org，， 那么这个dataFrame.org和_data的区别是，
         //_data是全量数据， dataFrame.org是_data经过dataZoom运算过后的子集
-        this._data = parse2MatrixData(opt.data);
+        this._data = parse2MatrixData(data);
 
         //三维引擎初始化
         this.app = new Application(this.width, this.height);
@@ -63,23 +65,6 @@ class Chart3d extends Events {
         //初始化渲染器
         this.renderer = this.app._framework.renderer;
 
-        this.DefaultControls = {
-            autoRotate: false,       //默认不自动旋转
-            boxWidth: 1200,         //空间中X的最大值(最大宽度)  
-            boxHeight: 1200,        //空间中Y的最大值(最大高度)  
-            boxDepth: 500,         //空间中Z的最大值(最大深度)
-
-            distance: 1500,        //默认相机距离
-            maxDistance: 3000,     //最大相机距离
-            minDistance: 600,      //最小相机距离 
-            minZoom: 0.2,           //正交投影缩小的最小值
-            maxZoom: 1.5,           //正交投影放大的最大值
-
-            alpha: 10,    //绕X轴旋转
-            beta: 40,      //绕Y轴旋转
-            gamma: 0      //绕Z轴旋转
-        }
-
 
         //组件管理机制,所有的组件都绘制在这个地方
         this.components = [];
@@ -87,14 +72,12 @@ class Chart3d extends Events {
         this.inited = false;
         this.dataFrame = this._initData(this._data, {}); //每个图表的数据集合 都 存放在dataFrame中。
 
-
-        this.init();
-
+        this.initComponent();
 
     }
-    init() {
+    init(DefaultControls) {
         let me = this;
-        let rendererOpts = _.extend({}, this.DefaultControls);
+        let rendererOpts = _.extend({}, DefaultControls);
         this.opt.coord.controls = this.opt.coord.controls || {};
         let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
@@ -152,12 +135,12 @@ class Chart3d extends Events {
     setCoord(_Coord) {
 
         //初始化物体的惯性坐标(放在具体的坐标系下)
-        // if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
-        // this.currCoord = new _Coord(this);
+        if (_Coord === InertialSystem || _Coord.prototype instanceof InertialSystem) {
+            this.currCoord = new _Coord(this);
 
-        this.currCoord = _Coord;
-        this.rootStage.add(this.currCoord.group);
-        // }
+            // this.currCoord = _Coord;
+            this.rootStage.add(this.currCoord.group);
+        }
 
 
     }
@@ -165,19 +148,35 @@ class Chart3d extends Events {
     initComponent() {
         let opts = this.opt;
         this.components = [];
+
+        //先初始化坐标系
+        let coord = this.componentModules.getComponentModule('coord', opts.coord.type)
+        if (!coord) {
+            coord = InertialSystem;
+        }
+        this.setCoord(coord);
+
         for (var p in opts) {
+
+            let comp = this.componentModules.getComponentModule(p, opts[p].type);
             if (p == 'coord') continue;
             if (p == 'graphs') {
                 for (var t = 0; t < opts.graphs.length; t++) {
                     let key = opts.graphs[t].type;
-                    if (this.graphMap[key]) {
-                        this.addComponent(this.graphMap[key], opts.graphs[t]);
-                    }
+                    comp = this.componentModules.getComponentModule(p, key);
+                    this.addComponent(comp, opts.graphs[t]);
+
                 }
+            } else {
+                //其他组件
+                this.addComponent(comp, opts[p]);
             }
-            if (this.componentMap[p]) {
-                this.addComponent(this.componentMap[p], opts[p]);
-            }
+
+
+
+
+
+
 
         }
     }

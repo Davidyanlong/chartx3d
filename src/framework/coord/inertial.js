@@ -1,5 +1,5 @@
 
-import { Events, Vector3, Box3, _Math } from "mmgl/src/index";
+import { Events, Vector3, Box3, _Math,Matrix4 } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
 
 
@@ -17,6 +17,9 @@ class InertialSystem extends Events {
         //中心的
         this.center = new Vector3(0, 0, 0);
 
+        this.boundbox = new Box3();
+        this.size = new Vector3();
+        this.baseBoundbox = new Box3();
         this.padding = {
             left: 0,
             top: 0,
@@ -25,8 +28,11 @@ class InertialSystem extends Events {
             front: 0,
             back: 0
         }
-      
-        this.fieldMap={};
+
+       
+
+
+        this.fieldMap = {};
         this.group = root.app.addGroup({ name: 'InertialSystem' });
         _.extend(true, this, this.setDefaultOpts(root.opt));
 
@@ -64,6 +70,8 @@ class InertialSystem extends Events {
 
         _boundbox.min.set(minX, minY, minZ);
         _boundbox.max.set(maxX, maxY, maxZ);
+
+        this.baseBoundbox = _boundbox
         return _boundbox;
     }
 
@@ -75,6 +83,12 @@ class InertialSystem extends Events {
         return posWorld;
     }
 
+    getSize() {
+        if (this.boundbox) {
+            this.size = this.boundbox.getSize();
+        }
+        return this.size;
+    }
 
     dataToPoint(data, dir) {
 
@@ -90,7 +104,7 @@ class InertialSystem extends Events {
         return null;
     }
     drawUI() {
-        this._root.initComponent();
+       // this._root.initComponent();
     }
 
     draw() {
@@ -99,7 +113,7 @@ class InertialSystem extends Events {
     dispose() {
 
     }
-    resetData(){
+    resetData() {
 
     }
 
@@ -114,8 +128,30 @@ class InertialSystem extends Events {
         })
 
     }
+    positionToScreen(pos) {
+        return positionToScreen.call(this, pos);
+    }
 
 
 }
+
+
+let positionToScreen = (function () {
+    let matrix = new Matrix4();
+
+    return function (pos) {
+        let pCam = this._root.renderView._camera;
+        const widthHalf = 0.5 * this._root.width;
+        const heightHalf = 0.5 * this._root.height;
+
+        let target = this.group.localToWorld(pos);
+
+        target.project(pCam, matrix);
+
+        target.x = (target.x * widthHalf) + widthHalf;
+        target.y = (- (target.y * heightHalf) + heightHalf);
+        return target;
+    }
+})();
 
 export { InertialSystem };

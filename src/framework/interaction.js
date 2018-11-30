@@ -25,6 +25,7 @@ class Interaction extends Events {
         this.domElement.addEventListener('mousedown', this._onMousedownbind, false);
         this.domElement.addEventListener('mouseup', this._onMouseupbind, false);
 
+        this.lastPos = null;
 
     }
     update() {
@@ -104,14 +105,21 @@ class Interaction extends Events {
         isClick = false;
         EVENT = null;
     }
-    onMousedown() {
+    onMousedown(e) {
         //isClick = true;
         EVENT = event;
+        let { x, y } = e;
+        this.lastPos = { x, y };
     }
-    onMouseup() {
-        isClick = true;
+    onMouseup(e) {
+
         isChange = true;
-        this.fire({ type: 'click', event: event });
+        let { x, y } = e;
+        if (x == this.lastPos.x && y == this.lastPos.y) {
+            isClick = true;
+            this.fire({ type: 'click', event: event });
+        }
+
         this.fire({ type: 'refresh' });
 
         EVENT = event;

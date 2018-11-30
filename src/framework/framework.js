@@ -29,7 +29,8 @@ class Framework extends Events {
                 depth: true,
                 antialias: true,
                 premultipliedAlpha: true,
-                preserveDrawingBuffer: true
+                preserveDrawingBuffer: true,
+                logarithmicDepthBuffer: true
             });
 
             //this.render._sortObjects=false;

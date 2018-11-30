@@ -8,7 +8,8 @@ class Bar extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
 
-        this.type = "bar3d";
+        this.type = "bar";
+        this._type = "bar3d";
 
         this.node = {
             shapeType: 'cube',  //'cube'立方体  'cylinder'圆柱体  ,'cone'圆锥体 

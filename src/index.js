@@ -1,33 +1,37 @@
 
-import { global, cloneOptions, cloneData, dom } from "mmvis"
+import { global } from "mmvis"
 
-//空坐标系，当一些非坐标系图表，就直接创建在emptyCoord上面
-import emptyCoord from './components/coord/index';
+import { Chart3d } from './chart3d';
+
 
 //坐标系
 import Box from './components/coord/box';
+import Polar3D from './components/coord/polar3d';
 
 //graphs
 import Bar from "./components/graphs/bar/index";
 import Line from "./components/graphs/line/index"
+import Pie from "./components/graphs/pie/index"
 
 // //components
 import Tips from "./components/tips/index"
 
 
-var coord = {
-    box: Box
-}
+global.registerComponent( Chart3d, 'chart' ,3);
 
-var graphs = {
-    bar: Bar,
-    line: Line
+//global.registerComponent( emptyCoord, 'coord' );
+global.registerComponent( Box, 'coord', 'box' ,3);
+global.registerComponent( Polar3D, 'coord', 'polar3d',3 );
 
-}
+global.registerComponent( Bar, 'graphs', 'bar',3 );
+global.registerComponent( Line, 'graphs', 'line',3 );
+global.registerComponent( Pie, 'graphs', 'pie',3 );
 
-var components = {
-    tips: Tips,
-}
+
+
+global.registerComponent( Tips, 'tips', 3 );
+
+
 
 
 //皮肤设定begin ---------------
@@ -38,62 +42,12 @@ if( projectTheme && projectTheme.length ){
 };
 //皮肤设定end -----------------
 
-
-
-
-
-
-
-var Chartx = {
-    create: function (el, data, opts) {
-        let me = this;
-        let chart = null;
-
-        var _destroy = function () {
-            me.instances[chart.id] = null;
-            delete me.instances[chart.id];
-        }
-
-        //这个el如果之前有绘制过图表，那么就要在instances中找到图表实例，然后销毁
-        var chart_id = dom.query(el).getAttribute("chart_id");
-        if (chart_id != undefined) {
-            var _chart = me.instances[chart_id];
-            if (_chart) {
-                _chart.destroy();
-                _chart.off("destroy", _destroy)
-            };
-            delete me.instances[chart_id];
-        };
-
-        //默认为惯性坐标系
-        let Coord = emptyCoord;
-
-        if (opts.coord && opts.coord.type) {
-            Coord = coord[opts.coord.type];
-        };
-
-
-        //try {
-
-        chart = new Coord(el, data, opts, graphs, components);
-        if (chart) {
-
-            chart.draw();
-
-            me.instances[chart.id] = chart;
-            chart.on("destroy", _destroy);
-        };
-        //} catch(err){
-        //    throw "Chatx Error：" + err
-        //};
-        return chart;
-    },
-    options: {}
+var chartx = {
+    options : {}
 };
 
-for (var p in global) {
-    Chartx[p] = global[p];
+for( var p in global ){
+    chartx[ p ] = global[ p ];
 };
 
-
-export default Chartx;
+export default chartx;

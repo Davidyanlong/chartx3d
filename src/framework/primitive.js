@@ -1,5 +1,5 @@
 import {
-    Mesh as _Math,
+    Math as _Math,
     Vector2,
     Vector3,
     Matrix4,
@@ -17,6 +17,7 @@ import {
     LineGeometry,
     CircleBufferGeometry,
     SphereBufferGeometry,
+    DoughnutBufferGeometry,
 
     MeshLambertMaterial,
     MeshBasicMaterial,
@@ -438,7 +439,38 @@ const primitive = {
         let mesh = new Mesh(geometry, materials);
 
         return mesh;
+    },
+    //饼图的一个扇形角
+    create3DPie(height, outterRadius, innerRadius = 0, startAngle, endAngle, materials) {
+        let radialSegments = 32;
+        let PI2 = Math.PI * 2;
+        //与2D的饼图角度一直,并沿顺时针绘制  
+
+        let _startAngle = _Math.degToRad(startAngle-90);
+        let _endAngle = _Math.degToRad(endAngle-90);
+
+
+
+
+        if (!materials) {
+
+            materials = new MeshBasicMaterial({
+                color: 0xffffff * Math.random(),
+                side: DoubleSide,
+                transparent: true,
+                opacity: 1,
+                depthTest: true,
+                depthWrite: true
+            });
+        }
+        let geometry = new DoughnutBufferGeometry(outterRadius, height, innerRadius, radialSegments, (PI2 - _startAngle) % PI2, -(_endAngle - _startAngle));
+
+        let mesh = new Mesh(geometry, materials);
+        return mesh;
+
     }
+
+
 
 }
 

@@ -6,7 +6,9 @@ let renderOrder = 100;
 class Line extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
-        this.type = "line3d";
+        
+        this.type = "line";
+        this._type = "line3d";
 
         this.line = { //线
             enabled: 1,
