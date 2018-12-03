@@ -37,7 +37,7 @@ class Framework extends Events {
 
         } catch (e) {
             this.view.style.cssText = "display: flex;justify-content: center;align-items:center;font-size:16px;color:#666;width:100%;height:100%;";
-            this.view.innerHTML = '很抱歉,您的浏览器不能展示3D图表!'
+            this.view.innerHTML = '很抱歉,您的浏览器不能展示3D图表,请使用<a href="" target="blank">Chrome浏览器</a>!'
             console.error(e);
             return;
         }
@@ -58,6 +58,8 @@ class Framework extends Events {
         if (redraw) {
 
             this.layers.forEach((view, index) => {
+                //reset时候又可能暂时渲染上下午丢失
+                if(!this.renderer) return;
                 if (this.layers.length > 1 && index !== this.layers.length - 1) {
                     this.renderer.autoClear = true
                 } else {

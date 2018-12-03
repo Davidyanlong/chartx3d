@@ -103,37 +103,46 @@
         let gopts = {
             type: "line",
             field: ["uv"],
-            yAxisName: "uv"
+            yAxisName: "uv",
+            area: {
+                enabled: false
+            }
         }
         let dataSection = [];
         $("[name='item']").each((index, dom) => {
             var key = dom.value;
             var isCheck = dom.checked;
-            var graph = Object.create(gopts);
+            var graph = Object.assign({}, gopts);
             graph.field = [key];
             graph.yAxisName = key;
-
             if (isCheck) {
-                if (customSet[key]) {
-                    yAxisOp.unshift(customSet[key])
+                graph.area = { enabled: true };
 
-                } else {
-                    yAxisOp.unshift({
-                        name: key
-                    })
-                }
-                graphs.unshift(graph);
             } else {
-                if (customSet[key]) {
-                    yAxisOp.push(customSet[key])
-                } else {
-                    yAxisOp.push({
-                        name: key
-                    })
-                }
-                graphs.push(graph);
-
+                graph.line = { strokeStyle: "#eee" }
             }
+
+            // if (isCheck) {
+            //     if (customSet[key]) {
+            //         yAxisOp.unshift(customSet[key])
+
+            //     } else {
+            //         yAxisOp.unshift({
+            //             name: key
+            //         })
+            //     }
+            //     graphs.unshift(graph);
+            // } else {
+            // if (customSet[key]) {
+            //     yAxisOp.push(customSet[key])
+            //  } else {
+            //     yAxisOp.push({
+            //         name: key
+            //      })
+            //  }
+            graphs.push(graph);
+
+            // }
 
 
 
@@ -146,7 +155,12 @@
         options.coord.yAxis = yAxisOp;
         options.coord.zAxis.dataSection = dataSection;
         options.graphs = graphs;
-        window.line = Chartx3d.create("canvasTest", data, options)
+        if (!window.line) {
+            window.line = Chartx3d.create("canvasTest", data, options)
+        } else {
+            window.line.reset( options,data);
+
+        }
     }
 
 
@@ -172,12 +186,12 @@
             },
             controls: {
                 autoRotate: false,
-                boxWidth: 2000,
+                boxWidth: 4000,
                 distance: 1800,        //默认相机距离
                 maxDistance: 8000,     //最大相机距离
                 minDistance: 300,      //最小相机距离
                 alpha: 15,    //绕X轴旋转
-                beta: 45,      //绕Y轴旋转
+                beta: 10,      //绕Y轴旋转
             },
 
         },

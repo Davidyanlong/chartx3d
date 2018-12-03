@@ -454,7 +454,6 @@ class Cartesian3D extends InertialSystem {
     }
 
     initCoordUI() {
-        debugger
         this._coordUI = new Cartesian3DUI(this);
         this.group.add(this._coordUI.group);
 

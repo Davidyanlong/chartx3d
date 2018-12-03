@@ -6,14 +6,14 @@ let renderOrder = 100;
 class Line extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
-        
+
         this.type = "line";
         this._type = "line3d";
 
         this.line = { //线
             enabled: 1,
             shapeType: "brokenLine",//折线
-            strokeStyle: '#ccc',
+            strokeStyle: null,
             lineWidth: 2,
             lineType: "solid",
             smooth: true
@@ -71,7 +71,7 @@ class Line extends Component {
             fields = this.field.slice(0);
         }
         let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-        let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
+        let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
         this.drawPosData = [];
         let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
         let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
@@ -230,49 +230,57 @@ class Line extends Component {
 
         const DIVISONS = 200;
         for (let field in linePoints) {
-            let _color = this._getColor(null, { field: field }) || "red";
+            let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
 
             let points = null;
+            if (this.line.enabled) {
+                if (me.line.smooth) {
+                    let curve = new CatmullRomCurve3(linePoints[field]);
+                    points = curve.getSpacedPoints(DIVISONS);
+                } else {
+                    points = linePoints[field];
+                }
 
-            if (me.line.smooth) {
-                let curve = new CatmullRomCurve3(linePoints[field]);
-                points = curve.getSpacedPoints(DIVISONS);
-            } else {
-                points = linePoints[field];
+
+                let line = app.createBrokenLine(points, 2, _color, true);
+
+                this.group.add(line);
             }
 
 
-            let line = app.createBrokenLine(points, 2, _color, true);
-
-            this.group.add(line);
-
 
             //绘制区域
-            let pointArr = [];
-            points.forEach(point => {
-                pointArr = pointArr.concat(point.toArray());
-            });
-            pointArr.unshift(pointArr[0], 0, pointArr[2]);
-            pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
-            let polygon = app.createPolygonPlane(pointArr, { fillStyle: _color });
-            this.group.add(polygon);
+            if (this.area.enabled) {
+                let pointArr = [];
+                points.forEach(point => {
+                    pointArr = pointArr.concat(point.toArray());
+                });
+                pointArr.unshift(pointArr[0], 0, pointArr[2]);
+                pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
+                let polygon = app.createPolygonPlane(pointArr, { fillStyle: _color });
+                this.group.add(polygon);
+            }
+
 
 
             //绘制node 点
-            linePoints[field].forEach(point => {
+            if (this.icon.enabled) {
+                linePoints[field].forEach(point => {
 
-                //let node = app.createSphere(10,{fillStyle:_color});
-                let node = app.createCirclePlane(10, { fillStyle: _color });
-                node.position.copy(point);
-                this.group.add(node);
-            });
+                    //let node = app.createSphere(10,{fillStyle:_color});
+                    let node = app.createCirclePlane(10, { fillStyle: _color });
+                    node.position.copy(point);
+                    this.group.add(node);
+                });
+            }
+
 
 
         }
     }
-    resetData(){
+    resetData() {
         this.dispose();
-        this.draw();    
+        this.draw();
     }
 }
 

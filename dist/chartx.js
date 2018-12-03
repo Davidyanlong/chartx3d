@@ -1665,7 +1665,7 @@ var Chartx3d = (function () {
           this.dataOrg = [];
 
           this.startAngle = this._opt.startAngle;
-          this.allAngles = this._opt.allAngles;
+          this.allAngles = Math.min(360, this._opt.allAngles);
           this.sort = this._opt.sort;
 
           this.layoutData = []; //和dataSection一一对应的，每个值的pos,agend,dregg,centerPos
@@ -1800,7 +1800,7 @@ var Chartx3d = (function () {
 
               Object.assign(this._opt, opt);
               this.startAngle = this._opt.startAngle;
-              this.allAngles = this._opt.allAngles;
+              this.allAngles = Math.min(360, this._opt.allAngles);
               this.sort = this._opt.sort;
           }
       }, {
@@ -3999,7 +3999,7 @@ var Chartx3d = (function () {
           this.dataOrg = [];
 
           this.startAngle = this._opt.startAngle;
-          this.allAngles = this._opt.allAngles;
+          this.allAngles = Math.min(360, this._opt.allAngles);
           this.sort = this._opt.sort;
 
           this.layoutData = []; //和dataSection一一对应的，每个值的pos,agend,dregg,centerPos
@@ -4017,7 +4017,7 @@ var Chartx3d = (function () {
           let currentAngle = 0;
           let opt = this._opt;
           let angle, endAngle, cosV, sinV, midAngle, quadrant;
-          let percentFixedNum =2;
+          let percentFixedNum = 2;
 
           let outRadius = opt.node.outRadius;
           let innerRadius = opt.node.innerRadius;
@@ -4091,7 +4091,7 @@ var Chartx3d = (function () {
 
 
                       orginPercentage: percentage,
-                      percentage: (percentage*100).toFixed(percentFixedNum),
+                      percentage: (percentage * 100).toFixed(percentFixedNum),
 
                       quadrant, //象限
                       isRightSide: quadrant == 1 || quadrant == 4 ? 1 : 0,
@@ -4126,7 +4126,7 @@ var Chartx3d = (function () {
       setOption(opt = {}) {
           Object.assign(this._opt, opt);
           this.startAngle = this._opt.startAngle;
-          this.allAngles = this._opt.allAngles;
+          this.allAngles = Math.min(360, this._opt.allAngles);
           this.sort = this._opt.sort;
       }
       setDataFrame(dataFrame) {
@@ -4156,7 +4156,7 @@ var Chartx3d = (function () {
 
               this.dataOrg.push(rowData[field]);
 
-              if (this._isFiled(radiusField,layoutData)) {
+              if (this._isFiled(radiusField, layoutData)) {
                   layoutData.radiusField = radiusField;
                   layoutData.radiusValue = rowData[radiusField];
               }
@@ -4164,7 +4164,7 @@ var Chartx3d = (function () {
           }
           if (this.sort) {
               this.dataOrg = [];
-              data.sort( (a, b)=>{
+              data.sort((a, b) => {
                   if (this.sort == 'asc') {
                       return a.value - b.value;
                   } else {
@@ -4173,7 +4173,7 @@ var Chartx3d = (function () {
               });
 
               //重新设定下ind
-              _$2.each(data,  (d, i) =>{
+              _$2.each(data, (d, i) => {
                   d.iNode = i;
                   this.dataOrg.push(d);
               });
@@ -4186,7 +4186,7 @@ var Chartx3d = (function () {
           return this.layoutData || [];
       }
 
-      _isFiled(field,layoutData) {
+      _isFiled(field, layoutData) {
           return field && (_$2.isString(field) && field in layoutData.rowData)
       }
       getAuadrant(ang) { //获取象限
@@ -21443,7 +21443,7 @@ var Chartx3d = (function () {
 
           } catch (e) {
               this.view.style.cssText = "display: flex;justify-content: center;align-items:center;font-size:16px;color:#666;width:100%;height:100%;";
-              this.view.innerHTML = '很抱歉,您的浏览器不能展示3D图表!';
+              this.view.innerHTML = '很抱歉,您的浏览器不能展示3D图表,请使用<a href="" target="blank">Chrome浏览器</a>!';
               console.error(e);
               return;
           }
@@ -21464,6 +21464,8 @@ var Chartx3d = (function () {
           if (redraw) {
 
               this.layers.forEach((view, index) => {
+                  //reset时候又可能暂时渲染上下午丢失
+                  if(!this.renderer) return;
                   if (this.layers.length > 1 && index !== this.layers.length - 1) {
                       this.renderer.autoClear = true;
                   } else {
@@ -25648,7 +25650,6 @@ var Chartx3d = (function () {
       }
 
       initCoordUI() {
-          debugger
           this._coordUI = new Cartesian3DUI(this);
           this.group.add(this._coordUI.group);
 
@@ -27639,7 +27640,7 @@ var Chartx3d = (function () {
 
           this.allGroupNum = 1;
           _$2.extend(true, this, opt);
-          this.materialMap = new Map();
+         // this.materialMap = new Map();
           this.init();
 
       }
@@ -27972,7 +27973,7 @@ var Chartx3d = (function () {
       }
       dispose() {
 
-          this.materialMap.clear();
+          //this.materialMap.clear();
           this.group.traverse((obj) => {
               if (obj.has('click', this.onClick)) {
                   obj.off('click', this.onClick);
@@ -27999,14 +28000,14 @@ var Chartx3d = (function () {
   class Line$2 extends Component {
       constructor(chart3d, opt) {
           super(chart3d.currCoord);
-          
+
           this.type = "line";
           this._type = "line3d";
 
           this.line = { //线
               enabled: 1,
               shapeType: "brokenLine",//折线
-              strokeStyle: '#ccc',
+              strokeStyle: null,
               lineWidth: 2,
               lineType: "solid",
               smooth: true
@@ -28061,7 +28062,7 @@ var Chartx3d = (function () {
               fields = this.field.slice(0);
           }
           let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection||[];
+          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
           this.drawPosData = [];
           let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
           let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
@@ -28219,49 +28220,57 @@ var Chartx3d = (function () {
 
           const DIVISONS = 200;
           for (let field in linePoints) {
-              let _color = this._getColor(null, { field: field }) || "red";
+              let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
 
               let points = null;
+              if (this.line.enabled) {
+                  if (me.line.smooth) {
+                      let curve = new CatmullRomCurve3(linePoints[field]);
+                      points = curve.getSpacedPoints(DIVISONS);
+                  } else {
+                      points = linePoints[field];
+                  }
 
-              if (me.line.smooth) {
-                  let curve = new CatmullRomCurve3(linePoints[field]);
-                  points = curve.getSpacedPoints(DIVISONS);
-              } else {
-                  points = linePoints[field];
+
+                  let line = app.createBrokenLine(points, 2, _color, true);
+
+                  this.group.add(line);
               }
 
 
-              let line = app.createBrokenLine(points, 2, _color, true);
-
-              this.group.add(line);
-
 
               //绘制区域
-              let pointArr = [];
-              points.forEach(point => {
-                  pointArr = pointArr.concat(point.toArray());
-              });
-              pointArr.unshift(pointArr[0], 0, pointArr[2]);
-              pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
-              let polygon = app.createPolygonPlane(pointArr, { fillStyle: _color });
-              this.group.add(polygon);
+              if (this.area.enabled) {
+                  let pointArr = [];
+                  points.forEach(point => {
+                      pointArr = pointArr.concat(point.toArray());
+                  });
+                  pointArr.unshift(pointArr[0], 0, pointArr[2]);
+                  pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
+                  let polygon = app.createPolygonPlane(pointArr, { fillStyle: _color });
+                  this.group.add(polygon);
+              }
+
 
 
               //绘制node 点
-              linePoints[field].forEach(point => {
+              if (this.icon.enabled) {
+                  linePoints[field].forEach(point => {
 
-                  //let node = app.createSphere(10,{fillStyle:_color});
-                  let node = app.createCirclePlane(10, { fillStyle: _color });
-                  node.position.copy(point);
-                  this.group.add(node);
-              });
+                      //let node = app.createSphere(10,{fillStyle:_color});
+                      let node = app.createCirclePlane(10, { fillStyle: _color });
+                      node.position.copy(point);
+                      this.group.add(node);
+                  });
+              }
+
 
 
           }
       }
-      resetData(){
+      resetData() {
           this.dispose();
-          this.draw();    
+          this.draw();
       }
   }
 

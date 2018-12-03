@@ -55,7 +55,7 @@ class Bar extends Component {
 
         this.allGroupNum = 1;
         _.extend(true, this, opt);
-        this.materialMap = new Map();
+       // this.materialMap = new Map();
         this.init();
 
     }
@@ -393,7 +393,7 @@ class Bar extends Component {
     }
     dispose() {
 
-        this.materialMap.clear();
+        //this.materialMap.clear();
         this.group.traverse((obj) => {
             if (obj.has('click', this.onClick)) {
                 obj.off('click', this.onClick);
