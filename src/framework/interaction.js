@@ -45,21 +45,23 @@ class Interaction extends Events {
 
         // }
         if (intersects.length > 0) {
+            if (this.target) {
+                this.target.fire({ type: 'mousemove', event: EVENT, intersects });
+            }
             if (intersects[0].object == this.target) {
-                this.target.fire({ type: 'mousemove', event: EVENT });
                 if (!isMouseOver) {
-                    this.target.fire({ type: 'mouseover', event: EVENT });
+                    this.target.fire({ type: 'mouseover', event: EVENT, intersects });
                     isMouseOver = true;
                     isMouseOut = false;
                 }
                 if (isClick) {
-                    this.target.fire({ type: 'click', event: EVENT });
+                    this.target.fire({ type: 'click', event: EVENT, intersects });
                     isClick = false;
                 }
 
             } else {
                 if (this.target !== null && !isMouseOut) {
-                    this.target.fire({ type: 'mouseout', event: EVENT });
+                    this.target.fire({ type: 'mouseout', event: EVENT, intersects });
                     isMouseOut = true;
                     isMouseOver = false;
                     // console.log({ type: 'mouseout' })
@@ -69,7 +71,7 @@ class Interaction extends Events {
 
         } else {
             if (this.target !== null && !isMouseOut) {
-                this.target.fire({ type: 'mouseout' });
+                this.target.fire({ type: 'mouseout', event: EVENT, intersects });
                 this.target = null;
                 isMouseOut = true;
                 isMouseOver = false;

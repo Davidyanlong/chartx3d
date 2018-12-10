@@ -1,72 +1,46 @@
 var Chartx3d = (function () {
   'use strict';
 
-  var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
-    return typeof obj;
-  } : function (obj) {
-    return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-  };
-
-  var classCallCheck = function (instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  };
-
-  var createClass = function () {
-    function defineProperties(target, props) {
-      for (var i = 0; i < props.length; i++) {
-        var descriptor = props[i];
-        descriptor.enumerable = descriptor.enumerable || false;
-        descriptor.configurable = true;
-        if ("value" in descriptor) descriptor.writable = true;
-        Object.defineProperty(target, descriptor.key, descriptor);
-      }
-    }
-
-    return function (Constructor, protoProps, staticProps) {
-      if (protoProps) defineProperties(Constructor.prototype, protoProps);
-      if (staticProps) defineProperties(Constructor, staticProps);
-      return Constructor;
-    };
-  }();
-
   var _ = {};
   var breaker = {};
-  var ArrayProto = Array.prototype,
-      ObjProto = Object.prototype,
-      FuncProto = Function.prototype;
+  var ArrayProto = Array.prototype, ObjProto = Object.prototype, FuncProto = Function.prototype;
+
 
   // Create quick reference variables for speed access to core prototypes.
-  var push = ArrayProto.push,
-      slice = ArrayProto.slice,
-      concat = ArrayProto.concat,
-      toString = ObjProto.toString,
-      hasOwnProperty = ObjProto.hasOwnProperty;
+  var
+    push = ArrayProto.push,
+    slice = ArrayProto.slice,
+    concat = ArrayProto.concat,
+    toString = ObjProto.toString,
+    hasOwnProperty = ObjProto.hasOwnProperty;
 
   // All **ECMAScript 5** native function implementations that we hope to use
   // are declared here.
-  var nativeForEach = ArrayProto.forEach,
-      nativeMap = ArrayProto.map,
-      nativeFilter = ArrayProto.filter,
-      nativeEvery = ArrayProto.every,
-      nativeSome = ArrayProto.some,
-      nativeIndexOf = ArrayProto.indexOf,
-      nativeIsArray = Array.isArray,
-      nativeKeys = Object.keys,
-      nativeBind = FuncProto.bind;
+  var 
+    nativeForEach = ArrayProto.forEach,
+    nativeMap = ArrayProto.map,
+    nativeFilter = ArrayProto.filter,
+    nativeEvery = ArrayProto.every,
+    nativeSome = ArrayProto.some,
+    nativeIndexOf = ArrayProto.indexOf,
+    nativeIsArray = Array.isArray,
+    nativeKeys = Object.keys,
+    nativeBind = FuncProto.bind;
 
-  var shallowProperty = function shallowProperty(key) {
+
+  var shallowProperty = function (key) {
     return function (obj) {
       return obj == null ? void 0 : obj[key];
     };
   };
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   var getLength = shallowProperty('length');
-  var isArrayLike = function isArrayLike(collection) {
+  var isArrayLike = function (collection) {
     var length = getLength(collection);
     return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
   };
+
+
 
   _.values = function (obj) {
     var keys = _.keys(obj);
@@ -81,9 +55,8 @@ var Chartx3d = (function () {
   _.keys = nativeKeys || function (obj) {
     if (obj !== Object(obj)) throw new TypeError('Invalid object');
     var keys = [];
-    for (var key in obj) {
-      if (_.has(obj, key)) keys.push(key);
-    }return keys;
+    for (var key in obj) if (_.has(obj, key)) keys.push(key);
+    return keys;
   };
 
   _.has = function (obj, key) {
@@ -156,9 +129,8 @@ var Chartx3d = (function () {
   _.isEmpty = function (obj) {
     if (obj == null) return true;
     if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
-    for (var key in obj) {
-      if (_.has(obj, key)) return false;
-    }return true;
+    for (var key in obj) if (_.has(obj, key)) return false;
+    return true;
   };
 
   _.isElement = function (obj) {
@@ -179,20 +151,18 @@ var Chartx3d = (function () {
 
   _.indexOf = function (array, item, isSorted) {
     if (array == null) return -1;
-    var i = 0,
-        length = array.length;
+    var i = 0, length = array.length;
     if (isSorted) {
       if (typeof isSorted == 'number') {
-        i = isSorted < 0 ? Math.max(0, length + isSorted) : isSorted;
+        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
       } else {
         i = _.sortedIndex(array, item);
         return array[i] === item ? i : -1;
       }
     }
     if (nativeIndexOf && array.indexOf === nativeIndexOf) return array.indexOf(item, isSorted);
-    for (; i < length; i++) {
-      if (array[i] === item) return i;
-    }return -1;
+    for (; i < length; i++) if (array[i] === item) return i;
+    return -1;
   };
 
   _.isWindow = function (obj) {
@@ -200,7 +170,7 @@ var Chartx3d = (function () {
   };
 
   // Internal implementation of a recursive `flatten` function.
-  var flatten = function flatten(input, shallow, output) {
+  var flatten = function (input, shallow, output) {
     if (shallow && _.every(input, _.isArray)) {
       return concat.apply(output, input);
     }
@@ -229,6 +199,11 @@ var Chartx3d = (function () {
     });
     return !!result;
   };
+
+
+
+
+
 
   // Return the minimum element (or element-based computation).
   _.min = function (obj, iterator, context) {
@@ -291,9 +266,7 @@ var Chartx3d = (function () {
   // Only the elements present in just the first array will remain.
   _.difference = function (array) {
     var rest = concat.apply(ArrayProto, slice.call(arguments, 1));
-    return _.filter(array, function (value) {
-      return !_.contains(rest, value);
-    });
+    return _.filter(array, function (value) { return !_.contains(rest, value); });
   };
   // Produce a duplicate-free version of the array. If the array has already
   // been sorted, you have the option of using a faster algorithm.
@@ -308,7 +281,7 @@ var Chartx3d = (function () {
     var results = [];
     var seen = [];
     each(initial, function (value, index) {
-      if (isSorted ? !index || seen[seen.length - 1] !== value : !_.contains(seen, value)) {
+      if (isSorted ? (!index || seen[seen.length - 1] !== value) : !_.contains(seen, value)) {
         seen.push(value);
         results.push(array[index]);
       }
@@ -338,9 +311,7 @@ var Chartx3d = (function () {
 
   // Convenience version of a common use case of `map`: fetching a property.
   _.pluck = function (obj, key) {
-    return _.map(obj, function (value) {
-      return value[key];
-    });
+    return _.map(obj, function (value) { return value[key]; });
   };
 
   // Return a random integer between min and max (inclusive).
@@ -375,24 +346,25 @@ var Chartx3d = (function () {
     return sample.slice(0, n);
   };
 
+
+
+
+
   /**
   *
   *如果是深度extend，第一个参数就设置为true
   */
   _.extend = function () {
-    var options,
-        name,
-        src,
-        copy,
-        target = arguments[0] || {},
-        i = 1,
-        length = arguments.length,
-        deep = false;
+    var options, name, src, copy,
+      target = arguments[0] || {},
+      i = 1,
+      length = arguments.length,
+      deep = false;
     if (typeof target === "boolean") {
       deep = target;
       target = arguments[1] || {};
       i = 2;
-    }  if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) !== "object" && !_.isFunction(target)) {
+    }  if (typeof target !== "object" && !_.isFunction(target)) {
       target = {};
     }  if (length === i) {
       target = this;
@@ -424,18 +396,18 @@ var Chartx3d = (function () {
   //********补存一些数学常用方法,暂放在这里文件下,后期多了单独成立一个类库  */
   // compute euclidian modulo of m % n
   // https://en.wikipedia.org/wiki/Modulo_operation
-  _.euclideanModulo = function (n, m) {
-    return (n % m + m) % m;
+  _.euclideanModulo = (n, m) => {
+    return ((n % m) + m) % m;
   };
 
   _.DEG2RAD = Math.PI / 180;
   _.RAD2DEG = 180 / Math.PI;
 
-  _.degToRad = function (degrees) {
+  _.degToRad = (degrees) => {
     return degrees * _.DEG2RAD;
   };
 
-  _.radToDeg = function (radians) {
+  _.radToDeg = (radians) => {
     return radians * _.RAD2DEG;
   };
 
@@ -461,56 +433,59 @@ var Chartx3d = (function () {
   }
 
   function correctFloat(num) {
-      return parseFloat(num.toPrecision(14));
+      return parseFloat(
+          num.toPrecision(14));
   }
 
-  function getLinearTickPositions(arr, $maxPart, $cfg) {
+  function getLinearTickPositions(arr,$maxPart,$cfg) {
 
-      arr = _.without(arr, undefined, null, "");
+      arr = _.without( arr , undefined , null , "" );
+      
+  	var scale = $cfg && $cfg.scale ? parseFloat($cfg.scale) :1;
+  	//返回的数组中的值 是否都为整数(思霏)  防止返回[8, 8.2, 8.4, 8.6, 8.8, 9]   应该返回[8, 9]
+  	var isInt = $cfg && $cfg.isInt ? 1 : 0; 
 
-      var scale = $cfg && $cfg.scale ? parseFloat($cfg.scale) : 1;
-      //返回的数组中的值 是否都为整数(思霏)  防止返回[8, 8.2, 8.4, 8.6, 8.8, 9]   应该返回[8, 9]
-      var isInt = $cfg && $cfg.isInt ? 1 : 0;
-
-      if (isNaN(scale)) {
-          scale = 1;
-      }
+  	if(isNaN(scale)){
+  		scale = 1;
+  	}
       var max = _.max(arr);
       var initMax = max;
       max *= scale;
-      var min = _.min(arr);
+      var min = _.min(arr); 
 
-      if (min == max) {
-          if (max > 0) {
-              min = 0;
-              return [min, max];
-              // min= Math.round(max/2);
-          } else if (max < 0) {
-              return [max, 0];
-              //min = max*2;
-          } else {
+      if(min==max){
+      	if(max > 0){
+      		min = 0;
+              return [ min , max ];
+      		// min= Math.round(max/2);
+      	} else if(max < 0){
+              return [ max , 0 ];
+      		//min = max*2;
+      	} else {
               max = 1;
-              return [0, max];
+              return [0 , max];
           }
       }
+
+      
 
       var length = max - min;
       if (length) {
-          var tempmin = min; //保证min>0的时候不会出现负数
-          min -= length * 0.05;
+      	var tempmin = min; //保证min>0的时候不会出现负数
+      	min -= length * 0.05;
           // S.log(min +":"+ tempmin)
-          if (min < 0 && tempmin >= 0) {
-              min = 0;
+          if(min<0 && tempmin>=0){
+          	min=0;
           }
           max += length * 0.05;
       }
-
-      var tickInterval = (max - min) * 0.3; //72 / 365;
+      
+      var tickInterval = (max - min) * 0.3;//72 / 365;
       var magnitude = Math.pow(10, Math.floor(Math.log(tickInterval) / Math.LN10));
 
       tickInterval = normalizeTickInterval(tickInterval, magnitude);
-      if (isInt) {
-          tickInterval = Math.ceil(tickInterval);
+      if(isInt){
+      	tickInterval = Math.ceil(tickInterval);
       }
 
       var pos,
@@ -527,7 +502,7 @@ var Chartx3d = (function () {
           tickPositions.push(pos);
 
           // Always add the raw tickInterval, not the corrected one.
-          pos = correctFloat(pos + tickInterval);
+          pos = correctFloat(pos + tickInterval); 
 
           // If the interval is not big enough in the current min - max range to actually increase
           // the loop variable, we need to break out to prevent endless loop. Issue #619
@@ -538,26 +513,24 @@ var Chartx3d = (function () {
           // Record the last value
           lastPos = pos;
       }
-      if (tickPositions.length >= 3) {
-          if (tickPositions[tickPositions.length - 2] >= initMax) {
-              tickPositions.pop();
-          }
+      if(tickPositions.length >= 3){
+      	if(tickPositions[tickPositions.length - 2] >= initMax){
+  			tickPositions.pop();
+  		}
       }
       return tickPositions;
   }
 
-  var dataSection = {
-      section: function section($arr, $maxPart, $cfg) {
-          return _.uniq(getLinearTickPositions($arr, $maxPart, $cfg));
-      }
+  var dataSection  = {
+  	section:function($arr,$maxPart,$cfg){
+          return _.uniq( getLinearTickPositions($arr,$maxPart,$cfg));
+  	}
   };
 
   //TODO 所有的get xxx OfVal 在非proportion下面如果数据有相同的情况，就会有风险
 
-  var axis = function () {
-      function axis(opt, dataOrg) {
-          classCallCheck(this, axis);
-
+  class axis {
+      constructor(opt, dataOrg) {
           //super();
           this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
 
@@ -601,7 +574,7 @@ var Chartx3d = (function () {
           //也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值
           this.origin = null;
           this.originPos = 0; //value为 origin 对应的pos位置
-          this._originTrans = 0; //当设置的 origin 和datasection的min不同的时候，
+          this._originTrans = 0;//当设置的 origin 和datasection的min不同的时候，
 
           //min,max不需要外面配置，没意义
           this._min = null;
@@ -612,753 +585,946 @@ var Chartx3d = (function () {
           this.sort = null;
 
           this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+
       }
 
-      createClass(axis, [{
-          key: "resetDataOrg",
-          value: function resetDataOrg(dataOrg) {
-              //配置和数据变化
+      resetDataOrg(dataOrg) {
+          //配置和数据变化
 
-              this.dataSection = [];
-              this.dataSectionGroup = [];
+          this.dataSection = [];
+          this.dataSectionGroup = [];
 
-              this.dataOrg = dataOrg;
+          this.dataOrg = dataOrg;
 
-              this._cellCount = null;
-              this._cellLength = null;
-          }
-      }, {
-          key: "setAxisLength",
-          value: function setAxisLength(length) {
-              this.axisLength = length;
-              this.calculateProps();
-          }
-      }, {
-          key: "calculateProps",
-          value: function calculateProps() {
+          this._cellCount = null;
+          this._cellLength = null;
 
-              var me = this;
+      }
 
-              if (this.layoutType == "proportion") {
+      setAxisLength(length) {
+          this.axisLength = length;
+          this.calculateProps();
+      }
 
-                  if (this._min == null) {
-                      this._min = _.min(this.dataSection);
-                  }                if (this._max == null) {
-                      this._max = _.max(this.dataSection);
-                  }
-                  //默认情况下 origin 就是datasection的最小值
-                  //如果用户设置了origin，那么就已用户的设置为准
-                  if (!("origin" in this._opt)) {
-                      this.origin = 0; //this.dataSection[0];//_.min( this.dataSection );
-                      if (_.max(this.dataSection) < 0) {
-                          this.origin = _.max(this.dataSection);
-                      }                    if (_.min(this.dataSection) > 0) {
-                          this.origin = _.min(this.dataSection);
-                      }                }
-                  this._originTrans = this._getOriginTrans(this.origin);
-                  this.originPos = this.getPosOfVal(this.origin);
+      calculateProps() {
+
+          var me = this;
+
+          if (this.layoutType == "proportion") {
+
+              if (this._min == null) {
+                  this._min = _.min(this.dataSection);
+              }            if (this._max == null) {
+                  this._max = _.max(this.dataSection);
               }
-              //get xxx OfPos的时候，要先来这里做一次寻找
-              this.dataSectionLayout = [];
-              _.each(this.dataSection, function (val, i) {
+              //默认情况下 origin 就是datasection的最小值
+              //如果用户设置了origin，那么就已用户的设置为准
+              if (!("origin" in this._opt)) {
+                  this.origin = 0;//this.dataSection[0];//_.min( this.dataSection );
+                  if (_.max(this.dataSection) < 0) {
+                      this.origin = _.max(this.dataSection);
+                  }                if (_.min(this.dataSection) > 0) {
+                      this.origin = _.min(this.dataSection);
+                  }            }
+              this._originTrans = this._getOriginTrans(this.origin);
+              this.originPos = this.getPosOfVal(this.origin);
 
-                  var ind = i;
-                  if (me.layoutType == "proportion") {
-                      ind = me.getIndexOfVal(val);
-                  }
-                  var pos = parseInt(me.getPosOf({
-                      ind: i,
-                      val: val
-                  }), 10);
-
-                  me.dataSectionLayout.push({
-                      val: val,
-                      ind: ind,
-                      pos: pos
-                  });
-              });
           }
-      }, {
-          key: "getDataSection",
-          value: function getDataSection() {
-              //对外返回的dataSection
-              return this.dataSection;
-          }
-      }, {
-          key: "setDataSection",
-          value: function setDataSection(_dataSection) {
-              var me = this;
 
-              //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
-              if (_.isEmpty(_dataSection) && _.isEmpty(this._opt.dataSection)) {
-                  if (this.layoutType == "proportion") {
 
-                      var arr = this._getDataSection();
+          //get xxx OfPos的时候，要先来这里做一次寻找
+          this.dataSectionLayout = [];
+          _.each(this.dataSection, function (val, i) {
 
-                      if (this.waterLine) {
-                          arr.push(this.waterLine);
-                      }
-                      if ("origin" in me._opt) {
-                          arr.push(me._opt.origin);
-                      }
-                      if (arr.length == 1) {
-                          arr.push(arr[0] * 2);
-                      }
-                      if (this.symmetric) {
-                          //如果需要处理为对称数据
-                          var _min = _.min(arr);
-                          var _max = _.max(arr);
-                          if (Math.abs(_min) > Math.abs(_max)) {
-                              arr.push(Math.abs(_min));
-                          } else {
-                              arr.push(-Math.abs(_max));
-                          }                    }
-                      for (var ai = 0, al = arr.length; ai < al; ai++) {
-                          arr[ai] = Number(arr[ai]);
-                          if (isNaN(arr[ai])) {
-                              arr.splice(ai, 1);
-                              ai--;
-                              al--;
-                          }                    }
-                      this.dataSection = dataSection.section(arr, 3);
-
-                      if (this.symmetric) {
-                          //可能得到的区间是偶数， 非对称，强行补上
-                          var _min = _.min(this.dataSection);
-                          var _max = _.max(this.dataSection);
-                          if (Math.abs(_min) > Math.abs(_max)) {
-                              this.dataSection.push(Math.abs(_min));
-                          } else {
-                              this.dataSection.unshift(-Math.abs(_max));
-                          }                    }
-                      //如果还是0
-                      if (this.dataSection.length == 0) {
-                          this.dataSection = [0];
-                      }
-                      //如果有 middleweight 设置，就会重新设置dataSectionGroup
-                      this.dataSectionGroup = [_.clone(this.dataSection)];
-
-                      this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
-
-                      this._sort();
-                  } else {
-
-                      //非proportion 也就是 rule peak 模式下面
-                      this.dataSection = _.flatten(this.dataOrg); //this._getDataSection();
-                      this.dataSectionGroup = [this.dataSection];
-                  }            } else {
-                  this.dataSection = _dataSection || this._opt.dataSection;
-                  this.dataSectionGroup = [this.dataSection];
-              }        }
-      }, {
-          key: "_getDataSection",
-          value: function _getDataSection() {
-              //如果有堆叠，比如[ ["uv","pv"], "click" ]
-              //那么这个 this.dataOrg， 也是个对应的结构
-              //vLen就会等于2
-              var vLen = 1;
-
-              _.each(this.dataOrg, function (arr) {
-                  vLen = Math.max(arr.length, vLen);
-              });
-
-              if (vLen == 1) {
-                  return this._oneDimensional();
-              }            if (vLen > 1) {
-                  return this._twoDimensional();
-              }        }
-      }, {
-          key: "_oneDimensional",
-          value: function _oneDimensional() {
-              var arr = _.flatten(this.dataOrg); //_.flatten( data.org );
-
-              for (var i = 0, il = arr.length; i < il; i++) {
-                  arr[i] = arr[i] || 0;
+              var ind = i;
+              if (me.layoutType == "proportion") {
+                  ind = me.getIndexOfVal(val);
               }
-              return arr;
-          }
-          //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
-
-      }, {
-          key: "_twoDimensional",
-          value: function _twoDimensional() {
-              var d = this.dataOrg;
-              var arr = [];
-              var min;
-              _.each(d, function (d, i) {
-                  if (!d.length) {
-                      return;
-                  }
-                  //有数据的情况下 
-                  if (!_.isArray(d[0])) {
-                      arr.push(d);
-                      return;
-                  }
-                  var varr = [];
-                  var len = d[0].length;
-                  var vLen = d.length;
-
-                  for (var i = 0; i < len; i++) {
-                      var up_count = 0;
-                      var up_i = 0;
-
-                      var down_count = 0;
-                      var down_i = 0;
-
-                      for (var ii = 0; ii < vLen; ii++) {
-
-                          var _val = d[ii][i];
-                          if (!_val && _val !== 0) {
-                              continue;
-                          }
-                          min == undefined && (min = _val);
-                          min = Math.min(min, _val);
-
-                          if (_val >= 0) {
-                              up_count += _val;
-                              up_i++;
-                          } else {
-                              down_count += _val;
-                              down_i++;
-                          }
-                      }
-                      up_i && varr.push(up_count);
-                      down_i && varr.push(down_count);
-                  }                arr.push(varr);
-              });
-              arr.push(min);
-              return _.flatten(arr);
-          }
-
-          //val 要被push到datasection 中去的 值
-          //主要是用在markline等组件中，当自己的y值超出了yaxis的范围
-
-      }, {
-          key: "setWaterLine",
-          value: function setWaterLine(val) {
-              if (val <= this.waterLine) return;
-              this.waterLine = val;
-              if (val < _.min(this.dataSection) || val > _.max(this.dataSection)) {
-                  //waterLine不再当前section的区间内，需要重新计算整个datasection    
-                  this.setDataSection();
-                  this.calculateProps();
-              }        }
-      }, {
-          key: "_sort",
-          value: function _sort() {
-              if (this.sort) {
-                  var sort = this._getSortType();
-                  if (sort == "desc") {
-
-                      this.dataSection.reverse();
-
-                      //dataSectionGroup 从里到外全部都要做一次 reverse， 这样就可以对应上 dataSection.reverse()
-                      _.each(this.dataSectionGroup, function (dsg, i) {
-                          dsg.reverse();
-                      });
-                      this.dataSectionGroup.reverse();
-                      //dataSectionGroup reverse end
-                  }            }        }
-      }, {
-          key: "_getSortType",
-          value: function _getSortType() {
-              var _sort;
-              if (_.isString(this.sort)) {
-                  _sort = this.sort;
-              }
-              if (!_sort) {
-                  _sort = "asc";
-              }
-              return _sort;
-          }
-      }, {
-          key: "_middleweight",
-          value: function _middleweight() {
-              if (this.middleweight) {
-                  //支持多个量级的设置
-
-                  if (!_.isArray(this.middleweight)) {
-                      this.middleweight = [this.middleweight];
-                  }
-                  //拿到dataSection中的min和 max 后，用middleweight数据重新设置一遍dataSection
-                  var dMin = _.min(this.dataSection);
-                  var dMax = _.max(this.dataSection);
-                  var newDS = [dMin];
-                  var newDSG = [];
-
-                  for (var i = 0, l = this.middleweight.length; i < l; i++) {
-                      var preMiddleweight = dMin;
-                      if (i > 0) {
-                          preMiddleweight = this.middleweight[i - 1];
-                      }                    var middleVal = preMiddleweight + parseInt((this.middleweight[i] - preMiddleweight) / 2);
-
-                      newDS.push(middleVal);
-                      newDS.push(this.middleweight[i]);
-
-                      newDSG.push([preMiddleweight, middleVal, this.middleweight[i]]);
-                  }                var lastMW = this.middleweight.slice(-1)[0];
-
-                  if (dMax > lastMW) {
-                      newDS.push(lastMW + (dMax - lastMW) / 2);
-                      newDS.push(dMax);
-                      newDSG.push([lastMW, lastMW + (dMax - lastMW) / 2, dMax]);
-                  }
-
-                  //好了。 到这里用简单的规则重新拼接好了新的 dataSection
-                  this.dataSection = newDS;
-                  this.dataSectionGroup = newDSG;
-              }        }
-
-          //origin 对应 this.origin 的值
-
-      }, {
-          key: "_getOriginTrans",
-          value: function _getOriginTrans(origin) {
-              var pos = 0;
-
-              var dsgLen = this.dataSectionGroup.length;
-              var groupLength = this.axisLength / dsgLen;
-
-              for (var i = 0, l = dsgLen; i < l; i++) {
-
-                  var ds = this.dataSectionGroup[i];
-
-                  if (this.layoutType == "proportion") {
-                      var min = _.min(ds);
-                      var max = _.max(ds);
-
-                      var amountABS = Math.abs(max - min);
-
-                      if (origin >= min && origin <= max) {
-                          pos = (origin - min) / amountABS * groupLength + i * groupLength;
-                          break;
-                      }                }
-              }
-              if (this.sort == "desc") {
-                  //如果是倒序的
-                  pos = -(groupLength - pos);
-              }
-              return parseInt(pos);
-          }
-
-          //opt { val ind pos } 一次只能传一个
-
-      }, {
-          key: "_getLayoutDataOf",
-          value: function _getLayoutDataOf(opt) {
-              var props = ["val", "ind", "pos"];
-              var prop;
-              _.each(props, function (_p) {
-                  if (_p in opt) {
-                      prop = _p;
-                  }
-              });
-
-              var layoutData;
-              _.each(this.dataSectionLayout, function (item) {
-                  if (item[prop] === opt[prop]) {
-                      layoutData = item;
-                  }            });
-
-              return layoutData || {};
-          }
-      }, {
-          key: "getPosOfVal",
-          value: function getPosOfVal(val) {
-
-              /* val可能会重复，so 这里得到的会有问题，先去掉
-              //先检查下 dataSectionLayout 中有没有对应的记录
-              var _pos = this._getLayoutDataOf({ val : val }).pos;
-              if( _pos != undefined ){
-                  return _pos;
-              };
-              */
-
-              return this.getPosOf({
+              var pos = parseInt(me.getPosOf({
+                  ind: i,
                   val: val
+              }), 10);
+
+              me.dataSectionLayout.push({
+                  val: val,
+                  ind: ind,
+                  pos: pos
               });
-          }
-      }, {
-          key: "getPosOfInd",
-          value: function getPosOfInd(ind) {
-              //先检查下 dataSectionLayout 中有没有对应的记录
-              var _pos = this._getLayoutDataOf({ ind: ind }).pos;
-              if (_pos != undefined) {
-                  return _pos;
-              }
-              return this.getPosOf({
-                  ind: ind
-              });
-          }
 
-          //opt {val, ind} val 或者ind 一定有一个
+          });
 
-      }, {
-          key: "getPosOf",
-          value: function getPosOf(opt) {
-              var pos;
+      }
+      getDataSection() {
+          //对外返回的dataSection
+          return this.dataSection;
+      }
+      setDataSection(_dataSection) {
+          var me = this;
 
-              var cellCount = this._getCellCount(); //dataOrg上面的真实数据节点数，把轴分成了多少个节点
-
+          //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
+          if (_.isEmpty(_dataSection) &&  _.isEmpty(this._opt.dataSection)) {
               if (this.layoutType == "proportion") {
-                  var dsgLen = this.dataSectionGroup.length;
-                  var groupLength = this.axisLength / dsgLen;
-                  for (var i = 0, l = dsgLen; i < l; i++) {
-                      var ds = this.dataSectionGroup[i];
-                      var min = _.min(ds);
-                      var max = _.max(ds);
-                      var val = "val" in opt ? opt.val : this.getValOfInd(opt.ind);
-                      if (val >= min && val <= max) {
-                          var _origin = this.origin;
-                          //如果 origin 并不在这个区间
-                          if (_origin < min || _origin > max) {
-                              _origin = min;
-                          }                        var maxGroupDisABS = Math.max(Math.abs(max - _origin), Math.abs(_origin - min));
-                          var amountABS = Math.abs(max - min);
-                          var h = maxGroupDisABS / amountABS * groupLength;
-                          pos = (val - _origin) / maxGroupDisABS * h + i * groupLength;
 
-                          if (isNaN(pos)) {
-                              pos = parseInt(i * groupLength);
-                          }
-                          break;
-                      }
+                  var arr = this._getDataSection();
+
+                  if ("origin" in me._opt) {
+                      arr.push(me._opt.origin);
                   }
+                  if (arr.length == 1) {
+                      arr.push(arr[0] * 2);
+                  }
+                  if (this.waterLine) {
+                      arr.push(this.waterLine);
+                  }
+                  if (this.symmetric) {
+                      //如果需要处理为对称数据
+                      var _min = _.min(arr);
+                      var _max = _.max(arr);
+                      if (Math.abs(_min) > Math.abs(_max)) {
+                          arr.push(Math.abs(_min));
+                      } else {
+                          arr.push(-Math.abs(_max));
+                      }                }
+                  for (var ai = 0, al = arr.length; ai < al; ai++) {
+                      arr[ai] = Number(arr[ai]);
+                      if (isNaN(arr[ai])) {
+                          arr.splice(ai, 1);
+                          ai--;
+                          al--;
+                      }                }
+                  this.dataSection = dataSection.section(arr, 3);
+
+                  if (this.symmetric) {
+                      //可能得到的区间是偶数， 非对称，强行补上
+                      var _min = _.min(this.dataSection);
+                      var _max = _.max(this.dataSection);
+                      if (Math.abs(_min) > Math.abs(_max)) {
+                          this.dataSection.push(Math.abs(_min));
+                      } else {
+                          this.dataSection.unshift(-Math.abs(_max));
+                      }                }
+                  //如果还是0
+                  if (this.dataSection.length == 0) {
+                      this.dataSection = [0];
+                  }
+                  //如果有 middleweight 设置，就会重新设置dataSectionGroup
+                  this.dataSectionGroup = [_.clone(this.dataSection)];
+
+                  this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
+
+                  this._sort();
+
               } else {
 
-                  if (cellCount == 1) {
-                      //如果只有一数据，那么就全部默认在正中间
-                      pos = this.axisLength / 2;
-                  } else {
-                      //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
-                      //因为可能有多个数据的val一样
+                  //非proportion 也就是 rule peak 模式下面
+                  this.dataSection = _.flatten(this.dataOrg);//this._getDataSection();
+                  this.dataSectionGroup = [this.dataSection];
 
-                      var valInd = "ind" in opt ? opt.ind : this.getIndexOfVal(opt.val);
-                      if (valInd != -1) {
-                          if (this.layoutType == "rule") {
-                              //line 的xaxis就是 rule
-                              pos = valInd / (cellCount - 1) * this.axisLength;
-                          }                        if (this.layoutType == "peak") {
-                              //bar的xaxis就是 peak
-                              /*
-                              pos = (this.axisLength/cellCount) 
-                                    * (valInd+1) 
-                                    - (this.axisLength/cellCount)/2;
-                              */
-                              var _cellLength = this.getCellLength();
-                              pos = _cellLength * (valInd + 1) - _cellLength / 2;
-                          }                    }                }            }
-              !pos && (pos = 0);
-
-              pos = Number(pos.toFixed(1)) + this._originTrans;
-
-              return Math.abs(pos);
+              }        } else {
+              this.dataSection = _dataSection || this._opt.dataSection;
+              this.dataSectionGroup = [this.dataSection];
           }
-      }, {
-          key: "getValOfPos",
-          value: function getValOfPos(pos) {
-              //先检查下 dataSectionLayout 中有没有对应的记录
-              var _val = this._getLayoutDataOf({ pos: pos }).val;
-              if (_val != undefined) {
-                  return _val;
-              }
-              return this._getValOfInd(this.getIndexOfPos(pos));
+      }
+      _getDataSection() {
+          //如果有堆叠，比如[ ["uv","pv"], "click" ]
+          //那么这个 this.dataOrg， 也是个对应的结构
+          //vLen就会等于2
+          var vLen = 1;
+
+          _.each(this.dataOrg, function (arr) {
+              vLen = Math.max(arr.length, vLen);
+          });
+
+          if (vLen == 1) {
+              return this._oneDimensional();
+          }        if (vLen > 1) {
+              return this._twoDimensional();
           }
+      }
+      _oneDimensional() {
+          var arr = _.flatten(this.dataOrg); //_.flatten( data.org );
 
-          //ds可选
-
-      }, {
-          key: "getValOfInd",
-          value: function getValOfInd(ind, ds) {
-
-              //先检查下 dataSectionLayout 中有没有对应的记录
-              var _val = this._getLayoutDataOf({ ind: ind }).val;
-              if (_val != undefined) {
-                  return _val;
+          for (var i = 0, il = arr.length; i < il; i++) {
+              arr[i] = arr[i] || 0;
+          }
+          return arr;
+      }
+      //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
+      _twoDimensional() {
+          var d = this.dataOrg;
+          var arr = [];
+          var min;
+          _.each(d, function (d, i) {
+              if (!d.length) {
+                  return
               }
+              //有数据的情况下 
+              if (!_.isArray(d[0])) {
+                  arr.push(d);
+                  return;
+              }
+              var varr = [];
+              var len = d[0].length;
+              var vLen = d.length;
+
+              for (var i = 0; i < len; i++) {
+                  var up_count = 0;
+                  var up_i = 0;
+
+                  var down_count = 0;
+                  var down_i = 0;
+
+                  for (var ii = 0; ii < vLen; ii++) {
+
+                      var _val = d[ii][i];
+                      if (!_val && _val !== 0) {
+                          continue;
+                      }
+                      min == undefined && (min = _val);
+                      min = Math.min(min, _val);
+
+                      if (_val >= 0) {
+                          up_count += _val;
+                          up_i++;
+                      } else {
+                          down_count += _val;
+                          down_i++;
+                      }
+                  }
+                  up_i && varr.push(up_count);
+                  down_i && varr.push(down_count);
+              }            arr.push(varr);
+          });
+          arr.push(min);
+          return _.flatten(arr);
+      }
+
+      //val 要被push到datasection 中去的 值
+      //主要是用在markline等组件中，当自己的y值超出了yaxis的范围
+      setWaterLine(val) {
+          if (val <= this.waterLine) return;
+          this.waterLine = val;
+          if (val < _.min(this.dataSection) || val > _.max(this.dataSection)) {
+              //waterLine不再当前section的区间内，需要重新计算整个datasection    
+              this.setDataSection();
+              this.calculateProps();
+          }    }
+
+      _sort() {
+          if (this.sort) {
+              var sort = this._getSortType();
+              if (sort == "desc") {
+
+                  this.dataSection.reverse();
+
+                  //dataSectionGroup 从里到外全部都要做一次 reverse， 这样就可以对应上 dataSection.reverse()
+                  _.each(this.dataSectionGroup, function (dsg, i) {
+                      dsg.reverse();
+                  });
+                  this.dataSectionGroup.reverse();
+                  //dataSectionGroup reverse end
+              }        }    }
+
+      _getSortType() {
+          var _sort;
+          if (_.isString(this.sort)) {
+              _sort = this.sort;
+          }
+          if (!_sort) {
+              _sort = "asc";
+          }
+          return _sort;
+      }
+
+      _middleweight() {
+          if (this.middleweight) {
+              //支持多个量级的设置
+
+              if (!_.isArray(this.middleweight)) {
+                  this.middleweight = [this.middleweight];
+              }
+              //拿到dataSection中的min和 max 后，用middleweight数据重新设置一遍dataSection
+              var dMin = _.min(this.dataSection);
+              var dMax = _.max(this.dataSection);
+              var newDS = [dMin];
+              var newDSG = [];
+
+              for (var i = 0, l = this.middleweight.length; i < l; i++) {
+                  var preMiddleweight = dMin;
+                  if (i > 0) {
+                      preMiddleweight = this.middleweight[i - 1];
+                  }                var middleVal = preMiddleweight + parseInt((this.middleweight[i] - preMiddleweight) / 2);
+
+                  newDS.push(middleVal);
+                  newDS.push(this.middleweight[i]);
+
+                  newDSG.push([
+                      preMiddleweight,
+                      middleVal,
+                      this.middleweight[i]
+                  ]);
+              }            var lastMW = this.middleweight.slice(-1)[0];
+
+              if (dMax > lastMW) {
+                  newDS.push(lastMW + (dMax - lastMW) / 2);
+                  newDS.push(dMax);
+                  newDSG.push([
+                      lastMW,
+                      lastMW + (dMax - lastMW) / 2,
+                      dMax
+                  ]);
+              }
+
+              //好了。 到这里用简单的规则重新拼接好了新的 dataSection
+              this.dataSection = newDS;
+              this.dataSectionGroup = newDSG;
+
+          }    }
+
+      //origin 对应 this.origin 的值
+      _getOriginTrans(origin) {
+          var pos = 0;
+
+          var dsgLen = this.dataSectionGroup.length;
+          var groupLength = this.axisLength / dsgLen;
+
+          for (var i = 0, l = dsgLen; i < l; i++) {
+
+              var ds = this.dataSectionGroup[i];
+
+              if (this.layoutType == "proportion") {
+                  var min = _.min(ds);
+                  var max = _.max(ds);
+
+                  var amountABS = Math.abs(max - min);
+
+                  if (origin >= min && origin <= max) {
+                      pos = ((origin - min) / amountABS * groupLength + i * groupLength);
+                      break;
+                  }
+
+              }
+          }
+          if (this.sort == "desc") {
+              //如果是倒序的
+              pos = -(groupLength - pos);
+          }
+          return parseInt(pos);
+      }
+
+      //opt { val ind pos } 一次只能传一个
+      _getLayoutDataOf(opt) {
+          var props = ["val", "ind", "pos"];
+          var prop;
+          _.each(props, function (_p) {
+              if (_p in opt) {
+                  prop = _p;
+              }
+          });
+
+          var layoutData;
+          _.each(this.dataSectionLayout, function (item) {
+              if (item[prop] === opt[prop]) {
+                  layoutData = item;
+              }        });
+
+          return layoutData || {};
+      }
+
+      getPosOfVal(val) {
+
+          /* val可能会重复，so 这里得到的会有问题，先去掉
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _pos = this._getLayoutDataOf({ val : val }).pos;
+          if( _pos != undefined ){
+              return _pos;
+          };
+          */
+
+          return this.getPosOf({
+              val: val
+          });
+      }
+      getPosOfInd(ind) {
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _pos = this._getLayoutDataOf({ ind: ind }).pos;
+          if (_pos != undefined) {
+              return _pos;
+          }
+          return this.getPosOf({
+              ind: ind
+          });
+      }
+
+      //opt {val, ind} val 或者ind 一定有一个
+      getPosOf(opt) {
+          var pos;
+
+          var cellCount = this._getCellCount(); //dataOrg上面的真实数据节点数，把轴分成了多少个节点
+
+          if (this.layoutType == "proportion") {
+              var dsgLen = this.dataSectionGroup.length;
+              var groupLength = this.axisLength / dsgLen;
+              for (var i = 0, l = dsgLen; i < l; i++) {
+                  var ds = this.dataSectionGroup[i];
+                  var min = _.min(ds);
+                  var max = _.max(ds);
+                  var val = "val" in opt ? opt.val : this.getValOfInd(opt.ind);
+                  if (val >= min && val <= max) {
+                      var _origin = this.origin;
+                      //如果 origin 并不在这个区间
+                      if (_origin < min || _origin > max) {
+                          _origin = min;
+                      }                    var maxGroupDisABS = Math.max(Math.abs(max - _origin), Math.abs(_origin - min));
+                      var amountABS = Math.abs(max - min);
+                      var h = (maxGroupDisABS / amountABS) * groupLength;
+                      pos = (val - _origin) / maxGroupDisABS * h + i * groupLength;
+
+                      if (isNaN(pos)) {
+                          pos = parseInt(i * groupLength);
+                      }
+                      break;
+                  }
+              }
+          } else {
+
+              if (cellCount == 1) {
+                  //如果只有一数据，那么就全部默认在正中间
+                  pos = this.axisLength / 2;
+              } else {
+                  //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
+                  //因为可能有多个数据的val一样
+
+                  var valInd = "ind" in opt ? opt.ind : this.getIndexOfVal(opt.val);
+                  if (valInd != -1) {
+                      if (this.layoutType == "rule") {
+                          //line 的xaxis就是 rule
+                          pos = valInd / (cellCount - 1) * this.axisLength;
+                      }                    if (this.layoutType == "peak") {
+                          //bar的xaxis就是 peak
+                          /*
+                          pos = (this.axisLength/cellCount) 
+                                * (valInd+1) 
+                                - (this.axisLength/cellCount)/2;
+                          */
+                          var _cellLength = this.getCellLength();
+                          pos = _cellLength * (valInd + 1) - _cellLength / 2;
+                      }                }            }
+          }
+          !pos && (pos = 0);
+
+          pos = Number(pos.toFixed(1)) + this._originTrans;
+
+          return Math.abs(pos);
+      }
+
+      getValOfPos(pos) {
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _val = this._getLayoutDataOf({ pos: pos }).val;
+          if (_val != undefined) {
+              return _val;
+          }
+          return this._getValOfInd(this.getIndexOfPos(pos));
+      }
+
+      //ds可选
+      getValOfInd(ind) {
+
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _val = this._getLayoutDataOf({ ind: ind }).val;
+          if (_val != undefined) {
+              return _val;
+          }
+          return this._getValOfInd(ind);
+
+          /*
+          if (this.layoutType == "proportion") {
+          
+          } else {
               //这里的index是直接的对应dataOrg的索引
               var org = ds ? ds : _.flatten(this.dataOrg);
               return org[ind];
+          };
+          */
+
+      }
+
+      //这里的ind
+      _getValOfInd(ind, ds) {
+          var me = this;
+
+          var org = _.flatten(this.dataOrg);
+          var val;
+
+          if (this.layoutType == "proportion") {
+
+              var groupLength = this.axisLength / this.dataSectionGroup.length;
+              _.each(this.dataSectionGroup, function (ds, i) {
+                  if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
+                      var min = _.min(ds);
+                      var max = _.max(ds);
+                      val = min + (max - min) / groupLength * (ind - groupLength * i);
+                      return false;
+                  }
+              });
+
+          } else {
+              val = org[ind];
+          }        return val;
+      }
+
+      getIndexOfPos(pos) {
+
+          //先检查下 dataSectionLayout 中有没有对应的记录
+          var _ind = this._getLayoutDataOf({ pos: pos }).ind;
+          if (_ind != undefined) {
+              return _ind;
           }
+          var ind = 0;
 
-          //这里的ind
+          var cellLength = this.getCellLengthOfPos(pos);
+          var cellCount = this._getCellCount();
 
-      }, {
-          key: "_getValOfInd",
-          value: function _getValOfInd(ind, ds) {
-              var me = this;
+          if (this.layoutType == "proportion") {
+              //proportion中的index以像素为单位 所以，传入的像素值就是index
+              return pos;
+          } else {
 
-              var org = ds ? ds : _.flatten(this.dataOrg);
-              var val;
+              if (this.layoutType == "peak") {
+                  ind = parseInt(pos / cellLength);
+                  if (ind == cellCount) {
+                      ind = cellCount - 1;
+                  }
+              }
+              if (this.layoutType == "rule") {
+                  ind = parseInt((pos + (cellLength / 2)) / cellLength);
+                  if (cellCount == 1) {
+                      //如果只有一个数据
+                      ind = 0;
+                  }
+              }        }
+          return ind
+      }
 
-              if (this.layoutType == "proportion") {
+      getIndexOfVal(val) {
 
-                  var groupLength = this.axisLength / this.dataSectionGroup.length;
-                  _.each(this.dataSectionGroup, function (ds, i) {
-                      if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
-                          var min = _.min(ds);
-                          var max = _.max(ds);
-                          val = min + (max - min) / groupLength * (ind - groupLength * i);
-                          return false;
-                      }
-                  });
-              } else {
-                  val = org[ind];
-              }            return val;
-          }
-      }, {
-          key: "getIndexOfPos",
-          value: function getIndexOfPos(pos) {
+          var valInd = -1;
+          if (this.layoutType == "proportion") {
 
               //先检查下 dataSectionLayout 中有没有对应的记录
-              var _ind = this._getLayoutDataOf({ pos: pos }).ind;
+              var _ind = this._getLayoutDataOf({ val: val }).ind;
               if (_ind != undefined) {
                   return _ind;
               }
-              var ind = 0;
+              //因为在proportion中index 就是 pos
+              //所以这里要返回pos
+              valInd = this.getPosOfVal(val);
+          } else {
+              _.each(this.dataOrg, function (arr) {
+                  _.each(arr, function (list) {
+                      var _ind = _.indexOf(list, val);
+                      if (_ind != -1) {
+                          valInd = _ind;
+                      }                });
+              });
+          }
 
-              var cellLength = this.getCellLengthOfPos(pos);
-              var cellCount = this._getCellCount();
+
+          return valInd;
+      }
+
+      getCellLength() {
+
+          if (this._cellLength !== null) {
+              return this._cellLength;
+          }
+          //ceilWidth默认按照peak算, 而且不能按照dataSection的length来做分母
+          var axisLength = this.axisLength;
+          var cellLength = axisLength;
+          var cellCount = this._getCellCount();
+
+          if (cellCount) {
 
               if (this.layoutType == "proportion") {
-                  //proportion中的index以像素为单位 所以，传入的像素值就是index
-                  return pos;
+                  cellLength = 1;
               } else {
 
-                  if (this.layoutType == "peak") {
-                      ind = parseInt(pos / cellLength);
-                      if (ind == cellCount) {
-                          ind = cellCount - 1;
-                      }
-                  }
+                  //默认按照 peak 也就是柱状图的需要的布局方式
+                  cellLength = axisLength / cellCount;
                   if (this.layoutType == "rule") {
-                      ind = parseInt((pos + cellLength / 2) / cellLength);
                       if (cellCount == 1) {
-                          //如果只有一个数据
-                          ind = 0;
-                      }
-                  }            }
-              return ind;
-          }
-      }, {
-          key: "getIndexOfVal",
-          value: function getIndexOfVal(val) {
-
-              var valInd = -1;
-              if (this.layoutType == "proportion") {
-
-                  //先检查下 dataSectionLayout 中有没有对应的记录
-                  var _ind = this._getLayoutDataOf({ val: val }).ind;
-                  if (_ind != undefined) {
-                      return _ind;
-                  }
-                  //因为在proportion中index 就是 pos
-                  //所以这里要返回pos
-                  valInd = this.getPosOfVal(val);
-              } else {
-                  _.each(this.dataOrg, function (arr) {
-                      _.each(arr, function (list) {
-                          var _ind = _.indexOf(list, val);
-                          if (_ind != -1) {
-                              valInd = _ind;
-                          }                    });
-                  });
-              }
-
-              return valInd;
-          }
-      }, {
-          key: "getCellLength",
-          value: function getCellLength() {
-
-              if (this._cellLength !== null) {
-                  return this._cellLength;
-              }
-              //ceilWidth默认按照peak算, 而且不能按照dataSection的length来做分母
-              var axisLength = this.axisLength;
-              var cellLength = axisLength;
-              var cellCount = this._getCellCount();
-
-              if (cellCount) {
-
-                  if (this.layoutType == "proportion") {
-                      cellLength = 1;
-                  } else {
-
-                      //默认按照 peak 也就是柱状图的需要的布局方式
-                      cellLength = axisLength / cellCount;
-                      if (this.layoutType == "rule") {
-                          if (cellCount == 1) {
-                              cellLength = axisLength / 2;
-                          } else {
-                              cellLength = axisLength / (cellCount - 1);
-                          }                    }
-                      if (this.posParseToInt) {
-                          cellLength = parseInt(cellLength);
+                          cellLength = axisLength / 2;
+                      } else {
+                          cellLength = axisLength / (cellCount - 1);
                       }                }
-              }
-              this._cellLength = cellLength;
-
-              return cellLength;
+                  if (this.posParseToInt) {
+                      cellLength = parseInt(cellLength);
+                  }            }
           }
+          this._cellLength = cellLength;
 
-          //这个getCellLengthOfPos接口主要是给tips用，因为tips中只有x信息
+          return cellLength;
 
-      }, {
-          key: "getCellLengthOfPos",
-          value: function getCellLengthOfPos(pos) {
-              return this.getCellLength();
+      }
+
+      //这个getCellLengthOfPos接口主要是给tips用，因为tips中只有x信息
+      getCellLengthOfPos(pos) {
+          return this.getCellLength();
+      }
+
+      //pos目前没用到，给后续的高级功能预留接口
+      getCellLengthOfInd(pos) {
+          return this.getCellLength();
+      }
+
+      _getCellCount() {
+
+          if (this._cellCount !== null) {
+              return this._cellCount;
           }
+          //总共有几个数据节点，默认平铺整个dataOrg，和x轴的需求刚好契合，而y轴目前不怎么需要用到这个
+          var cellCount = 0;
+          if (this.layoutType == "proportion") {
+              cellCount = this.axisLength;
+          } else {
+              if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
+                  cellCount = this.dataOrg[0][0].length;
+              }        }        this._cellCount = cellCount;
+          return cellCount;
+      }
 
-          //pos目前没用到，给后续的高级功能预留接口
+  }
 
-      }, {
-          key: "getCellLengthOfInd",
-          value: function getCellLengthOfInd(pos) {
-              return this.getCellLength();
-          }
-      }, {
-          key: "_getCellCount",
-          value: function _getCellCount() {
+  /**
+  * 把原始的数据
+  * field1 field2 field3
+  *   1      2      3
+  *   2      3      4
+  * 这样的数据格式转换为内部的
+  * [{field:'field1',index:0,data:[1,2]} ......]
+  * 这样的结构化数据格式。
+  */
 
-              if (this._cellCount !== null) {
-                  return this._cellCount;
-              }
-              //总共有几个数据节点，默认平铺整个dataOrg，和x轴的需求刚好契合，而y轴目前不怎么需要用到这个
-              var cellCount = 0;
-              if (this.layoutType == "proportion") {
-                  cellCount = this.axisLength;
-              } else {
-                  if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
-                      cellCount = this.dataOrg[0][0].length;
-                  }            }            this._cellCount = cellCount;
-              return cellCount;
-          }
-      }]);
-      return axis;
-  }();
-
-  var RESOLUTION = window.devicePixelRatio || 1;
-
-  var addOrRmoveEventHand = function addOrRmoveEventHand(domHand, ieHand) {
-      if (document[domHand]) {
-          var eventDomFn = function eventDomFn(el, type, fn) {
-              if (el.length) {
-                  for (var i = 0; i < el.length; i++) {
-                      eventDomFn(el[i], type, fn);
-                  }
-              } else {
-                  el[domHand](type, fn, false);
-              }
-          };
-          return eventDomFn;
+  //如果应用传入的数据是[{name:name, sex:sex ...} , ...] 这样的数据，就自动转换为chartx需要的矩阵格式数据
+  function parse2MatrixData( list )
+  {
+      if( list === undefined || list === null ){
+          list = [];
+      }    //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
+      if( list.length > 0 && !_.isArray( list[0] ) ){
+          var newArr = [];
+          var fields = [];
+          var fieldNum = 0;
+          for( var i=0,l=list.length ; i<l ; i++ ){
+              var row = list[i];
+              if( i == 0 ){
+                  for( var f in row ){
+                      fields.push( f ); 
+                  }                newArr.push( fields );
+                  fieldNum = fields.length;
+              }            var _rowData = [];
+              for( var ii=0 ; ii<fieldNum ; ii++ ){
+                  _rowData.push( row[ fields[ii] ] );
+              }            newArr.push( _rowData );
+          }        
+          return newArr;
       } else {
-          var eventFn = function eventFn(el, type, fn) {
-              if (el.length) {
-                  for (var i = 0; i < el.length; i++) {
-                      eventFn(el[i], type, fn);
+          return list
+      }
+  } 
+
+  function dataFrame( data, opt ){
+
+      //数据做一份拷贝，避免污染源数据
+      data = JSON.parse( JSON.stringify( data ) );
+      
+      var dataFrame  = {        //数据框架集合
+          length        : 0,
+          org           : [],   //最原始的数据，一定是个行列式，因为如果发现是json格式数据，会自动转换为行列式
+          data          : [],   //最原始的数据转化后的数据格式：[o,o,o] o={field:'val1',index:0,data:[1,2,3]}
+          getRowDataAt  : _getRowDataAt,
+          getRowDataOf  : _getRowDataOf,
+          getFieldData  : _getFieldData,
+          getDataOrg    : getDataOrg,
+          fields        : [],
+          range         : {
+              start     : 0,
+              end       : 0
+          }
+      };
+
+      if( !data || data.length == 0 ){
+          return dataFrame
+      }
+      //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
+      if( data.length > 0 && !_.isArray( data[0] ) ){
+          data = parse2MatrixData(data);
+          dataFrame.length = data.length;
+      } else {
+          dataFrame.length = data.length - 1;
+      }
+      //设置好数据区间end值
+      dataFrame.range.end = dataFrame.length - 1;
+      //然后检查opts中是否有dataZoom.range
+      if( opt && opt.dataZoom && opt.dataZoom.range ){
+          _.extend( dataFrame.range, opt.dataZoom.range );
+      }
+      if( data.length && data[0].length && !~data[0].indexOf("__index__") ){
+          //如果数据中没有用户自己设置的__index__，那么就主动添加一个__index__，来记录元数据中的index
+          for( var i=0,l=data.length; i<l; i++ ){
+              if( !i ){
+                  data[0].push( "__index__" );
+              } else {
+                  data[i].push( i-1 );
+              }
+          }
+      }
+
+      dataFrame.org = data;
+      dataFrame.fields = data[0] ? data[0] : []; //所有的字段集合;
+
+      
+
+      var total = [];//已经处理成[o,o,o]   o={field:'val1',index:0,data:[1,2,3]}
+      for(var a = 0, al = dataFrame.fields.length; a < al; a++){
+          var o = {};
+          o.field = dataFrame.fields[a];
+          o.index = a;
+          o.data  = [];
+          total.push(o);
+      }    dataFrame.data = total;
+
+      //填充好total的data并且把属于yAxis的设置为number
+      for(var a = 1, al = data.length; a < al; a++){
+          for(var b = 0, bl = data[a].length; b < bl; b++){
+              var _val = data[a][b];
+              //如果用户传入的数据是个number，那么就转换为真正的Number吧
+              //‘223’ --》 223
+              if( !isNaN( _val ) && _val !== "" && _val !== null ){
+                  _val = Number( _val );
+              }            total[b].data.push( _val );
+              //total[b].data.push( data[a][b] );
+          }
+      }
+      //会按照$field的格式转换成对应一一对应的 org 的结构
+      function getDataOrg( $field, format, totalList , lev){
+          
+          if( !lev ) lev = 0;
+
+          var arr = totalList || total;
+          if( !arr ){
+              return;
+          }
+          if( !format ){
+              format = function( e ){ return e };
+          }
+          function _format( data ){
+              for( var i=0,l=data.length; i<l; i++ ){
+                  data[i] = format( data[i] );
+              }            return data;
+          }
+          if( !_.isArray($field) ){
+              $field = [$field];
+          }
+          //这个时候的arr只是totalList的过滤，还没有完全的按照$field 中的排序
+          var newData = [];
+          for( var i=0,l=$field.length; i<l ; i++ ){
+              if( _.isArray($field[i]) ){
+                  newData.push( getDataOrg( $field[i], format, totalList , lev+1) );
+              } else {
+              
+                  var _fieldData = newData;
+                  if( !lev ){
+                      _fieldData = [];
+                  }                for( var ii=0,iil=arr.length ; ii<iil ; ii++ ){
+                       if( $field[i] == arr[ii].field ){
+                           _fieldData.push( _format( arr[ii].data.slice( dataFrame.range.start, dataFrame.range.end+1 ) ) );
+                           break;
+                       }
+                  }                if( !lev ){
+                      newData.push( _fieldData );
+                  }            }        }
+          return newData;
+      }
+      /*
+       * 获取某一行数据
+      */ 
+      function _getRowDataAt(index){
+          var o = {};
+          var data = dataFrame.data;
+          for(var a = 0; a < data.length; a++){
+              o[data[a].field] = data[a].data[ dataFrame.range.start + index ];
+          }        return o
+      }
+
+      /**
+       * obj => {uv: 100, pv: 10 ...}
+       */
+      function _getRowDataOf( obj ){
+          !obj && (obj={});
+          var arr = [];
+
+          var expCount = 0;
+          for( var p in obj ){
+              expCount++;
+          }
+          if( expCount ){
+              for( var i=dataFrame.range.start; i< dataFrame.range.end; i++ ){
+                  var matchNum = 0;
+                  _.each( dataFrame.data, function( fd ){
+                      if( fd.field in obj && fd.data[i] == obj[ fd.field ] ){
+                          matchNum++;
+                      }
+                  } );
+                  if( matchNum == expCount ){
+                      //说明这条数据是完全和查询
+                      arr.push( _getRowDataAt(i) );
+                  }            }        }
+          return arr;
+      }
+
+      function _getFieldData( field ){
+          var data;
+          _.each( dataFrame.data , function( d ){
+              if( d.field == field ){
+                  data = d;
+              }
+          } ); 
+          if( data ){
+              return data.data.slice( dataFrame.range.start, dataFrame.range.end+1 );
+          } else {
+              return []
+          }
+      }
+
+      return dataFrame;
+  }
+
+  const RESOLUTION = window.devicePixelRatio || 1;
+
+  var addOrRmoveEventHand = function( domHand , ieHand ){
+      if( document[ domHand ] ){
+          function eventDomFn( el , type , fn ){
+              if( el.length ){
+                  for(var i=0 ; i < el.length ; i++){
+                      eventDomFn( el[i] , type , fn );
                   }
               } else {
-                  el[ieHand]("on" + type, function () {
-                      return fn.call(el, window.event);
+                  el[ domHand ]( type , fn , false );
+              }
+          }        return eventDomFn
+      } else {
+          function eventFn( el , type , fn ){
+              if( el.length ){
+                  for(var i=0 ; i < el.length ; i++){
+                      eventFn( el[i],type,fn );
+                  }
+              } else {
+                  el[ ieHand ]( "on"+type , function(){
+                      return fn.call( el , window.event );
                   });
               }
-          };
-          return eventFn;
+          }        return eventFn
       }
   };
 
-  var dom = {
+  var $ = {
       // dom操作相关代码
-      query: function query(el) {
-          if (_.isString(el)) {
-              return document.getElementById(el);
+      query : function(el){
+          if(_.isString(el)){
+             return document.getElementById(el)
           }
-          if (el.nodeType == 1) {
-              //则为一个element本身
-              return el;
+          if(el.nodeType == 1){
+             //则为一个element本身
+             return el
           }
-          if (el.length) {
-              return el[0];
+          if(el.length){
+             return el[0]
           }
           return null;
       },
-      offset: function offset(el) {
-          var box = el.getBoundingClientRect(),
-              doc = el.ownerDocument,
-              body = doc.body,
-              docElem = doc.documentElement,
-
+      offset : function(el){
+          var box = el.getBoundingClientRect(), 
+          doc = el.ownerDocument, 
+          body = doc.body, 
+          docElem = doc.documentElement, 
 
           // for ie  
-          clientTop = docElem.clientTop || body.clientTop || 0,
-              clientLeft = docElem.clientLeft || body.clientLeft || 0,
-
+          clientTop = docElem.clientTop || body.clientTop || 0, 
+          clientLeft = docElem.clientLeft || body.clientLeft || 0, 
 
           // In Internet Explorer 7 getBoundingClientRect property is treated as physical, 
           // while others are logical. Make all logical, like in IE8. 
-          zoom = 1;
-          if (body.getBoundingClientRect) {
-              var bound = body.getBoundingClientRect();
-              zoom = (bound.right - bound.left) / body.clientWidth;
-          }
-          if (zoom > 1) {
-              clientTop = 0;
-              clientLeft = 0;
-          }
-          var top = box.top / zoom + (window.pageYOffset || docElem && docElem.scrollTop / zoom || body.scrollTop / zoom) - clientTop,
-              left = box.left / zoom + (window.pageXOffset || docElem && docElem.scrollLeft / zoom || body.scrollLeft / zoom) - clientLeft;
+          zoom = 1; 
+          if (body.getBoundingClientRect) { 
+              var bound = body.getBoundingClientRect(); 
+              zoom = (bound.right - bound.left)/body.clientWidth; 
+          } 
+          if (zoom > 1){ 
+              clientTop = 0; 
+              clientLeft = 0; 
+          } 
+          var top = box.top/zoom + (window.pageYOffset || docElem && docElem.scrollTop/zoom || body.scrollTop/zoom) - clientTop, 
+              left = box.left/zoom + (window.pageXOffset|| docElem && docElem.scrollLeft/zoom || body.scrollLeft/zoom) - clientLeft; 
 
-          return {
-              top: top,
-              left: left
-          };
+          return { 
+              top: top, 
+              left: left 
+          }; 
       },
-      addEvent: addOrRmoveEventHand("addEventListener", "attachEvent"),
-      removeEvent: addOrRmoveEventHand("removeEventListener", "detachEvent"),
-      pageX: function pageX(e) {
-          if (e.pageX) return e.pageX;else if (e.clientX) return e.clientX + (document.documentElement.scrollLeft ? document.documentElement.scrollLeft : document.body.scrollLeft);else return null;
+      addEvent : addOrRmoveEventHand( "addEventListener" , "attachEvent" ),
+      removeEvent : addOrRmoveEventHand( "removeEventListener" , "detachEvent" ),
+      pageX: function(e) {
+          if (e.pageX) return e.pageX;
+          else if (e.clientX)
+              return e.clientX + (document.documentElement.scrollLeft ?
+                      document.documentElement.scrollLeft : document.body.scrollLeft);
+          else return null;
       },
-      pageY: function pageY(e) {
-          if (e.pageY) return e.pageY;else if (e.clientY) return e.clientY + (document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop);else return null;
+      pageY: function(e) {
+          if (e.pageY) return e.pageY;
+          else if (e.clientY)
+              return e.clientY + (document.documentElement.scrollTop ?
+                      document.documentElement.scrollTop : document.body.scrollTop);
+          else return null;
       },
       /**
        * 创建dom
        * @param {string} id dom id 待用
        * @param {string} type : dom type， such as canvas, div etc.
        */
-      createCanvas: function createCanvas(_width, _height, id) {
+      createCanvas : function( _width , _height , id) {
           var canvas = document.createElement("canvas");
           canvas.style.position = 'absolute';
-          canvas.style.width = _width + 'px';
+          canvas.style.width  = _width + 'px';
           canvas.style.height = _height + 'px';
-          canvas.style.left = 0;
-          canvas.style.top = 0;
+          canvas.style.left   = 0;
+          canvas.style.top    = 0;
           canvas.setAttribute('width', _width * RESOLUTION);
           canvas.setAttribute('height', _height * RESOLUTION);
           canvas.setAttribute('id', id);
           return canvas;
       },
-      createView: function createView(_width, _height, id) {
+      createView: function(_width , _height, id){
           var view = document.createElement("div");
           view.className = "canvax-view";
           view.style.cssText += "position:relative;width:100%;height:100%;";
 
           var stageView = document.createElement("div");
-          stageView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height + "px;";
+          stageView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height +"px;";
 
           //用来存放一些dom元素
           var domView = document.createElement("div");
-          domView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height + "px;";
+          domView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height +"px;";
 
           view.appendChild(stageView);
           view.appendChild(domView);
-
+          
           return {
-              view: view,
+              view : view,
               stageView: stageView,
               domView: domView
-          };
+          }
       }
       //dom相关代码结束
   };
@@ -1366,10 +1532,10 @@ var Chartx3d = (function () {
   /**
    * 系统皮肤
    */
-  var _colors = ["#ff8533", "#73ace6", "#82d982", "#e673ac", "#cd6bed", "#8282d9", "#c0e650", "#e6ac73", "#6bcded", "#73e6ac", "#ed6bcd", "#9966cc"];
+  const _colors = ["#ff8533","#73ace6","#82d982","#e673ac","#cd6bed","#8282d9","#c0e650","#e6ac73","#6bcded","#73e6ac","#ed6bcd","#9966cc"];
   var globalTheme = {
-      colors: _colors,
-      set: function set(colors) {
+      colors : _colors,
+      set : function( colors ){
           this.colors = colors;
           /*
           var me = this;
@@ -1379,113 +1545,116 @@ var Chartx3d = (function () {
           */
           return this.colors;
       },
-      get: function get() {
-          return this.colors;
+      get : function( ){
+          return this.colors
       }
   };
 
-  var cloneOptions = function cloneOptions(opt) {
+  let cloneOptions = (opt) => {
       return _.clone(opt);
   };
 
-  var cloneData = function cloneData(data) {
+  let cloneData = (data) => {
       return JSON.parse(JSON.stringify(data));
   };
 
-  var is3dOpt = function is3dOpt(opt) {
+  let is3dOpt = (opt) => {
       var chartx3dCoordTypes = ["box", "polar3d"];
       return opt.coord && opt.coord.type && chartx3dCoordTypes.indexOf(opt.coord.type) > -1;
   };
 
   //图表皮肤
 
-  var global$1 = {
-      create: function create(el, _data, _opt) {
+  var global = {
+      create : function( el, _data, _opt ){
           var chart = null;
           var me = this;
 
-          var data = cloneData(_data);
-          var opt = cloneOptions(_opt);
+          var data = cloneData( _data );
+          var opt  = cloneOptions( _opt );  
 
-          var _destroy = function _destroy() {
-              me.instances[chart.id] = null;
-              delete me.instances[chart.id];
+          var _destroy = function(){
+              me.instances[ chart.id ] = null;
+              delete me.instances[ chart.id ];
           };
 
           //这个el如果之前有绘制过图表，那么就要在instances中找到图表实例，然后销毁
-          var chart_id = dom.query(el).getAttribute("chart_id");
-          if (chart_id != undefined) {
-              var _chart = me.instances[chart_id];
-              if (_chart) {
+          var chart_id = $.query(el).getAttribute("chart_id");
+          if( chart_id != undefined ){
+              var _chart = me.instances[ chart_id ];
+              if( _chart ){
                   _chart.destroy();
-                  _chart.off && _chart.off("destroy", _destroy);
-              }            delete me.instances[chart_id];
+                  _chart.off && _chart.off("destroy" , _destroy);
+              }            delete me.instances[ chart_id ];
           }
           //图表维度
           var dimension = 2;
-          if (is3dOpt(_opt)) {
+          if( is3dOpt( _opt ) ){
               dimension = 3;
           }
-          var componentModules = me.getComponentModules(dimension);
+          var componentModules = me.getComponentModules( dimension );
 
           //如果用户没有配置coord，说明这个图表是一个默认目标系的图表，比如标签云
           var Chart = me.getComponentModule('chart', dimension);
 
           //try {
-          chart = new Chart(el, data, opt, componentModules);
-          if (chart) {
-              chart.draw();
-
-              me.instances[chart.id] = chart;
-              chart.on("destroy", _destroy);
-          }        //} catch(err){
+              chart = new Chart( el, data, opt, componentModules );
+              if( chart ){
+                  chart.draw();
+                  
+                  me.instances[ chart.id ] = chart;
+                  chart.on("destroy" , _destroy);
+              }        //} catch(err){
           //    throw "Chatx Error：" + err
           //};
 
           return chart;
       },
-      setGlobalTheme: function setGlobalTheme(colors) {
-          globalTheme.set(colors);
+      setGlobalTheme: function( colors ){
+          globalTheme.set( colors );
       },
-      getGlobalTheme: function getGlobalTheme() {
+      getGlobalTheme: function(){
           return globalTheme.get();
       },
-
-      instances: {},
-      getChart: function getChart(chartId) {
-          return this.instances[chartId];
+      
+      instances : {},
+      getChart : function( chartId ){
+          return this.instances[ chartId ];
       },
-      resize: function resize() {
+      resize : function(){
           //调用全局的这个resize方法，会把当前所有的 chart instances 都执行一遍resize
-          for (var c in this.instances) {
-              this.instances[c].resize();
+          for( var c in this.instances ){
+              this.instances[ c ].resize();
           }
       },
-
+      
       //第二个参数是用户要用来覆盖chartpark中的配置的options
-      getOptions: function getOptions(chartPark_cid, userOptions) {
+      getOptions : function( chartPark_cid , userOptions ){
           //chartPark_cid,chartpark中的图表id
-          if (!this.options[chartPark_cid]) {
+          if( !this.options[ chartPark_cid ] ){
               return userOptions || {};
           }        var JsonSerialize = {
               prefix: '[[JSON_FUN_PREFIX_',
               suffix: '_JSON_FUN_SUFFIX]]'
           };
-          var parse = function parse(string) {
-              return JSON.parse(string, function (key, value) {
-                  if (typeof value === 'string' && value.indexOf(JsonSerialize.suffix) > 0 && value.indexOf(JsonSerialize.prefix) == 0) {
-                      return new Function('return ' + value.replace(JsonSerialize.prefix, '').replace(JsonSerialize.suffix, ''))();
+          var parse = function(string){
+              return JSON.parse( string ,function(key, value){
+                  if((typeof value === 'string') && 
+                     (value.indexOf(JsonSerialize.suffix) > 0) && 
+                     (value.indexOf(JsonSerialize.prefix) == 0)
+                  ){
+                      return (new Function('return ' + value.replace(JsonSerialize.prefix, '').replace(JsonSerialize.suffix, '')))();
                   }                return value;
               }) || {};
           };
-          var opt = parse(decodeURIComponent(this.options[chartPark_cid] || {}));
-          if (userOptions) {
-              opt = _.extend(true, opt, userOptions);
+          var opt = parse( decodeURIComponent( this.options[ chartPark_cid ] || {} ) );
+          if( userOptions ){
+              opt = _.extend( true, opt, userOptions );
           }        return opt;
       },
 
       components: {
-          c_2d: {
+          c_2d : {
               /*
               modules:{
                   coord : {
@@ -1499,163 +1668,103 @@ var Chartx3d = (function () {
                       ...
                   }
               },
-              getComponentModule: function( name, type ){}
+              get: function( name, type ){}
               */
           },
-          c_3d: {
+          c_3d : {
               //所有3d组件,同上
           }
       },
-      getComponentModules: function getComponentModules(dimension) {
+      getComponentModules( dimension ){
           var comps = this.components.c_2d;
-          if (dimension == 3) {
+          if( dimension == 3 ){
               comps = this.components.c_3d;
-          }        if (!comps.modules) {
+          }        if( !comps.modules ){
               comps.modules = {};
-          }        if (!comps.getComponentModule) {
-              comps.getComponentModule = function (name, type) {
-                  if (!type) {
+          }        if( !comps.get ){
+              comps.get = function( name, type ){
+                  if( !type ){
                       type = "empty";
-                  }                return comps.modules[name][type];
-              };
+                  }                var _module = comps.modules[ name ];
+                  if( _module && _module[type] ){
+                      return _module[type]
+                  }            };
           }        return comps;
       },
-
       /**
        * @param {compModule} 要注册进去的模块名称
        * @param {name} 要获取的comp名称
        * @param { dimension,type } 后面可以传传两个参数 
        * @param { dimension } 如果有四个参数，那么第三个肯定是type，第四个肯定是dimension 
        */
-      registerComponent: function registerComponent(compModule, name) {
+      registerComponent( compModule, name )
+      {
           var dimension = 2;
           var type = "empty";
 
-          if (arguments.length == 3) {
+          if( arguments.length == 3 ){
               var arg2 = arguments[2];
-              if (_.isNumber(arg2)) {
-                  if (arg2 == 3) {
+              if( _.isNumber( arg2 ) ){
+                  if( arg2 == 3 ){
                       dimension = 3;
                   }
-              }            if (_.isString(arg2)) {
+              }            if( _.isString( arg2 ) ){
                   type = arg2;
-              }        }        if (arguments.length == 4) {
+              }        }        if( arguments.length == 4 ){
               //那么肯定是有传 type  dimension 两个值
-              type = arguments[2];
-              if (arguments[3] == 3) {
+              type = arguments[ 2 ];
+              if( arguments[3] == 3 ){
                   dimension = 3;
-              }        }
-          var comps = this.getComponentModules(dimension).modules;
+              }        }        
+          var comps = this.getComponentModules( dimension ).modules;
 
-          var _comp = comps[name];
-          if (!_comp) {
-              _comp = comps[name] = {};
-          }        if (!_comp[type]) {
-              _comp[type] = compModule;
+          var _comp = comps[ name ];
+          if( !_comp ){
+              _comp = comps[ name ] = {
+                  
+              };
+          }        if( !_comp[ type ] ){
+              _comp[ type ] = compModule;
           }        return comps;
       },
-
       /**
        * 
        * @param {name} 要获取的comp名称
        * @param { dimension,type } 后面可以传传两个参数 
        * @param { dimension } 如果有三个参数，那么第二个肯定是type，第三个肯定是dimension 
        */
-      getComponentModule: function getComponentModule(name) {
+      getComponentModule( name ){
           var dimension = 2;
           var type = "empty";
 
-          if (arguments.length == 2) {
+          if( arguments.length == 2 ){
               var arg1 = arguments[1];
-              if (_.isNumber(arg1)) {
-                  if (arg1 == 3) {
+              if( _.isNumber( arg1 ) ){
+                  if( arg1 == 3 ){
                       dimension = 3;
                   }
-              }            if (_.isString(arg1)) {
+              }            if( _.isString( arg1 ) ){
                   type = arg1;
-              }        }        if (arguments.length == 3) {
+              }        }        if( arguments.length == 3 ){
               //那么肯定是有传 type  dimension 两个值
-              type = arguments[1];
-              if (arguments[2] == 3) {
+              type = arguments[ 1 ];
+              if( arguments[2] == 3 ){
                   dimension = 3;
               }        }
-          var comps = this.getComponentModules(dimension).modules;
-          var _comp = comps[name];
+          var _comp = this.getComponentModules( dimension ).modules[ name ];
 
-          return _comp[type];
+          return _comp ? _comp[ type ] : undefined;
       }
   };
 
-  //十六进制颜色值的正则表达式 
-  var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+  //十六进制颜色值的正则表达式
 
-  /*16进制颜色转为RGB格式*/
-  function colorRgb(hex) {
-      var sColor = hex.toLowerCase();
-      if (sColor && reg.test(sColor)) {
-          if (sColor.length === 4) {
-              var sColorNew = "#";
-              for (var i = 1; i < 4; i += 1) {
-                  sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
-              }
-              sColor = sColorNew;
-          }
-          //处理六位的颜色值  
-          var sColorChange = [];
-          for (var i = 1; i < 7; i += 2) {
-              sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
-          }
-          return "RGB(" + sColorChange.join(",") + ")";
-      } else {
-          return sColor;
-      }
-  }
-  function colorRgba(hex, a) {
-      return colorRgb(hex).replace(')', ',' + a + ')').replace('RGB', 'RGBA');
-  }
-  function hexTorgb(hex, out) {
-      //hex可能是“#ff0000” 也可能是 0xff0000
-      if (hex.replace) {
-          hex = parseInt(hex.replace("#", "0X"), 16);
-      }
-      out = out || [];
+  const aRound = 360; //一圈的度数
+  const Cos = Math.cos;
+  const Sin = Math.sin;
 
-      out[0] = (hex >> 16 & 0xFF) / 255;
-      out[1] = (hex >> 8 & 0xFF) / 255;
-      out[2] = (hex & 0xFF) / 255;
-
-      return out;
-  }
-
-  function hexTostring(hex) {
-      hex = hex.toString(16);
-      hex = '000000'.substr(0, 6 - hex.length) + hex;
-
-      return "#" + hex;
-  }
-
-  function rgbTohex(rgb) {
-      return (rgb[0] * 255 << 16) + (rgb[1] * 255 << 8) + rgb[2] * 255;
-  }
-
-  var color = /*#__PURE__*/Object.freeze({
-    colorRgb: colorRgb,
-    colorRgba: colorRgba,
-    hexTorgb: hexTorgb,
-    hexTostring: hexTostring,
-    rgbTohex: rgbTohex
-  });
-
-  var aRound = 360; //一圈的度数
-  var Cos = Math.cos;
-  var Sin = Math.sin;
-
-  var Polar = function () {
-      function Polar() {
-          var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-          var dataFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-          classCallCheck(this, Polar);
-
+  class Polar {
+      constructor(opt = {}, dataFrame = []) {
 
           this._opt = _.clone(opt);
           this.dataFrame = dataFrame;
@@ -1671,339 +1780,357 @@ var Chartx3d = (function () {
           this.layoutData = []; //和dataSection一一对应的，每个值的pos,agend,dregg,centerPos
 
 
+
           this.maxRadius = 0; //最大半径值
           this.minRadius = 0; //最小半径值 
+
       }
 
-      createClass(Polar, [{
-          key: "calculateProps",
-          value: function calculateProps() {
-              var _this = this;
+      calculateProps() {
+          let axisLength = 0;
+          let percentage = 0;
+          let currentAngle = 0;
+          let opt = this._opt;
+          let angle, endAngle, cosV, sinV, midAngle, quadrant;
+          let percentFixedNum = 2;
 
-              var axisLength = 0;
-              var percentage = 0;
-              var currentAngle = 0;
-              var opt = this._opt;
-              var angle = void 0,
-                  endAngle = void 0,
-                  cosV = void 0,
-                  sinV = void 0,
-                  midAngle = void 0,
-                  quadrant = void 0;
-              var percentFixedNum = 2;
+          let outRadius = opt.node.outRadius;
+          let innerRadius = opt.node.innerRadius;
+          let moveDis = opt.node.moveDis;
 
-              var outRadius = opt.node.outRadius;
-              var innerRadius = opt.node.innerRadius;
-              var moveDis = opt.node.moveDis;
+          this.layoutData.forEach((item, i) => {
+              if (!item.enabled) return;
+              axisLength += isNaN(+item.value) ? 0 : +item.value;
 
-              this.layoutData.forEach(function (item, i) {
-                  if (!item.enabled) return;
-                  axisLength += isNaN(+item.value) ? 0 : +item.value;
+              if (item.radiusField) {
+                  this.maxRadius = Math.max(item.radiusValue, axisLength);
+                  this.minRadius = Math.min(item.radiusValue, axisLength);
+              }
+          });
 
-                  if (item.radiusField) {
-                      _this.maxRadius = Math.max(item.radiusValue, axisLength);
-                      _this.minRadius = Math.min(item.radiusValue, axisLength);
+          this.axisLength = axisLength;
+
+          if (axisLength > 0) {
+
+              //原始算法
+              // currentAngle = + opt.startAngle % 360;
+              // limitAngle = opt.allAngles + me.startAngle % me.allAngles;
+
+              //新的算法
+              //这里只是计算每个扇区的初始位置,所以这里求模就可以啦
+              currentAngle = _.euclideanModulo(this.startAngle, aRound);
+              // opt.allAngles = opt.allAngles > 0 ? opt.allAngles : aRound;
+              // limitAngle = opt.allAngles + _.euclideanModulo(opt.startAngle, opt.allAngles);
+
+              this.layoutData.forEach((item, i) => {
+                  percentage = item.value / axisLength;
+                  //enabled为false的sec，比率就设置为0
+                  if (!item.enabled) {
+                      percentage = 0;
                   }
+                  angle = this.allAngles * percentage;
+                  //旧的算法
+                  // endAngle = currentAngle + angle > limitAngle ? limitAngle : me.currentAngle + angle;
+                  endAngle = currentAngle + angle;
+                  midAngle = currentAngle + angle * 0.5;
+
+                  cosV = Cos(_.degToRad(midAngle));
+                  sinV = Sin(_.degToRad(midAngle));
+
+                  cosV = cosV.toFixed(5);
+                  sinV = sinV.toFixed(5);
+                  quadrant = this.getAuadrant(midAngle);
+
+                  //如果用户在配置中制定了半径字段,这里需要计算相对的半径比例值
+                  if (!!item.radiusField) {
+                      // var _rr = Number(item.rowData[opt.node.radius]);
+                      outRadius = parseInt((opt.node.outRadius - opt.node.innerRadius) * ((item.radiusValue - this.minRadius) / (this.maxRadius - this.minRadius)) + opt.node.innerRadius);
+                  }                _.extend(item, {
+                      outRadius,
+                      innerRadius,
+                      startAngle: currentAngle, //起始角度
+                      endAngle, //结束角度
+                      midAngle,  //中间角度
+
+                      moveDis,
+
+                      outOffsetx: moveDis * 0.7 * cosV, //focus的事实外扩后圆心的坐标x
+                      outOffsety: moveDis * 0.7 * sinV, //focus的事实外扩后圆心的坐标y
+
+                      centerx: outRadius * cosV,
+                      centery: outRadius * sinV,
+                      outx: (outRadius + moveDis) * cosV,
+                      outy: (outRadius + moveDis) * sinV,
+                      edgex: (outRadius + moveDis) * cosV,
+                      edgey: (outRadius + moveDis) * sinV,
+
+
+                      orginPercentage: percentage,
+                      percentage: (percentage * 100).toFixed(percentFixedNum),
+
+                      quadrant, //象限
+                      isRightSide: quadrant == 1 || quadrant == 4 ? 1 : 0,
+                      cosV,
+                      sinV
+                  });
+
+                  currentAngle += angle;
+
+
               });
 
-              this.axisLength = axisLength;
-
-              if (axisLength > 0) {
-
-                  //原始算法
-                  // currentAngle = + opt.startAngle % 360;
-                  // limitAngle = opt.allAngles + me.startAngle % me.allAngles;
-
-                  //新的算法
-                  //这里只是计算每个扇区的初始位置,所以这里求模就可以啦
-                  currentAngle = _.euclideanModulo(this.startAngle, aRound);
-                  // opt.allAngles = opt.allAngles > 0 ? opt.allAngles : aRound;
-                  // limitAngle = opt.allAngles + _.euclideanModulo(opt.startAngle, opt.allAngles);
-
-                  this.layoutData.forEach(function (item, i) {
-                      percentage = item.value / axisLength;
-                      //enabled为false的sec，比率就设置为0
-                      if (!item.enabled) {
-                          percentage = 0;
-                      }
-                      angle = _this.allAngles * percentage;
-                      //旧的算法
-                      // endAngle = currentAngle + angle > limitAngle ? limitAngle : me.currentAngle + angle;
-                      endAngle = currentAngle + angle;
-                      midAngle = currentAngle + angle * 0.5;
-
-                      cosV = Cos(_.degToRad(midAngle));
-                      sinV = Sin(_.degToRad(midAngle));
-
-                      cosV = cosV.toFixed(5);
-                      sinV = sinV.toFixed(5);
-                      quadrant = _this.getAuadrant(midAngle);
-
-                      //如果用户在配置中制定了半径字段,这里需要计算相对的半径比例值
-                      if (!!item.radiusField) {
-                          // var _rr = Number(item.rowData[opt.node.radius]);
-                          outRadius = parseInt((opt.node.outRadius - opt.node.innerRadius) * ((item.radiusValue - _this.minRadius) / (_this.maxRadius - _this.minRadius)) + opt.node.innerRadius);
-                      }                    _.extend(item, {
-                          outRadius: outRadius,
-                          innerRadius: innerRadius,
-                          startAngle: currentAngle, //起始角度
-                          endAngle: endAngle, //结束角度
-                          midAngle: midAngle, //中间角度
-
-                          moveDis: moveDis,
-
-                          outOffsetx: moveDis * 0.7 * cosV, //focus的事实外扩后圆心的坐标x
-                          outOffsety: moveDis * 0.7 * sinV, //focus的事实外扩后圆心的坐标y
-
-                          centerx: outRadius * cosV,
-                          centery: outRadius * sinV,
-                          outx: (outRadius + moveDis) * cosV,
-                          outy: (outRadius + moveDis) * sinV,
-                          edgex: (outRadius + moveDis) * cosV,
-                          edgey: (outRadius + moveDis) * sinV,
-
-                          orginPercentage: percentage,
-                          percentage: (percentage * 100).toFixed(percentFixedNum),
-
-                          quadrant: quadrant, //象限
-                          isRightSide: quadrant == 1 || quadrant == 4 ? 1 : 0,
-                          cosV: cosV,
-                          sinV: sinV
-                      });
-
-                      currentAngle += angle;
-                  });
-              }
-          }
-          /**
-           *  重设数据后,需要调用setDataFrame与calculateProps 重新计算layoutData
-           * @param {ArryObject} dataFrame 
-           */
-
-      }, {
-          key: "resetData",
-          value: function resetData(dataFrame) {
-              this.dataFrame = dataFrame || [];
-
-              this.axisLength = 1;
-
-              this.dataOrg = [];
-              this.startAngle = this._opt.startAngle || -90;
-              this.allAngles = this._opt.allAngles || 360;
-
-              this.layoutData = [];
-          }
-      }, {
-          key: "setOption",
-          value: function setOption() {
-              var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-              Object.assign(this._opt, opt);
-              this.startAngle = this._opt.startAngle;
-              this.allAngles = Math.min(360, this._opt.allAngles);
-              this.sort = this._opt.sort;
-          }
-      }, {
-          key: "setDataFrame",
-          value: function setDataFrame(dataFrame) {
-              var _this2 = this;
-
-              var data = [];
-              var opt = this._opt;
-              var field = opt.field;
-              var labelField = opt.groupField || opt.label.field || opt.field;
-              var radiusField = opt.node.radius;
-
-              dataFrame = dataFrame || this.dataFrame;
-              this.dataFrame = dataFrame;
-
-              this.dataOrg = [];
-
-              for (var i = 0, l = dataFrame.length; i < l; i++) {
-                  var rowData = dataFrame.getRowDataAt(i);
-
-                  var layoutData = {
-                      rowData: rowData, //把这一行数据给到layoutData引用起来
-                      enabled: true, //是否启用，显示在列表中
-
-                      value: rowData[field],
-                      label: rowData[labelField],
-                      iNode: i
-                  };
-
-                  this.dataOrg.push(rowData[field]);
-
-                  if (this._isFiled(radiusField, layoutData)) {
-                      layoutData.radiusField = radiusField;
-                      layoutData.radiusValue = rowData[radiusField];
-                  }
-                  data.push(layoutData);
-              }
-              if (this.sort) {
-                  this.dataOrg = [];
-                  data.sort(function (a, b) {
-                      if (_this2.sort == 'asc') {
-                          return a.value - b.value;
-                      } else {
-                          return b.value - a.value;
-                      }
-                  });
-
-                  //重新设定下ind
-                  _.each(data, function (d, i) {
-                      d.iNode = i;
-                      _this2.dataOrg.push(d);
-                  });
-              }
-              this.layoutData = data;
-              return data;
-          }
-      }, {
-          key: "getLayoutData",
-          value: function getLayoutData() {
-              return this.layoutData || [];
-          }
-      }, {
-          key: "_isFiled",
-          value: function _isFiled(field, layoutData) {
-              return field && _.isString(field) && field in layoutData.rowData;
-          }
-      }, {
-          key: "getAuadrant",
-          value: function getAuadrant(ang) {
-              //获取象限
-
-              ang = _.euclideanModulo(ang, aRound);
-              var angleRatio = parseInt(ang / 90);
-              var _quadrant = 0;
-              switch (angleRatio) {
-                  case 0:
-                      _quadrant = 1;
-                      break;
-                  case 1:
-                      _quadrant = 2;
-                      break;
-                  case 2:
-                      _quadrant = 3;
-                      break;
-                  case 3:
-                  case 4:
-                      _quadrant = 4;
-                      break;
-              }
-              return _quadrant;
           }
 
-          /**
-           * 通过值或者索引返回数据集对象
-           * @param {Object} opt {val:xxx} 或 {ind:xxx} 
-           */
 
-      }, {
-          key: "_getLayoutDataOf",
-          value: function _getLayoutDataOf(opt) {
-              //先提供 具体值 和 索引的计算
-              var props = [{ val: "value" }, { ind: "iNode" }];
-              var prop = props[Object.keys(opt)[0]];
+      }
+      /**
+       *  重设数据后,需要调用setDataFrame与calculateProps 重新计算layoutData
+       * @param {ArryObject} dataFrame 
+       */
+      resetData(dataFrame) {
+          this.dataFrame = dataFrame || [];
 
-              var layoutData;
-              _.each(this.layoutData, function (item) {
-                  if (item[prop] === opt[prop]) {
-                      layoutData = item;
-                  }            });
+          this.axisLength = 1;
 
-              return layoutData || {};
-          }
-      }, {
-          key: "getRadiansAtR",
-          value: function getRadiansAtR() {
-              //基类不实现
-          }
-      }, {
-          key: "getPointsOfR",
-          value: function getPointsOfR(r, angleList) {
-              var points = [];
-              _.each(angleList, function (_a) {
-                  //弧度
-                  var _r = Math.PI * _a / 180;
-                  var point = Polar.getPointInRadianOfR(_r, r);
-                  points.push(point);
-              });
-              return points;
-          }
-      }], [{
-          key: "filterPointsInRect",
-          value: function filterPointsInRect(points, origin, width, height) {
-              for (var i = 0, l = points.length; i < l; i++) {
-                  if (!Polar.checkPointInRect(points[i], origin, width, height)) {
-                      //该点不在root rect范围内，去掉
-                      points.splice(i, 1);
-                      i--, l--;
-                  }
-              }            return points;
-          }
-      }, {
-          key: "checkPointInRect",
-          value: function checkPointInRect(p, origin, width, height) {
-              var _tansRoot = { x: p.x + origin.x, y: p.y + origin.y };
-              return !(_tansRoot.x < 0 || _tansRoot.x > width || _tansRoot.y < 0 || _tansRoot.y > height);
-          }
+          this.dataOrg = [];
+          this.startAngle = this._opt.startAngle || -90;
+          this.allAngles = this._opt.allAngles || 360;
 
-          //检查由n个相交点分割出来的圆弧是否在rect内
+          this.layoutData = [];
+      }
+      setOption(opt = {}) {
+          Object.assign(this._opt, opt);
+          this.startAngle = this._opt.startAngle;
+          this.allAngles = Math.min(360, this._opt.allAngles);
+          this.sort = this._opt.sort;
+      }
+      setDataFrame(dataFrame) {
 
-      }, {
-          key: "checkArcInRect",
-          value: function checkArcInRect(arc, r, origin, width, height) {
-              var start = arc[0];
-              var to = arc[1];
-              var differenceR = to.radian - start.radian;
-              if (to.radian < start.radian) {
-                  differenceR = Math.PI * 2 + to.radian - start.radian;
-              }            var middleR = (start.radian + differenceR / 2) % (Math.PI * 2);
-              return Polar.checkPointInRect(Polar.getPointInRadianOfR(middleR, r), origin, width, height);
-          }
+          let data = [];
+          let opt = this._opt;
+          let field = opt.field;
+          let labelField = opt.groupField || opt.label.field || opt.field;
+          let radiusField = opt.node.radius;
 
-          //获取某个点相对圆心的弧度值
+          dataFrame = dataFrame || this.dataFrame;
+          this.dataFrame = dataFrame;
 
-      }, {
-          key: "getRadianInPoint",
-          value: function getRadianInPoint(point) {
-              var pi2 = Math.PI * 2;
-              return (Math.atan2(point.y, point.x) + pi2) % pi2;
-          }
+          this.dataOrg = [];
 
-          //获取某个弧度方向，半径为r的时候的point坐标点位置
+          for (let i = 0, l = dataFrame.length; i < l; i++) {
+              let rowData = dataFrame.getRowDataAt(i);
 
-      }, {
-          key: "getPointInRadianOfR",
-          value: function getPointInRadianOfR(radian, r) {
-              var pi = Math.PI;
-              var x = Math.cos(radian) * r;
-              if (radian == pi / 2 || radian == pi * 3 / 2) {
-                  //90度或者270度的时候
-                  x = 0;
-              }            var y = Math.sin(radian) * r;
-              if (radian % pi == 0) {
-                  y = 0;
-              }            return {
-                  x: x,
-                  y: y
+              let layoutData = {
+                  rowData: rowData,//把这一行数据给到layoutData引用起来
+                  enabled: true,   //是否启用，显示在列表中
+
+                  value: rowData[field],
+                  label: rowData[labelField],
+                  iNode: i
               };
-          }
-      }, {
-          key: "getROfNum",
-          value: function getROfNum(num, dataSection, width, height) {
-              var r = 0;
-              var maxNum = _.max(dataSection);
-              var minNum = 0; //Math.min( this.rAxis.dataSection );
-              var maxR = parseInt(Math.max(width, height) / 2);
 
-              r = maxR * ((num - minNum) / (maxNum - minNum));
-              return r;
+              this.dataOrg.push(rowData[field]);
+
+              if (this._isFiled(radiusField, layoutData)) {
+                  layoutData.radiusField = radiusField;
+                  layoutData.radiusValue = rowData[radiusField];
+              }
+              data.push(layoutData);
           }
-      }]);
-      return Polar;
-  }();
+          if (this.sort) {
+              this.dataOrg = [];
+              data.sort((a, b) => {
+                  if (this.sort == 'asc') {
+                      return a.value - b.value;
+                  } else {
+                      return b.value - a.value;
+                  }
+              });
+
+              //重新设定下ind
+              _.each(data, (d, i) => {
+                  d.iNode = i;
+                  this.dataOrg.push(d);
+              });
+          }
+          this.layoutData = data;
+          return data;
+      }
+
+      getLayoutData() {
+          return this.layoutData || [];
+      }
+
+      _isFiled(field, layoutData) {
+          return field && (_.isString(field) && field in layoutData.rowData)
+      }
+      getAuadrant(ang) { //获取象限
+
+          ang = _.euclideanModulo(ang, aRound);
+          let angleRatio = parseInt(ang / 90);
+          let _quadrant = 0;
+          switch (angleRatio) {
+              case 0:
+                  _quadrant = 1;
+                  break;
+              case 1:
+                  _quadrant = 2;
+                  break;
+              case 2:
+                  _quadrant = 3;
+                  break;
+              case 3:
+              case 4:
+                  _quadrant = 4;
+                  break;
+          }
+          return _quadrant;
+      }
+
+      /**
+       * 通过值或者索引返回数据集对象
+       * @param {Object} opt {val:xxx} 或 {ind:xxx} 
+       */
+      _getLayoutDataOf(opt) {
+          //先提供 具体值 和 索引的计算
+          var props = [{ val: "value" }, { ind: "iNode" }];
+          var prop = props[Object.keys(opt)[0]];
+
+          var layoutData;
+          _.each(this.layoutData, function (item) {
+              if (item[prop] === opt[prop]) {
+                  layoutData = item;
+              }        });
+
+          return layoutData || {};
+      }
+
+      getRadiansAtR() {
+          //基类不实现
+      }
+
+      static filterPointsInRect(points, origin, width, height) {
+          for (var i = 0, l = points.length; i < l; i++) {
+              if (!Polar.checkPointInRect(points[i], origin, width, height)) {
+                  //该点不在root rect范围内，去掉
+                  points.splice(i, 1);
+                  i-- , l--;
+              }
+          }        return points;
+      }
+
+      static checkPointInRect(p, origin, width, height) {
+          var _tansRoot = { x: p.x + origin.x, y: p.y + origin.y };
+          return !(_tansRoot.x < 0 || _tansRoot.x > width || _tansRoot.y < 0 || _tansRoot.y > height);
+      }
+
+      //检查由n个相交点分割出来的圆弧是否在rect内
+      static checkArcInRect(arc, r, origin, width, height) {
+          var start = arc[0];
+          var to = arc[1];
+          var differenceR = to.radian - start.radian;
+          if (to.radian < start.radian) {
+              differenceR = (Math.PI * 2 + to.radian) - start.radian;
+          }        var middleR = (start.radian + differenceR / 2) % (Math.PI * 2);
+          return Polar.checkPointInRect(Polar.getPointInRadianOfR(middleR, r), origin, width, height);
+      }
+
+      //获取某个点相对圆心的弧度值
+      static getRadianInPoint(point) {
+          var pi2 = Math.PI * 2;
+          return (Math.atan2(point.y, point.x) + pi2) % pi2;
+      }
+
+      //获取某个弧度方向，半径为r的时候的point坐标点位置
+      static getPointInRadianOfR(radian, r) {
+          var pi = Math.PI;
+          var x = Math.cos(radian) * r;
+          if (radian == (pi / 2) || radian == pi * 3 / 2) {
+              //90度或者270度的时候
+              x = 0;
+          }        var y = Math.sin(radian) * r;
+          if (radian % pi == 0) {
+              y = 0;
+          }        return {
+              x: x,
+              y: y
+          };
+      }
+
+      static getROfNum(num, dataSection, width, height) {
+          var r = 0;
+          var maxNum = _.max(dataSection);
+          var minNum = 0; //Math.min( this.rAxis.dataSection );
+          var maxR = parseInt(Math.max(width, height) / 2);
+
+          r = maxR * ((num - minNum) / (maxNum - minNum));
+          return r;
+      }
+
+      getPointsOfR(r, angleList) {
+          var points = [];
+          _.each(angleList, function (_a) {
+              //弧度
+              var _r = Math.PI * _a / 180;
+              var point = Polar.getPointInRadianOfR(_r, r);
+              points.push(point);
+          });
+          return points;
+      }
+
+  }
+
+  /**
+   * Canvax
+   *
+   * @author 释剑 (李涛, litao.lt@alibaba-inc.com)
+   *
+   * canvas 上委托的事件管理
+   */
+
+  /**
+   * Canvax
+   *
+   * @author 释剑 (李涛, litao.lt@alibaba-inc.com)
+   *
+   * canvas 上委托的事件管理
+   */
+
+  /**
+   * Canvax
+   *
+   * @author 释剑 (李涛, litao.lt@alibaba-inc.com)
+   *
+   * 事件管理类
+   */
+
+  /**
+   * Canvax
+   *
+   * @author 释剑 (李涛, litao.lt@alibaba-inc.com)
+   *
+   * 事件派发类
+   */
+
+  /**
+   * Canvax
+   *
+   * @author 释剑 (李涛, litao.lt@alibaba-inc.com)
+   *
+   */
+
+  //这样的好处是document.compareDocumentPosition只会在定义的时候执行一次。
+  var contains = document.compareDocumentPosition ? function (parent, child) {
+      if( !child ){
+          return false;
+      }
+      return !!(parent.compareDocumentPosition(child) & 16);
+  } : function (parent, child) {
+      if( !child ){
+          return false;
+      }
+      return child !== child && (parent.contains ? parent.contains(child) : true);
+  };
 
   var _$1 = {};
   var breaker$1 = {};
@@ -2413,7 +2540,7 @@ var Chartx3d = (function () {
     return result;
   };
 
-  var $ = {
+  var $$1 = {
 
       // dom操作相关代码
       query(el) {
@@ -2456,1857 +2583,8 @@ var Chartx3d = (function () {
 
   };
 
-  var _$2 = {};
-  var breaker$2 = {};
-  var ArrayProto$2 = Array.prototype, ObjProto$2 = Object.prototype, FuncProto$2 = Function.prototype;
-
-
-  // Create quick reference variables for speed access to core prototypes.
-  var
-    push$2 = ArrayProto$2.push,
-    slice$2 = ArrayProto$2.slice,
-    concat$2 = ArrayProto$2.concat,
-    toString$2 = ObjProto$2.toString,
-    hasOwnProperty$2 = ObjProto$2.hasOwnProperty;
-
-  // All **ECMAScript 5** native function implementations that we hope to use
-  // are declared here.
-  var 
-    nativeForEach$2 = ArrayProto$2.forEach,
-    nativeMap$2 = ArrayProto$2.map,
-    nativeFilter$2 = ArrayProto$2.filter,
-    nativeEvery$2 = ArrayProto$2.every,
-    nativeSome$2 = ArrayProto$2.some,
-    nativeIndexOf$2 = ArrayProto$2.indexOf,
-    nativeIsArray$2 = Array.isArray,
-    nativeKeys$2 = Object.keys,
-    nativeBind$2 = FuncProto$2.bind;
-
-
-  var shallowProperty$2 = function (key) {
-    return function (obj) {
-      return obj == null ? void 0 : obj[key];
-    };
-  };
-  var MAX_ARRAY_INDEX$2 = Math.pow(2, 53) - 1;
-  var getLength$2 = shallowProperty$2('length');
-  var isArrayLike$2 = function (collection) {
-    var length = getLength$2(collection);
-    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX$2;
-  };
-
-
-
-  _$2.values = function (obj) {
-    var keys = _$2.keys(obj);
-    var length = keys.length;
-    var values = new Array(length);
-    for (var i = 0; i < length; i++) {
-      values[i] = obj[keys[i]];
-    }
-    return values;
-  };
-
-  _$2.keys = nativeKeys$2 || function (obj) {
-    if (obj !== Object(obj)) throw new TypeError('Invalid object');
-    var keys = [];
-    for (var key in obj) if (_$2.has(obj, key)) keys.push(key);
-    return keys;
-  };
-
-  _$2.has = function (obj, key) {
-    return hasOwnProperty$2.call(obj, key);
-  };
-
-  var each$2 = _$2.each = _$2.forEach = function (obj, iterator, context) {
-    if (obj == null) return;
-    if (nativeForEach$2 && obj.forEach === nativeForEach$2) {
-      obj.forEach(iterator, context);
-    } else if (obj.length === +obj.length) {
-      for (var i = 0, length = obj.length; i < length; i++) {
-        if (iterator.call(context, obj[i], i, obj) === breaker$2) return;
-      }
-    } else {
-      var keys = _$2.keys(obj);
-      for (var i = 0, length = keys.length; i < length; i++) {
-        if (iterator.call(context, obj[keys[i]], keys[i], obj) === breaker$2) return;
-      }
-    }
-  };
-
-  _$2.compact = function (array) {
-    return _$2.filter(array, _$2.identity);
-  };
-
-  _$2.filter = _$2.select = function (obj, iterator, context) {
-    var results = [];
-    if (obj == null) return results;
-    if (nativeFilter$2 && obj.filter === nativeFilter$2) return obj.filter(iterator, context);
-    each$2(obj, function (value, index, list) {
-      if (iterator.call(context, value, index, list)) results.push(value);
-    });
-    return results;
-  };
-
-  each$2(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function (name) {
-    _$2['is' + name] = function (obj) {
-      return toString$2.call(obj) == '[object ' + name + ']';
-    };
-  });
-
-  //if (!_.isArguments(arguments)) {
-  _$2.isArguments = function (obj) {
-    return !!(obj && _$2.has(obj, 'callee'));
-  };
-  //}
-
-  {
-    _$2.isFunction = function (obj) {
-      return typeof obj === 'function';
-    };
-  }
-  _$2.isFinite = function (obj) {
-    return isFinite(obj) && !isNaN(parseFloat(obj));
-  };
-
-  _$2.isNaN = function (obj) {
-    return _$2.isNumber(obj) && obj != +obj;
-  };
-
-  _$2.isBoolean = function (obj) {
-    return obj === true || obj === false || toString$2.call(obj) == '[object Boolean]';
-  };
-
-  _$2.isNull = function (obj) {
-    return obj === null;
-  };
-
-  _$2.isEmpty = function (obj) {
-    if (obj == null) return true;
-    if (_$2.isArray(obj) || _$2.isString(obj)) return obj.length === 0;
-    for (var key in obj) if (_$2.has(obj, key)) return false;
-    return true;
-  };
-
-  _$2.isElement = function (obj) {
-    return !!(obj && obj.nodeType === 1);
-  };
-
-  _$2.isArray = nativeIsArray$2 || function (obj) {
-    return toString$2.call(obj) == '[object Array]';
-  };
-
-  _$2.isObject = function (obj) {
-    return obj === Object(obj);
-  };
-
-  _$2.identity = function (value) {
-    return value;
-  };
-
-  _$2.indexOf = function (array, item, isSorted) {
-    if (array == null) return -1;
-    var i = 0, length = array.length;
-    if (isSorted) {
-      if (typeof isSorted == 'number') {
-        i = (isSorted < 0 ? Math.max(0, length + isSorted) : isSorted);
-      } else {
-        i = _$2.sortedIndex(array, item);
-        return array[i] === item ? i : -1;
-      }
-    }
-    if (nativeIndexOf$2 && array.indexOf === nativeIndexOf$2) return array.indexOf(item, isSorted);
-    for (; i < length; i++) if (array[i] === item) return i;
-    return -1;
-  };
-
-  _$2.isWindow = function (obj) {
-    return obj != null && obj == obj.window;
-  };
-
-  // Internal implementation of a recursive `flatten` function.
-  var flatten$2 = function (input, shallow, output) {
-    if (shallow && _$2.every(input, _$2.isArray)) {
-      return concat$2.apply(output, input);
-    }
-    each$2(input, function (value) {
-      if (_$2.isArray(value) || _$2.isArguments(value)) {
-        shallow ? push$2.apply(output, value) : flatten$2(value, shallow, output);
-      } else {
-        output.push(value);
-      }
-    });
-    return output;
-  };
-
-  // Flatten out an array, either recursively (by default), or just one level.
-  _$2.flatten = function (array, shallow) {
-    return flatten$2(array, shallow, []);
-  };
-
-  _$2.every = _$2.all = function (obj, iterator, context) {
-    iterator || (iterator = _$2.identity);
-    var result = true;
-    if (obj == null) return result;
-    if (nativeEvery$2 && obj.every === nativeEvery$2) return obj.every(iterator, context);
-    each$2(obj, function (value, index, list) {
-      if (!(result = result && iterator.call(context, value, index, list))) return breaker$2;
-    });
-    return !!result;
-  };
-
-
-
-
-
-
-  // Return the minimum element (or element-based computation).
-  _$2.min = function (obj, iterator, context) {
-    if (!iterator && _$2.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
-      return Math.min.apply(Math, obj);
-    }
-    if (!iterator && _$2.isEmpty(obj)) return Infinity;
-    var result = { computed: Infinity, value: Infinity };
-    each$2(obj, function (value, index, list) {
-      var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed < result.computed && (result = { value: value, computed: computed });
-    });
-    return result.value;
-  };
-  // Return the maximum element or (element-based computation).
-  // Can't optimize arrays of integers longer than 65,535 elements.
-  // See [WebKit Bug 80797](https://bugs.webkit.org/show_bug.cgi?id=80797)
-  _$2.max = function (obj, iterator, context) {
-    if (!iterator && _$2.isArray(obj) && obj[0] === +obj[0] && obj.length < 65535) {
-      return Math.max.apply(Math, obj);
-    }
-    if (!iterator && _$2.isEmpty(obj)) return -Infinity;
-    var result = { computed: -Infinity, value: -Infinity };
-    each$2(obj, function (value, index, list) {
-      var computed = iterator ? iterator.call(context, value, index, list) : value;
-      computed > result.computed && (result = { value: value, computed: computed });
-    });
-    return result.value;
-  };
-
-  // Return the first value which passes a truth test. Aliased as `detect`.
-  _$2.find = _$2.detect = function (obj, iterator, context) {
-    var result;
-    any$2(obj, function (value, index, list) {
-      if (iterator.call(context, value, index, list)) {
-        result = value;
-        return true;
-      }
-    });
-    return result;
-  };
-  // Determine if at least one element in the object matches a truth test.
-  // Delegates to **ECMAScript 5**'s native `some` if available.
-  // Aliased as `any`.
-  var any$2 = _$2.some = _$2.any = function (obj, iterator, context) {
-    iterator || (iterator = _$2.identity);
-    var result = false;
-    if (obj == null) return result;
-    if (nativeSome$2 && obj.some === nativeSome$2) return obj.some(iterator, context);
-    each$2(obj, function (value, index, list) {
-      if (result || (result = iterator.call(context, value, index, list))) return breaker$2;
-    });
-    return !!result;
-  };
-  // Return a version of the array that does not contain the specified value(s).
-  _$2.without = function (array) {
-    return _$2.difference(array, slice$2.call(arguments, 1));
-  };
-  // Take the difference between one array and a number of other arrays.
-  // Only the elements present in just the first array will remain.
-  _$2.difference = function (array) {
-    var rest = concat$2.apply(ArrayProto$2, slice$2.call(arguments, 1));
-    return _$2.filter(array, function (value) { return !_$2.contains(rest, value); });
-  };
-  // Produce a duplicate-free version of the array. If the array has already
-  // been sorted, you have the option of using a faster algorithm.
-  // Aliased as `unique`.
-  _$2.uniq = _$2.unique = function (array, isSorted, iterator, context) {
-    if (_$2.isFunction(isSorted)) {
-      context = iterator;
-      iterator = isSorted;
-      isSorted = false;
-    }
-    var initial = iterator ? _$2.map(array, iterator, context) : array;
-    var results = [];
-    var seen = [];
-    each$2(initial, function (value, index) {
-      if (isSorted ? (!index || seen[seen.length - 1] !== value) : !_$2.contains(seen, value)) {
-        seen.push(value);
-        results.push(array[index]);
-      }
-    });
-    return results;
-  };
-  // Return the results of applying the iterator to each element.
-  // Delegates to **ECMAScript 5**'s native `map` if available.
-  _$2.map = _$2.collect = function (obj, iterator, context) {
-    var results = [];
-    if (obj == null) return results;
-    if (nativeMap$2 && obj.map === nativeMap$2) return obj.map(iterator, context);
-    each$2(obj, function (value, index, list) {
-      results.push(iterator.call(context, value, index, list));
-    });
-    return results;
-  };
-  // Determine if the array or object contains a given value (using `===`).
-  // Aliased as `include`.
-  _$2.contains = _$2.include = function (obj, target) {
-    if (obj == null) return false;
-    if (nativeIndexOf$2 && obj.indexOf === nativeIndexOf$2) return obj.indexOf(target) != -1;
-    return any$2(obj, function (value) {
-      return value === target;
-    });
-  };
-
-  // Convenience version of a common use case of `map`: fetching a property.
-  _$2.pluck = function (obj, key) {
-    return _$2.map(obj, function (value) { return value[key]; });
-  };
-
-  // Return a random integer between min and max (inclusive).
-  _$2.random = function (min, max) {
-    if (max == null) {
-      max = min;
-      min = 0;
-    }
-    return min + Math.floor(Math.random() * (max - min + 1));
-  };
-
-  // Shuffle a collection.
-  _$2.shuffle = function (obj) {
-    return _$2.sample(obj, Infinity);
-  };
-
-  _$2.sample = function (obj, n, guard) {
-    if (n == null || guard) {
-      if (!isArrayLike$2(obj)) obj = _$2.values(obj);
-      return obj[_$2.random(obj.length - 1)];
-    }
-    var sample = isArrayLike$2(obj) ? _$2.clone(obj) : _$2.values(obj);
-    var length = getLength$2(sample);
-    n = Math.max(Math.min(n, length), 0);
-    var last = length - 1;
-    for (var index = 0; index < n; index++) {
-      var rand = _$2.random(index, last);
-      var temp = sample[index];
-      sample[index] = sample[rand];
-      sample[rand] = temp;
-    }
-    return sample.slice(0, n);
-  };
-
-
-
-
-
-  /**
-  *
-  *如果是深度extend，第一个参数就设置为true
-  */
-  _$2.extend = function () {
-    var options, name, src, copy,
-      target = arguments[0] || {},
-      i = 1,
-      length = arguments.length,
-      deep = false;
-    if (typeof target === "boolean") {
-      deep = target;
-      target = arguments[1] || {};
-      i = 2;
-    }  if (typeof target !== "object" && !_$2.isFunction(target)) {
-      target = {};
-    }  if (length === i) {
-      target = this;
-      --i;
-    }  for (; i < length; i++) {
-      if ((options = arguments[i]) != null) {
-        for (name in options) {
-          src = target[name];
-          copy = options[name];
-          if (target === copy) {
-            continue;
-          }
-          //if( deep && copy && _.isObject( copy ) &&  && !_.isArray( copy ) && !_.isFunction( copy ) ){
-          if (deep && copy && _$2.isObject(copy) && copy.constructor === Object) {
-            target[name] = _$2.extend(deep, src, copy);
-          } else {
-            target[name] = copy;
-          }      }
-      }
-    }
-    return target;
-  };
-
-  _$2.clone = function (obj) {
-    if (!_$2.isObject(obj)) return obj;
-    return _$2.isArray(obj) ? obj.slice() : _$2.extend(true, {}, obj);
-  };
-
-  //********补存一些数学常用方法,暂放在这里文件下,后期多了单独成立一个类库  */
-  // compute euclidian modulo of m % n
-  // https://en.wikipedia.org/wiki/Modulo_operation
-  _$2.euclideanModulo = (n, m) => {
-    return ((n % m) + m) % m;
-  };
-
-  _$2.DEG2RAD = Math.PI / 180;
-  _$2.RAD2DEG = 180 / Math.PI;
-
-  _$2.degToRad = (degrees) => {
-    return degrees * _$2.DEG2RAD;
-  };
-
-  _$2.radToDeg = (radians) => {
-    return radians * _$2.RAD2DEG;
-  };
-
-  function normalizeTickInterval$1(interval, magnitude) {
-      var normalized, i;
-      // var multiples = [1, 2, 2.5, 5, 10];
-      var multiples = [1, 2, 5, 10];
-      // round to a tenfold of 1, 2, 2.5 or 5
-      normalized = interval / magnitude;
-
-      // normalize the interval to the nearest multiple
-      for (var i = 0; i < multiples.length; i++) {
-          interval = multiples[i];
-          if (normalized <= (multiples[i] + (multiples[i + 1] || multiples[i])) / 2) {
-              break;
-          }
-      }
-
-      // multiply back to the correct magnitude
-      interval *= magnitude;
-
-      return interval;
-  }
-
-  function correctFloat$1(num) {
-      return parseFloat(
-          num.toPrecision(14));
-  }
-
-  function getLinearTickPositions$1(arr,$maxPart,$cfg) {
-
-      arr = _$2.without( arr , undefined , null , "" );
-      
-  	var scale = $cfg && $cfg.scale ? parseFloat($cfg.scale) :1;
-  	//返回的数组中的值 是否都为整数(思霏)  防止返回[8, 8.2, 8.4, 8.6, 8.8, 9]   应该返回[8, 9]
-  	var isInt = $cfg && $cfg.isInt ? 1 : 0; 
-
-  	if(isNaN(scale)){
-  		scale = 1;
-  	}
-      var max = _$2.max(arr);
-      var initMax = max;
-      max *= scale;
-      var min = _$2.min(arr); 
-
-      if(min==max){
-      	if(max > 0){
-      		min = 0;
-              return [ min , max ];
-      		// min= Math.round(max/2);
-      	} else if(max < 0){
-              return [ max , 0 ];
-      		//min = max*2;
-      	} else {
-              max = 1;
-              return [0 , max];
-          }
-      }
-
-      
-
-      var length = max - min;
-      if (length) {
-      	var tempmin = min; //保证min>0的时候不会出现负数
-      	min -= length * 0.05;
-          // S.log(min +":"+ tempmin)
-          if(min<0 && tempmin>=0){
-          	min=0;
-          }
-          max += length * 0.05;
-      }
-      
-      var tickInterval = (max - min) * 0.3;//72 / 365;
-      var magnitude = Math.pow(10, Math.floor(Math.log(tickInterval) / Math.LN10));
-
-      tickInterval = normalizeTickInterval$1(tickInterval, magnitude);
-      if(isInt){
-      	tickInterval = Math.ceil(tickInterval);
-      }
-
-      var pos,
-          lastPos,
-          roundedMin = correctFloat$1(Math.floor(min / tickInterval) * tickInterval),
-          roundedMax = correctFloat$1(Math.ceil(max / tickInterval) * tickInterval),
-          tickPositions = [];
-
-      // Populate the intermediate values
-      pos = roundedMin;
-      while (pos <= roundedMax) {
-
-          // Place the tick on the rounded value
-          tickPositions.push(pos);
-
-          // Always add the raw tickInterval, not the corrected one.
-          pos = correctFloat$1(pos + tickInterval); 
-
-          // If the interval is not big enough in the current min - max range to actually increase
-          // the loop variable, we need to break out to prevent endless loop. Issue #619
-          if (pos === lastPos) {
-              break;
-          }
-
-          // Record the last value
-          lastPos = pos;
-      }
-      if(tickPositions.length >= 3){
-      	if(tickPositions[tickPositions.length - 2] >= initMax){
-  			tickPositions.pop();
-  		}
-      }
-      return tickPositions;
-  }
-
-  var dataSection$1  = {
-  	section:function($arr,$maxPart,$cfg){
-          return _$2.uniq( getLinearTickPositions$1($arr,$maxPart,$cfg));
-  	}
-  };
-
-  //TODO 所有的get xxx OfVal 在非proportion下面如果数据有相同的情况，就会有风险
-
-  class axis$1 {
-      constructor(opt, dataOrg) {
-          //super();
-          this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
-
-          //源数据
-          //这个是一个一定会有两层数组的数据结构，是一个标准的dataFrame数据
-          // [ 
-          //    [   
-          //        [1,2,3],  
-          //        [1,2,3]    //这样有堆叠的数据只会出现在proportion的axis里，至少目前是这样
-          //    ] 
-          //   ,[    
-          //        [1,2,3] 
-          //    ]   
-          // ]
-          this._opt = _$2.clone(opt);
-          this.dataOrg = dataOrg || [];
-          this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
-          this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
-
-          //轴总长
-          this.axisLength = 1;
-
-          this._cellCount = null;
-          this._cellLength = null; //数据变动的时候要置空
-
-          //下面三个目前yAxis中实现了，后续统一都会实现
-
-          //水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值
-          //这个值主要用于第三方的markline等组件， 自己的y值超过了yaxis的范围的时候，需要纳入来修复yaxis的section区间
-          this.waterLine = null;
-          //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
-          this.dataSectionGroup = [];
-          //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
-          this.middleweight = null;
-
-          this.symmetric = false; //proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要
-
-          //1，如果数据中又正数和负数，则默认为0，
-          //2，如果dataSection最小值小于0，则baseNumber为最小值，
-          //3，如果dataSection最大值大于0，则baseNumber为最大值
-          //也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值
-          this.origin = null;
-          this.originPos = 0; //value为 origin 对应的pos位置
-          this._originTrans = 0;//当设置的 origin 和datasection的min不同的时候，
-
-          //min,max不需要外面配置，没意义
-          this._min = null;
-          this._max = null;
-
-          //"asc" 排序，默认从小到大, desc为从大到小
-          //之所以不设置默认值为asc，是要用 null 来判断用户是否进行了配置
-          this.sort = null;
-
-          this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-
-      }
-
-      resetDataOrg(dataOrg) {
-          //配置和数据变化
-
-          this.dataSection = [];
-          this.dataSectionGroup = [];
-
-          this.dataOrg = dataOrg;
-
-          this._cellCount = null;
-          this._cellLength = null;
-
-      }
-
-      setAxisLength(length) {
-          this.axisLength = length;
-          this.calculateProps();
-      }
-
-      calculateProps() {
-
-          var me = this;
-
-          if (this.layoutType == "proportion") {
-
-              if (this._min == null) {
-                  this._min = _$2.min(this.dataSection);
-              }            if (this._max == null) {
-                  this._max = _$2.max(this.dataSection);
-              }
-              //默认情况下 origin 就是datasection的最小值
-              //如果用户设置了origin，那么就已用户的设置为准
-              if (!("origin" in this._opt)) {
-                  this.origin = 0;//this.dataSection[0];//_.min( this.dataSection );
-                  if (_$2.max(this.dataSection) < 0) {
-                      this.origin = _$2.max(this.dataSection);
-                  }                if (_$2.min(this.dataSection) > 0) {
-                      this.origin = _$2.min(this.dataSection);
-                  }            }
-              this._originTrans = this._getOriginTrans(this.origin);
-              this.originPos = this.getPosOfVal(this.origin);
-
-          }
-
-
-          //get xxx OfPos的时候，要先来这里做一次寻找
-          this.dataSectionLayout = [];
-          _$2.each(this.dataSection, function (val, i) {
-
-              var ind = i;
-              if (me.layoutType == "proportion") {
-                  ind = me.getIndexOfVal(val);
-              }
-              var pos = parseInt(me.getPosOf({
-                  ind: i,
-                  val: val
-              }), 10);
-
-              me.dataSectionLayout.push({
-                  val: val,
-                  ind: ind,
-                  pos: pos
-              });
-
-          });
-
-      }
-      getDataSection() {
-          //对外返回的dataSection
-          return this.dataSection;
-      }
-      setDataSection(_dataSection) {
-          var me = this;
-
-          //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
-          if (_$2.isEmpty(_dataSection) &&  _$2.isEmpty(this._opt.dataSection)) {
-              if (this.layoutType == "proportion") {
-
-                  var arr = this._getDataSection();
-
-                  if (this.waterLine) {
-                      arr.push(this.waterLine);
-                  }
-                  if ("origin" in me._opt) {
-                      arr.push(me._opt.origin);
-                  }
-                  if (arr.length == 1) {
-                      arr.push(arr[0] * 2);
-                  }
-                  if (this.symmetric) {
-                      //如果需要处理为对称数据
-                      var _min = _$2.min(arr);
-                      var _max = _$2.max(arr);
-                      if (Math.abs(_min) > Math.abs(_max)) {
-                          arr.push(Math.abs(_min));
-                      } else {
-                          arr.push(-Math.abs(_max));
-                      }                }
-                  for (var ai = 0, al = arr.length; ai < al; ai++) {
-                      arr[ai] = Number(arr[ai]);
-                      if (isNaN(arr[ai])) {
-                          arr.splice(ai, 1);
-                          ai--;
-                          al--;
-                      }                }
-                  this.dataSection = dataSection$1.section(arr, 3);
-
-                  if (this.symmetric) {
-                      //可能得到的区间是偶数， 非对称，强行补上
-                      var _min = _$2.min(this.dataSection);
-                      var _max = _$2.max(this.dataSection);
-                      if (Math.abs(_min) > Math.abs(_max)) {
-                          this.dataSection.push(Math.abs(_min));
-                      } else {
-                          this.dataSection.unshift(-Math.abs(_max));
-                      }                }
-                  //如果还是0
-                  if (this.dataSection.length == 0) {
-                      this.dataSection = [0];
-                  }
-                  //如果有 middleweight 设置，就会重新设置dataSectionGroup
-                  this.dataSectionGroup = [_$2.clone(this.dataSection)];
-
-                  this._middleweight(); //如果有middleweight配置，需要根据配置来重新矫正下datasection
-
-                  this._sort();
-
-              } else {
-
-                  //非proportion 也就是 rule peak 模式下面
-                  this.dataSection = _$2.flatten(this.dataOrg);//this._getDataSection();
-                  this.dataSectionGroup = [this.dataSection];
-
-              }        } else {
-              this.dataSection = _dataSection || this._opt.dataSection;
-              this.dataSectionGroup = [this.dataSection];
-          }
-      }
-      _getDataSection() {
-          //如果有堆叠，比如[ ["uv","pv"], "click" ]
-          //那么这个 this.dataOrg， 也是个对应的结构
-          //vLen就会等于2
-          var vLen = 1;
-
-          _$2.each(this.dataOrg, function (arr) {
-              vLen = Math.max(arr.length, vLen);
-          });
-
-          if (vLen == 1) {
-              return this._oneDimensional();
-          }        if (vLen > 1) {
-              return this._twoDimensional();
-          }
-      }
-      _oneDimensional() {
-          var arr = _$2.flatten(this.dataOrg); //_.flatten( data.org );
-
-          for (var i = 0, il = arr.length; i < il; i++) {
-              arr[i] = arr[i] || 0;
-          }
-          return arr;
-      }
-      //二维的yAxis设置，肯定是堆叠的比如柱状图，后续也会做堆叠的折线图， 就是面积图
-      _twoDimensional() {
-          var d = this.dataOrg;
-          var arr = [];
-          var min;
-          _$2.each(d, function (d, i) {
-              if (!d.length) {
-                  return
-              }
-              //有数据的情况下 
-              if (!_$2.isArray(d[0])) {
-                  arr.push(d);
-                  return;
-              }
-              var varr = [];
-              var len = d[0].length;
-              var vLen = d.length;
-
-              for (var i = 0; i < len; i++) {
-                  var up_count = 0;
-                  var up_i = 0;
-
-                  var down_count = 0;
-                  var down_i = 0;
-
-                  for (var ii = 0; ii < vLen; ii++) {
-
-                      var _val = d[ii][i];
-                      if (!_val && _val !== 0) {
-                          continue;
-                      }
-                      min == undefined && (min = _val);
-                      min = Math.min(min, _val);
-
-                      if (_val >= 0) {
-                          up_count += _val;
-                          up_i++;
-                      } else {
-                          down_count += _val;
-                          down_i++;
-                      }
-                  }
-                  up_i && varr.push(up_count);
-                  down_i && varr.push(down_count);
-              }            arr.push(varr);
-          });
-          arr.push(min);
-          return _$2.flatten(arr);
-      }
-
-      //val 要被push到datasection 中去的 值
-      //主要是用在markline等组件中，当自己的y值超出了yaxis的范围
-      setWaterLine(val) {
-          if (val <= this.waterLine) return;
-          this.waterLine = val;
-          if (val < _$2.min(this.dataSection) || val > _$2.max(this.dataSection)) {
-              //waterLine不再当前section的区间内，需要重新计算整个datasection    
-              this.setDataSection();
-              this.calculateProps();
-          }    }
-
-      _sort() {
-          if (this.sort) {
-              var sort = this._getSortType();
-              if (sort == "desc") {
-
-                  this.dataSection.reverse();
-
-                  //dataSectionGroup 从里到外全部都要做一次 reverse， 这样就可以对应上 dataSection.reverse()
-                  _$2.each(this.dataSectionGroup, function (dsg, i) {
-                      dsg.reverse();
-                  });
-                  this.dataSectionGroup.reverse();
-                  //dataSectionGroup reverse end
-              }        }    }
-
-      _getSortType() {
-          var _sort;
-          if (_$2.isString(this.sort)) {
-              _sort = this.sort;
-          }
-          if (!_sort) {
-              _sort = "asc";
-          }
-          return _sort;
-      }
-
-      _middleweight() {
-          if (this.middleweight) {
-              //支持多个量级的设置
-
-              if (!_$2.isArray(this.middleweight)) {
-                  this.middleweight = [this.middleweight];
-              }
-              //拿到dataSection中的min和 max 后，用middleweight数据重新设置一遍dataSection
-              var dMin = _$2.min(this.dataSection);
-              var dMax = _$2.max(this.dataSection);
-              var newDS = [dMin];
-              var newDSG = [];
-
-              for (var i = 0, l = this.middleweight.length; i < l; i++) {
-                  var preMiddleweight = dMin;
-                  if (i > 0) {
-                      preMiddleweight = this.middleweight[i - 1];
-                  }                var middleVal = preMiddleweight + parseInt((this.middleweight[i] - preMiddleweight) / 2);
-
-                  newDS.push(middleVal);
-                  newDS.push(this.middleweight[i]);
-
-                  newDSG.push([
-                      preMiddleweight,
-                      middleVal,
-                      this.middleweight[i]
-                  ]);
-              }            var lastMW = this.middleweight.slice(-1)[0];
-
-              if (dMax > lastMW) {
-                  newDS.push(lastMW + (dMax - lastMW) / 2);
-                  newDS.push(dMax);
-                  newDSG.push([
-                      lastMW,
-                      lastMW + (dMax - lastMW) / 2,
-                      dMax
-                  ]);
-              }
-
-              //好了。 到这里用简单的规则重新拼接好了新的 dataSection
-              this.dataSection = newDS;
-              this.dataSectionGroup = newDSG;
-
-          }    }
-
-      //origin 对应 this.origin 的值
-      _getOriginTrans(origin) {
-          var pos = 0;
-
-          var dsgLen = this.dataSectionGroup.length;
-          var groupLength = this.axisLength / dsgLen;
-
-          for (var i = 0, l = dsgLen; i < l; i++) {
-
-              var ds = this.dataSectionGroup[i];
-
-              if (this.layoutType == "proportion") {
-                  var min = _$2.min(ds);
-                  var max = _$2.max(ds);
-
-                  var amountABS = Math.abs(max - min);
-
-                  if (origin >= min && origin <= max) {
-                      pos = ((origin - min) / amountABS * groupLength + i * groupLength);
-                      break;
-                  }
-
-              }
-          }
-          if (this.sort == "desc") {
-              //如果是倒序的
-              pos = -(groupLength - pos);
-          }
-          return parseInt(pos);
-      }
-
-      //opt { val ind pos } 一次只能传一个
-      _getLayoutDataOf(opt) {
-          var props = ["val", "ind", "pos"];
-          var prop;
-          _$2.each(props, function (_p) {
-              if (_p in opt) {
-                  prop = _p;
-              }
-          });
-
-          var layoutData;
-          _$2.each(this.dataSectionLayout, function (item) {
-              if (item[prop] === opt[prop]) {
-                  layoutData = item;
-              }        });
-
-          return layoutData || {};
-      }
-
-      getPosOfVal(val) {
-
-          /* val可能会重复，so 这里得到的会有问题，先去掉
-          //先检查下 dataSectionLayout 中有没有对应的记录
-          var _pos = this._getLayoutDataOf({ val : val }).pos;
-          if( _pos != undefined ){
-              return _pos;
-          };
-          */
-
-          return this.getPosOf({
-              val: val
-          });
-      }
-      getPosOfInd(ind) {
-          //先检查下 dataSectionLayout 中有没有对应的记录
-          var _pos = this._getLayoutDataOf({ ind: ind }).pos;
-          if (_pos != undefined) {
-              return _pos;
-          }
-          return this.getPosOf({
-              ind: ind
-          });
-      }
-
-      //opt {val, ind} val 或者ind 一定有一个
-      getPosOf(opt) {
-          var pos;
-
-          var cellCount = this._getCellCount(); //dataOrg上面的真实数据节点数，把轴分成了多少个节点
-
-          if (this.layoutType == "proportion") {
-              var dsgLen = this.dataSectionGroup.length;
-              var groupLength = this.axisLength / dsgLen;
-              for (var i = 0, l = dsgLen; i < l; i++) {
-                  var ds = this.dataSectionGroup[i];
-                  var min = _$2.min(ds);
-                  var max = _$2.max(ds);
-                  var val = "val" in opt ? opt.val : this.getValOfInd(opt.ind);
-                  if (val >= min && val <= max) {
-                      var _origin = this.origin;
-                      //如果 origin 并不在这个区间
-                      if (_origin < min || _origin > max) {
-                          _origin = min;
-                      }                    var maxGroupDisABS = Math.max(Math.abs(max - _origin), Math.abs(_origin - min));
-                      var amountABS = Math.abs(max - min);
-                      var h = (maxGroupDisABS / amountABS) * groupLength;
-                      pos = (val - _origin) / maxGroupDisABS * h + i * groupLength;
-
-                      if (isNaN(pos)) {
-                          pos = parseInt(i * groupLength);
-                      }
-                      break;
-                  }
-              }
-          } else {
-
-              if (cellCount == 1) {
-                  //如果只有一数据，那么就全部默认在正中间
-                  pos = this.axisLength / 2;
-              } else {
-                  //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
-                  //因为可能有多个数据的val一样
-
-                  var valInd = "ind" in opt ? opt.ind : this.getIndexOfVal(opt.val);
-                  if (valInd != -1) {
-                      if (this.layoutType == "rule") {
-                          //line 的xaxis就是 rule
-                          pos = valInd / (cellCount - 1) * this.axisLength;
-                      }                    if (this.layoutType == "peak") {
-                          //bar的xaxis就是 peak
-                          /*
-                          pos = (this.axisLength/cellCount) 
-                                * (valInd+1) 
-                                - (this.axisLength/cellCount)/2;
-                          */
-                          var _cellLength = this.getCellLength();
-                          pos = _cellLength * (valInd + 1) - _cellLength / 2;
-                      }                }            }
-          }
-          !pos && (pos = 0);
-
-          pos = Number(pos.toFixed(1)) + this._originTrans;
-
-          return Math.abs(pos);
-      }
-
-      getValOfPos(pos) {
-          //先检查下 dataSectionLayout 中有没有对应的记录
-          var _val = this._getLayoutDataOf({ pos: pos }).val;
-          if (_val != undefined) {
-              return _val;
-          }
-          return this._getValOfInd(this.getIndexOfPos(pos));
-      }
-
-      //ds可选
-      getValOfInd(ind, ds) {
-
-          //先检查下 dataSectionLayout 中有没有对应的记录
-          var _val = this._getLayoutDataOf({ ind: ind }).val;
-          if (_val != undefined) {
-              return _val;
-          }
-          //这里的index是直接的对应dataOrg的索引
-          var org = ds ? ds : _$2.flatten(this.dataOrg);
-          return org[ind];
-
-      }
-
-      //这里的ind
-      _getValOfInd(ind, ds) {
-          var me = this;
-
-          var org = ds ? ds : _$2.flatten(this.dataOrg);
-          var val;
-
-          if (this.layoutType == "proportion") {
-
-              var groupLength = this.axisLength / this.dataSectionGroup.length;
-              _$2.each(this.dataSectionGroup, function (ds, i) {
-                  if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
-                      var min = _$2.min(ds);
-                      var max = _$2.max(ds);
-                      val = min + (max - min) / groupLength * (ind - groupLength * i);
-                      return false;
-                  }
-              });
-
-          } else {
-              val = org[ind];
-          }        return val;
-      }
-
-      getIndexOfPos(pos) {
-
-          //先检查下 dataSectionLayout 中有没有对应的记录
-          var _ind = this._getLayoutDataOf({ pos: pos }).ind;
-          if (_ind != undefined) {
-              return _ind;
-          }
-          var ind = 0;
-
-          var cellLength = this.getCellLengthOfPos(pos);
-          var cellCount = this._getCellCount();
-
-          if (this.layoutType == "proportion") {
-              //proportion中的index以像素为单位 所以，传入的像素值就是index
-              return pos;
-          } else {
-
-              if (this.layoutType == "peak") {
-                  ind = parseInt(pos / cellLength);
-                  if (ind == cellCount) {
-                      ind = cellCount - 1;
-                  }
-              }
-              if (this.layoutType == "rule") {
-                  ind = parseInt((pos + (cellLength / 2)) / cellLength);
-                  if (cellCount == 1) {
-                      //如果只有一个数据
-                      ind = 0;
-                  }
-              }        }
-          return ind
-      }
-
-      getIndexOfVal(val) {
-
-          var valInd = -1;
-          if (this.layoutType == "proportion") {
-
-              //先检查下 dataSectionLayout 中有没有对应的记录
-              var _ind = this._getLayoutDataOf({ val: val }).ind;
-              if (_ind != undefined) {
-                  return _ind;
-              }
-              //因为在proportion中index 就是 pos
-              //所以这里要返回pos
-              valInd = this.getPosOfVal(val);
-          } else {
-              _$2.each(this.dataOrg, function (arr) {
-                  _$2.each(arr, function (list) {
-                      var _ind = _$2.indexOf(list, val);
-                      if (_ind != -1) {
-                          valInd = _ind;
-                      }                });
-              });
-          }
-
-
-          return valInd;
-      }
-
-      getCellLength() {
-
-          if (this._cellLength !== null) {
-              return this._cellLength;
-          }
-          //ceilWidth默认按照peak算, 而且不能按照dataSection的length来做分母
-          var axisLength = this.axisLength;
-          var cellLength = axisLength;
-          var cellCount = this._getCellCount();
-
-          if (cellCount) {
-
-              if (this.layoutType == "proportion") {
-                  cellLength = 1;
-              } else {
-
-                  //默认按照 peak 也就是柱状图的需要的布局方式
-                  cellLength = axisLength / cellCount;
-                  if (this.layoutType == "rule") {
-                      if (cellCount == 1) {
-                          cellLength = axisLength / 2;
-                      } else {
-                          cellLength = axisLength / (cellCount - 1);
-                      }                }
-                  if (this.posParseToInt) {
-                      cellLength = parseInt(cellLength);
-                  }            }
-          }
-          this._cellLength = cellLength;
-
-          return cellLength;
-
-      }
-
-      //这个getCellLengthOfPos接口主要是给tips用，因为tips中只有x信息
-      getCellLengthOfPos(pos) {
-          return this.getCellLength();
-      }
-
-      //pos目前没用到，给后续的高级功能预留接口
-      getCellLengthOfInd(pos) {
-          return this.getCellLength();
-      }
-
-      _getCellCount() {
-
-          if (this._cellCount !== null) {
-              return this._cellCount;
-          }
-          //总共有几个数据节点，默认平铺整个dataOrg，和x轴的需求刚好契合，而y轴目前不怎么需要用到这个
-          var cellCount = 0;
-          if (this.layoutType == "proportion") {
-              cellCount = this.axisLength;
-          } else {
-              if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
-                  cellCount = this.dataOrg[0][0].length;
-              }        }        this._cellCount = cellCount;
-          return cellCount;
-      }
-
-  }
-
-  /**
-  * 把原始的数据
-  * field1 field2 field3
-  *   1      2      3
-  *   2      3      4
-  * 这样的数据格式转换为内部的
-  * [{field:'field1',index:0,data:[1,2]} ......]
-  * 这样的结构化数据格式。
-  */
-
   //如果应用传入的数据是[{name:name, sex:sex ...} , ...] 这样的数据，就自动转换为chartx需要的矩阵格式数据
-  function parse2MatrixData$1( list )
-  {
-      if( list === undefined || list === null ){
-          list = [];
-      }    //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
-      if( list.length > 0 && !_$2.isArray( list[0] ) ){
-          var newArr = [];
-          var fields = [];
-          var fieldNum = 0;
-          for( var i=0,l=list.length ; i<l ; i++ ){
-              var row = list[i];
-              if( i == 0 ){
-                  for( var f in row ){
-                      fields.push( f ); 
-                  }                newArr.push( fields );
-                  fieldNum = fields.length;
-              }            var _rowData = [];
-              for( var ii=0 ; ii<fieldNum ; ii++ ){
-                  _rowData.push( row[ fields[ii] ] );
-              }            newArr.push( _rowData );
-          }        
-          return newArr;
-      } else {
-          return list
-      }
-  } 
-
-  function dataFrame$1( data, opt ){
-
-      //数据做一份拷贝，避免污染源数据
-      data = JSON.parse( JSON.stringify( data ) );
-      
-      var dataFrame  = {        //数据框架集合
-          length        : 0,
-          org           : [],   //最原始的数据，一定是个行列式，因为如果发现是json格式数据，会自动转换为行列式
-          data          : [],   //最原始的数据转化后的数据格式：[o,o,o] o={field:'val1',index:0,data:[1,2,3]}
-          getRowDataAt  : _getRowDataAt,
-          getRowDataOf  : _getRowDataOf,
-          getFieldData  : _getFieldData,
-          getDataOrg    : getDataOrg,
-          fields        : [],
-          range         : {
-              start     : 0,
-              end       : 0
-          }
-      };
-
-      if( !data || data.length == 0 ){
-          return dataFrame
-      }
-      //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
-      if( data.length > 0 && !_$2.isArray( data[0] ) ){
-          data = parse2MatrixData$1(data);
-          dataFrame.length = data.length;
-      } else {
-          dataFrame.length = data.length - 1;
-      }
-      //设置好数据区间end值
-      dataFrame.range.end = dataFrame.length - 1;
-      //然后检查opts中是否有dataZoom.range
-      if( opt && opt.dataZoom && opt.dataZoom.range ){
-          _$2.extend( dataFrame.range, opt.dataZoom.range );
-      }
-      if( data.length && data[0].length && !~data[0].indexOf("__index__") ){
-          //如果数据中没有用户自己设置的__index__，那么就主动添加一个__index__，来记录元数据中的index
-          for( var i=0,l=data.length; i<l; i++ ){
-              if( !i ){
-                  data[0].push( "__index__" );
-              } else {
-                  data[i].push( i-1 );
-              }
-          }
-      }
-
-      dataFrame.org = data;
-      dataFrame.fields = data[0] ? data[0] : []; //所有的字段集合;
-
-      
-
-      var total = [];//已经处理成[o,o,o]   o={field:'val1',index:0,data:[1,2,3]}
-      for(var a = 0, al = dataFrame.fields.length; a < al; a++){
-          var o = {};
-          o.field = dataFrame.fields[a];
-          o.index = a;
-          o.data  = [];
-          total.push(o);
-      }    dataFrame.data = total;
-
-      //填充好total的data并且把属于yAxis的设置为number
-      for(var a = 1, al = data.length; a < al; a++){
-          for(var b = 0, bl = data[a].length; b < bl; b++){
-              var _val = data[a][b];
-              //如果用户传入的数据是个number，那么就转换为真正的Number吧
-              //‘223’ --》 223
-              if( !isNaN( _val ) && _val !== "" && _val !== null ){
-                  _val = Number( _val );
-              }            total[b].data.push( _val );
-              //total[b].data.push( data[a][b] );
-          }
-      }
-      //会按照$field的格式转换成对应一一对应的 org 的结构
-      function getDataOrg( $field, format, totalList , lev){
-          
-          if( !lev ) lev = 0;
-
-          var arr = totalList || total;
-          if( !arr ){
-              return;
-          }
-          if( !format ){
-              format = function( e ){ return e };
-          }
-          function _format( data ){
-              for( var i=0,l=data.length; i<l; i++ ){
-                  data[i] = format( data[i] );
-              }            return data;
-          }
-          if( !_$2.isArray($field) ){
-              $field = [$field];
-          }
-          //这个时候的arr只是totalList的过滤，还没有完全的按照$field 中的排序
-          var newData = [];
-          for( var i=0,l=$field.length; i<l ; i++ ){
-              if( _$2.isArray($field[i]) ){
-                  newData.push( getDataOrg( $field[i], format, totalList , lev+1) );
-              } else {
-              
-                  var _fieldData = newData;
-                  if( !lev ){
-                      _fieldData = [];
-                  }                for( var ii=0,iil=arr.length ; ii<iil ; ii++ ){
-                       if( $field[i] == arr[ii].field ){
-                           _fieldData.push( _format( arr[ii].data.slice( dataFrame.range.start, dataFrame.range.end+1 ) ) );
-                           break;
-                       }
-                  }                if( !lev ){
-                      newData.push( _fieldData );
-                  }            }        }
-          return newData;
-      }
-      /*
-       * 获取某一行数据
-      */ 
-      function _getRowDataAt(index){
-          var o = {};
-          var data = dataFrame.data;
-          for(var a = 0; a < data.length; a++){
-              o[data[a].field] = data[a].data[ dataFrame.range.start + index ];
-          }        return o
-      }
-
-      /**
-       * obj => {uv: 100, pv: 10 ...}
-       */
-      function _getRowDataOf( obj ){
-          !obj && (obj={});
-          var arr = [];
-
-          var expCount = 0;
-          for( var p in obj ){
-              expCount++;
-          }
-          if( expCount ){
-              for( var i=dataFrame.range.start; i< dataFrame.range.end; i++ ){
-                  var matchNum = 0;
-                  _$2.each( dataFrame.data, function( fd ){
-                      if( fd.field in obj && fd.data[i] == obj[ fd.field ] ){
-                          matchNum++;
-                      }
-                  } );
-                  if( matchNum == expCount ){
-                      //说明这条数据是完全和查询
-                      arr.push( _getRowDataAt(i) );
-                  }            }        }
-          return arr;
-      }
-
-      function _getFieldData( field ){
-          var data;
-          _$2.each( dataFrame.data , function( d ){
-              if( d.field == field ){
-                  data = d;
-              }
-          } ); 
-          if( data ){
-              return data.data.slice( dataFrame.range.start, dataFrame.range.end+1 );
-          } else {
-              return []
-          }
-      }
-
-      return dataFrame;
-  }
-
-  const RESOLUTION$1 = window.devicePixelRatio || 1;
-
-  var addOrRmoveEventHand$1 = function( domHand , ieHand ){
-      if( document[ domHand ] ){
-          function eventDomFn( el , type , fn ){
-              if( el.length ){
-                  for(var i=0 ; i < el.length ; i++){
-                      eventDomFn( el[i] , type , fn );
-                  }
-              } else {
-                  el[ domHand ]( type , fn , false );
-              }
-          }        return eventDomFn
-      } else {
-          function eventFn( el , type , fn ){
-              if( el.length ){
-                  for(var i=0 ; i < el.length ; i++){
-                      eventFn( el[i],type,fn );
-                  }
-              } else {
-                  el[ ieHand ]( "on"+type , function(){
-                      return fn.call( el , window.event );
-                  });
-              }
-          }        return eventFn
-      }
-  };
-
-  ({
-      // dom操作相关代码
-      query : function(el){
-          if(_$2.isString(el)){
-             return document.getElementById(el)
-          }
-          if(el.nodeType == 1){
-             //则为一个element本身
-             return el
-          }
-          if(el.length){
-             return el[0]
-          }
-          return null;
-      },
-      offset : function(el){
-          var box = el.getBoundingClientRect(), 
-          doc = el.ownerDocument, 
-          body = doc.body, 
-          docElem = doc.documentElement, 
-
-          // for ie  
-          clientTop = docElem.clientTop || body.clientTop || 0, 
-          clientLeft = docElem.clientLeft || body.clientLeft || 0, 
-
-          // In Internet Explorer 7 getBoundingClientRect property is treated as physical, 
-          // while others are logical. Make all logical, like in IE8. 
-          zoom = 1; 
-          if (body.getBoundingClientRect) { 
-              var bound = body.getBoundingClientRect(); 
-              zoom = (bound.right - bound.left)/body.clientWidth; 
-          } 
-          if (zoom > 1){ 
-              clientTop = 0; 
-              clientLeft = 0; 
-          } 
-          var top = box.top/zoom + (window.pageYOffset || docElem && docElem.scrollTop/zoom || body.scrollTop/zoom) - clientTop, 
-              left = box.left/zoom + (window.pageXOffset|| docElem && docElem.scrollLeft/zoom || body.scrollLeft/zoom) - clientLeft; 
-
-          return { 
-              top: top, 
-              left: left 
-          }; 
-      },
-      addEvent : addOrRmoveEventHand$1( "addEventListener" , "attachEvent" ),
-      removeEvent : addOrRmoveEventHand$1( "removeEventListener" , "detachEvent" ),
-      pageX: function(e) {
-          if (e.pageX) return e.pageX;
-          else if (e.clientX)
-              return e.clientX + (document.documentElement.scrollLeft ?
-                      document.documentElement.scrollLeft : document.body.scrollLeft);
-          else return null;
-      },
-      pageY: function(e) {
-          if (e.pageY) return e.pageY;
-          else if (e.clientY)
-              return e.clientY + (document.documentElement.scrollTop ?
-                      document.documentElement.scrollTop : document.body.scrollTop);
-          else return null;
-      },
-      /**
-       * 创建dom
-       * @param {string} id dom id 待用
-       * @param {string} type : dom type， such as canvas, div etc.
-       */
-      createCanvas : function( _width , _height , id) {
-          var canvas = document.createElement("canvas");
-          canvas.style.position = 'absolute';
-          canvas.style.width  = _width + 'px';
-          canvas.style.height = _height + 'px';
-          canvas.style.left   = 0;
-          canvas.style.top    = 0;
-          canvas.setAttribute('width', _width * RESOLUTION$1);
-          canvas.setAttribute('height', _height * RESOLUTION$1);
-          canvas.setAttribute('id', id);
-          return canvas;
-      },
-      createView: function(_width , _height, id){
-          var view = document.createElement("div");
-          view.className = "canvax-view";
-          view.style.cssText += "position:relative;width:100%;height:100%;";
-
-          var stageView = document.createElement("div");
-          stageView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height +"px;";
-
-          //用来存放一些dom元素
-          var domView = document.createElement("div");
-          domView.style.cssText += "position:absolute;width:" + _width + "px;height:" + _height +"px;";
-
-          view.appendChild(stageView);
-          view.appendChild(domView);
-          
-          return {
-              view : view,
-              stageView: stageView,
-              domView: domView
-          }
-      }
-      //dom相关代码结束
-  });
-
-  /**
-   * 系统皮肤
-   */
-
-  //图表皮肤
-
-  //十六进制颜色值的正则表达式
-
-  const aRound$1 = 360; //一圈的度数
-  const Cos$1 = Math.cos;
-  const Sin$1 = Math.sin;
-
-  class Polar$1 {
-      constructor(opt = {}, dataFrame = []) {
-
-          this._opt = _$2.clone(opt);
-          this.dataFrame = dataFrame;
-
-          this.axisLength = 1;
-
-          this.dataOrg = [];
-
-          this.startAngle = this._opt.startAngle;
-          this.allAngles = Math.min(360, this._opt.allAngles);
-          this.sort = this._opt.sort;
-
-          this.layoutData = []; //和dataSection一一对应的，每个值的pos,agend,dregg,centerPos
-
-
-
-          this.maxRadius = 0; //最大半径值
-          this.minRadius = 0; //最小半径值 
-
-      }
-
-      calculateProps() {
-          let axisLength = 0;
-          let percentage = 0;
-          let currentAngle = 0;
-          let opt = this._opt;
-          let angle, endAngle, cosV, sinV, midAngle, quadrant;
-          let percentFixedNum = 2;
-
-          let outRadius = opt.node.outRadius;
-          let innerRadius = opt.node.innerRadius;
-          let moveDis = opt.node.moveDis;
-
-          this.layoutData.forEach((item, i) => {
-              if (!item.enabled) return;
-              axisLength += isNaN(+item.value) ? 0 : +item.value;
-
-              if (item.radiusField) {
-                  this.maxRadius = Math.max(item.radiusValue, axisLength);
-                  this.minRadius = Math.min(item.radiusValue, axisLength);
-              }
-          });
-
-          this.axisLength = axisLength;
-
-          if (axisLength > 0) {
-
-              //原始算法
-              // currentAngle = + opt.startAngle % 360;
-              // limitAngle = opt.allAngles + me.startAngle % me.allAngles;
-
-              //新的算法
-              //这里只是计算每个扇区的初始位置,所以这里求模就可以啦
-              currentAngle = _$2.euclideanModulo(this.startAngle, aRound$1);
-              // opt.allAngles = opt.allAngles > 0 ? opt.allAngles : aRound;
-              // limitAngle = opt.allAngles + _.euclideanModulo(opt.startAngle, opt.allAngles);
-
-              this.layoutData.forEach((item, i) => {
-                  percentage = item.value / axisLength;
-                  //enabled为false的sec，比率就设置为0
-                  if (!item.enabled) {
-                      percentage = 0;
-                  }
-                  angle = this.allAngles * percentage;
-                  //旧的算法
-                  // endAngle = currentAngle + angle > limitAngle ? limitAngle : me.currentAngle + angle;
-                  endAngle = currentAngle + angle;
-                  midAngle = currentAngle + angle * 0.5;
-
-                  cosV = Cos$1(_$2.degToRad(midAngle));
-                  sinV = Sin$1(_$2.degToRad(midAngle));
-
-                  cosV = cosV.toFixed(5);
-                  sinV = sinV.toFixed(5);
-                  quadrant = this.getAuadrant(midAngle);
-
-                  //如果用户在配置中制定了半径字段,这里需要计算相对的半径比例值
-                  if (!!item.radiusField) {
-                      // var _rr = Number(item.rowData[opt.node.radius]);
-                      outRadius = parseInt((opt.node.outRadius - opt.node.innerRadius) * ((item.radiusValue - this.minRadius) / (this.maxRadius - this.minRadius)) + opt.node.innerRadius);
-                  }                _$2.extend(item, {
-                      outRadius,
-                      innerRadius,
-                      startAngle: currentAngle, //起始角度
-                      endAngle, //结束角度
-                      midAngle,  //中间角度
-
-                      moveDis,
-
-                      outOffsetx: moveDis * 0.7 * cosV, //focus的事实外扩后圆心的坐标x
-                      outOffsety: moveDis * 0.7 * sinV, //focus的事实外扩后圆心的坐标y
-
-                      centerx: outRadius * cosV,
-                      centery: outRadius * sinV,
-                      outx: (outRadius + moveDis) * cosV,
-                      outy: (outRadius + moveDis) * sinV,
-                      edgex: (outRadius + moveDis) * cosV,
-                      edgey: (outRadius + moveDis) * sinV,
-
-
-                      orginPercentage: percentage,
-                      percentage: (percentage * 100).toFixed(percentFixedNum),
-
-                      quadrant, //象限
-                      isRightSide: quadrant == 1 || quadrant == 4 ? 1 : 0,
-                      cosV,
-                      sinV
-                  });
-
-                  currentAngle += angle;
-
-
-              });
-
-          }
-
-
-      }
-      /**
-       *  重设数据后,需要调用setDataFrame与calculateProps 重新计算layoutData
-       * @param {ArryObject} dataFrame 
-       */
-      resetData(dataFrame) {
-          this.dataFrame = dataFrame || [];
-
-          this.axisLength = 1;
-
-          this.dataOrg = [];
-          this.startAngle = this._opt.startAngle || -90;
-          this.allAngles = this._opt.allAngles || 360;
-
-          this.layoutData = [];
-      }
-      setOption(opt = {}) {
-          Object.assign(this._opt, opt);
-          this.startAngle = this._opt.startAngle;
-          this.allAngles = Math.min(360, this._opt.allAngles);
-          this.sort = this._opt.sort;
-      }
-      setDataFrame(dataFrame) {
-
-          let data = [];
-          let opt = this._opt;
-          let field = opt.field;
-          let labelField = opt.groupField || opt.label.field || opt.field;
-          let radiusField = opt.node.radius;
-
-          dataFrame = dataFrame || this.dataFrame;
-          this.dataFrame = dataFrame;
-
-          this.dataOrg = [];
-
-          for (let i = 0, l = dataFrame.length; i < l; i++) {
-              let rowData = dataFrame.getRowDataAt(i);
-
-              let layoutData = {
-                  rowData: rowData,//把这一行数据给到layoutData引用起来
-                  enabled: true,   //是否启用，显示在列表中
-
-                  value: rowData[field],
-                  label: rowData[labelField],
-                  iNode: i
-              };
-
-              this.dataOrg.push(rowData[field]);
-
-              if (this._isFiled(radiusField, layoutData)) {
-                  layoutData.radiusField = radiusField;
-                  layoutData.radiusValue = rowData[radiusField];
-              }
-              data.push(layoutData);
-          }
-          if (this.sort) {
-              this.dataOrg = [];
-              data.sort((a, b) => {
-                  if (this.sort == 'asc') {
-                      return a.value - b.value;
-                  } else {
-                      return b.value - a.value;
-                  }
-              });
-
-              //重新设定下ind
-              _$2.each(data, (d, i) => {
-                  d.iNode = i;
-                  this.dataOrg.push(d);
-              });
-          }
-          this.layoutData = data;
-          return data;
-      }
-
-      getLayoutData() {
-          return this.layoutData || [];
-      }
-
-      _isFiled(field, layoutData) {
-          return field && (_$2.isString(field) && field in layoutData.rowData)
-      }
-      getAuadrant(ang) { //获取象限
-
-          ang = _$2.euclideanModulo(ang, aRound$1);
-          let angleRatio = parseInt(ang / 90);
-          let _quadrant = 0;
-          switch (angleRatio) {
-              case 0:
-                  _quadrant = 1;
-                  break;
-              case 1:
-                  _quadrant = 2;
-                  break;
-              case 2:
-                  _quadrant = 3;
-                  break;
-              case 3:
-              case 4:
-                  _quadrant = 4;
-                  break;
-          }
-          return _quadrant;
-      }
-
-      /**
-       * 通过值或者索引返回数据集对象
-       * @param {Object} opt {val:xxx} 或 {ind:xxx} 
-       */
-      _getLayoutDataOf(opt) {
-          //先提供 具体值 和 索引的计算
-          var props = [{ val: "value" }, { ind: "iNode" }];
-          var prop = props[Object.keys(opt)[0]];
-
-          var layoutData;
-          _$2.each(this.layoutData, function (item) {
-              if (item[prop] === opt[prop]) {
-                  layoutData = item;
-              }        });
-
-          return layoutData || {};
-      }
-
-      getRadiansAtR() {
-          //基类不实现
-      }
-
-      static filterPointsInRect(points, origin, width, height) {
-          for (var i = 0, l = points.length; i < l; i++) {
-              if (!Polar$1.checkPointInRect(points[i], origin, width, height)) {
-                  //该点不在root rect范围内，去掉
-                  points.splice(i, 1);
-                  i-- , l--;
-              }
-          }        return points;
-      }
-
-      static checkPointInRect(p, origin, width, height) {
-          var _tansRoot = { x: p.x + origin.x, y: p.y + origin.y };
-          return !(_tansRoot.x < 0 || _tansRoot.x > width || _tansRoot.y < 0 || _tansRoot.y > height);
-      }
-
-      //检查由n个相交点分割出来的圆弧是否在rect内
-      static checkArcInRect(arc, r, origin, width, height) {
-          var start = arc[0];
-          var to = arc[1];
-          var differenceR = to.radian - start.radian;
-          if (to.radian < start.radian) {
-              differenceR = (Math.PI * 2 + to.radian) - start.radian;
-          }        var middleR = (start.radian + differenceR / 2) % (Math.PI * 2);
-          return Polar$1.checkPointInRect(Polar$1.getPointInRadianOfR(middleR, r), origin, width, height);
-      }
-
-      //获取某个点相对圆心的弧度值
-      static getRadianInPoint(point) {
-          var pi2 = Math.PI * 2;
-          return (Math.atan2(point.y, point.x) + pi2) % pi2;
-      }
-
-      //获取某个弧度方向，半径为r的时候的point坐标点位置
-      static getPointInRadianOfR(radian, r) {
-          var pi = Math.PI;
-          var x = Math.cos(radian) * r;
-          if (radian == (pi / 2) || radian == pi * 3 / 2) {
-              //90度或者270度的时候
-              x = 0;
-          }        var y = Math.sin(radian) * r;
-          if (radian % pi == 0) {
-              y = 0;
-          }        return {
-              x: x,
-              y: y
-          };
-      }
-
-      static getROfNum(num, dataSection, width, height) {
-          var r = 0;
-          var maxNum = _$2.max(dataSection);
-          var minNum = 0; //Math.min( this.rAxis.dataSection );
-          var maxR = parseInt(Math.max(width, height) / 2);
-
-          r = maxR * ((num - minNum) / (maxNum - minNum));
-          return r;
-      }
-
-      getPointsOfR(r, angleList) {
-          var points = [];
-          _$2.each(angleList, function (_a) {
-              //弧度
-              var _r = Math.PI * _a / 180;
-              var point = Polar$1.getPointInRadianOfR(_r, r);
-              points.push(point);
-          });
-          return points;
-      }
-
-  }
-
-  //如果应用传入的数据是[{name:name, sex:sex ...} , ...] 这样的数据，就自动转换为chartx需要的矩阵格式数据
-  function parse2MatrixData$2(list) {
+  function parse2MatrixData$1(list) {
       if (list === undefined || list === null) {
           list = [];
       }    //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
@@ -4439,7 +2717,7 @@ var Chartx3d = (function () {
       }
   }
 
-  var version = "0.0.39";
+  var version = "0.0.41";
 
   const REVISION = version;
 
@@ -9481,6 +7759,11 @@ var Chartx3d = (function () {
   		return this;
 
   	}
+  	equals(v) {
+
+          return ((v.x === this.x) && (v.y === this.y));
+
+      }
 
 
   }
@@ -10189,6 +8472,145 @@ var Chartx3d = (function () {
       computeBoundingSphere() {
 
           computeBoundingSphere.call(this);
+      }
+      computeVertexNormals() {
+
+          var index = this.index;
+          var attributes = this.attributes;
+          var groups = this.groups;
+
+          if (attributes.position) {
+
+              var positions = attributes.position.array;
+
+              if (attributes.normal === undefined) {
+
+                  this.addAttribute('normal', new BufferAttribute(new Float32Array(positions.length), 3));
+
+              } else {
+
+                  // reset existing normals to zero
+
+                  var array = attributes.normal.array;
+
+                  for (var i = 0, il = array.length; i < il; i++) {
+
+                      array[i] = 0;
+
+                  }
+
+              }
+
+              var normals = attributes.normal.array;
+
+              var vA, vB, vC;
+              var pA = new Vector3(), pB = new Vector3(), pC = new Vector3();
+              var cb = new Vector3(), ab = new Vector3();
+
+              // indexed elements
+
+              if (index) {
+
+                  var indices = index.array;
+
+                  if (groups.length === 0) {
+
+                      this.addGroup(0, indices.length);
+
+                  }
+
+                  for (var j = 0, jl = groups.length; j < jl; ++j) {
+
+                      var group = groups[j];
+
+                      var start = group.start;
+                      var count = group.count;
+
+                      for (var i = start, il = start + count; i < il; i += 3) {
+
+                          vA = indices[i + 0] * 3;
+                          vB = indices[i + 1] * 3;
+                          vC = indices[i + 2] * 3;
+
+                          pA.fromArray(positions, vA);
+                          pB.fromArray(positions, vB);
+                          pC.fromArray(positions, vC);
+
+                          cb.subVectors(pC, pB);
+                          ab.subVectors(pA, pB);
+                          cb.cross(ab);
+
+                          normals[vA] += cb.x;
+                          normals[vA + 1] += cb.y;
+                          normals[vA + 2] += cb.z;
+
+                          normals[vB] += cb.x;
+                          normals[vB + 1] += cb.y;
+                          normals[vB + 2] += cb.z;
+
+                          normals[vC] += cb.x;
+                          normals[vC + 1] += cb.y;
+                          normals[vC + 2] += cb.z;
+
+                      }
+
+                  }
+
+              } else {
+
+                  // non-indexed elements (unconnected triangle soup)
+
+                  for (var i = 0, il = positions.length; i < il; i += 9) {
+
+                      pA.fromArray(positions, i);
+                      pB.fromArray(positions, i + 3);
+                      pC.fromArray(positions, i + 6);
+
+                      cb.subVectors(pC, pB);
+                      ab.subVectors(pA, pB);
+                      cb.cross(ab);
+
+                      normals[i] = cb.x;
+                      normals[i + 1] = cb.y;
+                      normals[i + 2] = cb.z;
+
+                      normals[i + 3] = cb.x;
+                      normals[i + 4] = cb.y;
+                      normals[i + 5] = cb.z;
+
+                      normals[i + 6] = cb.x;
+                      normals[i + 7] = cb.y;
+                      normals[i + 8] = cb.z;
+
+                  }
+
+              }
+
+              this.normalizeNormals();
+
+              attributes.normal.needsUpdate = true;
+
+          }
+
+      }
+
+      normalizeNormals() {
+          var vector = new Vector3();
+          var normals = this.attributes.normal;
+
+          for (var i = 0, il = normals.count; i < il; i++) {
+
+              vector.x = normals.getX(i);
+              vector.y = normals.getY(i);
+              vector.z = normals.getZ(i);
+
+              vector.normalize();
+
+              normals.setXYZ(i, vector.x, vector.y, vector.z);
+
+          }
+          vector = null;
+
       }
 
       addGroup(start, count, materialIndex) {
@@ -19828,6 +18250,39 @@ var Chartx3d = (function () {
       }
   }
 
+  // DoughnutGemetry
+
+  class DoughnutGeometry extends Geometry {
+      /**
+       * 
+       * @param {number} outterRadius 外径 
+       * @param {number} height 高度 
+       * @param {number} innerRadius 内径
+       * @param {number} radialSegments 顶面拆分个数
+       * @param {number} thetaStart 开始弧度
+       * @param {number} thetaLength 结束弧度
+       */
+      constructor(outterRadius, height, innerRadius = 0, radialSegments, thetaStart, thetaLength) {
+
+          super();
+
+          this.type = 'DoughnutGeometry';
+
+          this.parameters = {
+              outterRadius,
+              height,
+              innerRadius,
+              radialSegments,
+              thetaStart,
+              thetaLength
+          };
+
+          this.fromBufferGeometry(new DoughnutBufferGeometry(outterRadius, height, innerRadius, radialSegments, thetaStart, thetaLength));
+          this.mergeVertices();
+
+      }
+  }
+
   // DoughnutBufferGeometry
 
   class DoughnutBufferGeometry extends BufferGeometry {
@@ -19875,7 +18330,7 @@ var Chartx3d = (function () {
 
           this.setIndex(indices);
           this.addAttribute('position', new Float32BufferAttribute(vertices, 3));
-          this.addAttribute('normal', new Float32BufferAttribute(normals, 3));
+        //  this.addAttribute('normal', new Float32BufferAttribute(normals, 3));
           this.addAttribute('uv', new Float32BufferAttribute(uvs, 2));
 
 
@@ -20222,6 +18677,1655 @@ var Chartx3d = (function () {
       }
   }
 
+  /**
+   * @author Mugen87 / https://github.com/Mugen87
+   * Port from https://github.com/mapbox/earcut (v2.1.2)
+   */
+
+  var Earcut = {
+
+  	triangulate: function ( data, holeIndices, dim ) {
+
+  		dim = dim || 2;
+
+  		var hasHoles = holeIndices && holeIndices.length,
+  			outerLen = hasHoles ? holeIndices[ 0 ] * dim : data.length,
+  			outerNode = linkedList( data, 0, outerLen, dim, true ),
+  			triangles = [];
+
+  		if ( ! outerNode ) return triangles;
+
+  		var minX, minY, maxX, maxY, x, y, invSize;
+
+  		if ( hasHoles ) outerNode = eliminateHoles( data, holeIndices, outerNode, dim );
+
+  		// if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
+
+  		if ( data.length > 80 * dim ) {
+
+  			minX = maxX = data[ 0 ];
+  			minY = maxY = data[ 1 ];
+
+  			for ( var i = dim; i < outerLen; i += dim ) {
+
+  				x = data[ i ];
+  				y = data[ i + 1 ];
+  				if ( x < minX ) minX = x;
+  				if ( y < minY ) minY = y;
+  				if ( x > maxX ) maxX = x;
+  				if ( y > maxY ) maxY = y;
+
+  			}
+
+  			// minX, minY and invSize are later used to transform coords into integers for z-order calculation
+
+  			invSize = Math.max( maxX - minX, maxY - minY );
+  			invSize = invSize !== 0 ? 1 / invSize : 0;
+
+  		}
+
+  		earcutLinked( outerNode, triangles, dim, minX, minY, invSize );
+
+  		return triangles;
+
+  	}
+
+  };
+
+  // create a circular doubly linked list from polygon points in the specified winding order
+
+  function linkedList( data, start, end, dim, clockwise ) {
+
+  	var i, last;
+
+  	if ( clockwise === ( signedArea( data, start, end, dim ) > 0 ) ) {
+
+  		for ( i = start; i < end; i += dim ) last = insertNode( i, data[ i ], data[ i + 1 ], last );
+
+  	} else {
+
+  		for ( i = end - dim; i >= start; i -= dim ) last = insertNode( i, data[ i ], data[ i + 1 ], last );
+
+  	}
+
+  	if ( last && equals( last, last.next ) ) {
+
+  		removeNode( last );
+  		last = last.next;
+
+  	}
+
+  	return last;
+
+  }
+
+  // eliminate colinear or duplicate points
+
+  function filterPoints( start, end ) {
+
+  	if ( ! start ) return start;
+  	if ( ! end ) end = start;
+
+  	var p = start, again;
+
+  	do {
+
+  		again = false;
+
+  		if ( ! p.steiner && ( equals( p, p.next ) || area( p.prev, p, p.next ) === 0 ) ) {
+
+  			removeNode( p );
+  			p = end = p.prev;
+  			if ( p === p.next ) break;
+  			again = true;
+
+  		} else {
+
+  			p = p.next;
+
+  		}
+
+  	} while ( again || p !== end );
+
+  	return end;
+
+  }
+
+  // main ear slicing loop which triangulates a polygon (given as a linked list)
+
+  function earcutLinked( ear, triangles, dim, minX, minY, invSize, pass ) {
+
+  	if ( ! ear ) return;
+
+  	// interlink polygon nodes in z-order
+
+  	if ( ! pass && invSize ) indexCurve( ear, minX, minY, invSize );
+
+  	var stop = ear, prev, next;
+
+  	// iterate through ears, slicing them one by one
+
+  	while ( ear.prev !== ear.next ) {
+
+  		prev = ear.prev;
+  		next = ear.next;
+
+  		if ( invSize ? isEarHashed( ear, minX, minY, invSize ) : isEar( ear ) ) {
+
+  			// cut off the triangle
+  			triangles.push( prev.i / dim );
+  			triangles.push( ear.i / dim );
+  			triangles.push( next.i / dim );
+
+  			removeNode( ear );
+
+  			// skipping the next vertice leads to less sliver triangles
+  			ear = next.next;
+  			stop = next.next;
+
+  			continue;
+
+  		}
+
+  		ear = next;
+
+  		// if we looped through the whole remaining polygon and can't find any more ears
+
+  		if ( ear === stop ) {
+
+  			// try filtering points and slicing again
+
+  			if ( ! pass ) {
+
+  				earcutLinked( filterPoints( ear ), triangles, dim, minX, minY, invSize, 1 );
+
+  				// if this didn't work, try curing all small self-intersections locally
+
+  			} else if ( pass === 1 ) {
+
+  				ear = cureLocalIntersections( ear, triangles, dim );
+  				earcutLinked( ear, triangles, dim, minX, minY, invSize, 2 );
+
+  			// as a last resort, try splitting the remaining polygon into two
+
+  			} else if ( pass === 2 ) {
+
+  				splitEarcut( ear, triangles, dim, minX, minY, invSize );
+
+  			}
+
+  			break;
+
+  		}
+
+  	}
+
+  }
+
+  // check whether a polygon node forms a valid ear with adjacent nodes
+
+  function isEar( ear ) {
+
+  	var a = ear.prev,
+  		b = ear,
+  		c = ear.next;
+
+  	if ( area( a, b, c ) >= 0 ) return false; // reflex, can't be an ear
+
+  	// now make sure we don't have other points inside the potential ear
+  	var p = ear.next.next;
+
+  	while ( p !== ear.prev ) {
+
+  		if ( pointInTriangle( a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y ) && area( p.prev, p, p.next ) >= 0 ) {
+
+  			return false;
+
+  		}
+
+  		p = p.next;
+
+  	}
+
+  	return true;
+
+  }
+
+  function isEarHashed( ear, minX, minY, invSize ) {
+
+  	var a = ear.prev,
+  		b = ear,
+  		c = ear.next;
+
+  	if ( area( a, b, c ) >= 0 ) return false; // reflex, can't be an ear
+
+  	// triangle bbox; min & max are calculated like this for speed
+
+  	var minTX = a.x < b.x ? ( a.x < c.x ? a.x : c.x ) : ( b.x < c.x ? b.x : c.x ),
+  		minTY = a.y < b.y ? ( a.y < c.y ? a.y : c.y ) : ( b.y < c.y ? b.y : c.y ),
+  		maxTX = a.x > b.x ? ( a.x > c.x ? a.x : c.x ) : ( b.x > c.x ? b.x : c.x ),
+  		maxTY = a.y > b.y ? ( a.y > c.y ? a.y : c.y ) : ( b.y > c.y ? b.y : c.y );
+
+  	// z-order range for the current triangle bbox;
+
+  	var minZ = zOrder( minTX, minTY, minX, minY, invSize ),
+  		maxZ = zOrder( maxTX, maxTY, minX, minY, invSize );
+
+  	// first look for points inside the triangle in increasing z-order
+
+  	var p = ear.nextZ;
+
+  	while ( p && p.z <= maxZ ) {
+
+  		if ( p !== ear.prev && p !== ear.next &&
+  				pointInTriangle( a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y ) &&
+  				area( p.prev, p, p.next ) >= 0 ) return false;
+  		p = p.nextZ;
+
+  	}
+
+  	// then look for points in decreasing z-order
+
+  	p = ear.prevZ;
+
+  	while ( p && p.z >= minZ ) {
+
+  		if ( p !== ear.prev && p !== ear.next &&
+  				pointInTriangle( a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y ) &&
+  				area( p.prev, p, p.next ) >= 0 ) return false;
+
+  		p = p.prevZ;
+
+  	}
+
+  	return true;
+
+  }
+
+  // go through all polygon nodes and cure small local self-intersections
+
+  function cureLocalIntersections( start, triangles, dim ) {
+
+  	var p = start;
+
+  	do {
+
+  		var a = p.prev, b = p.next.next;
+
+  		if ( ! equals( a, b ) && intersects( a, p, p.next, b ) && locallyInside( a, b ) && locallyInside( b, a ) ) {
+
+  			triangles.push( a.i / dim );
+  			triangles.push( p.i / dim );
+  			triangles.push( b.i / dim );
+
+  			// remove two nodes involved
+
+  			removeNode( p );
+  			removeNode( p.next );
+
+  			p = start = b;
+
+  		}
+
+  		p = p.next;
+
+  	} while ( p !== start );
+
+  	return p;
+
+  }
+
+  // try splitting polygon into two and triangulate them independently
+
+  function splitEarcut( start, triangles, dim, minX, minY, invSize ) {
+
+  	// look for a valid diagonal that divides the polygon into two
+
+  	var a = start;
+
+  	do {
+
+  		var b = a.next.next;
+
+  		while ( b !== a.prev ) {
+
+  			if ( a.i !== b.i && isValidDiagonal( a, b ) ) {
+
+  				// split the polygon in two by the diagonal
+
+  				var c = splitPolygon( a, b );
+
+  				// filter colinear points around the cuts
+
+  				a = filterPoints( a, a.next );
+  				c = filterPoints( c, c.next );
+
+  				// run earcut on each half
+
+  				earcutLinked( a, triangles, dim, minX, minY, invSize );
+  				earcutLinked( c, triangles, dim, minX, minY, invSize );
+  				return;
+
+  			}
+
+  			b = b.next;
+
+  		}
+
+  		a = a.next;
+
+  	} while ( a !== start );
+
+  }
+
+  // link every hole into the outer loop, producing a single-ring polygon without holes
+
+  function eliminateHoles( data, holeIndices, outerNode, dim ) {
+
+  	var queue = [], i, len, start, end, list;
+
+  	for ( i = 0, len = holeIndices.length; i < len; i ++ ) {
+
+  		start = holeIndices[ i ] * dim;
+  		end = i < len - 1 ? holeIndices[ i + 1 ] * dim : data.length;
+  		list = linkedList( data, start, end, dim, false );
+  		if ( list === list.next ) list.steiner = true;
+  		queue.push( getLeftmost( list ) );
+
+  	}
+
+  	queue.sort( compareX );
+
+  	// process holes from left to right
+
+  	for ( i = 0; i < queue.length; i ++ ) {
+
+  		eliminateHole( queue[ i ], outerNode );
+  		outerNode = filterPoints( outerNode, outerNode.next );
+
+  	}
+
+  	return outerNode;
+
+  }
+
+  function compareX( a, b ) {
+
+  	return a.x - b.x;
+
+  }
+
+  // find a bridge between vertices that connects hole with an outer ring and and link it
+
+  function eliminateHole( hole, outerNode ) {
+
+  	outerNode = findHoleBridge( hole, outerNode );
+
+  	if ( outerNode ) {
+
+  		var b = splitPolygon( outerNode, hole );
+
+  		filterPoints( b, b.next );
+
+  	}
+
+  }
+
+  // David Eberly's algorithm for finding a bridge between hole and outer polygon
+
+  function findHoleBridge( hole, outerNode ) {
+
+  	var p = outerNode,
+  		hx = hole.x,
+  		hy = hole.y,
+  		qx = - Infinity,
+  		m;
+
+  	// find a segment intersected by a ray from the hole's leftmost point to the left;
+  	// segment's endpoint with lesser x will be potential connection point
+
+  	do {
+
+  		if ( hy <= p.y && hy >= p.next.y && p.next.y !== p.y ) {
+
+  			var x = p.x + ( hy - p.y ) * ( p.next.x - p.x ) / ( p.next.y - p.y );
+
+  			if ( x <= hx && x > qx ) {
+
+  				qx = x;
+
+  				if ( x === hx ) {
+
+  					if ( hy === p.y ) return p;
+  					if ( hy === p.next.y ) return p.next;
+
+  				}
+
+  				m = p.x < p.next.x ? p : p.next;
+
+  			}
+
+  		}
+
+  		p = p.next;
+
+  	} while ( p !== outerNode );
+
+  	if ( ! m ) return null;
+
+  	if ( hx === qx ) return m.prev; // hole touches outer segment; pick lower endpoint
+
+  	// look for points inside the triangle of hole point, segment intersection and endpoint;
+  	// if there are no points found, we have a valid connection;
+  	// otherwise choose the point of the minimum angle with the ray as connection point
+
+  	var stop = m,
+  		mx = m.x,
+  		my = m.y,
+  		tanMin = Infinity,
+  		tan;
+
+  	p = m.next;
+
+  	while ( p !== stop ) {
+
+  		if ( hx >= p.x && p.x >= mx && hx !== p.x &&
+  						pointInTriangle( hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y ) ) {
+
+  			tan = Math.abs( hy - p.y ) / ( hx - p.x ); // tangential
+
+  			if ( ( tan < tanMin || ( tan === tanMin && p.x > m.x ) ) && locallyInside( p, hole ) ) {
+
+  				m = p;
+  				tanMin = tan;
+
+  			}
+
+  		}
+
+  		p = p.next;
+
+  	}
+
+  	return m;
+
+  }
+
+  // interlink polygon nodes in z-order
+
+  function indexCurve( start, minX, minY, invSize ) {
+
+  	var p = start;
+
+  	do {
+
+  		if ( p.z === null ) p.z = zOrder( p.x, p.y, minX, minY, invSize );
+  		p.prevZ = p.prev;
+  		p.nextZ = p.next;
+  		p = p.next;
+
+  	} while ( p !== start );
+
+  	p.prevZ.nextZ = null;
+  	p.prevZ = null;
+
+  	sortLinked( p );
+
+  }
+
+  // Simon Tatham's linked list merge sort algorithm
+  // http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
+
+  function sortLinked( list ) {
+
+  	var i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
+
+  	do {
+
+  		p = list;
+  		list = null;
+  		tail = null;
+  		numMerges = 0;
+
+  		while ( p ) {
+
+  			numMerges ++;
+  			q = p;
+  			pSize = 0;
+
+  			for ( i = 0; i < inSize; i ++ ) {
+
+  				pSize ++;
+  				q = q.nextZ;
+  				if ( ! q ) break;
+
+  			}
+
+  			qSize = inSize;
+
+  			while ( pSize > 0 || ( qSize > 0 && q ) ) {
+
+  				if ( pSize !== 0 && ( qSize === 0 || ! q || p.z <= q.z ) ) {
+
+  					e = p;
+  					p = p.nextZ;
+  					pSize --;
+
+  				} else {
+
+  					e = q;
+  					q = q.nextZ;
+  					qSize --;
+
+  				}
+
+  				if ( tail ) tail.nextZ = e;
+  				else list = e;
+
+  				e.prevZ = tail;
+  				tail = e;
+
+  			}
+
+  			p = q;
+
+  		}
+
+  		tail.nextZ = null;
+  		inSize *= 2;
+
+  	} while ( numMerges > 1 );
+
+  	return list;
+
+  }
+
+  // z-order of a point given coords and inverse of the longer side of data bbox
+
+  function zOrder( x, y, minX, minY, invSize ) {
+
+  	// coords are transformed into non-negative 15-bit integer range
+
+  	x = 32767 * ( x - minX ) * invSize;
+  	y = 32767 * ( y - minY ) * invSize;
+
+  	x = ( x | ( x << 8 ) ) & 0x00FF00FF;
+  	x = ( x | ( x << 4 ) ) & 0x0F0F0F0F;
+  	x = ( x | ( x << 2 ) ) & 0x33333333;
+  	x = ( x | ( x << 1 ) ) & 0x55555555;
+
+  	y = ( y | ( y << 8 ) ) & 0x00FF00FF;
+  	y = ( y | ( y << 4 ) ) & 0x0F0F0F0F;
+  	y = ( y | ( y << 2 ) ) & 0x33333333;
+  	y = ( y | ( y << 1 ) ) & 0x55555555;
+
+  	return x | ( y << 1 );
+
+  }
+
+  // find the leftmost node of a polygon ring
+
+  function getLeftmost( start ) {
+
+  	var p = start, leftmost = start;
+
+  	do {
+
+  		if ( p.x < leftmost.x ) leftmost = p;
+  		p = p.next;
+
+  	} while ( p !== start );
+
+  	return leftmost;
+
+  }
+
+  // check if a point lies within a convex triangle
+
+  function pointInTriangle( ax, ay, bx, by, cx, cy, px, py ) {
+
+  	return ( cx - px ) * ( ay - py ) - ( ax - px ) * ( cy - py ) >= 0 &&
+  	 ( ax - px ) * ( by - py ) - ( bx - px ) * ( ay - py ) >= 0 &&
+  	 ( bx - px ) * ( cy - py ) - ( cx - px ) * ( by - py ) >= 0;
+
+  }
+
+  // check if a diagonal between two polygon nodes is valid (lies in polygon interior)
+
+  function isValidDiagonal( a, b ) {
+
+  	return a.next.i !== b.i && a.prev.i !== b.i && ! intersectsPolygon( a, b ) &&
+  		locallyInside( a, b ) && locallyInside( b, a ) && middleInside( a, b );
+
+  }
+
+  // signed area of a triangle
+
+  function area( p, q, r ) {
+
+  	return ( q.y - p.y ) * ( r.x - q.x ) - ( q.x - p.x ) * ( r.y - q.y );
+
+  }
+
+  // check if two points are equal
+
+  function equals( p1, p2 ) {
+
+  	return p1.x === p2.x && p1.y === p2.y;
+
+  }
+
+  // check if two segments intersect
+
+  function intersects( p1, q1, p2, q2 ) {
+
+  	if ( ( equals( p1, q1 ) && equals( p2, q2 ) ) ||
+  			( equals( p1, q2 ) && equals( p2, q1 ) ) ) return true;
+
+  	return area( p1, q1, p2 ) > 0 !== area( p1, q1, q2 ) > 0 &&
+  				 area( p2, q2, p1 ) > 0 !== area( p2, q2, q1 ) > 0;
+
+  }
+
+  // check if a polygon diagonal intersects any polygon segments
+
+  function intersectsPolygon( a, b ) {
+
+  	var p = a;
+
+  	do {
+
+  		if ( p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&
+  						intersects( p, p.next, a, b ) ) {
+
+  			return true;
+
+  		}
+
+  		p = p.next;
+
+  	} while ( p !== a );
+
+  	return false;
+
+  }
+
+  // check if a polygon diagonal is locally inside the polygon
+
+  function locallyInside( a, b ) {
+
+  	return area( a.prev, a, a.next ) < 0 ?
+  		area( a, b, a.next ) >= 0 && area( a, a.prev, b ) >= 0 :
+  		area( a, b, a.prev ) < 0 || area( a, a.next, b ) < 0;
+
+  }
+
+  // check if the middle point of a polygon diagonal is inside the polygon
+
+  function middleInside( a, b ) {
+
+  	var p = a,
+  		inside = false,
+  		px = ( a.x + b.x ) / 2,
+  		py = ( a.y + b.y ) / 2;
+
+  	do {
+
+  		if ( ( ( p.y > py ) !== ( p.next.y > py ) ) && p.next.y !== p.y &&
+  						( px < ( p.next.x - p.x ) * ( py - p.y ) / ( p.next.y - p.y ) + p.x ) ) {
+
+  			inside = ! inside;
+
+  		}
+
+  		p = p.next;
+
+  	} while ( p !== a );
+
+  	return inside;
+
+  }
+
+  // link two polygon vertices with a bridge; if the vertices belong to the same ring, it splits polygon into two;
+  // if one belongs to the outer ring and another to a hole, it merges it into a single ring
+
+  function splitPolygon( a, b ) {
+
+  	var a2 = new Node( a.i, a.x, a.y ),
+  		b2 = new Node( b.i, b.x, b.y ),
+  		an = a.next,
+  		bp = b.prev;
+
+  	a.next = b;
+  	b.prev = a;
+
+  	a2.next = an;
+  	an.prev = a2;
+
+  	b2.next = a2;
+  	a2.prev = b2;
+
+  	bp.next = b2;
+  	b2.prev = bp;
+
+  	return b2;
+
+  }
+
+  // create a node and optionally link it with previous one (in a circular doubly linked list)
+
+  function insertNode( i, x, y, last ) {
+
+  	var p = new Node( i, x, y );
+
+  	if ( ! last ) {
+
+  		p.prev = p;
+  		p.next = p;
+
+  	} else {
+
+  		p.next = last.next;
+  		p.prev = last;
+  		last.next.prev = p;
+  		last.next = p;
+
+  	}
+
+  	return p;
+
+  }
+
+  function removeNode( p ) {
+
+  	p.next.prev = p.prev;
+  	p.prev.next = p.next;
+
+  	if ( p.prevZ ) p.prevZ.nextZ = p.nextZ;
+  	if ( p.nextZ ) p.nextZ.prevZ = p.prevZ;
+
+  }
+
+  function Node( i, x, y ) {
+
+  	// vertice index in coordinates array
+  	this.i = i;
+
+  	// vertex coordinates
+  	this.x = x;
+  	this.y = y;
+
+  	// previous and next vertice nodes in a polygon ring
+  	this.prev = null;
+  	this.next = null;
+
+  	// z-order curve value
+  	this.z = null;
+
+  	// previous and next nodes in z-order
+  	this.prevZ = null;
+  	this.nextZ = null;
+
+  	// indicates whether this is a steiner point
+  	this.steiner = false;
+
+  }
+
+  function signedArea( data, start, end, dim ) {
+
+  	var sum = 0;
+
+  	for ( var i = start, j = end - dim; i < end; i += dim ) {
+
+  		sum += ( data[ j ] - data[ i ] ) * ( data[ i + 1 ] + data[ j + 1 ] );
+  		j = i;
+
+  	}
+
+  	return sum;
+
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   */
+
+  var ShapeUtils = {
+
+  	// calculate area of the contour polygon
+
+  	area: function ( contour ) {
+
+  		var n = contour.length;
+  		var a = 0.0;
+
+  		for ( var p = n - 1, q = 0; q < n; p = q ++ ) {
+
+  			a += contour[ p ].x * contour[ q ].y - contour[ q ].x * contour[ p ].y;
+
+  		}
+
+  		return a * 0.5;
+
+  	},
+
+  	isClockWise: function ( pts ) {
+
+  		return ShapeUtils.area( pts ) < 0;
+
+  	},
+
+  	triangulateShape: function ( contour, holes ) {
+
+  		var vertices = []; // flat array of vertices like [ x0,y0, x1,y1, x2,y2, ... ]
+  		var holeIndices = []; // array of hole indices
+  		var faces = []; // final array of vertex indices like [ [ a,b,d ], [ b,c,d ] ]
+
+  		removeDupEndPts( contour );
+  		addContour( vertices, contour );
+
+  		//
+
+  		var holeIndex = contour.length;
+
+  		holes.forEach( removeDupEndPts );
+
+  		for ( var i = 0; i < holes.length; i ++ ) {
+
+  			holeIndices.push( holeIndex );
+  			holeIndex += holes[ i ].length;
+  			addContour( vertices, holes[ i ] );
+
+  		}
+
+  		//
+
+  		var triangles = Earcut.triangulate( vertices, holeIndices );
+
+  		//
+
+  		for ( var i = 0; i < triangles.length; i += 3 ) {
+
+  			faces.push( triangles.slice( i, i + 3 ) );
+
+  		}
+
+  		return faces;
+
+  	}
+
+  };
+
+  function removeDupEndPts( points ) {
+
+  	var l = points.length;
+
+  	if ( l > 2 && points[ l - 1 ].equals( points[ 0 ] ) ) {
+
+  		points.pop();
+
+  	}
+
+  }
+
+  function addContour( vertices, contour ) {
+
+  	for ( var i = 0; i < contour.length; i ++ ) {
+
+  		vertices.push( contour[ i ].x );
+  		vertices.push( contour[ i ].y );
+
+  	}
+
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   *
+   * Creates extruded geometry from a path shape.
+   *
+   * parameters = {
+   *
+   *  curveSegments: <int>, // number of points on the curves
+   *  steps: <int>, // number of points for z-side extrusions / used for subdividing segments of extrude spline too
+   *  depth: <float>, // Depth to extrude the shape
+   *
+   *  bevelEnabled: <bool>, // turn on bevel
+   *  bevelThickness: <float>, // how deep into the original shape bevel goes
+   *  bevelSize: <float>, // how far from shape outline is bevel
+   *  bevelSegments: <int>, // number of bevel layers
+   *
+   *  extrudePath: <THREE.Curve> // curve to extrude shape along
+   *
+   *  UVGenerator: <Object> // object that provides UV generator functions
+   *
+   * }
+   */
+
+
+  // ExtrudeBufferGeometry
+
+  class ExtrudeBufferGeometry extends BufferGeometry {
+      constructor(shapes, options) {
+
+          super();
+
+          this.type = 'ExtrudeBufferGeometry';
+
+          this.parameters = {
+              shapes: shapes,
+              options: options
+          };
+
+          shapes = Array.isArray(shapes) ? shapes : [shapes];
+
+          var scope = this;
+
+          var verticesArray = [];
+          var uvArray = [];
+
+          for (var i = 0, l = shapes.length; i < l; i++) {
+
+              var shape = shapes[i];
+              addShape(shape);
+
+          }
+
+          // build geometry
+
+          this.addAttribute('position', new Float32BufferAttribute(verticesArray, 3));
+          this.addAttribute('uv', new Float32BufferAttribute(uvArray, 2));
+
+          this.computeVertexNormals();
+
+          // functions
+
+          function addShape(shape) {
+
+              var placeholder = [];
+
+              // options
+
+              var curveSegments = options.curveSegments !== undefined ? options.curveSegments : 12;
+              var steps = options.steps !== undefined ? options.steps : 1;
+              var depth = options.depth !== undefined ? options.depth : 100;
+
+              var bevelEnabled = options.bevelEnabled !== undefined ? options.bevelEnabled : true;
+              var bevelThickness = options.bevelThickness !== undefined ? options.bevelThickness : 6;
+              var bevelSize = options.bevelSize !== undefined ? options.bevelSize : bevelThickness - 2;
+              var bevelSegments = options.bevelSegments !== undefined ? options.bevelSegments : 3;
+
+              var extrudePath = options.extrudePath;
+
+              var uvgen = options.UVGenerator !== undefined ? options.UVGenerator : WorldUVGenerator;
+
+              // deprecated options
+
+              if (options.amount !== undefined) {
+
+                  console.warn('THREE.ExtrudeBufferGeometry: amount has been renamed to depth.');
+                  depth = options.amount;
+
+              }
+
+              //
+
+              var extrudePts, extrudeByPath = false;
+              var splineTube, binormal, normal, position2;
+
+              if (extrudePath) {
+
+                  extrudePts = extrudePath.getSpacedPoints(steps);
+
+                  extrudeByPath = true;
+                  bevelEnabled = false; // bevels not supported for path extrusion
+
+                  // SETUP TNB variables
+
+                  // TODO1 - have a .isClosed in spline?
+
+                  splineTube = extrudePath.computeFrenetFrames(steps, false);
+
+                  // console.log(splineTube, 'splineTube', splineTube.normals.length, 'steps', steps, 'extrudePts', extrudePts.length);
+
+                  binormal = new Vector3();
+                  normal = new Vector3();
+                  position2 = new Vector3();
+
+              }
+
+              // Safeguards if bevels are not enabled
+
+              if (!bevelEnabled) {
+
+                  bevelSegments = 0;
+                  bevelThickness = 0;
+                  bevelSize = 0;
+
+              }
+
+              // Variables initialization
+
+              var ahole, h, hl; // looping of holes
+
+              var shapePoints = shape.extractPoints(curveSegments);
+
+              var vertices = shapePoints.shape;
+              var holes = shapePoints.holes;
+
+              var reverse = !ShapeUtils.isClockWise(vertices);
+
+              if (reverse) {
+
+                  vertices = vertices.reverse();
+
+                  // Maybe we should also check if holes are in the opposite direction, just to be safe ...
+
+                  for (h = 0, hl = holes.length; h < hl; h++) {
+
+                      ahole = holes[h];
+
+                      if (ShapeUtils.isClockWise(ahole)) {
+
+                          holes[h] = ahole.reverse();
+
+                      }
+
+                  }
+
+              }
+
+
+              var faces = ShapeUtils.triangulateShape(vertices, holes);
+
+              /* Vertices */
+
+              var contour = vertices; // vertices has all points but contour has only points of circumference
+
+              for (h = 0, hl = holes.length; h < hl; h++) {
+
+                  ahole = holes[h];
+
+                  vertices = vertices.concat(ahole);
+
+              }
+
+
+              function scalePt2(pt, vec, size) {
+
+                  if (!vec) console.error("THREE.ExtrudeGeometry: vec does not exist");
+
+                  return vec.clone().multiplyScalar(size).add(pt);
+
+              }
+
+              var b, bs, t, z,
+                  vert, vlen = vertices.length,
+                  face, flen = faces.length;
+
+
+              // Find directions for point movement
+
+
+              function getBevelVec(inPt, inPrev, inNext) {
+
+                  // computes for inPt the corresponding point inPt' on a new contour
+                  //   shifted by 1 unit (length of normalized vector) to the left
+                  // if we walk along contour clockwise, this new contour is outside the old one
+                  //
+                  // inPt' is the intersection of the two lines parallel to the two
+                  //  adjacent edges of inPt at a distance of 1 unit on the left side.
+
+                  var v_trans_x, v_trans_y, shrink_by; // resulting translation vector for inPt
+
+                  // good reading for geometry algorithms (here: line-line intersection)
+                  // http://geomalgorithms.com/a05-_intersect-1.html
+
+                  var v_prev_x = inPt.x - inPrev.x,
+                      v_prev_y = inPt.y - inPrev.y;
+                  var v_next_x = inNext.x - inPt.x,
+                      v_next_y = inNext.y - inPt.y;
+
+                  var v_prev_lensq = (v_prev_x * v_prev_x + v_prev_y * v_prev_y);
+
+                  // check for collinear edges
+                  var collinear0 = (v_prev_x * v_next_y - v_prev_y * v_next_x);
+
+                  if (Math.abs(collinear0) > Number.EPSILON) {
+
+                      // not collinear
+
+                      // length of vectors for normalizing
+
+                      var v_prev_len = Math.sqrt(v_prev_lensq);
+                      var v_next_len = Math.sqrt(v_next_x * v_next_x + v_next_y * v_next_y);
+
+                      // shift adjacent points by unit vectors to the left
+
+                      var ptPrevShift_x = (inPrev.x - v_prev_y / v_prev_len);
+                      var ptPrevShift_y = (inPrev.y + v_prev_x / v_prev_len);
+
+                      var ptNextShift_x = (inNext.x - v_next_y / v_next_len);
+                      var ptNextShift_y = (inNext.y + v_next_x / v_next_len);
+
+                      // scaling factor for v_prev to intersection point
+
+                      var sf = ((ptNextShift_x - ptPrevShift_x) * v_next_y -
+                          (ptNextShift_y - ptPrevShift_y) * v_next_x) /
+                          (v_prev_x * v_next_y - v_prev_y * v_next_x);
+
+                      // vector from inPt to intersection point
+
+                      v_trans_x = (ptPrevShift_x + v_prev_x * sf - inPt.x);
+                      v_trans_y = (ptPrevShift_y + v_prev_y * sf - inPt.y);
+
+                      // Don't normalize!, otherwise sharp corners become ugly
+                      //  but prevent crazy spikes
+                      var v_trans_lensq = (v_trans_x * v_trans_x + v_trans_y * v_trans_y);
+                      if (v_trans_lensq <= 2) {
+
+                          return new Vector2(v_trans_x, v_trans_y);
+
+                      } else {
+
+                          shrink_by = Math.sqrt(v_trans_lensq / 2);
+
+                      }
+
+                  } else {
+
+                      // handle special case of collinear edges
+
+                      var direction_eq = false; // assumes: opposite
+                      if (v_prev_x > Number.EPSILON) {
+
+                          if (v_next_x > Number.EPSILON) {
+
+                              direction_eq = true;
+
+                          }
+
+                      } else {
+
+                          if (v_prev_x < - Number.EPSILON) {
+
+                              if (v_next_x < - Number.EPSILON) {
+
+                                  direction_eq = true;
+
+                              }
+
+                          } else {
+
+                              if (Math.sign(v_prev_y) === Math.sign(v_next_y)) {
+
+                                  direction_eq = true;
+
+                              }
+
+                          }
+
+                      }
+
+                      if (direction_eq) {
+
+                          // console.log("Warning: lines are a straight sequence");
+                          v_trans_x = - v_prev_y;
+                          v_trans_y = v_prev_x;
+                          shrink_by = Math.sqrt(v_prev_lensq);
+
+                      } else {
+
+                          // console.log("Warning: lines are a straight spike");
+                          v_trans_x = v_prev_x;
+                          v_trans_y = v_prev_y;
+                          shrink_by = Math.sqrt(v_prev_lensq / 2);
+
+                      }
+
+                  }
+
+                  return new Vector2(v_trans_x / shrink_by, v_trans_y / shrink_by);
+
+              }
+
+
+              var contourMovements = [];
+
+              for (var i = 0, il = contour.length, j = il - 1, k = i + 1; i < il; i++ , j++ , k++) {
+
+                  if (j === il) j = 0;
+                  if (k === il) k = 0;
+
+                  //  (j)---(i)---(k)
+                  // console.log('i,j,k', i, j , k)
+
+                  contourMovements[i] = getBevelVec(contour[i], contour[j], contour[k]);
+
+              }
+
+              var holesMovements = [],
+                  oneHoleMovements, verticesMovements = contourMovements.concat();
+
+              for (h = 0, hl = holes.length; h < hl; h++) {
+
+                  ahole = holes[h];
+
+                  oneHoleMovements = [];
+
+                  for (i = 0, il = ahole.length, j = il - 1, k = i + 1; i < il; i++ , j++ , k++) {
+
+                      if (j === il) j = 0;
+                      if (k === il) k = 0;
+
+                      //  (j)---(i)---(k)
+                      oneHoleMovements[i] = getBevelVec(ahole[i], ahole[j], ahole[k]);
+
+                  }
+
+                  holesMovements.push(oneHoleMovements);
+                  verticesMovements = verticesMovements.concat(oneHoleMovements);
+
+              }
+
+
+              // Loop bevelSegments, 1 for the front, 1 for the back
+
+              for (b = 0; b < bevelSegments; b++) {
+
+                  //for ( b = bevelSegments; b > 0; b -- ) {
+
+                  t = b / bevelSegments;
+                  z = bevelThickness * Math.cos(t * Math.PI / 2);
+                  bs = bevelSize * Math.sin(t * Math.PI / 2);
+
+                  // contract shape
+
+                  for (i = 0, il = contour.length; i < il; i++) {
+
+                      vert = scalePt2(contour[i], contourMovements[i], bs);
+
+                      v(vert.x, vert.y, - z);
+
+                  }
+
+                  // expand holes
+
+                  for (h = 0, hl = holes.length; h < hl; h++) {
+
+                      ahole = holes[h];
+                      oneHoleMovements = holesMovements[h];
+
+                      for (i = 0, il = ahole.length; i < il; i++) {
+
+                          vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+
+                          v(vert.x, vert.y, - z);
+
+                      }
+
+                  }
+
+              }
+
+              bs = bevelSize;
+
+              // Back facing vertices
+
+              for (i = 0; i < vlen; i++) {
+
+                  vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+
+                  if (!extrudeByPath) {
+
+                      v(vert.x, vert.y, 0);
+
+                  } else {
+
+                      // v( vert.x, vert.y + extrudePts[ 0 ].y, extrudePts[ 0 ].x );
+
+                      normal.copy(splineTube.normals[0]).multiplyScalar(vert.x);
+                      binormal.copy(splineTube.binormals[0]).multiplyScalar(vert.y);
+
+                      position2.copy(extrudePts[0]).add(normal).add(binormal);
+
+                      v(position2.x, position2.y, position2.z);
+
+                  }
+
+              }
+
+              // Add stepped vertices...
+              // Including front facing vertices
+
+              var s;
+
+              for (s = 1; s <= steps; s++) {
+
+                  for (i = 0; i < vlen; i++) {
+
+                      vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+
+                      if (!extrudeByPath) {
+
+                          v(vert.x, vert.y, depth / steps * s);
+
+                      } else {
+
+                          // v( vert.x, vert.y + extrudePts[ s - 1 ].y, extrudePts[ s - 1 ].x );
+
+                          normal.copy(splineTube.normals[s]).multiplyScalar(vert.x);
+                          binormal.copy(splineTube.binormals[s]).multiplyScalar(vert.y);
+
+                          position2.copy(extrudePts[s]).add(normal).add(binormal);
+
+                          v(position2.x, position2.y, position2.z);
+
+                      }
+
+                  }
+
+              }
+
+
+              // Add bevel segments planes
+
+              //for ( b = 1; b <= bevelSegments; b ++ ) {
+              for (b = bevelSegments - 1; b >= 0; b--) {
+
+                  t = b / bevelSegments;
+                  z = bevelThickness * Math.cos(t * Math.PI / 2);
+                  bs = bevelSize * Math.sin(t * Math.PI / 2);
+
+                  // contract shape
+
+                  for (i = 0, il = contour.length; i < il; i++) {
+
+                      vert = scalePt2(contour[i], contourMovements[i], bs);
+                      v(vert.x, vert.y, depth + z);
+
+                  }
+
+                  // expand holes
+
+                  for (h = 0, hl = holes.length; h < hl; h++) {
+
+                      ahole = holes[h];
+                      oneHoleMovements = holesMovements[h];
+
+                      for (i = 0, il = ahole.length; i < il; i++) {
+
+                          vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+
+                          if (!extrudeByPath) {
+
+                              v(vert.x, vert.y, depth + z);
+
+                          } else {
+
+                              v(vert.x, vert.y + extrudePts[steps - 1].y, extrudePts[steps - 1].x + z);
+
+                          }
+
+                      }
+
+                  }
+
+              }
+
+              /* Faces */
+
+              // Top and bottom faces
+
+              buildLidFaces();
+
+              // Sides faces
+
+              buildSideFaces();
+
+
+              /////  Internal functions
+
+              function buildLidFaces() {
+
+                  var start = verticesArray.length / 3;
+
+                  if (bevelEnabled) {
+
+                      var layer = 0; // steps + 1
+                      var offset = vlen * layer;
+
+                      // Bottom faces
+
+                      for (i = 0; i < flen; i++) {
+
+                          face = faces[i];
+                          f3(face[2] + offset, face[1] + offset, face[0] + offset);
+
+                      }
+
+                      layer = steps + bevelSegments * 2;
+                      offset = vlen * layer;
+
+                      // Top faces
+
+                      for (i = 0; i < flen; i++) {
+
+                          face = faces[i];
+                          f3(face[0] + offset, face[1] + offset, face[2] + offset);
+
+                      }
+
+                  } else {
+
+                      // Bottom faces
+
+                      for (i = 0; i < flen; i++) {
+
+                          face = faces[i];
+                          f3(face[2], face[1], face[0]);
+
+                      }
+
+                      // Top faces
+
+                      for (i = 0; i < flen; i++) {
+
+                          face = faces[i];
+                          f3(face[0] + vlen * steps, face[1] + vlen * steps, face[2] + vlen * steps);
+
+                      }
+
+                  }
+
+                  scope.addGroup(start, verticesArray.length / 3 - start, 0);
+
+              }
+
+              // Create faces for the z-sides of the shape
+
+              function buildSideFaces() {
+
+                  var start = verticesArray.length / 3;
+                  var layeroffset = 0;
+                  sidewalls(contour, layeroffset);
+                  layeroffset += contour.length;
+
+                  for (h = 0, hl = holes.length; h < hl; h++) {
+
+                      ahole = holes[h];
+                      sidewalls(ahole, layeroffset);
+
+                      //, true
+                      layeroffset += ahole.length;
+
+                  }
+
+
+                  scope.addGroup(start, verticesArray.length / 3 - start, 1);
+
+
+              }
+
+              function sidewalls(contour, layeroffset) {
+
+                  var j, k;
+                  i = contour.length;
+
+                  while (--i >= 0) {
+
+                      j = i;
+                      k = i - 1;
+                      if (k < 0) k = contour.length - 1;
+
+                      //console.log('b', i,j, i-1, k,vertices.length);
+
+                      var s = 0,
+                          sl = steps + bevelSegments * 2;
+
+                      for (s = 0; s < sl; s++) {
+
+                          var slen1 = vlen * s;
+                          var slen2 = vlen * (s + 1);
+
+                          var a = layeroffset + j + slen1,
+                              b = layeroffset + k + slen1,
+                              c = layeroffset + k + slen2,
+                              d = layeroffset + j + slen2;
+
+                          f4(a, b, c, d);
+
+                      }
+
+                  }
+
+              }
+
+              function v(x, y, z) {
+
+                  placeholder.push(x);
+                  placeholder.push(y);
+                  placeholder.push(z);
+
+              }
+
+
+              function f3(a, b, c) {
+
+                  addVertex(a);
+                  addVertex(b);
+                  addVertex(c);
+
+                  var nextIndex = verticesArray.length / 3;
+                  var uvs = uvgen.generateTopUV(scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+
+                  addUV(uvs[0]);
+                  addUV(uvs[1]);
+                  addUV(uvs[2]);
+
+              }
+
+              function f4(a, b, c, d) {
+
+                  addVertex(a);
+                  addVertex(b);
+                  addVertex(d);
+
+                  addVertex(b);
+                  addVertex(c);
+                  addVertex(d);
+
+
+                  var nextIndex = verticesArray.length / 3;
+                  var uvs = uvgen.generateSideWallUV(scope, verticesArray, nextIndex - 6, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+
+                  addUV(uvs[0]);
+                  addUV(uvs[1]);
+                  addUV(uvs[3]);
+
+                  addUV(uvs[1]);
+                  addUV(uvs[2]);
+                  addUV(uvs[3]);
+
+              }
+
+              function addVertex(index) {
+
+                  verticesArray.push(placeholder[index * 3 + 0]);
+                  verticesArray.push(placeholder[index * 3 + 1]);
+                  verticesArray.push(placeholder[index * 3 + 2]);
+
+              }
+
+
+              function addUV(vector2) {
+
+                  uvArray.push(vector2.x);
+                  uvArray.push(vector2.y);
+
+              }
+
+          }
+      }
+  }
+
+  let WorldUVGenerator = {
+
+      generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
+
+          var a_x = vertices[indexA * 3];
+          var a_y = vertices[indexA * 3 + 1];
+          var b_x = vertices[indexB * 3];
+          var b_y = vertices[indexB * 3 + 1];
+          var c_x = vertices[indexC * 3];
+          var c_y = vertices[indexC * 3 + 1];
+
+          return [
+              new Vector2(a_x, a_y),
+              new Vector2(b_x, b_y),
+              new Vector2(c_x, c_y)
+          ];
+
+      },
+
+      generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
+
+          var a_x = vertices[indexA * 3];
+          var a_y = vertices[indexA * 3 + 1];
+          var a_z = vertices[indexA * 3 + 2];
+          var b_x = vertices[indexB * 3];
+          var b_y = vertices[indexB * 3 + 1];
+          var b_z = vertices[indexB * 3 + 2];
+          var c_x = vertices[indexC * 3];
+          var c_y = vertices[indexC * 3 + 1];
+          var c_z = vertices[indexC * 3 + 2];
+          var d_x = vertices[indexD * 3];
+          var d_y = vertices[indexD * 3 + 1];
+          var d_z = vertices[indexD * 3 + 2];
+
+          if (Math.abs(a_y - b_y) < 0.01) {
+
+              return [
+                  new Vector2(a_x, 1 - a_z),
+                  new Vector2(b_x, 1 - b_z),
+                  new Vector2(c_x, 1 - c_z),
+                  new Vector2(d_x, 1 - d_z)
+              ];
+
+          } else {
+
+              return [
+                  new Vector2(a_y, 1 - a_z),
+                  new Vector2(b_y, 1 - b_z),
+                  new Vector2(c_y, 1 - c_z),
+                  new Vector2(d_y, 1 - d_z)
+              ];
+
+          }
+
+      }
+  };
+
   //所有的预定几何体
 
   class MeshLambertMaterial extends Material {
@@ -20391,25 +20495,6 @@ var Chartx3d = (function () {
 
       }
 
-  }
-
-  class DirectionalLight extends Light {
-      constructor(color, intensity) {
-          super(color, intensity);
-
-          this.type = 'DirectionalLight';
-
-          this.position.copy(Object3D.DefaultUp);
-          this.updateMatrix();
-
-          this.target = new Object3D();
-
-
-      }
-      
-      get isDirectionalLight() {
-          return true;
-      }
   }
 
   class AmbientLight extends Light {
@@ -21161,6 +21246,114 @@ var Chartx3d = (function () {
   	}
    }
 
+  class EllipseCurve extends Curve {
+      constructor(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
+          
+          super();
+
+          this.type = 'EllipseCurve';
+
+          this.aX = aX || 0;
+          this.aY = aY || 0;
+
+          this.xRadius = xRadius || 1;
+          this.yRadius = yRadius || 1;
+
+          this.aStartAngle = aStartAngle || 0;
+          this.aEndAngle = aEndAngle || 2 * Math.PI;
+
+          this.aClockwise = aClockwise || false;
+
+          this.aRotation = aRotation || 0;
+
+      }
+      get isEllipseCurve() {
+          return true;
+      }
+
+      getPoint(t, optionalTarget) {
+
+          var point = optionalTarget || new Vector2();
+
+          var twoPi = Math.PI * 2;
+          var deltaAngle = this.aEndAngle - this.aStartAngle;
+          var samePoints = Math.abs(deltaAngle) < Number.EPSILON;
+
+          // ensures that deltaAngle is 0 .. 2 PI
+          while (deltaAngle < 0) deltaAngle += twoPi;
+          while (deltaAngle > twoPi) deltaAngle -= twoPi;
+
+          if (deltaAngle < Number.EPSILON) {
+
+              if (samePoints) {
+
+                  deltaAngle = 0;
+
+              } else {
+
+                  deltaAngle = twoPi;
+
+              }
+
+          }
+
+          if (this.aClockwise === true && !samePoints) {
+
+              if (deltaAngle === twoPi) {
+
+                  deltaAngle = - twoPi;
+
+              } else {
+
+                  deltaAngle = deltaAngle - twoPi;
+
+              }
+
+          }
+
+          var angle = this.aStartAngle + t * deltaAngle;
+          var x = this.aX + this.xRadius * Math.cos(angle);
+          var y = this.aY + this.yRadius * Math.sin(angle);
+
+          if (this.aRotation !== 0) {
+
+              var cos = Math.cos(this.aRotation);
+              var sin = Math.sin(this.aRotation);
+
+              var tx = x - this.aX;
+              var ty = y - this.aY;
+
+              // Rotate the point about the center of the ellipse.
+              x = tx * cos - ty * sin + this.aX;
+              y = tx * sin + ty * cos + this.aY;
+
+          }
+
+          return point.set(x, y);
+
+      }
+      copy(source) {
+
+          Curve.prototype.copy.call(this, source);
+
+          this.aX = source.aX;
+          this.aY = source.aY;
+
+          this.xRadius = source.xRadius;
+          this.yRadius = source.yRadius;
+
+          this.aStartAngle = source.aStartAngle;
+          this.aEndAngle = source.aEndAngle;
+
+          this.aClockwise = source.aClockwise;
+
+          this.aRotation = source.aRotation;
+
+          return this;
+
+      }
+  }
+
   /**
    * @author zz85 https://github.com/zz85
    *
@@ -21406,6 +21599,737 @@ var Chartx3d = (function () {
 
       }
   }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   *
+   * Bezier Curves formulas obtained from
+   * http://en.wikipedia.org/wiki/Bézier_curve
+   */
+
+  function CatmullRom(t, p0, p1, p2, p3) {
+
+      var v0 = (p2 - p0) * 0.5;
+      var v1 = (p3 - p1) * 0.5;
+      var t2 = t * t;
+      var t3 = t * t2;
+      return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (- 3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1;
+
+  }
+
+  //
+
+  function QuadraticBezierP0(t, p) {
+
+      var k = 1 - t;
+      return k * k * p;
+
+  }
+
+  function QuadraticBezierP1(t, p) {
+
+      return 2 * (1 - t) * t * p;
+
+  }
+
+  function QuadraticBezierP2(t, p) {
+
+      return t * t * p;
+
+  }
+
+  function QuadraticBezier(t, p0, p1, p2) {
+
+      return QuadraticBezierP0(t, p0) + QuadraticBezierP1(t, p1) +
+          QuadraticBezierP2(t, p2);
+
+  }
+
+  //
+
+  function CubicBezierP0(t, p) {
+
+      var k = 1 - t;
+      return k * k * k * p;
+
+  }
+
+  function CubicBezierP1(t, p) {
+
+      var k = 1 - t;
+      return 3 * k * k * t * p;
+
+  }
+
+  function CubicBezierP2(t, p) {
+
+      return 3 * (1 - t) * t * t * p;
+
+  }
+
+  function CubicBezierP3(t, p) {
+
+      return t * t * t * p;
+
+  }
+
+  function CubicBezier(t, p0, p1, p2, p3) {
+
+      return CubicBezierP0(t, p0) + CubicBezierP1(t, p1) + CubicBezierP2(t, p2) +
+          CubicBezierP3(t, p3);
+
+  }
+
+  class CubicBezierCurve extends Curve {
+
+      constructor(v0, v1, v2, v3) {
+          super();
+
+          this.type = 'CubicBezierCurve';
+
+          this.v0 = v0 || new Vector2();
+          this.v1 = v1 || new Vector2();
+          this.v2 = v2 || new Vector2();
+          this.v3 = v3 || new Vector2();
+
+      }
+      get isCubicBezierCurve() {
+          return true;
+      }
+      getPoint(t, optionalTarget) {
+
+          var point = optionalTarget || new Vector2();
+
+          var v0 = this.v0, v1 = this.v1, v2 = this.v2, v3 = this.v3;
+
+          point.set(
+              CubicBezier(t, v0.x, v1.x, v2.x, v3.x),
+              CubicBezier(t, v0.y, v1.y, v2.y, v3.y)
+          );
+
+          return point;
+
+      }
+      copy(source) {
+
+          Curve.prototype.copy.call(this, source);
+
+          this.v0.copy(source.v0);
+          this.v1.copy(source.v1);
+          this.v2.copy(source.v2);
+          this.v3.copy(source.v3);
+
+          return this;
+
+      }
+  }
+
+  class LineCurve extends Curve {
+
+      constructor(v1, v2) {
+
+          super();
+          this.type = 'LineCurve';
+
+          this.v1 = v1 || new Vector2();
+          this.v2 = v2 || new Vector2();
+
+      }
+      get isLineCurve() {
+          return true;
+      }
+
+      getPoint(t, optionalTarget) {
+
+          var point = optionalTarget || new Vector2();
+
+          if (t === 1) {
+
+              point.copy(this.v2);
+
+          } else {
+
+              point.copy(this.v2).sub(this.v1);
+              point.multiplyScalar(t).add(this.v1);
+
+          }
+
+          return point;
+
+      };
+
+      // Line curve is linear, so we can overwrite default getPointAt
+
+      getPointAt(u, optionalTarget) {
+
+          return this.getPoint(u, optionalTarget);
+
+      };
+
+      getTangent( /* t */) {
+
+          var tangent = this.v2.clone().sub(this.v1);
+
+          return tangent.normalize();
+
+      };
+
+      copy(source) {
+
+          super.copy(source);
+
+          this.v1.copy(source.v1);
+          this.v2.copy(source.v2);
+
+          return this;
+
+      };
+
+  }
+
+  class QuadraticBezierCurve extends Curve {
+
+      constructor(v0, v1, v2) {
+
+          super();
+
+          this.type = 'QuadraticBezierCurve';
+
+          this.v0 = v0 || new Vector2();
+          this.v1 = v1 || new Vector2();
+          this.v2 = v2 || new Vector2();
+
+      }
+
+      get isQuadraticBezierCurve() {
+          return true;
+      }
+
+
+      getPoint(t, optionalTarget) {
+
+          var point = optionalTarget || new Vector2();
+
+          var v0 = this.v0, v1 = this.v1, v2 = this.v2;
+
+          point.set(
+              QuadraticBezier(t, v0.x, v1.x, v2.x),
+              QuadraticBezier(t, v0.y, v1.y, v2.y)
+          );
+
+          return point;
+
+      }
+
+      copy(source) {
+
+          super.copy(source);
+
+          this.v0.copy(source.v0);
+          this.v1.copy(source.v1);
+          this.v2.copy(source.v2);
+
+          return this;
+
+      }
+
+  }
+
+  class SplineCurve extends Curve {
+
+      constructor(points /* array of Vector2 */) {
+
+          super();
+
+          this.type = 'SplineCurve';
+
+          this.points = points || [];
+
+      }
+
+      get isSplineCurve() {
+          return true;
+      }
+
+      getPoint(t, optionalTarget) {
+
+          var point = optionalTarget || new Vector2();
+
+          var points = this.points;
+          var p = (points.length - 1) * t;
+
+          var intPoint = Math.floor(p);
+          var weight = p - intPoint;
+
+          var p0 = points[intPoint === 0 ? intPoint : intPoint - 1];
+          var p1 = points[intPoint];
+          var p2 = points[intPoint > points.length - 2 ? points.length - 1 : intPoint + 1];
+          var p3 = points[intPoint > points.length - 3 ? points.length - 1 : intPoint + 2];
+
+          point.set(
+              CatmullRom(weight, p0.x, p1.x, p2.x, p3.x),
+              CatmullRom(weight, p0.y, p1.y, p2.y, p3.y)
+          );
+
+          return point;
+
+      }
+
+      copy(source) {
+
+          super.copy(source);
+
+          this.points = [];
+
+          for (var i = 0, l = source.points.length; i < l; i++) {
+
+              var point = source.points[i];
+
+              this.points.push(point.clone());
+
+          }
+
+          return this;
+
+      }
+
+
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   *
+   **/
+
+  /**************************************************************
+   *	Curved Path - a curve path is simply a array of connected
+   *  curves, but retains the api of a curve
+   **************************************************************/
+
+
+  class CurvePath extends Curve {
+      constructor() {
+          super();
+
+          this.type = 'CurvePath';
+
+          this.curves = [];
+          this.autoClose = false; // Automatically closes the path
+      }
+      add(curve) {
+
+          this.curves.push(curve);
+
+      }
+
+      closePath() {
+
+          // Add a line curve if start and end of lines are not connected
+          var startPoint = this.curves[0].getPoint(0);
+          var endPoint = this.curves[this.curves.length - 1].getPoint(1);
+
+          if (!startPoint.equals(endPoint)) {
+
+              this.curves.push(new LineCurve(endPoint, startPoint));
+
+          }
+
+      }
+
+      // To get accurate point with reference to
+      // entire path distance at time t,
+      // following has to be done:
+
+      // 1. Length of each sub path have to be known
+      // 2. Locate and identify type of curve
+      // 3. Get t for the curve
+      // 4. Return curve.getPointAt(t')
+
+      getPoint(t) {
+
+          var d = t * this.getLength();
+          var curveLengths = this.getCurveLengths();
+          var i = 0;
+
+          // To think about boundaries points.
+
+          while (i < curveLengths.length) {
+
+              if (curveLengths[i] >= d) {
+
+                  var diff = curveLengths[i] - d;
+                  var curve = this.curves[i];
+
+                  var segmentLength = curve.getLength();
+                  var u = segmentLength === 0 ? 0 : 1 - diff / segmentLength;
+
+                  return curve.getPointAt(u);
+
+              }
+
+              i++;
+
+          }
+
+          return null;
+
+          // loop where sum != 0, sum > d , sum+1 <d
+
+      }
+
+      // We cannot use the default THREE.Curve getPoint() with getLength() because in
+      // THREE.Curve, getLength() depends on getPoint() but in THREE.CurvePath
+      // getPoint() depends on getLength
+
+      getLength() {
+
+          var lens = this.getCurveLengths();
+          return lens[lens.length - 1];
+
+      }
+
+      // cacheLengths must be recalculated.
+      updateArcLengths() {
+
+          this.needsUpdate = true;
+          this.cacheLengths = null;
+          this.getCurveLengths();
+
+      }
+
+      // Compute lengths and cache them
+      // We cannot overwrite getLengths() because UtoT mapping uses it.
+
+      getCurveLengths() {
+
+          // We use cache values if curves and cache array are same length
+
+          if (this.cacheLengths && this.cacheLengths.length === this.curves.length) {
+
+              return this.cacheLengths;
+
+          }
+
+          // Get length of sub-curve
+          // Push sums into cached array
+
+          var lengths = [], sums = 0;
+
+          for (var i = 0, l = this.curves.length; i < l; i++) {
+
+              sums += this.curves[i].getLength();
+              lengths.push(sums);
+
+          }
+
+          this.cacheLengths = lengths;
+
+          return lengths;
+
+      }
+
+      getSpacedPoints(divisions) {
+
+          if (divisions === undefined) divisions = 40;
+
+          var points = [];
+
+          for (var i = 0; i <= divisions; i++) {
+
+              points.push(this.getPoint(i / divisions));
+
+          }
+
+          if (this.autoClose) {
+
+              points.push(points[0]);
+
+          }
+
+          return points;
+
+      }
+
+      getPoints(divisions) {
+
+          divisions = divisions || 12;
+
+          var points = [], last;
+
+          for (var i = 0, curves = this.curves; i < curves.length; i++) {
+
+              var curve = curves[i];
+              var resolution = (curve && curve.isEllipseCurve) ? divisions * 2
+                  : (curve && curve.isLineCurve) ? 1
+                      : (curve && curve.isSplineCurve) ? divisions * curve.points.length
+                          : divisions;
+
+              var pts = curve.getPoints(resolution);
+
+              for (var j = 0; j < pts.length; j++) {
+
+                  var point = pts[j];
+
+                  if (last && last.equals(point)) continue; // ensures no consecutive points are duplicates
+
+                  points.push(point);
+                  last = point;
+
+              }
+
+          }
+
+          if (this.autoClose && points.length > 1 && !points[points.length - 1].equals(points[0])) {
+
+              points.push(points[0]);
+
+          }
+
+          return points;
+
+      }
+
+      copy(source) {
+
+          Curve.prototype.copy.call(this, source);
+
+          this.curves = [];
+
+          for (var i = 0, l = source.curves.length; i < l; i++) {
+
+              var curve = source.curves[i];
+
+              this.curves.push(curve.clone());
+
+          }
+
+          this.autoClose = source.autoClose;
+
+          return this;
+
+      }
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   * Creates free form 2d path using series of points, lines or curves.
+   **/
+
+  class Path extends CurvePath {
+      constructor(points) {
+
+          super();
+
+          this.type = 'Path';
+
+          this.currentPoint = new Vector2();
+
+          if (points) {
+
+              this.setFromPoints(points);
+
+          }
+      }
+      setFromPoints(points) {
+
+          this.moveTo(points[0].x, points[0].y);
+
+          for (var i = 1, l = points.length; i < l; i++) {
+
+              this.lineTo(points[i].x, points[i].y);
+
+          }
+
+      }
+
+      moveTo(x, y) {
+
+          this.currentPoint.set(x, y); // TODO consider referencing vectors instead of copying?
+
+      }
+
+      lineTo(x, y) {
+
+          var curve = new LineCurve(this.currentPoint.clone(), new Vector2(x, y));
+          this.curves.push(curve);
+
+          this.currentPoint.set(x, y);
+
+      }
+
+      quadraticCurveTo(aCPx, aCPy, aX, aY) {
+
+          var curve = new QuadraticBezierCurve(
+              this.currentPoint.clone(),
+              new Vector2(aCPx, aCPy),
+              new Vector2(aX, aY)
+          );
+
+          this.curves.push(curve);
+
+          this.currentPoint.set(aX, aY);
+
+      }
+
+      bezierCurveTo(aCP1x, aCP1y, aCP2x, aCP2y, aX, aY) {
+
+          var curve = new CubicBezierCurve(
+              this.currentPoint.clone(),
+              new Vector2(aCP1x, aCP1y),
+              new Vector2(aCP2x, aCP2y),
+              new Vector2(aX, aY)
+          );
+
+          this.curves.push(curve);
+
+          this.currentPoint.set(aX, aY);
+
+      }
+
+      splineThru(pts /*Array of Vector*/) {
+
+          var npts = [this.currentPoint.clone()].concat(pts);
+
+          var curve = new SplineCurve(npts);
+          this.curves.push(curve);
+
+          this.currentPoint.copy(pts[pts.length - 1]);
+
+      }
+
+      arc(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise) {
+
+          var x0 = this.currentPoint.x;
+          var y0 = this.currentPoint.y;
+
+          this.absarc(aX + x0, aY + y0, aRadius,
+              aStartAngle, aEndAngle, aClockwise);
+
+      }
+
+      absarc(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise) {
+
+          this.absellipse(aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise);
+
+      }
+
+      ellipse(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
+
+          var x0 = this.currentPoint.x;
+          var y0 = this.currentPoint.y;
+
+          this.absellipse(aX + x0, aY + y0, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation);
+
+      }
+
+      absellipse(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
+
+          var curve = new EllipseCurve(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation);
+
+          if (this.curves.length > 0) {
+
+              // if a previous curve is present, attempt to join
+              var firstPoint = curve.getPoint(0);
+
+              if (!firstPoint.equals(this.currentPoint)) {
+
+                  this.lineTo(firstPoint.x, firstPoint.y);
+
+              }
+
+          }
+
+          this.curves.push(curve);
+
+          var lastPoint = curve.getPoint(1);
+          this.currentPoint.copy(lastPoint);
+
+      }
+
+      copy(source) {
+
+          super.copy(source);
+
+          this.currentPoint.copy(source.currentPoint);
+
+          return this;
+
+      }
+
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   * Defines a 2d shape plane using paths.
+   **/
+
+  // STEP 1 Create a path.
+  // STEP 2 Turn path into shape.
+  // STEP 3 ExtrudeGeometry takes in Shape/Shapes
+  // STEP 3a - Extract points from each shape, turn to vertices
+  // STEP 3b - Triangulate each shape, add faces.
+
+  class Shape extends Path {
+      constructor(points) {
+
+          super(points);
+
+          //this.uuid = _Math.generateUUID();
+
+          this.type = 'Shape';
+
+          this.holes = [];
+
+      }
+      getPointsHoles(divisions) {
+
+          var holesPts = [];
+
+          for (var i = 0, l = this.holes.length; i < l; i++) {
+
+              holesPts[i] = this.holes[i].getPoints(divisions);
+
+          }
+
+          return holesPts;
+
+      }
+
+      // get points of shape and holes (keypoints based on segments parameter)
+
+      extractPoints(divisions) {
+
+          return {
+
+              shape: this.getPoints(divisions),
+              holes: this.getPointsHoles(divisions)
+
+          };
+
+      }
+      copy(source) {
+
+          super.copy(source);
+
+          this.holes = [];
+
+          for (var i = 0, l = source.holes.length; i < l; i++) {
+
+              var hole = source.holes[i];
+
+              this.holes.push(hole.clone());
+
+          }
+
+          return this;
+
+      }
+  }
+
+  /**
+   * @author zz85 / http://www.lab4games.net/zz85/blog
+   * minimal class for proxing functions to Path. Replaces old "extractSubpaths()"
+   **/
 
   class Framework extends Events {
       constructor() {
@@ -21735,17 +22659,21 @@ var Chartx3d = (function () {
   class RenderFont {
       constructor({
           scale = 0,
-          color = '#333333',
+          fillStyle = '#333333',
+          strokeStyle = null,
+          lineWidth = 1,
           fontSize = 14,
           fontFamily = '微软雅黑,sans-serif',
           isBold = false,
           lineHeight = 1.2,
-          defaultTextureWidth = 128,
+          defaultTextureWidth = 256,
           canvas = null
       } = {}) {
           this.scale = scale || window.devicePixelRatio || 1;
           this.style = {
-              color,
+              fillStyle,
+              strokeStyle,
+              lineWidth,
               fontSize,
               fontFamily,
               isBold,
@@ -21762,7 +22690,7 @@ var Chartx3d = (function () {
 
       }
       getFont() {
-          return this.style.isBold ? 'bold ' : 'normal ' + this.style.fontSize + 'px ' + this.style.fontFamily;
+          return (this.style.isBold ? 'bold ' : 'normal ') + this.style.fontSize + 'px ' + this.style.fontFamily;
       }
       getTextWidth(txt, font = "") {
           let width = 0;
@@ -21900,12 +22828,16 @@ var Chartx3d = (function () {
           let { maxWidth, maxHeight, canvasWidth, canvasHeight, uvs, sizes } = this.computeUvsAndCanvasSize(texts);
           this.setCanvasSize(canvasWidth, canvasHeight);
 
-          me.context.fillStyle = me.style.color;
+          me.context.fillStyle = me.style.fillStyle;
+          if (me.style.strokeStyle) {
+              me.context.strokeStyle = me.style.strokeStyle;
+              me.context.lineWidth = me.style.lineWidth;
+          }
           me.context.textAlign = me.style.textAlign;
           me.context.textBaseline = me.style.textBaseline;
           me.context.webkitImageSmoothingEnabled = true;
 
-          me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize + 'px ' + me.style.fontFamily;
+          me.context.font = this.getFont();
 
 
           texts.forEach(text => {
@@ -21922,11 +22854,13 @@ var Chartx3d = (function () {
 
               txtArr.forEach((txt, line) => {
                   me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+                  if (me.style.strokeStyle) {
+                      me.context.strokeText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+                  }
               });
 
           });
 
-          window._debug = false;
           if (window._debug) {
               //console.log('left,top', left, top, maxWidth, size.width);
               document.body.appendChild(me.canvas);
@@ -21956,656 +22890,6 @@ var Chartx3d = (function () {
 
   }
 
-  var earcut_1 = earcut;
-  var default_1 = earcut;
-
-  function earcut(data, holeIndices, dim) {
-
-      dim = dim || 2;
-
-      var hasHoles = holeIndices && holeIndices.length,
-          outerLen = hasHoles ? holeIndices[0] * dim : data.length,
-          outerNode = linkedList(data, 0, outerLen, dim, true),
-          triangles = [];
-
-      if (!outerNode) return triangles;
-
-      var minX, minY, maxX, maxY, x, y, invSize;
-
-      if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
-
-      // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
-      if (data.length > 80 * dim) {
-          minX = maxX = data[0];
-          minY = maxY = data[1];
-
-          for (var i = dim; i < outerLen; i += dim) {
-              x = data[i];
-              y = data[i + 1];
-              if (x < minX) minX = x;
-              if (y < minY) minY = y;
-              if (x > maxX) maxX = x;
-              if (y > maxY) maxY = y;
-          }
-
-          // minX, minY and invSize are later used to transform coords into integers for z-order calculation
-          invSize = Math.max(maxX - minX, maxY - minY);
-          invSize = invSize !== 0 ? 1 / invSize : 0;
-      }
-
-      earcutLinked(outerNode, triangles, dim, minX, minY, invSize);
-
-      return triangles;
-  }
-
-  // create a circular doubly linked list from polygon points in the specified winding order
-  function linkedList(data, start, end, dim, clockwise) {
-      var i, last;
-
-      if (clockwise === (signedArea(data, start, end, dim) > 0)) {
-          for (i = start; i < end; i += dim) last = insertNode(i, data[i], data[i + 1], last);
-      } else {
-          for (i = end - dim; i >= start; i -= dim) last = insertNode(i, data[i], data[i + 1], last);
-      }
-
-      if (last && equals(last, last.next)) {
-          removeNode(last);
-          last = last.next;
-      }
-
-      return last;
-  }
-
-  // eliminate colinear or duplicate points
-  function filterPoints(start, end) {
-      if (!start) return start;
-      if (!end) end = start;
-
-      var p = start,
-          again;
-      do {
-          again = false;
-
-          if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
-              removeNode(p);
-              p = end = p.prev;
-              if (p === p.next) break;
-              again = true;
-
-          } else {
-              p = p.next;
-          }
-      } while (again || p !== end);
-
-      return end;
-  }
-
-  // main ear slicing loop which triangulates a polygon (given as a linked list)
-  function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
-      if (!ear) return;
-
-      // interlink polygon nodes in z-order
-      if (!pass && invSize) indexCurve(ear, minX, minY, invSize);
-
-      var stop = ear,
-          prev, next;
-
-      // iterate through ears, slicing them one by one
-      while (ear.prev !== ear.next) {
-          prev = ear.prev;
-          next = ear.next;
-
-          if (invSize ? isEarHashed(ear, minX, minY, invSize) : isEar(ear)) {
-              // cut off the triangle
-              triangles.push(prev.i / dim);
-              triangles.push(ear.i / dim);
-              triangles.push(next.i / dim);
-
-              removeNode(ear);
-
-              // skipping the next vertice leads to less sliver triangles
-              ear = next.next;
-              stop = next.next;
-
-              continue;
-          }
-
-          ear = next;
-
-          // if we looped through the whole remaining polygon and can't find any more ears
-          if (ear === stop) {
-              // try filtering points and slicing again
-              if (!pass) {
-                  earcutLinked(filterPoints(ear), triangles, dim, minX, minY, invSize, 1);
-
-              // if this didn't work, try curing all small self-intersections locally
-              } else if (pass === 1) {
-                  ear = cureLocalIntersections(ear, triangles, dim);
-                  earcutLinked(ear, triangles, dim, minX, minY, invSize, 2);
-
-              // as a last resort, try splitting the remaining polygon into two
-              } else if (pass === 2) {
-                  splitEarcut(ear, triangles, dim, minX, minY, invSize);
-              }
-
-              break;
-          }
-      }
-  }
-
-  // check whether a polygon node forms a valid ear with adjacent nodes
-  function isEar(ear) {
-      var a = ear.prev,
-          b = ear,
-          c = ear.next;
-
-      if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
-
-      // now make sure we don't have other points inside the potential ear
-      var p = ear.next.next;
-
-      while (p !== ear.prev) {
-          if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-              area(p.prev, p, p.next) >= 0) return false;
-          p = p.next;
-      }
-
-      return true;
-  }
-
-  function isEarHashed(ear, minX, minY, invSize) {
-      var a = ear.prev,
-          b = ear,
-          c = ear.next;
-
-      if (area(a, b, c) >= 0) return false; // reflex, can't be an ear
-
-      // triangle bbox; min & max are calculated like this for speed
-      var minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x),
-          minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y),
-          maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x),
-          maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
-
-      // z-order range for the current triangle bbox;
-      var minZ = zOrder(minTX, minTY, minX, minY, invSize),
-          maxZ = zOrder(maxTX, maxTY, minX, minY, invSize);
-
-      var p = ear.prevZ,
-          n = ear.nextZ;
-
-      // look for points inside the triangle in both directions
-      while (p && p.z >= minZ && n && n.z <= maxZ) {
-          if (p !== ear.prev && p !== ear.next &&
-              pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-              area(p.prev, p, p.next) >= 0) return false;
-          p = p.prevZ;
-
-          if (n !== ear.prev && n !== ear.next &&
-              pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-              area(n.prev, n, n.next) >= 0) return false;
-          n = n.nextZ;
-      }
-
-      // look for remaining points in decreasing z-order
-      while (p && p.z >= minZ) {
-          if (p !== ear.prev && p !== ear.next &&
-              pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-              area(p.prev, p, p.next) >= 0) return false;
-          p = p.prevZ;
-      }
-
-      // look for remaining points in increasing z-order
-      while (n && n.z <= maxZ) {
-          if (n !== ear.prev && n !== ear.next &&
-              pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-              area(n.prev, n, n.next) >= 0) return false;
-          n = n.nextZ;
-      }
-
-      return true;
-  }
-
-  // go through all polygon nodes and cure small local self-intersections
-  function cureLocalIntersections(start, triangles, dim) {
-      var p = start;
-      do {
-          var a = p.prev,
-              b = p.next.next;
-
-          if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
-
-              triangles.push(a.i / dim);
-              triangles.push(p.i / dim);
-              triangles.push(b.i / dim);
-
-              // remove two nodes involved
-              removeNode(p);
-              removeNode(p.next);
-
-              p = start = b;
-          }
-          p = p.next;
-      } while (p !== start);
-
-      return p;
-  }
-
-  // try splitting polygon into two and triangulate them independently
-  function splitEarcut(start, triangles, dim, minX, minY, invSize) {
-      // look for a valid diagonal that divides the polygon into two
-      var a = start;
-      do {
-          var b = a.next.next;
-          while (b !== a.prev) {
-              if (a.i !== b.i && isValidDiagonal(a, b)) {
-                  // split the polygon in two by the diagonal
-                  var c = splitPolygon(a, b);
-
-                  // filter colinear points around the cuts
-                  a = filterPoints(a, a.next);
-                  c = filterPoints(c, c.next);
-
-                  // run earcut on each half
-                  earcutLinked(a, triangles, dim, minX, minY, invSize);
-                  earcutLinked(c, triangles, dim, minX, minY, invSize);
-                  return;
-              }
-              b = b.next;
-          }
-          a = a.next;
-      } while (a !== start);
-  }
-
-  // link every hole into the outer loop, producing a single-ring polygon without holes
-  function eliminateHoles(data, holeIndices, outerNode, dim) {
-      var queue = [],
-          i, len, start, end, list;
-
-      for (i = 0, len = holeIndices.length; i < len; i++) {
-          start = holeIndices[i] * dim;
-          end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
-          list = linkedList(data, start, end, dim, false);
-          if (list === list.next) list.steiner = true;
-          queue.push(getLeftmost(list));
-      }
-
-      queue.sort(compareX);
-
-      // process holes from left to right
-      for (i = 0; i < queue.length; i++) {
-          eliminateHole(queue[i], outerNode);
-          outerNode = filterPoints(outerNode, outerNode.next);
-      }
-
-      return outerNode;
-  }
-
-  function compareX(a, b) {
-      return a.x - b.x;
-  }
-
-  // find a bridge between vertices that connects hole with an outer ring and and link it
-  function eliminateHole(hole, outerNode) {
-      outerNode = findHoleBridge(hole, outerNode);
-      if (outerNode) {
-          var b = splitPolygon(outerNode, hole);
-          filterPoints(b, b.next);
-      }
-  }
-
-  // David Eberly's algorithm for finding a bridge between hole and outer polygon
-  function findHoleBridge(hole, outerNode) {
-      var p = outerNode,
-          hx = hole.x,
-          hy = hole.y,
-          qx = -Infinity,
-          m;
-
-      // find a segment intersected by a ray from the hole's leftmost point to the left;
-      // segment's endpoint with lesser x will be potential connection point
-      do {
-          if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
-              var x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
-              if (x <= hx && x > qx) {
-                  qx = x;
-                  if (x === hx) {
-                      if (hy === p.y) return p;
-                      if (hy === p.next.y) return p.next;
-                  }
-                  m = p.x < p.next.x ? p : p.next;
-              }
-          }
-          p = p.next;
-      } while (p !== outerNode);
-
-      if (!m) return null;
-
-      if (hx === qx) return m.prev; // hole touches outer segment; pick lower endpoint
-
-      // look for points inside the triangle of hole point, segment intersection and endpoint;
-      // if there are no points found, we have a valid connection;
-      // otherwise choose the point of the minimum angle with the ray as connection point
-
-      var stop = m,
-          mx = m.x,
-          my = m.y,
-          tanMin = Infinity,
-          tan;
-
-      p = m.next;
-
-      while (p !== stop) {
-          if (hx >= p.x && p.x >= mx && hx !== p.x &&
-                  pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
-
-              tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
-
-              if ((tan < tanMin || (tan === tanMin && p.x > m.x)) && locallyInside(p, hole)) {
-                  m = p;
-                  tanMin = tan;
-              }
-          }
-
-          p = p.next;
-      }
-
-      return m;
-  }
-
-  // interlink polygon nodes in z-order
-  function indexCurve(start, minX, minY, invSize) {
-      var p = start;
-      do {
-          if (p.z === null) p.z = zOrder(p.x, p.y, minX, minY, invSize);
-          p.prevZ = p.prev;
-          p.nextZ = p.next;
-          p = p.next;
-      } while (p !== start);
-
-      p.prevZ.nextZ = null;
-      p.prevZ = null;
-
-      sortLinked(p);
-  }
-
-  // Simon Tatham's linked list merge sort algorithm
-  // http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
-  function sortLinked(list) {
-      var i, p, q, e, tail, numMerges, pSize, qSize,
-          inSize = 1;
-
-      do {
-          p = list;
-          list = null;
-          tail = null;
-          numMerges = 0;
-
-          while (p) {
-              numMerges++;
-              q = p;
-              pSize = 0;
-              for (i = 0; i < inSize; i++) {
-                  pSize++;
-                  q = q.nextZ;
-                  if (!q) break;
-              }
-              qSize = inSize;
-
-              while (pSize > 0 || (qSize > 0 && q)) {
-
-                  if (pSize !== 0 && (qSize === 0 || !q || p.z <= q.z)) {
-                      e = p;
-                      p = p.nextZ;
-                      pSize--;
-                  } else {
-                      e = q;
-                      q = q.nextZ;
-                      qSize--;
-                  }
-
-                  if (tail) tail.nextZ = e;
-                  else list = e;
-
-                  e.prevZ = tail;
-                  tail = e;
-              }
-
-              p = q;
-          }
-
-          tail.nextZ = null;
-          inSize *= 2;
-
-      } while (numMerges > 1);
-
-      return list;
-  }
-
-  // z-order of a point given coords and inverse of the longer side of data bbox
-  function zOrder(x, y, minX, minY, invSize) {
-      // coords are transformed into non-negative 15-bit integer range
-      x = 32767 * (x - minX) * invSize;
-      y = 32767 * (y - minY) * invSize;
-
-      x = (x | (x << 8)) & 0x00FF00FF;
-      x = (x | (x << 4)) & 0x0F0F0F0F;
-      x = (x | (x << 2)) & 0x33333333;
-      x = (x | (x << 1)) & 0x55555555;
-
-      y = (y | (y << 8)) & 0x00FF00FF;
-      y = (y | (y << 4)) & 0x0F0F0F0F;
-      y = (y | (y << 2)) & 0x33333333;
-      y = (y | (y << 1)) & 0x55555555;
-
-      return x | (y << 1);
-  }
-
-  // find the leftmost node of a polygon ring
-  function getLeftmost(start) {
-      var p = start,
-          leftmost = start;
-      do {
-          if (p.x < leftmost.x) leftmost = p;
-          p = p.next;
-      } while (p !== start);
-
-      return leftmost;
-  }
-
-  // check if a point lies within a convex triangle
-  function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
-      return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
-             (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
-             (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
-  }
-
-  // check if a diagonal between two polygon nodes is valid (lies in polygon interior)
-  function isValidDiagonal(a, b) {
-      return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) &&
-             locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b);
-  }
-
-  // signed area of a triangle
-  function area(p, q, r) {
-      return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-  }
-
-  // check if two points are equal
-  function equals(p1, p2) {
-      return p1.x === p2.x && p1.y === p2.y;
-  }
-
-  // check if two segments intersect
-  function intersects(p1, q1, p2, q2) {
-      if ((equals(p1, q1) && equals(p2, q2)) ||
-          (equals(p1, q2) && equals(p2, q1))) return true;
-      return area(p1, q1, p2) > 0 !== area(p1, q1, q2) > 0 &&
-             area(p2, q2, p1) > 0 !== area(p2, q2, q1) > 0;
-  }
-
-  // check if a polygon diagonal intersects any polygon segments
-  function intersectsPolygon(a, b) {
-      var p = a;
-      do {
-          if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&
-                  intersects(p, p.next, a, b)) return true;
-          p = p.next;
-      } while (p !== a);
-
-      return false;
-  }
-
-  // check if a polygon diagonal is locally inside the polygon
-  function locallyInside(a, b) {
-      return area(a.prev, a, a.next) < 0 ?
-          area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 :
-          area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
-  }
-
-  // check if the middle point of a polygon diagonal is inside the polygon
-  function middleInside(a, b) {
-      var p = a,
-          inside = false,
-          px = (a.x + b.x) / 2,
-          py = (a.y + b.y) / 2;
-      do {
-          if (((p.y > py) !== (p.next.y > py)) && p.next.y !== p.y &&
-                  (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
-              inside = !inside;
-          p = p.next;
-      } while (p !== a);
-
-      return inside;
-  }
-
-  // link two polygon vertices with a bridge; if the vertices belong to the same ring, it splits polygon into two;
-  // if one belongs to the outer ring and another to a hole, it merges it into a single ring
-  function splitPolygon(a, b) {
-      var a2 = new Node(a.i, a.x, a.y),
-          b2 = new Node(b.i, b.x, b.y),
-          an = a.next,
-          bp = b.prev;
-
-      a.next = b;
-      b.prev = a;
-
-      a2.next = an;
-      an.prev = a2;
-
-      b2.next = a2;
-      a2.prev = b2;
-
-      bp.next = b2;
-      b2.prev = bp;
-
-      return b2;
-  }
-
-  // create a node and optionally link it with previous one (in a circular doubly linked list)
-  function insertNode(i, x, y, last) {
-      var p = new Node(i, x, y);
-
-      if (!last) {
-          p.prev = p;
-          p.next = p;
-
-      } else {
-          p.next = last.next;
-          p.prev = last;
-          last.next.prev = p;
-          last.next = p;
-      }
-      return p;
-  }
-
-  function removeNode(p) {
-      p.next.prev = p.prev;
-      p.prev.next = p.next;
-
-      if (p.prevZ) p.prevZ.nextZ = p.nextZ;
-      if (p.nextZ) p.nextZ.prevZ = p.prevZ;
-  }
-
-  function Node(i, x, y) {
-      // vertice index in coordinates array
-      this.i = i;
-
-      // vertex coordinates
-      this.x = x;
-      this.y = y;
-
-      // previous and next vertice nodes in a polygon ring
-      this.prev = null;
-      this.next = null;
-
-      // z-order curve value
-      this.z = null;
-
-      // previous and next nodes in z-order
-      this.prevZ = null;
-      this.nextZ = null;
-
-      // indicates whether this is a steiner point
-      this.steiner = false;
-  }
-
-  // return a percentage difference between the polygon area and its triangulation area;
-  // used to verify correctness of triangulation
-  earcut.deviation = function (data, holeIndices, dim, triangles) {
-      var hasHoles = holeIndices && holeIndices.length;
-      var outerLen = hasHoles ? holeIndices[0] * dim : data.length;
-
-      var polygonArea = Math.abs(signedArea(data, 0, outerLen, dim));
-      if (hasHoles) {
-          for (var i = 0, len = holeIndices.length; i < len; i++) {
-              var start = holeIndices[i] * dim;
-              var end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
-              polygonArea -= Math.abs(signedArea(data, start, end, dim));
-          }
-      }
-
-      var trianglesArea = 0;
-      for (i = 0; i < triangles.length; i += 3) {
-          var a = triangles[i] * dim;
-          var b = triangles[i + 1] * dim;
-          var c = triangles[i + 2] * dim;
-          trianglesArea += Math.abs(
-              (data[a] - data[c]) * (data[b + 1] - data[a + 1]) -
-              (data[a] - data[b]) * (data[c + 1] - data[a + 1]));
-      }
-
-      return polygonArea === 0 && trianglesArea === 0 ? 0 :
-          Math.abs((trianglesArea - polygonArea) / polygonArea);
-  };
-
-  function signedArea(data, start, end, dim) {
-      var sum = 0;
-      for (var i = start, j = end - dim; i < end; i += dim) {
-          sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
-          j = i;
-      }
-      return sum;
-  }
-
-  // turn a polygon in a multi-dimensional array form (e.g. as in GeoJSON) into a form Earcut accepts
-  earcut.flatten = function (data) {
-      var dim = data[0][0].length,
-          result = {vertices: [], holes: [], dimensions: dim},
-          holeIndex = 0;
-
-      for (var i = 0; i < data.length; i++) {
-          for (var j = 0; j < data[i].length; j++) {
-              for (var d = 0; d < dim; d++) result.vertices.push(data[i][j][d]);
-          }
-          if (i > 0) {
-              holeIndex += data[i - 1].length;
-              result.holes.push(holeIndex);
-          }
-      }
-      return result;
-  };
-  earcut_1.default = default_1;
-
   const getBasicMaterial = () => {
       return new MeshBasicMaterial$$1({
       });
@@ -22628,6 +22912,13 @@ var Chartx3d = (function () {
               vertice.addScalar(0.5);
               vertice.z *= -1;
           });
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
           //更加给定的得数据变换box
           transMatrix.makeScale(width, height, depth);
@@ -22657,6 +22948,13 @@ var Chartx3d = (function () {
               //vertice.y -= 0.5;
               vertice.z *= -1;
           });
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
           //更加给定的得数据变换box
           let radius = width * 0.5;
@@ -22689,6 +22987,14 @@ var Chartx3d = (function () {
               //vertice.y -= 0.5;
               vertice.z *= -1;
           });
+
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
           //更加给定的得数据变换box
           let radius = width * 0.5;
@@ -22802,7 +23108,7 @@ var Chartx3d = (function () {
               dashed: false
           });
 
-          if (!_$2.isArray(origins)) {
+          if (!_.isArray(origins)) {
               origins = [origins];
           }
           let triangleVertices = [];
@@ -22820,7 +23126,7 @@ var Chartx3d = (function () {
               triangleVertices.push(endPoint.toArray());
               let lineMeshGeometry = new LineGeometry();
 
-              lineMeshGeometry.setPositions(_$2.flatten(triangleVertices));
+              lineMeshGeometry.setPositions(_.flatten(triangleVertices));
 
               line = new Line2(lineMeshGeometry, matLine);
               line.drawMode = TrianglesDrawMode;
@@ -22918,7 +23224,7 @@ var Chartx3d = (function () {
 
           let renderFont = new RenderFont(fontStyle);
 
-          if (!_$2.isArray(texts)) {
+          if (!_.isArray(texts)) {
               texts = [texts];
           }
 
@@ -22946,7 +23252,7 @@ var Chartx3d = (function () {
           });
 
 
-          texts.forEach((text, index) => {
+          texts.forEach((text, index$$1) => {
               let realSize = labelInfos.sizes[text];
               //realSize==[width,height]
               let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
@@ -22999,7 +23305,7 @@ var Chartx3d = (function () {
           }
 
           //earcut(data.vertices, data.holes, data.dimensions);
-          let triangles = earcut_1(points, null, 3);
+          let triangles = Earcut.triangulate(points, null, 3);
           let geometry = new BufferGeometry();
           let positionBuffer = new Float32BufferAttribute(points, 3);
           geometry.addAttribute('position', positionBuffer);
@@ -23009,16 +23315,55 @@ var Chartx3d = (function () {
 
           return mesh;
       },
+
+      createArea(points = [], depth, faceStyle = {}, materials) {
+          if (!materials) {
+
+              materials = new MeshPhongMaterial({
+                  color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                  side: DoubleSide,
+                  transparent: true,
+                  opacity: faceStyle.alpha || 1.0,
+                  // polygonOffset: true,
+                  // polygonOffsetFactor: 1,
+                  // polygonOffsetUnits: 0.1,
+                  depthTest: true,
+                  depthWrite: true
+
+              });
+          }
+
+          //earcut(data.vertices, data.holes, data.dimensions);
+          // let triangles = earcut(points, null, 3);
+          // let geometry = new BufferGeometry();
+          // let positionBuffer = new Float32BufferAttribute(points, 3);
+          // geometry.addAttribute('position', positionBuffer);
+          // geometry.setIndex(triangles);
+
+          let shape = new Shape(points);
+          let extrudeSettings = {
+              depth: depth || 50,
+              bevelEnabled: true,
+              bevelSegments: 2,
+              steps: 1,
+              bevelSize: 1,
+              bevelThickness: 10
+          };
+          let geometry = new ExtrudeBufferGeometry(shape, extrudeSettings);
+          let mesh = new Mesh(geometry, materials);
+
+          return mesh;
+      },
+
+
       //饼图的一个扇形角
       create3DPie(height, outterRadius, innerRadius = 0, startAngle, endAngle, materials) {
           let radialSegments = 32;
           let PI2 = Math.PI * 2;
           //与2D的饼图角度一直,并沿顺时针绘制  
 
-          let _startAngle = _Math.degToRad(startAngle-90);
-          let _endAngle = _Math.degToRad(endAngle-90);
-
-
+          let _startAngle = _Math.degToRad(startAngle - 90);
+          let _endAngle = _Math.degToRad(endAngle - 90);
 
 
           if (!materials) {
@@ -23032,7 +23377,7 @@ var Chartx3d = (function () {
                   depthWrite: true
               });
           }
-          let geometry = new DoughnutBufferGeometry(outterRadius, height, innerRadius, radialSegments, (PI2 - _startAngle) % PI2, -(_endAngle - _startAngle));
+          let geometry = new DoughnutGeometry(outterRadius, height, innerRadius, radialSegments, (PI2 - _startAngle) % PI2, -(_endAngle - _startAngle));
 
           let mesh = new Mesh(geometry, materials);
           return mesh;
@@ -23131,12 +23476,12 @@ var Chartx3d = (function () {
               back: 0
           };
 
-         
+
 
 
           this.fieldMap = {};
           this.group = root.app.addGroup({ name: 'InertialSystem' });
-          _$2.extend(true, this, this.setDefaultOpts(root.opt));
+          _.extend(true, this, this.setDefaultOpts(root.opt));
 
       }
 
@@ -23206,7 +23551,7 @@ var Chartx3d = (function () {
           return null;
       }
       drawUI() {
-         // this._root.initComponent();
+          // this._root.initComponent();
       }
 
       draw() {
@@ -23220,9 +23565,9 @@ var Chartx3d = (function () {
       }
 
       getAxisDataFrame(fields) {
-          let dataFrame = this._root.dataFrame;
+          let dataFrame$$1 = this._root.dataFrame;
 
-          return dataFrame.getDataOrg(fields, function (val) {
+          return dataFrame$$1.getDataOrg(fields, function (val) {
               if (val === undefined || val === null || val == "") {
                   return val;
               }
@@ -23233,7 +23578,9 @@ var Chartx3d = (function () {
       positionToScreen(pos) {
           return positionToScreen.call(this, pos);
       }
-
+      screenToWorld(dx, dy) {
+          return screenToWorld.call(this, dx, dy);
+      }
 
   }
 
@@ -23256,6 +23603,34 @@ var Chartx3d = (function () {
       }
   })();
 
+
+
+  let screenToWorld = (function () {
+      let matrix = new Matrix4();
+
+      return function (dx, dy) {
+          let pCam = this._root.renderView._camera;
+          const width = this._root.width;
+          const height = this._root.height;
+          let mouse = new Vector2();
+
+          mouse.x = (dx / width) * 2 - 1;
+          mouse.y = -(dy / height) * 2 + 1;
+          //新建一个三维单位向量 假设z方向就是0.5
+          //根据照相机，把这个向量转换到视点坐标系
+
+          var target = new Vector3(mouse.x, mouse.y, 0.5).unproject(pCam, matrix);
+
+          // let target = this.group.localToWorld(pos);
+
+          // target.project(pCam, matrix);
+
+          // target.x = (target.x * widthHalf) + widthHalf;
+          // target.y = (- (target.y * heightHalf) + heightHalf);
+           return target;
+      }
+  })();
+
   //组件的标准
   class Component extends Events {
       constructor(_coordSystem) {
@@ -23275,9 +23650,10 @@ var Chartx3d = (function () {
           this.group.name = name;
       }
 
-      dispose() {
+      dispose(group) {
           let removes = [];
-          this.group.traverse(obj => {
+          group = group || this.group;
+          group.traverse(obj => {
               if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite) {
                   if (obj.geometry) {
                       obj.geometry.dispose();
@@ -23301,8 +23677,8 @@ var Chartx3d = (function () {
       draw() {
           //基类不实现
       }
-      resetData(){
-          
+      resetData() {
+
       }
       //后续组件的公共部分可以提取到这里
 
@@ -23490,7 +23866,7 @@ var Chartx3d = (function () {
 
                   triangleVertices.push(endPoint.toArray());
 
-                  obj.geometry.setPositions(_$2.flatten(triangleVertices));
+                  obj.geometry.setPositions(_.flatten(triangleVertices));
                   obj.position.copy(origins[i]);
                   i++;
               }
@@ -23600,7 +23976,7 @@ var Chartx3d = (function () {
           }
       }
       getTextPos(text) {
-          let index = _$2.indexOf(this.texts, text);
+          let index = _.indexOf(this.texts, text);
           if (index != -1) {
               return this.origins[index];
           }
@@ -23614,7 +23990,7 @@ var Chartx3d = (function () {
           let zDir = new Vector3(0, 0, -1);
           this.texts = texts || this.texts;
 
-          let labels = app.creatSpriteText(texts, { fontSize, color });
+          let labels = app.creatSpriteText(texts, { fontSize, fillStyle:color });
 
           labels.forEach((label, index) => {
               label.userData.position = me.origins[index].clone();
@@ -23763,7 +24139,7 @@ var Chartx3d = (function () {
           this.axisAttribute = this._coordSystem.yAxisAttribute[this.name];
 
           
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           this.init(opt);
 
@@ -23776,7 +24152,7 @@ var Chartx3d = (function () {
           let me = this;
           //extend会设置好this.field
           //先要矫正子啊field确保一定是个array
-          if (!_$2.isArray(this.field)) {
+          if (!_.isArray(this.field)) {
               this.field = [this.field];
           }
           this._initData(this.axisAttribute);
@@ -23914,7 +24290,7 @@ var Chartx3d = (function () {
 
 
           let segment = _coordSystem.coord.yAxis.length;
-          let index = _$2.indexOf(_coordSystem.coord.yAxis, this._opt);
+          let index = _.indexOf(_coordSystem.coord.yAxis, this._opt);
           let step = 0;
           if (segment == 1) {
               step = 0;
@@ -23940,7 +24316,7 @@ var Chartx3d = (function () {
 
           me._formatTextSection = [];
           me._textElements = [];
-          _$2.each(me.dataSection, function (val, i) {
+          _.each(me.dataSection, function (val, i) {
               me._formatTextSection[i] = me._getFormatText(val, i);
 
           });
@@ -23950,10 +24326,10 @@ var Chartx3d = (function () {
               this.label.textAlign = "right";
           }
           //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$2.min(this.dataSection));
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
           if (isNaN(this.minVal) || this.minVal == Infinity) {
               this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$2.max(this.dataSection));
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
           if (isNaN(this.maxVal) || this.maxVal == Infinity) {
               this.maxVal = 1;
           }
@@ -23964,13 +24340,13 @@ var Chartx3d = (function () {
 
       _getFormatText(val, i) {
           var res;
-          if (_$2.isFunction(this.label.format)) {
+          if (_.isFunction(this.label.format)) {
               res = this.label.format.apply(this, arguments);
           } else {
               res = val;
           }
 
-          if (_$2.isArray(res)) {
+          if (_.isArray(res)) {
               res = numAddSymbol(res);
           }
           if (!res) {
@@ -24100,7 +24476,7 @@ var Chartx3d = (function () {
 
           this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           // this.label.enabled = this.enabled && this.label.enabled;
           // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
@@ -24139,7 +24515,7 @@ var Chartx3d = (function () {
 
           me._formatTextSection = [];
           me._textElements = [];
-          _$2.each(me.dataSection, function (val, i) {
+          _.each(me.dataSection, function (val, i) {
               me._formatTextSection[i] = me._getFormatText(val, i);
           });
 
@@ -24148,10 +24524,10 @@ var Chartx3d = (function () {
               this.label.textAlign = "right";
           }
           //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$2.min(this.dataSection));
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
           if (isNaN(this.minVal) || this.minVal == Infinity) {
               this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$2.max(this.dataSection));
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
           if (isNaN(this.maxVal) || this.maxVal == Infinity) {
               this.maxVal = 1;
           }
@@ -24159,13 +24535,13 @@ var Chartx3d = (function () {
       }
       _getFormatText(val, i) {
           var res;
-          if (_$2.isFunction(this.label.format)) {
+          if (_.isFunction(this.label.format)) {
               res = this.label.format.apply(this, arguments);
           } else {
               res = val;
           }
 
-          if (_$2.isArray(res)) {
+          if (_.isArray(res)) {
               res = numAddSymbol(res);
           }
           if (!res) {
@@ -24416,7 +24792,7 @@ var Chartx3d = (function () {
           // }
 
           this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           this.label.enabled = this.enabled && this.label.enabled;
           this.tickLine.enabled = this.enabled && this.tickLine.enabled;
@@ -24455,7 +24831,7 @@ var Chartx3d = (function () {
           let zCustomSection = data._opt.dataSection||[];
           me._formatTextSection = [];
           me._textElements = [];
-          _$2.each(me.dataSection, function (val, i) {
+          _.each(me.dataSection, function (val, i) {
               val = zCustomSection[i]||val;
               me._formatTextSection[i] = me._getFormatText(val, i);
           });
@@ -24465,10 +24841,10 @@ var Chartx3d = (function () {
               this.label.textAlign = "right";
           }
           //取第一个数据来判断xaxis的刻度值类型是否为 number
-          !("minVal" in this._opt) && (this.minVal = _$2.min(this.dataSection));
+          !("minVal" in this._opt) && (this.minVal = _.min(this.dataSection));
           if (isNaN(this.minVal) || this.minVal == Infinity) {
               this.minVal = 0;
-          }        !("maxVal" in this._opt) && (this.maxVal = _$2.max(this.dataSection));
+          }        !("maxVal" in this._opt) && (this.maxVal = _.max(this.dataSection));
           if (isNaN(this.maxVal) || this.maxVal == Infinity) {
               this.maxVal = 1;
           }
@@ -24478,13 +24854,13 @@ var Chartx3d = (function () {
       }
       _getFormatText(val, i) {
           var res;
-          if (_$2.isFunction(this.label.format)) {
+          if (_.isFunction(this.label.format)) {
               res = this.label.format.apply(this, arguments);
           } else {
               res = val;
           }
 
-          if (_$2.isArray(res)) {
+          if (_.isArray(res)) {
               res = numAddSymbol(res);
           }
           if (!res) {
@@ -24759,7 +25135,7 @@ var Chartx3d = (function () {
           };
 
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           this.init();
       }
@@ -24787,7 +25163,7 @@ var Chartx3d = (function () {
           this._onChangeBind = () => {
               if (!me.enabled) return;
               let _faceInfo = me._cartesionUI.getFaceInfo();
-              _$2.each(_faceInfo, (value, key) => {
+              _.each(_faceInfo, (value, key) => {
                   me[key + 'Group'].visible = value.visible;
               });
 
@@ -24983,28 +25359,28 @@ var Chartx3d = (function () {
           this.zAxis = opt.zAxis || {};
           this.grid = opt.grid || {};
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           if (opt.horizontal) {
               this.xAxis.isH = true;
               this.zAxis.isH = true;
-              _$2.each(this.yAxis, function (yAxis) {
+              _.each(this.yAxis, function (yAxis) {
                   yAxis.isH = true;
               });
           }
 
           if ("enabled" in opt) {
               //如果有给直角坐标系做配置display，就直接通知到xAxis，yAxis，grid三个子组件
-              _$2.extend(true, this.xAxis, {
+              _.extend(true, this.xAxis, {
                   enabled: opt.enabled
               });
-              _$2.each(this.yAxis, function (yAxis) {
-                  _$2.extend(true, yAxis, {
+              _.each(this.yAxis, function (yAxis) {
+                  _.extend(true, yAxis, {
                       enabled: opt.enabled
                   });
               });
 
-              _$2.extend(true, this.zAxis, {
+              _.extend(true, this.zAxis, {
                   enabled: opt.enabled
               });
 
@@ -25155,9 +25531,41 @@ var Chartx3d = (function () {
 
   }
 
-  class AxisAttribute extends axis$1 {
+  class AxisAttribute extends axis {
       constructor(opt, dataOrg) {
           super(opt, dataOrg);
+          this.field = opt.field || null;
+          if ("middleweight" in opt) {
+              this.setMiddleweight(opt.middleweight);
+          }
+          this._nativeDataSection = [];
+      }
+
+      setDataSection(dataSection$$1) {
+          super.setDataSection(dataSection$$1);
+          if (this.layoutType !== 'proportion') {
+              this.dataSection = _.uniq(this.dataSection);//this._getDataSection();
+              this.dataSectionGroup = [this.dataSection];
+          }
+      }
+      getNativeDataSection() {
+          if (this._nativeDataSection.length > 0) {
+              return this._nativeDataSection;
+          }
+          if (this._opt.dataSection) {
+              if (this.layoutType !== "proportion") {
+
+                  //非proportion 也就是 rule peak 模式下面
+                  this._nativeDataSection = _.flatten(this.dataOrg);//this._getDataSection();
+                  this._nativeDataSection = _.uniq(this._nativeDataSection);
+              } else {
+                  this._nativeDataSection = this.getDataSection();
+              }
+              this._nativeDataSection = this._nativeDataSection;
+          } else {
+              this._nativeDataSection = this.getDataSection();
+          }
+          return this._nativeDataSection;
       }
 
       getPartDataOrg(fields) {
@@ -25165,12 +25573,15 @@ var Chartx3d = (function () {
           let map = this._opt.field.map(item => {
               return item.toString();
           });
-          fields.forEach(field=>{
-              let index = _$2.indexOf(map, field.toString());
-              result.push(this.dataOrg[index]);
+          fields.forEach(field => {
+              let index$$1 = _.indexOf(map, field.toString());
+              result.push(this.dataOrg[index$$1]);
           });
           return result;
-          
+
+      }
+      setMiddleweight(val) {
+          this.middleweight = val;
       }
       //多轴重新计算数据集
       static resetDataSection(_axisAttributeDs) {
@@ -25185,7 +25596,7 @@ var Chartx3d = (function () {
               let _axisAtt = _axisAttributeDs[key];
               let _currSection = _axisAtt.getDataSection();            //用户设置了dataSection
 
-              if (!_$2.isEmpty(_axisAtt._opt.dataSection)) {
+              if (!_.isEmpty(_axisAtt._opt.dataSection)) {
                   minSegmentUser = Math.min(minSegmentUser, _currSection.length);
               } else {
                   maxSegment = Math.max(maxSegment, _currSection.length);
@@ -25222,6 +25633,50 @@ var Chartx3d = (function () {
           }
 
 
+      }
+
+      //OVERFLOW Class
+      _getCellCount() {
+
+          if (this._cellCount !== null) {
+              return this._cellCount;
+          }
+          //总共有几个数据节点，默认平铺整个dataOrg，和x轴的需求刚好契合，而y轴目前不怎么需要用到这个
+          var cellCount = 0;
+          if (this.layoutType == "proportion") {
+              cellCount = this.axisLength;
+          } else {
+              //todo 三维场景下,部分数据是重复的,所以直接在数据源中获取长度是不对的
+              //if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
+              //    cellCount = this.dataOrg[0][0].length;
+              //  }
+              if (this.dataSection.length) {
+                  cellCount = this.dataSection.length;
+              }        }        this._cellCount = cellCount;
+          return cellCount;
+      }
+      getIndexOfVal(val) {
+
+          var valInd = -1;
+          if (this.layoutType == "proportion") {
+
+              //先检查下 dataSectionLayout 中有没有对应的记录
+              var _ind = this._getLayoutDataOf({ val: val }).ind;
+              if (_ind != undefined) {
+                  return _ind;
+              }
+              //因为在proportion中index 就是 pos
+              //所以这里要返回pos
+              valInd = this.getPosOfVal(val);
+          } else {
+              var _ind = _.indexOf(this.dataSection, val);
+              if (_ind != -1) {
+                  valInd = _ind;
+              }
+          }
+
+
+          return valInd;
       }
   }
 
@@ -25274,23 +25729,23 @@ var Chartx3d = (function () {
               }
           };
 
-          opts = _$2.clone(opts);
+          opts = _.clone(opts);
 
           //规范Y轴的定义,采用数组形式,如果没有定义就初始化为空数组
           if (opts.coord.yAxis) {
               var _nyarr = [];
-              _$2.each(_$2.flatten([opts.coord.yAxis]), function (yopt, index) {
+              _.each(_.flatten([opts.coord.yAxis]), function (yopt, index$$1) {
                   //标记定义的Y轴信息是否在绘图中使用
                   yopt._used = false;
                   //如果坐标轴没有置顶名称,第一个为默认坐标轴,其余的将被舍弃
-                  if (_$2.isEmpty(yopt.name)) {
-                      if (index == 0) {
+                  if (_.isEmpty(yopt.name)) {
+                      if (index$$1 == 0) {
                           yopt.name = DEFAULT_AXIS;
                       } else {
                           return;
                       }
                   }
-                  _nyarr.push(_$2.clone(yopt));
+                  _nyarr.push(_.clone(yopt));
 
 
               });
@@ -25304,7 +25759,7 @@ var Chartx3d = (function () {
           let getYaxisInfo = (name) => {
               let _opt = null;
               if (opts.coord.yAxis) {
-                  _$2.each(_$2.flatten([opts.coord.yAxis]), function (yopt) {
+                  _.each(_.flatten([opts.coord.yAxis]), function (yopt) {
                       if (yopt.name == name) {
                           yopt._used = true;
                           _opt = yopt;
@@ -25344,7 +25799,7 @@ var Chartx3d = (function () {
                               name: _axisName,
                               _used: true
                           };
-                          if (_$2.isArray(graphs.field)) {
+                          if (_.isArray(graphs.field)) {
                               _yAxisNew.field = _yAxisNew.field.concat(graphs.field);
                           } else {
                               _yAxisNew.field.push(graphs.field);
@@ -25352,17 +25807,17 @@ var Chartx3d = (function () {
                           opts.coord.yAxis.push(_yAxisNew);
                       } else {
 
-                          if (_$2.isEmpty(_tAxis.field)) {
+                          if (_.isEmpty(_tAxis.field)) {
                               _tAxis.field = [];
                           }
-                          if (_$2.isArray(_tAxis.field)) {
-                              if (_$2.isArray(graphs.field)) {
+                          if (_.isArray(_tAxis.field)) {
+                              if (_.isArray(graphs.field)) {
                                   _tAxis.field = _tAxis.field.concat(graphs.field);
                               } else {
                                   _tAxis.field.push(graphs.field);
                               }
                           } else {
-                              if (_$2.isArray(graphs.field)) {
+                              if (_.isArray(graphs.field)) {
                                   _tAxis.field = [_tAxis.field].concat(graphs.field);
                               } else {
                                   _tAxis.field = [_tAxis.field].push(graphs.field);
@@ -25383,7 +25838,7 @@ var Chartx3d = (function () {
                   opts.coord.yAxis[i].layoutType = 'proportion'; //默认布局
               }
               //没有field的Y轴是无效的配置
-              if (_$2.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
+              if (_.isEmpty(opts.coord.yAxis[i].field) || opts.coord.yAxis[i]._used == false) {
                   opts.coord.yAxis.splice(i--, 1);
               }
               if (opts.coord.yAxis[i]) {
@@ -25399,7 +25854,7 @@ var Chartx3d = (function () {
           this.getBoundbox();
           let { x: widith, y: height, z: depth } = this.boundbox.getSize();
 
-          let opt = _$2.clone(this.coord);
+          let opt = _.clone(this.coord);
           this.xAxisAttribute = new AxisAttribute(opt.xAxis, this.getAxisDataFrame(opt.xAxis.field)); //new AxisAttribute(this._root);
           this.xAxisAttribute.setDataSection();
           this.xAxisAttribute.setAxisLength(widith);
@@ -25430,7 +25885,7 @@ var Chartx3d = (function () {
 
           //Z轴如果设置了filed,按照数据轴的正常逻辑进行,否则Z轴按照Graphs配置中
           //的索引显示对应的名称 
-          if (_$2.isEmpty(opt.zAxis.field)) {
+          if (!this.isExistZAxisField()) {
               let _sectionZ = [];
               this._root.opt.graphs.forEach((yOps) => {
                   _sectionZ.push(yOps.field.toString());
@@ -25452,7 +25907,7 @@ var Chartx3d = (function () {
           let _allField = [];
           opt.yAxis.forEach(yx => {
               yx.field.forEach(fd => {
-                  if (_$2.isArray(fd)) {
+                  if (_.isArray(fd)) {
                       fd.forEach(fname => {
                           _allField.push(fname);
                       });
@@ -25464,17 +25919,30 @@ var Chartx3d = (function () {
 
 
           let getTheme = this._root.getTheme.bind(this._root);
-          _allField.forEach((v, i) => {
+          if (!this.isExistZAxisField()) {
+              _allField.forEach((v, i) => {
 
-              this.fieldMap[v] = this.fieldMap[v] || {};
-              this.fieldMap[v].color = getTheme(i);
-          });
+                  this.fieldMap[v] = this.fieldMap[v] || {};
+                  this.fieldMap[v].color = getTheme(i);
+              });
+          } else {
+              this.zAxisAttribute.getDataSection().forEach((v, i) => {
+
+                  this.fieldMap[v] = this.fieldMap[v] || {};
+                  this.fieldMap[v].color = getTheme(i);
+              });
+          }
 
 
           this.addLights();
       }
 
-
+      isExistZAxisField() {
+          if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)) {
+              return this.coord.zAxis.field
+          }
+          return false;
+      }
 
       getYAxis(name = DEFAULT_AXIS) {
           let yAxisAttr = this.yAxisAttribute[name];
@@ -25484,7 +25952,7 @@ var Chartx3d = (function () {
               yAxisAttr = this.yAxisAttribute[name];
           }
 
-          let yOpts = _$2.clone(yAxisAttr._opt);
+          let yOpts = _.clone(yAxisAttr._opt);
           return {
               attr: yAxisAttr,
               opts: yOpts
@@ -25584,53 +26052,71 @@ var Chartx3d = (function () {
 
           let center = this.center.clone();
           center = this._getWorldPos(center);
-          //center.setY(0);
-
-          let dirLights = [];
-          let intensity = 0.8;
+          let intensity = 0.5;
           let lightColor = 0xcccccc;
           let position = new Vector3(-1, -1, 1);
 
-          dirLights[0] = new DirectionalLight(lightColor, intensity);
-          position.multiplyScalar(10000);
-          dirLights[0].position.copy(position);
-          dirLights[0].target.position.copy(center);
-          this._root.rootStage.add(dirLights[0]);
-
-
-          dirLights[1] = new DirectionalLight(lightColor, intensity);
-          position = new Vector3(1, -1, 1);
-          position.multiplyScalar(10000);
-          dirLights[1].position.copy(position);
-          dirLights[1].target.position.copy(center);
-          this._root.rootStage.add(dirLights[1]);
-
-          // pointLight[0] = new PointLight(lightColor, intensity);
-          // position = new Vector3(-1, -1, 1);
+          // dirLights[0] = new DirectionalLight(lightColor, intensity);
           // position.multiplyScalar(10000);
-          // pointLight[0].position.copy(position);
-          // this._root.rootStage.add(pointLight[0]);
+          // dirLights[0].position.copy(position);
+          // dirLights[0].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[0]);
 
 
-          // pointLight[1] = new PointLight(lightColor, intensity);
+          // dirLights[1] = new DirectionalLight(lightColor, intensity);
           // position = new Vector3(1, -1, 1);
           // position.multiplyScalar(10000);
-          // pointLight[1].position.copy(position);
-          // this._root.rootStage.add(pointLight[1]);
+          // dirLights[1].position.copy(position);
+          // dirLights[1].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[1]);
 
 
-          // pointLight[2] = new PointLight(lightColor, intensity);
+          // dirLights[2] = new DirectionalLight(lightColor, intensity);
           // position = new Vector3(-1, -1, -1);
           // position.multiplyScalar(10000);
-          // pointLight[2].position.copy(position);
-          // this._root.rootStage.add(pointLight[2]);
+          // dirLights[2].position.copy(position);
+          // dirLights[2].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[2]);
 
 
-          // pointLight[3] = new PointLight('#fff', 1);
+          // dirLights[3] = new DirectionalLight(lightColor, intensity);
           // position = new Vector3(1, -1, -1);
-          // position.multiplyScalar(1000);
-          // pointLight[3].position.copy(position);
-          // this._root.rootStage.add(pointLight[3]);
+          // position.multiplyScalar(10000);
+          // dirLights[3].position.copy(position);
+          // dirLights[3].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[3]);
+
+
+
+
+          let pointLight = [];
+
+          pointLight[0] = new PointLight(lightColor, intensity);
+          position = new Vector3(-1, 1, 1);
+          position.multiplyScalar(10000);
+          pointLight[0].position.copy(position);
+          this._root.rootStage.add(pointLight[0]);
+
+
+          pointLight[1] = new PointLight(lightColor, intensity);
+          position = new Vector3(1, 1, 1);
+          position.multiplyScalar(10000);
+          pointLight[1].position.copy(position);
+          this._root.rootStage.add(pointLight[1]);
+
+
+          pointLight[2] = new PointLight(lightColor, intensity);
+          position = new Vector3(-1, 1, -1);
+          position.multiplyScalar(10000);
+          pointLight[2].position.copy(position);
+          this._root.rootStage.add(pointLight[2]);
+
+
+          pointLight[3] = new PointLight(lightColor, intensity);
+          position = new Vector3(1, 1, -1);
+          position.multiplyScalar(1000);
+          pointLight[3].position.copy(position);
+          this._root.rootStage.add(pointLight[3]);
 
 
 
@@ -25705,7 +26191,7 @@ var Chartx3d = (function () {
           this._coordUI.dispose();
       }
       resetData() {
-          let opt = _$2.clone(this.coord);
+          let opt = _.clone(this.coord);
           this.xAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.xAxis.field));
           this.xAxisAttribute.setDataSection();
           this.xAxisAttribute.calculateProps();
@@ -25720,7 +26206,7 @@ var Chartx3d = (function () {
           });
 
 
-          if (_$2.isEmpty(opt.zAxis.field)) {
+          if (_.isEmpty(opt.zAxis.field)) {
               let _sectionZ = [];
               this._root.opt.graphs.forEach((yOps) => {
                   _sectionZ.push(yOps.field.toString());
@@ -25731,7 +26217,7 @@ var Chartx3d = (function () {
           } else {
               this.zAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.zAxis.field));
           }
-         
+
           this.zAxisAttribute.setDataSection();
           this.zAxisAttribute.calculateProps();
 
@@ -25740,9 +26226,9 @@ var Chartx3d = (function () {
       }
   }
 
-  const _colors$2 = ["#ff8533","#73ace6","#82d982","#e673ac","#cd6bed","#8282d9","#c0e650","#e6ac73","#6bcded","#73e6ac","#ed6bcd","#9966cc"];
+  const _colors$1 = ["#ff8533","#73ace6","#82d982","#e673ac","#cd6bed","#8282d9","#c0e650","#e6ac73","#6bcded","#73e6ac","#ed6bcd","#9966cc"];
   var theme = {
-      colors : _colors$2,
+      colors : _colors$1,
       set : function( colors ){
           this.colors = colors;
           return this.colors;
@@ -26746,21 +27232,23 @@ var Chartx3d = (function () {
 
           // }
           if (intersects.length > 0) {
+              if (this.target) {
+                  this.target.fire({ type: 'mousemove', event: EVENT, intersects });
+              }
               if (intersects[0].object == this.target) {
-                  this.target.fire({ type: 'mousemove', event: EVENT });
                   if (!isMouseOver) {
-                      this.target.fire({ type: 'mouseover', event: EVENT });
+                      this.target.fire({ type: 'mouseover', event: EVENT, intersects });
                       isMouseOver = true;
                       isMouseOut = false;
                   }
                   if (isClick) {
-                      this.target.fire({ type: 'click', event: EVENT });
+                      this.target.fire({ type: 'click', event: EVENT, intersects });
                       isClick = false;
                   }
 
               } else {
                   if (this.target !== null && !isMouseOut) {
-                      this.target.fire({ type: 'mouseout', event: EVENT });
+                      this.target.fire({ type: 'mouseout', event: EVENT, intersects });
                       isMouseOut = true;
                       isMouseOver = false;
                       // console.log({ type: 'mouseout' })
@@ -26770,7 +27258,7 @@ var Chartx3d = (function () {
 
           } else {
               if (this.target !== null && !isMouseOut) {
-                  this.target.fire({ type: 'mouseout' });
+                  this.target.fire({ type: 'mouseout', event: EVENT, intersects });
                   this.target = null;
                   isMouseOut = true;
                   isMouseOver = false;
@@ -26881,7 +27369,7 @@ var Chartx3d = (function () {
           //通过parse2MatrixData最终转换的是data = [ ['xfield','yfield'] , ['2016', 111]] 这样 chartx的数据格式
           //后面有些地方比如 一些graphs中会使用dataFrame.org，， 那么这个dataFrame.org和_data的区别是，
           //_data是全量数据， dataFrame.org是_data经过dataZoom运算过后的子集
-          this._data = parse2MatrixData$2(data);
+          this._data = parse2MatrixData$1(data);
 
           //三维引擎初始化
           this.app = new Application(this.width, this.height);
@@ -26902,9 +27390,9 @@ var Chartx3d = (function () {
       }
       init(DefaultControls) {
           let me = this;
-          let rendererOpts = _$2.extend({}, DefaultControls);
+          let rendererOpts = _.extend({}, DefaultControls);
           this.opt.coord.controls = this.opt.coord.controls || {};
-          let controlOpts = this.opt.coord.controls = _$2.extend(rendererOpts, this.opt.coord.controls);
+          let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
           this._initRenderer(rendererOpts);
 
@@ -26975,35 +27463,34 @@ var Chartx3d = (function () {
           this.components = [];
 
           //先初始化坐标系
-          let coord = this.componentModules.getComponentModule('coord', opts.coord.type);
+          let coord = this.componentModules.get('coord', opts.coord.type);
           if (!coord) {
               coord = InertialSystem;
           }
           this.setCoord(coord);
-
-          for (var p in opts) {
-
-              let comp = this.componentModules.getComponentModule(p, opts[p].type);
-              if (p == 'coord') continue;
-              if (p == 'graphs') {
-                  for (var t = 0; t < opts.graphs.length; t++) {
-                      let key = opts.graphs[t].type;
-                      comp = this.componentModules.getComponentModule(p, key);
-                      this.addComponent(comp, opts.graphs[t]);
-
-                  }
-              } else {
-                  //其他组件
-                  this.addComponent(comp, opts[p]);
-              }
-
-
-
-
-
-
+          //加载graph组件
+          for (let t = 0; t < opts.graphs.length; t++) {
+              let key = opts.graphs[t].type;
+              let comp = this.componentModules.get('graphs', key);
+              this.addComponent(comp, opts.graphs[t]);
 
           }
+          //加载其他组件
+          for (let p in opts) {
+              if (p === 'coord') continue;
+              if (p === 'graphs') continue;
+              if (_.isArray(opts[p])) {
+                  for (let t = 0; t < opts[p].length; t++) {
+                      let key = opts[p][t].type;
+                      let comp = this.componentModules.get(p, key);
+                      this.addComponent(comp, opts[p][t]);
+                  }
+              } else {
+                  let comp = this.componentModules.get(p);
+                  this.addComponent(comp, opts[p]);
+              }
+          }
+
       }
       //添加组件
       addComponent(cmp, opts) {
@@ -27091,12 +27578,12 @@ var Chartx3d = (function () {
 
           this._cid = "chartx3d_" + _cid++;
 
-          this.el = $.query(_domSelector);
+          this.el = $$1.query(_domSelector);
 
           this.width = this.el.offsetWidth;
           this.height = this.el.offsetHeight;
 
-          viewObj = $.createView(this.width, this.height, this._cid);
+          viewObj = $$1.createView(this.width, this.height, this._cid);
 
           this.view = viewObj.view;
           this.stageView = viewObj.stageView;
@@ -27113,7 +27600,7 @@ var Chartx3d = (function () {
 
       _initData(data, opt) {
 
-          return dataFrame$1.call(this, data, opt);
+          return dataFrame.call(this, data, opt);
       }
 
       _initRenderer(rendererOpts) {
@@ -27179,10 +27666,10 @@ var Chartx3d = (function () {
           !opt && (opt = {});
 
           //配置初始化
-          _$2.extend(true, this.opt, opt);
+          _.extend(true, this.opt, opt);
           //数据初始化
           if (data) {
-              this._data = parse2MatrixData$2(data);
+              this._data = parse2MatrixData$1(data);
               this.dataFrame = this._initData(this._data, {});
           }
 
@@ -27218,7 +27705,7 @@ var Chartx3d = (function () {
        */
       resetData(data, dataTrigger) {
           if (data) {
-              this._data = parse2MatrixData$2(data);
+              this._data = parse2MatrixData$1(data);
               this.dataFrame = this._initData(this._data, this.opt);
           }        this.currCoord.resetData();
           this.components.forEach(cmp => {
@@ -27334,9 +27821,9 @@ var Chartx3d = (function () {
 
   }
 
-  class PolarAttribute extends Polar$1 {
-      constructor(opt, dataFrame) {
-          super(opt, dataFrame);
+  class PolarAttribute extends Polar {
+      constructor(opt, dataFrame$$1) {
+          super(opt, dataFrame$$1);
           this.height = 0;
       }
 
@@ -27436,7 +27923,7 @@ var Chartx3d = (function () {
           //center.setY(0);
 
           //     let dirLights = [];
-          let intensity = 0.8;
+          let intensity = 0.5;
           let lightColor = 0xcccccc;
           //     let position = new Vector3(-1, -1, 1);
 
@@ -27490,14 +27977,14 @@ var Chartx3d = (function () {
 
 
           pointLight[2] = new PointLight(lightColor, intensity);
-          position = new Vector3(-1, -1, -1);
+          position = new Vector3(-1, 1, -1);
           position.multiplyScalar(10000);
           pointLight[2].position.copy(position);
           this._root.rootStage.add(pointLight[2]);
 
 
-          pointLight[3] = new PointLight('#fff', 1);
-          position = new Vector3(1, -1, -1);
+          pointLight[3] = new PointLight(lightColor, intensity);
+          position = new Vector3(1, 1, -1);
           position.multiplyScalar(1000);
           pointLight[3].position.copy(position);
           this._root.rootStage.add(pointLight[3]);
@@ -27639,7 +28126,7 @@ var Chartx3d = (function () {
           this.proportion = false;//比例柱状图，比例图首先肯定是个堆叠图
 
           this.allGroupNum = 1;
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
          // this.materialMap = new Map();
           this.init();
 
@@ -27651,7 +28138,7 @@ var Chartx3d = (function () {
       computePos() {
           let me = this;
           let fields = [], customField = [];
-          if (!_$2.isArray(this.field)) {
+          if (!_.isArray(this.field)) {
               fields.push(this.field);
           } else {
               fields = this.field.slice(0);
@@ -27667,7 +28154,7 @@ var Chartx3d = (function () {
           let yDatas = yAxisAttribute.dataOrg;
           //x轴返回的数据是单列
           if (xDatas.length == 1) {
-              xDatas = _$2.flatten(xDatas);
+              xDatas = _.flatten(xDatas);
           }
 
           let yValidData = [];
@@ -27715,7 +28202,7 @@ var Chartx3d = (function () {
           //let ceil = this.getCeilSize();
           let getZAxiaName = (fieldName) => {
               let name = '';
-              _$2.each(zSection, (section = "", num) => {
+              _.each(zSection, (section = "", num) => {
                   let ind = section.indexOf(fieldName);
                   if (ind !== -1) {
                       name = zSection[num];
@@ -27734,7 +28221,7 @@ var Chartx3d = (function () {
                   if (yda.length > 1) {
                       yda.forEach((ydad, num) => {
 
-                          let ydadd = _$2.flatten(ydad).slice(0);
+                          let ydadd = _.flatten(ydad).slice(0);
                           let _fdd = _fd[num];
                           ydadd.forEach((yd, i) => {
                               if (i === no) {
@@ -27758,7 +28245,7 @@ var Chartx3d = (function () {
                               }
 
                           });
-                          _$2.flatten(ydad).slice(0).forEach((t, y) => {
+                          _.flatten(ydad).slice(0).forEach((t, y) => {
                               lastArray[y] = (lastArray[y] || 0) + t;
                           });
                           //lastArray = _.flatten(ydad).slice(0);
@@ -27768,7 +28255,7 @@ var Chartx3d = (function () {
                       let _tmp = new DataOrg();
                       _tmp.field = _fd;
                       _tmp.group = (index + 1);
-                      _$2.flatten(yda).slice(0).forEach((yd, i) => {
+                      _.flatten(yda).slice(0).forEach((yd, i) => {
                           if (i === no) {
                               _tmp.value = new Vector3(xd, yd, zd);
                               me.drawPosData.push(_tmp);
@@ -27962,11 +28449,11 @@ var Chartx3d = (function () {
 
           var color = this._coordSystem.getColor(dataOrg.field);
           //field对应的索引，， 取颜色这里不要用i
-          if (_$2.isString(c)) {
+          if (_.isString(c)) {
               color = c;
-          }        if (_$2.isArray(c)) {
-              color = _$2.flatten(c)[_$2.indexOf(_flattenField, field)];
-          }        if (_$2.isFunction(c)) {
+          }        if (_.isArray(c)) {
+              color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          }        if (_.isFunction(c)) {
               color = c.apply(this, [rectData]);
           }
           return color;
@@ -28031,7 +28518,7 @@ var Chartx3d = (function () {
           };
 
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
           this.init();
 
       }
@@ -28043,11 +28530,11 @@ var Chartx3d = (function () {
           var color = this._coordSystem.getColor(dataOrg.field);
 
           //field对应的索引，， 取颜色这里不要用i
-          if (_$2.isString(c)) {
+          if (_.isString(c)) {
               color = c;
-          }        if (_$2.isArray(c)) {
-              color = _$2.flatten(c)[_$2.indexOf(_flattenField, field)];
-          }        if (_$2.isFunction(c)) {
+          }        if (_.isArray(c)) {
+              color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          }        if (_.isFunction(c)) {
               color = c.apply(this, [rectData]);
           }
           return color;
@@ -28056,13 +28543,14 @@ var Chartx3d = (function () {
       computePos() {
           let me = this;
           let fields = [], customField = [];
-          if (!_$2.isArray(this.field)) {
+          if (!_.isArray(this.field)) {
               fields.push(this.field);
           } else {
               fields = this.field.slice(0);
           }
           let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
+
+          let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
           this.drawPosData = [];
           let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
           let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
@@ -28071,7 +28559,7 @@ var Chartx3d = (function () {
           let yDatas = yAxisAttribute.dataOrg;
           //x轴返回的数据是单列
           if (xDatas.length == 1) {
-              xDatas = _$2.flatten(xDatas);
+              xDatas = _.flatten(xDatas);
           }
           //todo 三维数据这里会有问题,需要整理清楚
 
@@ -28106,15 +28594,16 @@ var Chartx3d = (function () {
 
           //let ceil = this.getCeilSize();
 
-          let generate = (zd) => {
+          let generate = (zd, zInd) => {
               xDatas.forEach((xd, no) => {
                   lastArray = [];
                   yValidData.forEach((yda, index) => {
                       let _fd = fields[index];
+
                       if (yda.length > 1) {
                           yda.forEach((ydad, num) => {
 
-                              let ydadd = _$2.flatten(ydad).slice(0);
+                              let ydadd = _.flatten(ydad).slice(0);
                               let _fdd = _fd[num];
                               ydadd.forEach((yd, i) => {
                                   if (i === no) {
@@ -28137,7 +28626,7 @@ var Chartx3d = (function () {
                                   }
 
                               });
-                              _$2.flatten(ydad).slice(0).forEach((t, y) => {
+                              _.flatten(ydad).slice(0).forEach((t, y) => {
                                   lastArray[y] = (lastArray[y] || 0) + t;
                               });
                               //lastArray = _.flatten(ydad).slice(0);
@@ -28145,14 +28634,23 @@ var Chartx3d = (function () {
 
                       } else {
                           let _tmp = new DataOrg();
-                          _tmp.field = _fd;
-                          _$2.flatten(yda).slice(0).forEach((yd, i) => {
-                              if (i === no) {
-                                  _tmp.value = new Vector3(xd, yd, zd);
-                                  me.drawPosData.push(_tmp);
-                              }
-
-                          });
+                          let searchOpt = {};
+                          let zdd = zd;
+                          if (zNativeSection[zInd] == zd) {
+                              zdd = zd;
+                          } else {
+                              zdd = zNativeSection[zInd];
+                          }
+                          if (me._coordSystem.zAxisAttribute.field) {
+                              searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
+                          }
+                          searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
+                          let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
+                          _tmp.field = zdd;
+                          if (yd.length > 0) {
+                              _tmp.value = new Vector3(xd, yd[0][zdd], zd);
+                              me.drawPosData.push(_tmp);
+                          }
                       }
                   });
               });
@@ -28160,12 +28658,13 @@ var Chartx3d = (function () {
 
 
           let fieldName = fields.toString();
-          if (_$2.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-              generate(fieldName);
+          if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              let ind = _.indexOf(zNativeSection, fieldName);
+              generate(zSection[ind], ind);
           } else {
 
-              zSection.forEach(zd => {
-                  generate(fieldName);
+              zSection.forEach((zd, zInd) => {
+                  generate(zd, zInd);
               });
           }
 
@@ -28190,7 +28689,7 @@ var Chartx3d = (function () {
               pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
               pos.setZ(getZAxisPosition(dataOrg.value.z));
 
-              if (_$2.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
                   linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
               } else {
                   linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
@@ -28210,7 +28709,7 @@ var Chartx3d = (function () {
               }
 
 
-              if (_$2.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
                   linePoints[dataOrg.field].push(stack);
               } else {
                   linePoints[dataOrg.value.z].push(stack);
@@ -28267,6 +28766,424 @@ var Chartx3d = (function () {
 
 
           }
+      }
+      resetData() {
+          this.dispose();
+          this.draw();
+      }
+  }
+
+  let __lastPosition = null;
+
+  class Area extends Component {
+      constructor(chart3d, opt) {
+          super(chart3d.currCoord);
+
+          this.type = "area";
+          this._type = "area3d";
+
+          // this.line = { //线
+          //     enabled: 1,
+          //     shapeType: "brokenLine",//折线
+          //     strokeStyle: null,
+          //     lineWidth: 2,
+          //     lineType: "solid",
+          //     smooth: true
+          // };
+
+          // this.icon = { //节点 
+          //     enabled: 1, //是否有
+          //     shapeType: "circle",
+          //     corner: false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
+          //     radius: 3, //半径 icon 圆点的半径
+          //     fillStyle: '#ffffff',
+          //     strokeStyle: null,
+          //     lineWidth: 2
+          // };
+
+          this.area = { //填充
+              //            shapeType : "path",
+              enabled: 1,
+              fillStyle: null,
+              alpha: 0.3
+          };
+
+
+          _.extend(true, this, opt);
+          this.init();
+
+      }
+      init() {
+          this.textGroup = this._root.app.addGroup({
+              name: 'text_groups'
+          });
+          this.textTempGroup = this._root.app.addGroup({
+              name: 'text_temp_groups'
+          });
+
+          this.group.add(this.textGroup);
+          this.group.add(this.textTempGroup);
+
+      }
+      _getColor(c, dataOrg) {
+
+          var color = this._coordSystem.getColor(dataOrg.field);
+
+          //field对应的索引，， 取颜色这里不要用i
+          if (_.isString(c)) {
+              color = c;
+          }        if (_.isArray(c)) {
+              color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          }        if (_.isFunction(c)) {
+              color = c.apply(this, [rectData]);
+          }
+          return color;
+      }
+
+      computePos() {
+          let me = this;
+          let fields = [], customField = [];
+          if (!_.isArray(this.field)) {
+              fields.push(this.field);
+          } else {
+              fields = this.field.slice(0);
+          }
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+          let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
+          this.drawPosData = [];
+
+          let xDatas = this._coordSystem.xAxisAttribute.getDataSection();
+
+          let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
+          let yAxisAttribute = yAxisInfo.attr;
+
+          let yDatas = yAxisAttribute.dataOrg;
+          //x轴返回的数据是单列
+          if (xDatas.length == 1) {
+              xDatas = _.flatten(xDatas);
+          }
+          //todo 三维数据这里会有问题,需要整理清楚
+
+
+          let yValidData = [];
+
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
+          if (this._coordSystem.coord.zAxis.dataSection) {
+              customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
+          }
+
+
+          let lastArray = [];
+
+          let DataOrg = function () {
+              //this.org = [];
+              this.isStack = false;
+              //this.stack = [];
+              //具体XYZ的值
+              this.value = null;
+              //堆叠值
+              this.stackValue = null;
+              //堆叠楼层
+              this.floor = 0;
+              //绘制的字段顺序
+              this.level = 0;
+              this.field = '';
+
+              //
+              //this.pos = null;
+          };
+
+          //let ceil = this.getCeilSize();
+
+          let generate = (zd, zInd) => {
+              xDatas.forEach((xd, no) => {
+                  lastArray = [];
+                  if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                      yValidData.forEach((yda, index) => {
+                          let _fd = fields[index];
+                          if (yda.length > 1) {
+                              yda.forEach((ydad, num) => {
+
+                                  let ydadd = _.flatten(ydad).slice(0);
+                                  let _fdd = _fd[num];
+                                  ydadd.forEach((yd, i) => {
+                                      if (i === no) {
+                                          let _tmp = new DataOrg();
+                                          _tmp.floor = num;
+                                          _tmp.level = index + num;
+                                          _tmp.field = _fdd;
+                                          if (num > 0) {
+                                              _tmp.isStack = true;
+                                              _tmp.value = new Vector3(xd, yd, zd);
+                                              _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+
+                                          } else {
+                                              _tmp.isStack = true;
+                                              _tmp.stackValue = new Vector3(xd, 0, zd);
+                                              _tmp.value = new Vector3(xd, yd, zd);
+
+                                          }
+                                          me.drawPosData.push(_tmp);
+                                      }
+
+                                  });
+                                  _.flatten(ydad).slice(0).forEach((t, y) => {
+                                      lastArray[y] = (lastArray[y] || 0) + t;
+                                  });
+                                  //lastArray = _.flatten(ydad).slice(0);
+                              });
+
+                          } else {
+                              let _tmp = new DataOrg();
+                              _tmp.field = _fd;
+                              _.flatten(yda).slice(0).forEach((yd, i) => {
+                                  if (i === no) {
+                                      _tmp.value = new Vector3(xd, yd, zd);
+                                      me.drawPosData.push(_tmp);
+                                  }
+
+                              });
+                          }
+                      });
+                  } else {
+                      let _tmp = new DataOrg();
+                      let searchOpt = {};
+                      let zdd = zd;
+                      if (zNativeSection[zInd] == zd) {
+                          zdd = zd;
+                      } else {
+                          zdd = zNativeSection[zInd];
+                      }
+
+                      searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
+                      searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
+                      let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
+                      if (yd.length > 0) {
+                          _tmp.value = new Vector3(xd, yd[0][yAxisInfo.opts.field.toString()], zd);
+                          me.drawPosData.push(_tmp);
+                      }
+
+                  }
+
+              });
+          };
+
+
+          let fieldName = fields.toString();
+          if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              generate(fieldName);
+          } else {
+              zSection.forEach((zd, zInd) => {
+                  generate(zd, zInd);
+              });
+          }
+
+
+      }
+      draw() {
+          let me = this;
+          let app = this._root.app;
+          let linePoints = {};
+          this.computePos();
+          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+          let ceil = this._coordSystem.getCeilSize();
+          let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
+          let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
+          let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
+          let boxWidth = ceil.x * 0.7;
+          let boxDepth = ceil.z * 0.7;
+          this.drawPosData.forEach(dataOrg => {
+              let pos = new Vector3();
+              let stack = new Vector3();
+              pos.setX(getXAxisPosition(dataOrg.value.x));
+              pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
+              pos.setZ(getZAxisPosition(dataOrg.value.z));
+
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+              } else {
+                  linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
+              }
+
+              if (dataOrg.isStack) {
+                  stack.setX(pos.x);
+                  stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
+                  stack.setZ(-pos.z);
+
+              } else {
+
+                  stack.setX(pos.x);
+                  stack.setY(pos.y);
+                  stack.setZ(-pos.z);
+
+              }
+
+
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field].push({
+                      pos: stack.clone(),
+                      val: dataOrg.value.clone()
+                  });
+              } else {
+                  linePoints[dataOrg.value.z].push({
+                      pos: stack.clone(),
+                      val: dataOrg.value.clone()
+                  });
+              }
+
+          });
+
+          const DIVISONS = 200;
+          for (let field in linePoints) {
+              let _color = this._getColor(null, { field: field }) || "red";
+
+              let points = null;
+              // // //if (this.line.enabled) {
+              // //     if (me.line.smooth) {
+              let pos = linePoints[field].map(item => {
+                  return item.pos;
+              });
+              let curve = new CatmullRomCurve3(pos);
+              points = curve.getSpacedPoints(DIVISONS);
+              // //     } else {
+              //points = linePoints[field];
+              // // }
+
+              // debugger;
+
+
+              // let line = 
+
+              // this.group.add(line);
+              // //}
+
+              let thickness = boxDepth;
+              //绘制区域
+              if (this.area.enabled) {
+                  //let pointArr = [];
+                  // points.forEach(point => {
+                  //     pointArr = pointArr.concat(point.toArray());
+                  // });
+                  points.unshift(points[0].clone().setY(0));
+                  points.push(points[(points.length - 1)].clone().setY(0));
+                  let polygon = app.createArea(points, thickness, { fillStyle: _color });
+
+                  polygon.name = "polygon_area_" + field;
+                  polygon.userData = {
+                      infos: linePoints[field],
+                      field
+
+                      // values:dataOrg
+                  };
+                  let posZ = points[0].z;
+                  // if (points[0].z === 0) {
+                  //     posZ = points[0].z - thickness;
+                  // }else{
+                  posZ = posZ - thickness * 0.5;
+                  // }
+
+                  polygon.position.setZ(posZ);
+                  this.group.add(polygon);
+              }
+
+
+
+              //绘制node 点
+              // if (this.icon.enabled) {
+              //     linePoints[field].forEach(point => {
+
+              //         //let node = app.createSphere(10,{fillStyle:_color});
+              //         let node = app.createCirclePlane(10, { fillStyle: _color });
+              //         node.position.copy(point);
+              //         this.group.add(node);
+              //     });
+              // }
+
+              //文字绘制
+              // let fontStyle = { fontSize: 50, fillStyle: _color,strokeStyle:"#fff",lineWidth:1,isBold:true };
+              // let offset = 50;
+              // linePoints[field].forEach(node => {
+              //     let val = yAxisAttribute.getValOfPos(node.y);
+
+              //     let textObj = app.creatSpriteText(val, fontStyle);
+              //     textObj[0].position.copy(node);
+              //     textObj[0].position.setY(offset + textObj[0].position.y);
+              //     this.textGroup.add(textObj[0]);
+              // })
+
+
+          }
+          me.bindEvent();
+      }
+      bindEvent() {
+          this.group.traverse(obj => {
+              if (obj.name && obj.name.includes("polygon_area_")) {
+                  obj.on('mousemove', (e) => {
+                      this.onMouseMove(e);
+                  });
+                  obj.on("mouseout", (e) => {
+                      this.onMouseOut(e);
+                  });
+              }
+          });
+      }
+      onMouseMove(e) {
+          let currObj = e.intersects[0];
+          let target = e.target;
+          if (currObj) {
+              let pos = currObj.point.clone();
+              let locPos = this._coordSystem.group.worldToLocal(pos);
+              let positions = target.userData.infos.map(obj => {
+                  return obj.pos;
+              });
+
+              let currPoint = this._findPoint(positions, locPos);
+              let currInfo = _.find(target.userData.infos, item => {
+                  return item.pos.equals(currPoint);
+              });
+
+              if (!__lastPosition || !currPoint.equals(__lastPosition)) {
+                  this._showLabel(currPoint, currInfo.val.y, target.userData.field);
+                  __lastPosition = currPoint;
+              }
+
+              // console.log(currPoint);
+          }
+      }
+      onMouseOut(e) {
+          this.dispose(this.textTempGroup);
+      }
+      _showLabel(position, val, field) {
+          let app = this._root.app;
+          let _color = this._getColor(null, { field: field }) || "red";
+          let fontStyle = { fontSize: 50, fillStyle: _color, strokeStyle: "#ccc", lineWidth: 2, isBold: true };
+          let offset = 50;
+
+          //干掉上一个显示
+          this.dispose(this.textTempGroup);
+
+          //this.
+
+          //let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+          //let val = yAxisAttribute.getValOfPos(position.y);
+          let textObj = app.creatSpriteText(val, fontStyle);
+          textObj[0].position.copy(position);
+          textObj[0].position.setY(offset + textObj[0].position.y);
+          this.textTempGroup.add(textObj[0]);
+
+      }
+      _findPoint(points, point) {
+          let minDistance = Infinity;
+          let result = new Vector3();
+          points.forEach(p => {
+              let distance = point.distanceTo(p);
+              if (minDistance > distance) {
+                  minDistance = distance;
+                  result.copy(p);
+              }
+          });
+          return result;
+
       }
       resetData() {
           this.dispose();
@@ -28334,7 +29251,7 @@ var Chartx3d = (function () {
       }
       init(opt) {
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
           //计算一下图形的半径
           let attr = this._coordSystem.dataAttribute;
@@ -28356,7 +29273,7 @@ var Chartx3d = (function () {
                   //要预留moveDis位置来hover sector 的时候外扩
                   outRadius -= this.node.moveDis;
               }            this.node.outRadius = outRadius;
-          }        if (this.node.radius !== null && _$2.isNumber(this.node.radius)) {
+          }        if (this.node.radius !== null && _.isNumber(this.node.radius)) {
               //如果用户有直接配置 radius，那么radius优先，用来计算
               this.node.radius = Math.max(this.node.radius, this.node.minRadius);
               //this.node.outRadius = this.node.innerRadius + this.node.radius;
@@ -28497,7 +29414,7 @@ var Chartx3d = (function () {
           var str;
           if (this.label.enabled) {
               if (this.label.format) {
-                  if (_$2.isFunction(this.label.format)) {
+                  if (_.isFunction(this.label.format)) {
                       str = this.label.format(itemData.label, itemData);
                   }
               } else {
@@ -28686,7 +29603,6 @@ var Chartx3d = (function () {
               // if (globalX > me._graphs.root.width || globalY < 0 || globalY > me._graphs.root.height) {
               //     return;
               // };
-              // debugger
               // var pathStr = "M" + itemData.centerx + "," + itemData.centery;
               // pathStr += "Q" + itemData.outx + "," + itemData.outy + "," + currentX + "," + currentY;
 
@@ -28707,7 +29623,7 @@ var Chartx3d = (function () {
               this.group.add(line);
 
 
-              let label = app.creatSpriteText(itemData.labelText, { fontSize: 14, color: itemData.color });
+              let label = app.creatSpriteText(itemData.labelText, { fontSize: 14, fillStyle: itemData.color });
               label[0].userData.position = new Vector3(currentX, 0, currentY);
               label[0].userData.dir = new Vector3(itemData.outx, 0, itemData.outy).sub(new Vector3(itemData.centerx, 0, itemData.centery));
               label[0].userData.dir.normalize();
@@ -28831,9 +29747,9 @@ var Chartx3d = (function () {
       adjustPosition(heights) {
 
           //判断是否需要调整
-          let isAdjust = _$2.uniq(heights).length > 1;
+          let isAdjust = _.uniq(heights).length > 1;
           if (!isAdjust) return;
-          let maxHeight = _$2.max(heights);
+          let maxHeight = _.max(heights);
           this.group.traverse(obj => {
               if (obj.isMesh && obj.geometry && obj.geometry.type === "DoughnutBufferGeometry") {
                   let offset = (maxHeight - obj.geometry.parameters.height) * 0.5;
@@ -28913,7 +29829,7 @@ var Chartx3d = (function () {
           this.pointerAnim = true;
           this._tipsPointer = null;
 
-          _$2.extend(true, this, opt);
+          _.extend(true, this, opt);
 
 
           // this.sprite = new Canvax.Display.Sprite({
@@ -29053,7 +29969,7 @@ var Chartx3d = (function () {
           let tipsContent;
 
           if (this.content) {
-              tipsContent = _$2.isFunction(this.content) ? this.content(e.eventInfo) : this.content;
+              tipsContent = _.isFunction(this.content) ? this.content(e.eventInfo) : this.content;
           } else {
               tipsContent = this._getDefaultContent(e.eventInfo);
           }
@@ -29070,7 +29986,7 @@ var Chartx3d = (function () {
           str += "<div style='line-height:1.5;font-size:12px;padding:0 4px;'>";
           if (style) {
               str += "<div style='background:" + style + ";margin-right:8px;margin-top:5px;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></div>";
-          }        _$2.each(info.value, (value, key) => {
+          }        _.each(info.value, (value, key) => {
               str += '<div><span style="margin-right:5px">- ' + key + ':</span><span>' + value + '</span></div>';
           });
 
@@ -29297,19 +30213,223 @@ var Chartx3d = (function () {
 
   }
 
-  global$1.registerComponent( Chart3d, 'chart' ,3);
+  class MarkPoint extends Component {
+      constructor(chart3d, opt) {
+          super(chart3d.currCoord);
+
+          this.opt = opt;
+          this.type = "markline";
+          this.markTo = null;
+          this.active = 'max';   //max,min
+          this.position = null;  //点的位置,如果是一个二维数组绘制多个点
+          this.data = null;
+
+          this.label = {
+              fontSize: 50,
+              fillStyle: 'red',
+              strokeStyle: "#eee",
+              lineWidth: 2,
+              isBold: true,
+              offset: 50
+
+          };
+
+          this.icon = {
+
+          };
+          _.extend(true, this, opt);
+          this.init();
+
+      }
+
+      init() {
+
+          if (this.markTo) {
+              let zField = this._coordSystem.isExistZAxisField();
+              let zSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
+              let zCusSection = this._coordSystem.zAxisAttribute.getDataSection();
+
+              if (zField) {
+                  this.data = [];
+                  zSection.forEach((val, i) => {
+                      let _groups = this._root.dataFrame.getRowDataOf({ [zField]: val });
+                      let arr = [];
+                      _groups.forEach(item => {
+                          arr.push(item[this.markTo]);
+                      });
+                      arr.zField = val;
+                      if (zCusSection[i]) {
+                          arr.zCusSection = zCusSection[i];
+                      }
+                      this.data.push(arr);
+                  });
+
+              } else {
+                  this.data = this._coordSystem.getAxisDataFrame(this.markTo);
+              }
+          }
+          this._coordSystem.group.add(this.group);
+      }
+
+      draw() {
+          let app = this._root.app;
+          let infos = [];
+          //1、如果指定了position是具体的数组,就按照给定的值来绘制
+          //2、如果指定了position是函数,就根据函数来计算
+          //3、如果只制定了markTo,默认返回所有点,active是预设的一些方法,默认是最大最小值
+          let drawPoints = [];
+
+          if (this.position) {
+              if (_.isFunction(this.position)) {
+                  drawPoints = this.position.call(this, this.data);
+              }
+              if (_.isArray(this.position)) {
+                  drawPoints = drawPoints.concat(this.position);
+              }
+          } else {
+              if (this.active === 'max') {
+                  infos = this._getMaxValuePos();
+
+
+              } else if (this.active === 'min') {
+                  infos = this._getMinValuePos();
+
+              }
+          }
+
+
+          infos.forEach(item => {
+              let fontStyle = this._getFontStyle(item.zValue);
+
+              let textObj = app.creatSpriteText(item.val, fontStyle);
+              textObj[0].position.fromArray(item.pos);
+              textObj[0].position.setY(fontStyle.offset + textObj[0].position.y);
+              this.group.add(textObj[0]);
+          });
+
+
+      }
+      _getMaxValuePos() {
+          let pos = [], arr, val;
+
+          if (!this.data) {
+              console.error('markpoint组件中请指定markTo字段');
+          } else {
+              if (_.isArray(this.data[0])) {
+                  this.data.forEach(dt => {
+                      arr = _.flatten(dt);
+                      val = Math.max.apply(null, arr);
+                      pos.push(this._getValPos(val, dt));
+
+                  });
+                  return pos;
+              } else {
+                  arr = _.flatten(this.data);
+                  val = Math.max.apply(null, arr);
+                  pos.push(this._getValPos(val));
+                  return pos;
+              }
+
+          }
+          return [[0, 0, 0]];
+
+      }
+      _getMinValuePos() {
+          let pos = [], arr, val;
+
+          if (!this.data) {
+              console.error('markpoint组件中请指定markTo字段');
+          } else {
+              if (_.isArray(this.data[0])) {
+                  this.data.forEach(dt => {
+                      arr = _.flatten(dt);
+                      val = Math.min.apply(null, arr);
+                      pos.push(this._getValPos(val, dt));
+
+                  });
+                  return pos;
+              } else {
+                  arr = _.flatten(this.data);
+                  val = Math.min.apply(null, arr);
+                  pos.push(this._getValPos(val));
+                  return pos;
+              }
+
+          }
+          return [[0, 0, 0]];
+      }
+      _getValPos(val, dt) {
+          let rootOpt = this._root.opt;
+          let x, y, z;
+          let zField = this._coordSystem.isExistZAxisField();
+          //大数据获取XYZ
+
+          let searchOpt = { [this.markTo]: val };
+          if (dt && zField) {
+              searchOpt[zField] = dt.zField;
+          }
+          let rowData = this._root.dataFrame.getRowDataOf(searchOpt);
+          let attr = this._getYAttribute();
+
+          y = this._coordSystem.getYAxisPosition(val, attr);
+
+          x = this._coordSystem.getXAxisPosition(rowData[0][rootOpt.coord.xAxis.field]);
+          if (rootOpt.coord.zAxis && rootOpt.coord.zAxis.field) {
+              z = this._coordSystem.getZAxisPosition(dt.zCusSection);
+          } else {
+              z = this._coordSystem.getZAxisPosition(this.markTo);
+          }
+
+          return {
+              val: val,
+              pos: [x, y, -z],
+              zValue: dt.zCusSection || this.markTo
+          };
+      }
+      _getYAttribute() {
+          let axisName = DEFAULT_AXIS;
+          this._root.opt.graphs.forEach(item => {
+              if (_.isArray(item.field)) {
+                  let _fields = _.flatten(this.field);
+                  let idx = _.indexOf(_fields, this.markTo);
+                  if (idx !== -1) {
+                      axisName = item.yAxisName;
+                  }
+              }
+          });
+          return this._coordSystem.getYAxis(axisName).attr;
+      }
+      _getFontStyle(field) {
+          let _color;
+          if (this.opt.label && this.opt.label.fillStyle) {
+              return this.label;
+          } else {
+
+              _color = this._coordSystem.fieldMap[field].color;
+
+          }
+          return _.extend({}, this.label, { fillStyle: _color });
+
+      }
+
+
+  }
+
+  global.registerComponent(Chart3d, 'chart', 3);
 
   //global.registerComponent( emptyCoord, 'coord' );
-  global$1.registerComponent( Box, 'coord', 'box' ,3);
-  global$1.registerComponent( Polar3D, 'coord', 'polar3d',3 );
+  global.registerComponent(Box, 'coord', 'box', 3);
+  global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
 
-  global$1.registerComponent( Bar, 'graphs', 'bar',3 );
-  global$1.registerComponent( Line$2, 'graphs', 'line',3 );
-  global$1.registerComponent( Pie, 'graphs', 'pie',3 );
+  global.registerComponent(Bar, 'graphs', 'bar', 3);
+  global.registerComponent(Line$2, 'graphs', 'line', 3);
+  global.registerComponent(Area, 'graphs', 'area', 3);
+  global.registerComponent(Pie, 'graphs', 'pie', 3);
 
 
 
-  global$1.registerComponent( Tips, 'tips', 3 );
+  global.registerComponent(Tips, 'tips', 3);
+  global.registerComponent(MarkPoint, 'markpoint', 3);
 
 
 
@@ -29317,16 +30437,16 @@ var Chartx3d = (function () {
   //皮肤设定begin ---------------
   //如果数据库中有项目皮肤
   var projectTheme = []; //从数据库中查询出来设计师设置的项目皮肤
-  if( projectTheme && projectTheme.length ){
-      global$1.setGlobalTheme( projectTheme );
+  if (projectTheme && projectTheme.length) {
+      global.setGlobalTheme(projectTheme);
   }//皮肤设定end -----------------
 
   var chartx = {
-      options : {}
+      options: {}
   };
 
-  for( var p in global$1 ){
-      chartx[ p ] = global$1[ p ];
+  for (var p in global) {
+      chartx[p] = global[p];
   }
 
   return chartx;

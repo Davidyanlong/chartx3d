@@ -150,35 +150,34 @@ class Chart3d extends Events {
         this.components = [];
 
         //先初始化坐标系
-        let coord = this.componentModules.getComponentModule('coord', opts.coord.type)
+        let coord = this.componentModules.get('coord', opts.coord.type)
         if (!coord) {
             coord = InertialSystem;
         }
         this.setCoord(coord);
-
-        for (var p in opts) {
-
-            let comp = this.componentModules.getComponentModule(p, opts[p].type);
-            if (p == 'coord') continue;
-            if (p == 'graphs') {
-                for (var t = 0; t < opts.graphs.length; t++) {
-                    let key = opts.graphs[t].type;
-                    comp = this.componentModules.getComponentModule(p, key);
-                    this.addComponent(comp, opts.graphs[t]);
-
-                }
-            } else {
-                //其他组件
-                this.addComponent(comp, opts[p]);
-            }
-
-
-
-
-
-
+        //加载graph组件
+        for (let t = 0; t < opts.graphs.length; t++) {
+            let key = opts.graphs[t].type;
+            let comp = this.componentModules.get('graphs', key);
+            this.addComponent(comp, opts.graphs[t]);
 
         }
+        //加载其他组件
+        for (let p in opts) {
+            if (p === 'coord') continue;
+            if (p === 'graphs') continue;
+            if (_.isArray(opts[p])) {
+                for (let t = 0; t < opts[p].length; t++) {
+                    let key = opts[p][t].type;
+                    let comp = this.componentModules.get(p, key);
+                    this.addComponent(comp, opts[p][t]);
+                }
+            } else {
+                let comp = this.componentModules.get(p);
+                this.addComponent(comp, opts[p]);
+            }
+        }
+
     }
     //添加组件
     addComponent(cmp, opts) {
@@ -481,5 +480,5 @@ function onRenderBefore() {
 function onRenderAfter() {
     this.update();
 }
-export { Chart3d };
+export default Chart3d ;
 

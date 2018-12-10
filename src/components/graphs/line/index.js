@@ -71,7 +71,8 @@ class Line extends Component {
             fields = this.field.slice(0);
         }
         let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-        let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
+
+        let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
         this.drawPosData = [];
         let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
         let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
@@ -115,11 +116,12 @@ class Line extends Component {
 
         //let ceil = this.getCeilSize();
 
-        let generate = (zd) => {
+        let generate = (zd, zInd) => {
             xDatas.forEach((xd, no) => {
                 lastArray = [];
                 yValidData.forEach((yda, index) => {
                     let _fd = fields[index];
+
                     if (yda.length > 1) {
                         yda.forEach((ydad, num) => {
 
@@ -154,14 +156,23 @@ class Line extends Component {
 
                     } else {
                         let _tmp = new DataOrg();
-                        _tmp.field = _fd;
-                        _.flatten(yda).slice(0).forEach((yd, i) => {
-                            if (i === no) {
-                                _tmp.value = new Vector3(xd, yd, zd);
-                                me.drawPosData.push(_tmp);
-                            }
-
-                        })
+                        let searchOpt = {};
+                        let zdd = zd;
+                        if (zNativeSection[zInd] == zd) {
+                            zdd = zd;
+                        } else {
+                            zdd = zNativeSection[zInd];
+                        }
+                        if (me._coordSystem.zAxisAttribute.field) {
+                            searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
+                        }
+                        searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
+                        let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
+                        _tmp.field = zdd;
+                        if (yd.length > 0) {
+                            _tmp.value = new Vector3(xd, yd[0][zdd], zd);
+                            me.drawPosData.push(_tmp);
+                        }
                     }
                 })
             })
@@ -170,11 +181,12 @@ class Line extends Component {
 
         let fieldName = fields.toString();
         if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-            generate(fieldName);
+            let ind = _.indexOf(zNativeSection, fieldName)
+            generate(zSection[ind], ind);
         } else {
 
-            zSection.forEach(zd => {
-                generate(fieldName);
+            zSection.forEach((zd, zInd) => {
+                generate(zd, zInd);
             });
         }
 

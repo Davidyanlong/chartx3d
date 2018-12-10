@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <title>xChart demo -- area</title>
+
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <!-- codemirror -->
+    <script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
+    <link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
+    <link rel="stylesheet" href="../../lib/codemirror/docs.css">
+    <!-- codemirror end -->
+    <!--bootstrap-->
+    <script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
+    <!--bootstrap end-->
+    <script type="text/javascript" src="../../lib/demo.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
+</head>
+
+<body>
+
+    <table>
+        <tr>
+            <td id="td-vl">
+                <form><textarea id="code" name="code">
+
+//chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
+//第一行是表头。
+var data= [
+            ["xfield","uv" ,"pv" ,"click", "ppc"],
+            [ 1      , 101 , 300  , 33    , 0.2],
+            [ 2      , 67  , 51  , 26    , 0.5],
+            [ 3      , 130 , 50  , 50    , 0.8],
+            [ 4      , 101 , 60  , 33    , 0.4],
+            [ 5      , 67  , 91  , 126   , 0.22 ],
+            [ 6      , 30  , 50 , 90     , 0.35],
+            [ 7      , 51  , 120 , 33    , 0.91],
+            [ 8      , 67  , 51  , 86    , 0.1],
+            [ 9      , 120 , 90  , 150   , 0.34 ]
+                
+        ];
+
+
+         data=[
+        {"level":1,"active":15,"ds":"20181001"},{"level":1,"active":13,"ds":"20181002"},{"level":1,"active":13,"ds":"20181003"},{"level":1,"active":13,"ds":"20181004"},{"level":1,"active":13,"ds":"20181005"},{"level":1,"active":13,"ds":"20181006"},{"level":1,"active":13,"ds":"20181007"},{"level":1,"active":13,"ds":"20181008"},{"level":1,"active":13,"ds":"20181009"},{"level":1,"active":14,"ds":"20181010"},{"level":1,"active":15,"ds":"20181011"},{"level":1,"active":15,"ds":"20181012"},{"level":1,"active":15,"ds":"20181013"},{"level":1,"active":15,"ds":"20181014"},{"level":1,"active":15,"ds":"20181015"},{"level":1,"active":15,"ds":"20181016"},{"level":1,"active":15,"ds":"20181017"},{"level":1,"active":15,"ds":"20181018"},{"level":1,"active":15,"ds":"20181019"},{"level":1,"active":16,"ds":"20181020"},{"level":1,"active":16,"ds":"20181021"},{"level":1,"active":16,"ds":"20181022"},{"level":1,"active":16,"ds":"20181023"},{"level":1,"active":16,"ds":"20181024"},{"level":1,"active":16,"ds":"20181025"},{"level":1,"active":16,"ds":"20181026"},{"level":1,"active":16,"ds":"20181027"},{"level":1,"active":16,"ds":"20181028"},{"level":1,"active":16,"ds":"20181029"},{"level":1,"active":16,"ds":"20181030"},{"level":1,"active":16,"ds":"20181031"},
+        {"level":2,"active":44,"ds":"20181001"},{"level":2,"active":42,"ds":"20181002"},{"level":2,"active":42,"ds":"20181003"},{"level":2,"active":42,"ds":"20181004"},{"level":2,"active":41,"ds":"20181005"},{"level":2,"active":42,"ds":"20181006"},{"level":2,"active":43,"ds":"20181007"},{"level":2,"active":44,"ds":"20181008"},{"level":2,"active":45,"ds":"20181009"},{"level":2,"active":47,"ds":"20181010"},{"level":2,"active":47,"ds":"20181011"},{"level":2,"active":46,"ds":"20181012"},{"level":2,"active":46,"ds":"20181013"},{"level":2,"active":46,"ds":"20181014"},{"level":2,"active":45,"ds":"20181015"},{"level":2,"active":47,"ds":"20181016"},{"level":2,"active":47,"ds":"20181017"},{"level":2,"active":47,"ds":"20181018"},{"level":2,"active":48,"ds":"20181019"},{"level":2,"active":48,"ds":"20181020"},{"level":2,"active":48,"ds":"20181021"},{"level":2,"active":48,"ds":"20181022"},{"level":2,"active":48,"ds":"20181023"},{"level":2,"active":48,"ds":"20181024"},{"level":2,"active":48,"ds":"20181025"},{"level":2,"active":48,"ds":"20181026"},{"level":2,"active":48,"ds":"20181027"},{"level":2,"active":48,"ds":"20181028"},{"level":2,"active":48,"ds":"20181029"},{"level":2,"active":48,"ds":"20181030"},{"level":2,"active":48,"ds":"20181031"},
+        {"level":3,"active":80,"ds":"20181001"},{"level":3,"active":77,"ds":"20181002"},{"level":3,"active":77,"ds":"20181003"},{"level":3,"active":77,"ds":"20181004"},{"level":3,"active":77,"ds":"20181005"},{"level":3,"active":77,"ds":"20181006"},{"level":3,"active":78,"ds":"20181007"},{"level":3,"active":79,"ds":"20181008"},{"level":3,"active":79,"ds":"20181009"},{"level":3,"active":81,"ds":"20181010"},{"level":3,"active":87,"ds":"20181011"},{"level":3,"active":87,"ds":"20181012"},{"level":3,"active":86,"ds":"20181013"},{"level":3,"active":86,"ds":"20181014"},{"level":3,"active":86,"ds":"20181015"},{"level":3,"active":85,"ds":"20181016"},{"level":3,"active":86,"ds":"20181017"},{"level":3,"active":86,"ds":"20181018"},{"level":3,"active":87,"ds":"20181019"},{"level":3,"active":87,"ds":"20181020"},{"level":3,"active":87,"ds":"20181021"},{"level":3,"active":87,"ds":"20181022"},{"level":3,"active":87,"ds":"20181023"},{"level":3,"active":87,"ds":"20181024"},{"level":3,"active":87,"ds":"20181025"},{"level":3,"active":87,"ds":"20181026"},{"level":3,"active":87,"ds":"20181027"},{"level":3,"active":87,"ds":"20181028"},{"level":3,"active":87,"ds":"20181029"},{"level":3,"active":87,"ds":"20181030"},{"level":3,"active":87,"ds":"20181031"},
+        {"level":4,"active":147,"ds":"20181001"},{"level":4,"active":147,"ds":"20181002"},{"level":4,"active":146,"ds":"20181003"},{"level":4,"active":146,"ds":"20181004"},{"level":4,"active":145,"ds":"20181005"},{"level":4,"active":146,"ds":"20181006"},{"level":4,"active":146,"ds":"20181007"},{"level":4,"active":152,"ds":"20181008"},{"level":4,"active":152,"ds":"20181009"},{"level":4,"active":153,"ds":"20181010"},{"level":4,"active":156,"ds":"20181011"},{"level":4,"active":153,"ds":"20181012"},{"level":4,"active":154,"ds":"20181013"},{"level":4,"active":154,"ds":"20181014"},{"level":4,"active":154,"ds":"20181015"},{"level":4,"active":155,"ds":"20181016"},{"level":4,"active":157,"ds":"20181017"},{"level":4,"active":158,"ds":"20181018"},{"level":4,"active":159,"ds":"20181019"},{"level":4,"active":159,"ds":"20181020"},{"level":4,"active":159,"ds":"20181021"},{"level":4,"active":159,"ds":"20181022"},{"level":4,"active":159,"ds":"20181023"},{"level":4,"active":159,"ds":"20181024"},{"level":4,"active":159,"ds":"20181025"},{"level":4,"active":159,"ds":"20181026"},{"level":4,"active":159,"ds":"20181027"},{"level":4,"active":159,"ds":"20181028"},{"level":4,"active":159,"ds":"20181029"},{"level":4,"active":159,"ds":"20181030"},{"level":4,"active":159,"ds":"20181031"},
+        {"level":5,"active":265,"ds":"20181001"},{"level":5,"active":263,"ds":"20181002"},{"level":5,"active":263,"ds":"20181003"},{"level":5,"active":258,"ds":"20181004"},{"level":5,"active":260,"ds":"20181005"},{"level":5,"active":261,"ds":"20181006"},{"level":5,"active":259,"ds":"20181007"},{"level":5,"active":265,"ds":"20181008"},{"level":5,"active":267,"ds":"20181009"},{"level":5,"active":270,"ds":"20181010"},{"level":5,"active":274,"ds":"20181011"},{"level":5,"active":272,"ds":"20181012"},{"level":5,"active":269,"ds":"20181013"},{"level":5,"active":264,"ds":"20181014"},{"level":5,"active":266,"ds":"20181015"},{"level":5,"active":275,"ds":"20181016"},{"level":5,"active":276,"ds":"20181017"},{"level":5,"active":278,"ds":"20181018"},{"level":5,"active":283,"ds":"20181019"},{"level":5,"active":284,"ds":"20181020"},{"level":5,"active":284,"ds":"20181021"},{"level":5,"active":284,"ds":"20181022"},{"level":5,"active":284,"ds":"20181023"},{"level":5,"active":284,"ds":"20181024"},{"level":5,"active":284,"ds":"20181025"},{"level":5,"active":284,"ds":"20181026"},{"level":5,"active":283,"ds":"20181027"},{"level":5,"active":283,"ds":"20181028"},{"level":5,"active":284,"ds":"20181029"},{"level":5,"active":283,"ds":"20181030"},{"level":5,"active":282,"ds":"20181031"},
+        {"level":6,"active":466,"ds":"20181001"},{"level":6,"active":459,"ds":"20181002"},{"level":6,"active":454,"ds":"20181003"},{"level":6,"active":453,"ds":"20181004"},{"level":6,"active":462,"ds":"20181005"},{"level":6,"active":468,"ds":"20181006"},{"level":6,"active":473,"ds":"20181007"},{"level":6,"active":484,"ds":"20181008"},{"level":6,"active":489,"ds":"20181009"},{"level":6,"active":491,"ds":"20181010"},{"level":6,"active":489,"ds":"20181011"},{"level":6,"active":491,"ds":"20181012"},{"level":6,"active":493,"ds":"20181013"},{"level":6,"active":493,"ds":"20181014"},{"level":6,"active":500,"ds":"20181015"},{"level":6,"active":498,"ds":"20181016"},{"level":6,"active":505,"ds":"20181017"},{"level":6,"active":509,"ds":"20181018"},{"level":6,"active":520,"ds":"20181019"},{"level":6,"active":521,"ds":"20181020"},{"level":6,"active":521,"ds":"20181021"},{"level":6,"active":524,"ds":"20181022"},{"level":6,"active":525,"ds":"20181023"},{"level":6,"active":525,"ds":"20181024"},{"level":6,"active":525,"ds":"20181025"},{"level":6,"active":525,"ds":"20181026"},{"level":6,"active":524,"ds":"20181027"},{"level":6,"active":524,"ds":"20181028"},{"level":6,"active":525,"ds":"20181029"},{"level":6,"active":525,"ds":"20181030"},{"level":6,"active":522,"ds":"20181031"},
+        {"level":7,"active":956,"ds":"20181001"},{"level":7,"active":945,"ds":"20181002"},{"level":7,"active":944,"ds":"20181003"},{"level":7,"active":942,"ds":"20181004"},{"level":7,"active":955,"ds":"20181005"},{"level":7,"active":967,"ds":"20181006"},{"level":7,"active":971,"ds":"20181007"},{"level":7,"active":991,"ds":"20181008"},{"level":7,"active":1004,"ds":"20181009"},{"level":7,"active":1002,"ds":"20181010"},{"level":7,"active":1009,"ds":"20181011"},{"level":7,"active":993,"ds":"20181012"},{"level":7,"active":994,"ds":"20181013"},{"level":7,"active":993,"ds":"20181014"},{"level":7,"active":1011,"ds":"20181015"},{"level":7,"active":1020,"ds":"20181016"},{"level":7,"active":1022,"ds":"20181017"},{"level":7,"active":1032,"ds":"20181018"},{"level":7,"active":1043,"ds":"20181019"},{"level":7,"active":1050,"ds":"20181020"},{"level":7,"active":1049,"ds":"20181021"},{"level":7,"active":1049,"ds":"20181022"},{"level":7,"active":1049,"ds":"20181023"},{"level":7,"active":1051,"ds":"20181024"},{"level":7,"active":1050,"ds":"20181025"},{"level":7,"active":1049,"ds":"20181026"},{"level":7,"active":1047,"ds":"20181027"},{"level":7,"active":1043,"ds":"20181028"},{"level":7,"active":1046,"ds":"20181029"},{"level":7,"active":1046,"ds":"20181030"},{"level":7,"active":1047,"ds":"20181031"},
+        {"level":8,"active":2034,"ds":"20181001"},{"level":8,"active":2028,"ds":"20181002"},{"level":8,"active":2024,"ds":"20181003"},{"level":8,"active":2018,"ds":"20181004"},{"level":8,"active":2028,"ds":"20181005"},{"level":8,"active":2048,"ds":"20181006"},{"level":8,"active":2048,"ds":"20181007"},{"level":8,"active":2102,"ds":"20181008"},{"level":8,"active":2127,"ds":"20181009"},{"level":8,"active":2141,"ds":"20181010"},{"level":8,"active":2147,"ds":"20181011"},{"level":8,"active":2135,"ds":"20181012"},{"level":8,"active":2119,"ds":"20181013"},{"level":8,"active":2115,"ds":"20181014"},{"level":8,"active":2150,"ds":"20181015"},{"level":8,"active":2177,"ds":"20181016"},{"level":8,"active":2185,"ds":"20181017"},{"level":8,"active":2191,"ds":"20181018"},{"level":8,"active":2228,"ds":"20181019"},{"level":8,"active":2259,"ds":"20181020"},{"level":8,"active":2250,"ds":"20181021"},{"level":8,"active":2253,"ds":"20181022"},{"level":8,"active":2255,"ds":"20181023"},{"level":8,"active":2261,"ds":"20181024"},{"level":8,"active":2259,"ds":"20181025"},{"level":8,"active":2246,"ds":"20181026"},{"level":8,"active":2246,"ds":"20181027"},{"level":8,"active":2241,"ds":"20181028"},{"level":8,"active":2246,"ds":"20181029"},{"level":8,"active":2241,"ds":"20181030"},{"level":8,"active":2237,"ds":"20181031"},
+        {"level":9,"active":4964,"ds":"20181001"},{"level":9,"active":4916,"ds":"20181002"},{"level":9,"active":4920,"ds":"20181003"},{"level":9,"active":4958,"ds":"20181004"},{"level":9,"active":4997,"ds":"20181005"},{"level":9,"active":5059,"ds":"20181006"},{"level":9,"active":5093,"ds":"20181007"},{"level":9,"active":5199,"ds":"20181008"},{"level":9,"active":5257,"ds":"20181009"},{"level":9,"active":5279,"ds":"20181010"},{"level":9,"active":5283,"ds":"20181011"},{"level":9,"active":5297,"ds":"20181012"},{"level":9,"active":5276,"ds":"20181013"},{"level":9,"active":5252,"ds":"20181014"},{"level":9,"active":5284,"ds":"20181015"},{"level":9,"active":5332,"ds":"20181016"},{"level":9,"active":5363,"ds":"20181017"},{"level":9,"active":5390,"ds":"20181018"},{"level":9,"active":5468,"ds":"20181019"},{"level":9,"active":5544,"ds":"20181020"},{"level":9,"active":5529,"ds":"20181021"},{"level":9,"active":5551,"ds":"20181022"},{"level":9,"active":5597,"ds":"20181023"},{"level":9,"active":5590,"ds":"20181024"},{"level":9,"active":5571,"ds":"20181025"},{"level":9,"active":5544,"ds":"20181026"},{"level":9,"active":5529,"ds":"20181027"},{"level":9,"active":5498,"ds":"20181028"},{"level":9,"active":5502,"ds":"20181029"},{"level":9,"active":5510,"ds":"20181030"},{"level":9,"active":5500,"ds":"20181031"},
+        {"level":10,"active":37642,"ds":"20181001"},{"level":10,"active":37337,"ds":"20181002"},{"level":10,"active":36865,"ds":"20181003"},{"level":10,"active":36967,"ds":"20181004"},{"level":10,"active":37268,"ds":"20181005"},{"level":10,"active":37343,"ds":"20181006"},{"level":10,"active":37415,"ds":"20181007"},{"level":10,"active":38387,"ds":"20181008"},{"level":10,"active":39106,"ds":"20181009"},{"level":10,"active":39503,"ds":"20181010"},{"level":10,"active":39948,"ds":"20181011"},{"level":10,"active":40357,"ds":"20181012"},{"level":10,"active":40232,"ds":"20181013"},{"level":10,"active":39981,"ds":"20181014"},{"level":10,"active":40350,"ds":"20181015"},{"level":10,"active":40452,"ds":"20181016"},{"level":10,"active":40926,"ds":"20181017"},{"level":10,"active":41398,"ds":"20181018"},{"level":10,"active":41714,"ds":"20181019"},{"level":10,"active":41887,"ds":"20181020"},{"level":10,"active":41631,"ds":"20181021"},{"level":10,"active":43029,"ds":"20181022"},{"level":10,"active":48101,"ds":"20181023"},{"level":10,"active":49183,"ds":"20181024"},{"level":10,"active":48838,"ds":"20181025"},{"level":10,"active":45820,"ds":"20181026"},{"level":10,"active":45480,"ds":"20181027"},{"level":10,"active":44446,"ds":"20181028"},{"level":10,"active":44514,"ds":"20181029"},{"level":10,"active":46007,"ds":"20181030"},{"level":10,"active":64240,"ds":"20181031"}
+
+    ]
+
+
+var options = {
+    coord : {
+        type : "box",
+        //横向的图表，是坐标系横向了
+        //horizontal : true,
+
+        xAxis : {
+            field : "ds",
+        },
+        yAxis:{
+            middleweight:[16,50,100,200,300,550,1500,2500,6000],
+           
+        },
+        zAxis:{
+            field:"level",
+            layoutType:'peak',
+            dataSection:['一层','二层','三层','四层','五层','六层','七层','八层','九层','十层',]
+        },
+        controls:{
+            boxWidth:2000,
+            boxDepth:2000,
+            alpha: 15,    //绕X轴旋转
+            beta: 10,      //绕Y轴旋转
+        }
+    },
+    graphs : [
+        { 
+            type : "area",
+            field : ["active"] ,
+        }
+
+    ],
+    markpoint:[
+    {
+        markTo:'active',
+        active:'max',
+        label:{
+            fillStyle:'red'
+        }
+    },
+    {
+        markTo:'active',
+        active:'min',
+        label:{
+            fillStyle:'green'
+        }
+    }
+]
+      
+};
+
+window.line = Chartx3d.create("canvasTest" , data , options)
+
+
+            </textarea></form>
+            </td>
+            <td style="padding:0 10px;" id="td-vr">
+                <div id="chartdemo-r">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
+                        <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
+
+                        <h4>折线图（bar chart）</h4>
+                        <p>
+                            联系人：@不决
+                        </p>
+                    </div>
+                    <div class="test-c">
+                        <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+</body>
+
+</html>

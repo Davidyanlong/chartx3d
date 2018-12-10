@@ -84,7 +84,7 @@ class TickTexts extends Component {
         let zDir = new Vector3(0, 0, -1);
         this.texts = texts || this.texts;
 
-        let labels = app.creatSpriteText(texts, { fontSize, color });
+        let labels = app.creatSpriteText(texts, { fontSize, fillStyle:color });
 
         labels.forEach((label, index) => {
             label.userData.position = me.origins[index].clone();

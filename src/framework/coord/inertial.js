@@ -1,5 +1,5 @@
 
-import { Events, Vector3, Box3, _Math,Matrix4 } from "mmgl/src/index";
+import { Events, Vector3, Box3, _Math, Matrix4,Vector2 } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
 
 
@@ -29,7 +29,7 @@ class InertialSystem extends Events {
             back: 0
         }
 
-       
+
 
 
         this.fieldMap = {};
@@ -104,7 +104,7 @@ class InertialSystem extends Events {
         return null;
     }
     drawUI() {
-       // this._root.initComponent();
+        // this._root.initComponent();
     }
 
     draw() {
@@ -131,7 +131,9 @@ class InertialSystem extends Events {
     positionToScreen(pos) {
         return positionToScreen.call(this, pos);
     }
-
+    screenToWorld(dx, dy) {
+        return screenToWorld.call(this, dx, dy);
+    }
 
 }
 
@@ -151,6 +153,34 @@ let positionToScreen = (function () {
         target.x = (target.x * widthHalf) + widthHalf;
         target.y = (- (target.y * heightHalf) + heightHalf);
         return target;
+    }
+})();
+
+
+
+let screenToWorld = (function () {
+    let matrix = new Matrix4();
+
+    return function (dx, dy) {
+        let pCam = this._root.renderView._camera;
+        const width = this._root.width;
+        const height = this._root.height;
+        let mouse = new Vector2();
+
+        mouse.x = (dx / width) * 2 - 1;
+        mouse.y = -(dy / height) * 2 + 1;
+        //新建一个三维单位向量 假设z方向就是0.5
+        //根据照相机，把这个向量转换到视点坐标系
+
+        var target = new Vector3(mouse.x, mouse.y, 0.5).unproject(pCam, matrix);
+
+        // let target = this.group.localToWorld(pos);
+
+        // target.project(pCam, matrix);
+
+        // target.x = (target.x * widthHalf) + widthHalf;
+        // target.y = (- (target.y * heightHalf) + heightHalf);
+         return target;
     }
 })();
 

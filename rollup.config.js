@@ -52,7 +52,7 @@ rollup.rollup({
             browser: true
         }),
 
-        commonjs({ include: 'node_modules/**' }),
+        commonjs(),
         //babel()
         // babel({
         //     //babelrc: true,

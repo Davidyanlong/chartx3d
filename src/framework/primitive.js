@@ -18,9 +18,13 @@ import {
     CircleBufferGeometry,
     SphereBufferGeometry,
     DoughnutBufferGeometry,
+    DoughnutGeometry,
+    Shape,
+    ExtrudeBufferGeometry,
 
     MeshLambertMaterial,
     MeshBasicMaterial,
+    MeshPhongMaterial,
     LineMeshMaterial,
     LineBasicMaterial,
     LineDashedMaterial,
@@ -30,12 +34,13 @@ import {
     Mesh,
     Line,
     Line2,
-    Sprite
+    Sprite,
+
+    Earcut
 } from 'mmgl/src/index';
 
 import { _ } from "mmvis/src/index";
 import { RenderFont } from './renderFont';
-import earcut from "earcut";
 
 const getBasicMaterial = () => {
     return new MeshBasicMaterial({
@@ -59,6 +64,13 @@ const primitive = {
             vertice.addScalar(0.5);
             vertice.z *= -1;
         });
+        geometry.faces.forEach(face => {
+            let a = face.a;
+            face.a = face.b;
+            face.b = a;
+        })
+        geometry.normalsNeedUpdate = true;
+        geometry.computeFaceNormals();
 
         //更加给定的得数据变换box
         transMatrix.makeScale(width, height, depth);
@@ -88,6 +100,13 @@ const primitive = {
             //vertice.y -= 0.5;
             vertice.z *= -1;
         });
+        geometry.faces.forEach(face => {
+            let a = face.a;
+            face.a = face.b;
+            face.b = a;
+        })
+        geometry.normalsNeedUpdate = true;
+        geometry.computeFaceNormals();
 
         //更加给定的得数据变换box
         let radius = width * 0.5;
@@ -120,6 +139,14 @@ const primitive = {
             //vertice.y -= 0.5;
             vertice.z *= -1;
         });
+
+        geometry.faces.forEach(face => {
+            let a = face.a;
+            face.a = face.b;
+            face.b = a;
+        })
+        geometry.normalsNeedUpdate = true;
+        geometry.computeFaceNormals();
 
         //更加给定的得数据变换box
         let radius = width * 0.5;
@@ -430,7 +457,7 @@ const primitive = {
         }
 
         //earcut(data.vertices, data.holes, data.dimensions);
-        let triangles = earcut(points, null, 3);
+        let triangles = Earcut.triangulate(points, null, 3);
         let geometry = new BufferGeometry();
         let positionBuffer = new Float32BufferAttribute(points, 3);
         geometry.addAttribute('position', positionBuffer);
@@ -440,16 +467,55 @@ const primitive = {
 
         return mesh;
     },
+
+    createArea(points = [], depth, faceStyle = {}, materials) {
+        if (!materials) {
+
+            materials = new MeshPhongMaterial({
+                color: faceStyle.fillStyle || 0xffffff * Math.random(),
+                side: DoubleSide,
+                transparent: true,
+                opacity: faceStyle.alpha || 1.0,
+                // polygonOffset: true,
+                // polygonOffsetFactor: 1,
+                // polygonOffsetUnits: 0.1,
+                depthTest: true,
+                depthWrite: true
+
+            });
+        }
+
+        //earcut(data.vertices, data.holes, data.dimensions);
+        // let triangles = earcut(points, null, 3);
+        // let geometry = new BufferGeometry();
+        // let positionBuffer = new Float32BufferAttribute(points, 3);
+        // geometry.addAttribute('position', positionBuffer);
+        // geometry.setIndex(triangles);
+
+        let shape = new Shape(points);
+        let extrudeSettings = {
+            depth: depth || 50,
+            bevelEnabled: true,
+            bevelSegments: 2,
+            steps: 1,
+            bevelSize: 1,
+            bevelThickness: 10
+        };
+        let geometry = new ExtrudeBufferGeometry(shape, extrudeSettings)
+        let mesh = new Mesh(geometry, materials);
+
+        return mesh;
+    },
+
+
     //饼图的一个扇形角
     create3DPie(height, outterRadius, innerRadius = 0, startAngle, endAngle, materials) {
         let radialSegments = 32;
         let PI2 = Math.PI * 2;
         //与2D的饼图角度一直,并沿顺时针绘制  
 
-        let _startAngle = _Math.degToRad(startAngle-90);
-        let _endAngle = _Math.degToRad(endAngle-90);
-
-
+        let _startAngle = _Math.degToRad(startAngle - 90);
+        let _endAngle = _Math.degToRad(endAngle - 90);
 
 
         if (!materials) {
@@ -463,7 +529,7 @@ const primitive = {
                 depthWrite: true
             });
         }
-        let geometry = new DoughnutBufferGeometry(outterRadius, height, innerRadius, radialSegments, (PI2 - _startAngle) % PI2, -(_endAngle - _startAngle));
+        let geometry = new DoughnutGeometry(outterRadius, height, innerRadius, radialSegments, (PI2 - _startAngle) % PI2, -(_endAngle - _startAngle));
 
         let mesh = new Mesh(geometry, materials);
         return mesh;

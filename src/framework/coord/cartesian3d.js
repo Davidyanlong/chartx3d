@@ -213,7 +213,7 @@ class Cartesian3D extends InertialSystem {
 
         //Z轴如果设置了filed,按照数据轴的正常逻辑进行,否则Z轴按照Graphs配置中
         //的索引显示对应的名称 
-        if (_.isEmpty(opt.zAxis.field)) {
+        if (!this.isExistZAxisField()) {
             let _sectionZ = [];
             this._root.opt.graphs.forEach((yOps) => {
                 _sectionZ.push(yOps.field.toString());
@@ -247,17 +247,30 @@ class Cartesian3D extends InertialSystem {
 
 
         let getTheme = this._root.getTheme.bind(this._root);
-        _allField.forEach((v, i) => {
+        if (!this.isExistZAxisField()) {
+            _allField.forEach((v, i) => {
 
-            this.fieldMap[v] = this.fieldMap[v] || {};
-            this.fieldMap[v].color = getTheme(i);
-        })
+                this.fieldMap[v] = this.fieldMap[v] || {};
+                this.fieldMap[v].color = getTheme(i);
+            })
+        } else {
+            this.zAxisAttribute.getDataSection().forEach((v, i) => {
+
+                this.fieldMap[v] = this.fieldMap[v] || {};
+                this.fieldMap[v].color = getTheme(i);
+            })
+        }
 
 
         this.addLights();
     }
 
-
+    isExistZAxisField() {
+        if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)) {
+            return this.coord.zAxis.field
+        }
+        return false;
+    }
 
     getYAxis(name = DEFAULT_AXIS) {
         let yAxisAttr = this.yAxisAttribute[name];
@@ -370,23 +383,23 @@ class Cartesian3D extends InertialSystem {
         //center.setY(0);
 
         let dirLights = [];
-        let intensity = 0.8;
+        let intensity = 0.5;
         let lightColor = 0xcccccc;
         let position = new Vector3(-1, -1, 1);
 
-        dirLights[0] = new DirectionalLight(lightColor, intensity);
-        position.multiplyScalar(10000);
-        dirLights[0].position.copy(position);
-        dirLights[0].target.position.copy(center);
-        this._root.rootStage.add(dirLights[0]);
+        // dirLights[0] = new DirectionalLight(lightColor, intensity);
+        // position.multiplyScalar(10000);
+        // dirLights[0].position.copy(position);
+        // dirLights[0].target.position.copy(center);
+        // this._root.rootStage.add(dirLights[0]);
 
 
-        dirLights[1] = new DirectionalLight(lightColor, intensity);
-        position = new Vector3(1, -1, 1);
-        position.multiplyScalar(10000);
-        dirLights[1].position.copy(position);
-        dirLights[1].target.position.copy(center);
-        this._root.rootStage.add(dirLights[1]);
+        // dirLights[1] = new DirectionalLight(lightColor, intensity);
+        // position = new Vector3(1, -1, 1);
+        // position.multiplyScalar(10000);
+        // dirLights[1].position.copy(position);
+        // dirLights[1].target.position.copy(center);
+        // this._root.rootStage.add(dirLights[1]);
 
 
         // dirLights[2] = new DirectionalLight(lightColor, intensity);
@@ -409,32 +422,32 @@ class Cartesian3D extends InertialSystem {
 
         let pointLight = [];
 
-        // pointLight[0] = new PointLight(lightColor, intensity);
-        // position = new Vector3(-1, -1, 1);
-        // position.multiplyScalar(10000);
-        // pointLight[0].position.copy(position);
-        // this._root.rootStage.add(pointLight[0]);
+        pointLight[0] = new PointLight(lightColor, intensity);
+        position = new Vector3(-1, 1, 1);
+        position.multiplyScalar(10000);
+        pointLight[0].position.copy(position);
+        this._root.rootStage.add(pointLight[0]);
 
 
-        // pointLight[1] = new PointLight(lightColor, intensity);
-        // position = new Vector3(1, -1, 1);
-        // position.multiplyScalar(10000);
-        // pointLight[1].position.copy(position);
-        // this._root.rootStage.add(pointLight[1]);
+        pointLight[1] = new PointLight(lightColor, intensity);
+        position = new Vector3(1, 1, 1);
+        position.multiplyScalar(10000);
+        pointLight[1].position.copy(position);
+        this._root.rootStage.add(pointLight[1]);
 
 
-        // pointLight[2] = new PointLight(lightColor, intensity);
-        // position = new Vector3(-1, -1, -1);
-        // position.multiplyScalar(10000);
-        // pointLight[2].position.copy(position);
-        // this._root.rootStage.add(pointLight[2]);
+        pointLight[2] = new PointLight(lightColor, intensity);
+        position = new Vector3(-1, 1, -1);
+        position.multiplyScalar(10000);
+        pointLight[2].position.copy(position);
+        this._root.rootStage.add(pointLight[2]);
 
 
-        // pointLight[3] = new PointLight('#fff', 1);
-        // position = new Vector3(1, -1, -1);
-        // position.multiplyScalar(1000);
-        // pointLight[3].position.copy(position);
-        // this._root.rootStage.add(pointLight[3]);
+        pointLight[3] = new PointLight(lightColor, intensity);
+        position = new Vector3(1, 1, -1);
+        position.multiplyScalar(1000);
+        pointLight[3].position.copy(position);
+        this._root.rootStage.add(pointLight[3]);
 
 
 
@@ -535,7 +548,7 @@ class Cartesian3D extends InertialSystem {
         } else {
             this.zAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.zAxis.field));
         }
-       
+
         this.zAxisAttribute.setDataSection();
         this.zAxisAttribute.calculateProps();
 
@@ -550,4 +563,4 @@ class Cartesian3D extends InertialSystem {
 
 
 
-export { Cartesian3D };
+export { Cartesian3D, DEFAULT_AXIS };

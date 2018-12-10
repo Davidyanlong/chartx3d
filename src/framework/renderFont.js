@@ -10,17 +10,21 @@ const _computeCanvasContent = (function () {
 class RenderFont {
     constructor({
         scale = 0,
-        color = '#333333',
+        fillStyle = '#333333',
+        strokeStyle = null,
+        lineWidth = 1,
         fontSize = 14,
         fontFamily = '微软雅黑,sans-serif',
         isBold = false,
         lineHeight = 1.2,
-        defaultTextureWidth = 128,
+        defaultTextureWidth = 256,
         canvas = null
     } = {}) {
         this.scale = scale || window.devicePixelRatio || 1;
         this.style = {
-            color,
+            fillStyle,
+            strokeStyle,
+            lineWidth,
             fontSize,
             fontFamily,
             isBold,
@@ -37,7 +41,7 @@ class RenderFont {
 
     }
     getFont() {
-        return this.style.isBold ? 'bold ' : 'normal ' + this.style.fontSize + 'px ' + this.style.fontFamily;
+        return (this.style.isBold ? 'bold ' : 'normal ') + this.style.fontSize + 'px ' + this.style.fontFamily;
     }
     getTextWidth(txt, font = "") {
         let width = 0;
@@ -178,12 +182,16 @@ class RenderFont {
         let { maxWidth, maxHeight, canvasWidth, canvasHeight, uvs, sizes } = this.computeUvsAndCanvasSize(texts);
         this.setCanvasSize(canvasWidth, canvasHeight);
 
-        me.context.fillStyle = me.style.color;
+        me.context.fillStyle = me.style.fillStyle;
+        if (me.style.strokeStyle) {
+            me.context.strokeStyle = me.style.strokeStyle;
+            me.context.lineWidth = me.style.lineWidth;
+        }
         me.context.textAlign = me.style.textAlign;
         me.context.textBaseline = me.style.textBaseline;
         me.context.webkitImageSmoothingEnabled = true;
 
-        me.context.font = me.style.isBold ? 'bold ' : 'normal ' + me.style.fontSize + 'px ' + me.style.fontFamily;
+        me.context.font = this.getFont();
 
 
         texts.forEach(text => {
@@ -200,11 +208,13 @@ class RenderFont {
 
             txtArr.forEach((txt, line) => {
                 me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+                if (me.style.strokeStyle) {
+                    me.context.strokeText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+                }
             });
 
         })
 
-        window._debug = false;
         if (window._debug) {
             //console.log('left,top', left, top, maxWidth, size.width);
             document.body.appendChild(me.canvas);

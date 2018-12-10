@@ -424,7 +424,6 @@ class Pie extends Component {
             // if (globalX > me._graphs.root.width || globalY < 0 || globalY > me._graphs.root.height) {
             //     return;
             // };
-            // debugger
             // var pathStr = "M" + itemData.centerx + "," + itemData.centery;
             // pathStr += "Q" + itemData.outx + "," + itemData.outy + "," + currentX + "," + currentY;
 
@@ -445,7 +444,7 @@ class Pie extends Component {
             this.group.add(line);
 
 
-            let label = app.creatSpriteText(itemData.labelText, { fontSize: 14, color: itemData.color });
+            let label = app.creatSpriteText(itemData.labelText, { fontSize: 14, fillStyle: itemData.color });
             label[0].userData.position = new Vector3(currentX, 0, currentY);
             label[0].userData.dir = new Vector3(itemData.outx, 0, itemData.outy).sub(new Vector3(itemData.centerx, 0, itemData.centery))
             label[0].userData.dir.normalize();

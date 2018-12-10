@@ -20,9 +20,10 @@ class Component extends Events {
         this.group.name = name;
     }
 
-    dispose() {
+    dispose(group) {
         let removes = [];
-        this.group.traverse(obj => {
+        group = group || this.group;
+        group.traverse(obj => {
             if (obj.isMesh || obj.isLine || obj.isLine2 || obj.isSprite) {
                 if (obj.geometry) {
                     obj.geometry.dispose();
@@ -46,8 +47,8 @@ class Component extends Events {
     draw() {
         //基类不实现
     }
-    resetData(){
-        
+    resetData() {
+
     }
     //后续组件的公共部分可以提取到这里
 

@@ -54,7 +54,7 @@ class Cylindrical extends InertialSystem {
         //center.setY(0);
 
         //     let dirLights = [];
-        let intensity = 0.8;
+        let intensity = 0.5;
         let lightColor = 0xcccccc;
         //     let position = new Vector3(-1, -1, 1);
 
@@ -108,14 +108,14 @@ class Cylindrical extends InertialSystem {
 
 
         pointLight[2] = new PointLight(lightColor, intensity);
-        position = new Vector3(-1, -1, -1);
+        position = new Vector3(-1, 1, -1);
         position.multiplyScalar(10000);
         pointLight[2].position.copy(position);
         this._root.rootStage.add(pointLight[2]);
 
 
-        pointLight[3] = new PointLight('#fff', 1);
-        position = new Vector3(1, -1, -1);
+        pointLight[3] = new PointLight(lightColor, intensity);
+        position = new Vector3(1, 1, -1);
         position.multiplyScalar(1000);
         pointLight[3].position.copy(position);
         this._root.rootStage.add(pointLight[3]);
