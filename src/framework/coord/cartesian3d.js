@@ -27,6 +27,7 @@ class Cartesian3D extends InertialSystem {
     constructor(root) {
         super(root);
 
+        this.type = "Cartesian3D";
         this.offset = new Vector3(0, 0, 0);
 
         this._coordUI = null;
@@ -232,41 +233,121 @@ class Cartesian3D extends InertialSystem {
 
 
         //y轴的颜色值先预设好
-        let _allField = [];
-        opt.yAxis.forEach(yx => {
-            yx.field.forEach(fd => {
-                if (_.isArray(fd)) {
-                    fd.forEach(fname => {
-                        _allField.push(fname);
-                    })
-                } else {
-                    _allField.push(fd);
-                }
-            })
-        });
+        // let _allField = [];
+        // opt.yAxis.forEach(yx => {
+        //     yx.field.forEach(fd => {
+        //         if (_.isArray(fd)) {
+        //             fd.forEach(fname => {
+        //                 _allField.push(fname);
+        //             })
+        //         } else {
+        //             _allField.push(fd);
+        //         }
+        //     })
+        // });
 
 
-        let getTheme = this._root.getTheme.bind(this._root);
-        if (!this.isExistZAxisField()) {
-            _allField.forEach((v, i) => {
+        // let getTheme = this._root.getTheme.bind(this._root);
+        // if (!this.isExistZAxisField()) {
+        //     _allField.forEach((v, i) => {
 
-                this.fieldMap[v] = this.fieldMap[v] || {};
-                this.fieldMap[v].color = getTheme(i);
-            })
-        } else {
-            this.zAxisAttribute.getDataSection().forEach((v, i) => {
+        //         this.fieldMap[v] = this.fieldMap[v] || {};
+        //         this.fieldMap[v].color = getTheme(i);
+        //     })
+        // } else {
+        //     debugger
+        //     this.zAxisAttribute.getDataSection().forEach((v, i) => {
 
-                this.fieldMap[v] = this.fieldMap[v] || {};
-                this.fieldMap[v].color = getTheme(i);
-            })
-        }
-
+        //         this.fieldMap[v] = this.fieldMap[v] || {};
+        //         this.fieldMap[v].color = getTheme(i);
+        //     })
+        // }
+        this.fieldsMap = this._setFieldsMap();
 
         this.addLights();
     }
 
+    _setFieldsMap() {
+        var me = this;
+        var fieldInd = 0;
+        let opt = _.clone(this.coord);
+        let getTheme = this._root.getTheme.bind(this._root);
+        let _set = (fields) => {
+
+            let _zField = this.isExistZAxisField();
+
+
+            if (!fields) {
+                var yAxis = opt.yAxis;
+                if (!_.isArray(yAxis)) {
+                    yAxis = [yAxis];
+                };
+                fields = [];
+                _.each(yAxis, function (item, i) {
+                    if (item.field) {
+                        fields = fields.concat(item.field);
+                    };
+                });
+            };
+
+            if (_.isString(fields)) {
+                fields = [fields];
+            };
+
+            var clone_fields = _.clone(fields);
+            for (var i = 0, l = fields.length; i < l; i++) {
+                if (_zField) {
+                    //三维数据
+                    let zDataSection = this.zAxisAttribute.getDataSection();
+                    let len = zDataSection.length;
+                    zDataSection.forEach((zf, zInd) => {
+                        if (_.isString(fields[i])) {
+                            clone_fields[i * len + zInd] = {
+                                field: fields[i],
+                                enabled: true,
+                                // yAxis: me._getYaxisOfField(fields[i]),
+                                color: getTheme(fieldInd),
+                                ind: fieldInd++,
+                                zInd: zInd,
+                                [_zField]: zf
+
+                            }
+                        } else {
+                            clone_fields[i] = _set(fields[i], fieldInd);
+                        }
+                    });
+                } else {
+                    //二维数据
+                    if (_.isString(fields[i])) {
+
+                        clone_fields[i] = {
+                            field: fields[i],
+                            enabled: true,
+                            // yAxis: me._getYaxisOfField(fields[i]),
+                            color: getTheme(fieldInd),
+                            ind: fieldInd++,
+                            zInd: 0
+                        }
+
+                    }
+                    if (_.isArray(fields[i])) {
+                        clone_fields[i] = _set(fields[i], fieldInd);
+                    }
+                }
+
+            };
+
+            return clone_fields;
+        };
+
+        return _set();
+    }
+
+
+
     isExistZAxisField() {
-        if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)) {
+        if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)
+            && this.coord.zAxis.layoutType !== "proportion") {
             return this.coord.zAxis.field
         }
         return false;
@@ -362,19 +443,12 @@ class Cartesian3D extends InertialSystem {
         //orbite target position
         this._root.orbitControls.target.copy(center);
 
-
-        //测试中心点的位置
-        // let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
-        // let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
-        // this._root.renderView._scene.add(helpLine);
-        // this._root.renderView._scene.add(helpLine2);
-
     }
 
     addLights() {
         //加入灯光
 
-        var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+        var ambientlight = new AmbientLight(0xffffff, 0.5); // soft white light
 
         this._root.rootStage.add(ambientlight);
 
@@ -384,41 +458,8 @@ class Cartesian3D extends InertialSystem {
 
         let dirLights = [];
         let intensity = 0.5;
-        let lightColor = 0xcccccc;
+        let lightColor = 0xFFFFFF;
         let position = new Vector3(-1, -1, 1);
-
-        // dirLights[0] = new DirectionalLight(lightColor, intensity);
-        // position.multiplyScalar(10000);
-        // dirLights[0].position.copy(position);
-        // dirLights[0].target.position.copy(center);
-        // this._root.rootStage.add(dirLights[0]);
-
-
-        // dirLights[1] = new DirectionalLight(lightColor, intensity);
-        // position = new Vector3(1, -1, 1);
-        // position.multiplyScalar(10000);
-        // dirLights[1].position.copy(position);
-        // dirLights[1].target.position.copy(center);
-        // this._root.rootStage.add(dirLights[1]);
-
-
-        // dirLights[2] = new DirectionalLight(lightColor, intensity);
-        // position = new Vector3(-1, -1, -1);
-        // position.multiplyScalar(10000);
-        // dirLights[2].position.copy(position);
-        // dirLights[2].target.position.copy(center);
-        // this._root.rootStage.add(dirLights[2]);
-
-
-        // dirLights[3] = new DirectionalLight(lightColor, intensity);
-        // position = new Vector3(1, -1, -1);
-        // position.multiplyScalar(10000);
-        // dirLights[3].position.copy(position);
-        // dirLights[3].target.position.copy(center);
-        // this._root.rootStage.add(dirLights[3]);
-
-
-
 
         let pointLight = [];
 

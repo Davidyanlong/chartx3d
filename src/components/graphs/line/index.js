@@ -1,11 +1,11 @@
-import { Component, _ } from '../../Component';
+import { GraphObject, _ } from '../graph';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 100;
 
-class Line extends Component {
+class Line extends GraphObject {
     constructor(chart3d, opt) {
-        super(chart3d.currCoord);
+        super(chart3d);
 
         this.type = "line";
         this._type = "line3d";
@@ -61,196 +61,30 @@ class Line extends Component {
 
         return color;
     }
-
-    computePos() {
-        let me = this;
-        let fields = [], customField = [];
-        if (!_.isArray(this.field)) {
-            fields.push(this.field);
-        } else {
-            fields = this.field.slice(0);
-        }
-        let zSection = this._coordSystem.zAxisAttribute.getDataSection();
-
-        let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
-        this.drawPosData = [];
-        let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
-        let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
-        let yAxisAttribute = yAxisInfo.attr;
-
-        let yDatas = yAxisAttribute.dataOrg;
-        //x轴返回的数据是单列
-        if (xDatas.length == 1) {
-            xDatas = _.flatten(xDatas);
-        }
-        //todo 三维数据这里会有问题,需要整理清楚
-
-
-        let yValidData = [];
-
-        yValidData = yAxisAttribute.getPartDataOrg(this.field);
-        if (this._coordSystem.coord.zAxis.dataSection) {
-            customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
-        }
-
-
-        let lastArray = [];
-
-        let DataOrg = function () {
-            //this.org = [];
-            this.isStack = false;
-            //this.stack = [];
-            //具体XYZ的值
-            this.value = null;
-            //堆叠值
-            this.stackValue = null
-            //堆叠楼层
-            this.floor = 0;
-            //绘制的字段顺序
-            this.level = 0;
-            this.field = '';
-
-            //
-            //this.pos = null;
-        };
-
-        //let ceil = this.getCeilSize();
-
-        let generate = (zd, zInd) => {
-            xDatas.forEach((xd, no) => {
-                lastArray = [];
-                yValidData.forEach((yda, index) => {
-                    let _fd = fields[index];
-
-                    if (yda.length > 1) {
-                        yda.forEach((ydad, num) => {
-
-                            let ydadd = _.flatten(ydad).slice(0);
-                            let _fdd = _fd[num];
-                            ydadd.forEach((yd, i) => {
-                                if (i === no) {
-                                    let _tmp = new DataOrg();
-                                    _tmp.floor = num;
-                                    _tmp.level = index + num;
-                                    _tmp.field = _fdd;
-                                    if (num > 0) {
-                                        _tmp.isStack = true;
-                                        _tmp.value = new Vector3(xd, yd, zd);
-                                        _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
-
-                                    } else {
-                                        _tmp.isStack = true;
-                                        _tmp.stackValue = new Vector3(xd, 0, zd);
-                                        _tmp.value = new Vector3(xd, yd, zd);
-
-                                    }
-                                    me.drawPosData.push(_tmp);
-                                }
-
-                            })
-                            _.flatten(ydad).slice(0).forEach((t, y) => {
-                                lastArray[y] = (lastArray[y] || 0) + t;
-                            })
-                            //lastArray = _.flatten(ydad).slice(0);
-                        })
-
-                    } else {
-                        let _tmp = new DataOrg();
-                        let searchOpt = {};
-                        let zdd = zd;
-                        if (zNativeSection[zInd] == zd) {
-                            zdd = zd;
-                        } else {
-                            zdd = zNativeSection[zInd];
-                        }
-                        if (me._coordSystem.zAxisAttribute.field) {
-                            searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
-                        }
-                        searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
-                        let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
-                        _tmp.field = zdd;
-                        if (yd.length > 0) {
-                            _tmp.value = new Vector3(xd, yd[0][zdd], zd);
-                            me.drawPosData.push(_tmp);
-                        }
-                    }
-                })
-            })
-        }
-
-
-        let fieldName = fields.toString();
-        if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-            let ind = _.indexOf(zNativeSection, fieldName)
-            generate(zSection[ind], ind);
-        } else {
-
-            zSection.forEach((zd, zInd) => {
-                generate(zd, zInd);
-            });
-        }
-
-
+    dataProcess() {
+        super.dataProcess();
     }
     draw() {
         let me = this;
         let app = this._root.app;
-        let linePoints = {};
-        this.computePos();
-        let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
-        let ceil = this._coordSystem.getCeilSize();
-        let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
-        let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
-        let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
-        let boxWidth = ceil.x * 0.7;
-        let boxDepth = ceil.z * 0.7;
-        let boxHeight = 1;
-        this.drawPosData.forEach(dataOrg => {
-            let pos = new Vector3();
-            let stack = new Vector3();
-            pos.setX(getXAxisPosition(dataOrg.value.x));
-            pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
-            pos.setZ(getZAxisPosition(dataOrg.value.z));
-
-            if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-                linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
-            } else {
-                linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
-            }
-
-            if (dataOrg.isStack) {
-                stack.setX(pos.x);
-                stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
-                stack.setZ(-pos.z);
-
-            } else {
-
-                stack.setX(pos.x);
-                stack.setY(pos.y);
-                stack.setZ(-pos.z);
-
-            }
-
-
-            if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
-                linePoints[dataOrg.field].push(stack);
-            } else {
-                linePoints[dataOrg.value.z].push(stack);
-            }
-
-        })
+        this.dataProcess();
 
         const DIVISONS = 200;
-        for (let field in linePoints) {
+        for (let field in this.drawData) {
             let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
+            let fieldObj = this.drawData[field];
 
             let points = null;
+
+            let poses = fieldObj.map(item => {
+                return item.pos;
+            });
             if (this.line.enabled) {
                 if (me.line.smooth) {
-                    let curve = new CatmullRomCurve3(linePoints[field]);
+                    let curve = new CatmullRomCurve3(poses);
                     points = curve.getSpacedPoints(DIVISONS);
                 } else {
-                    points = linePoints[field];
+                    points = poses;
                 }
 
 
@@ -274,10 +108,9 @@ class Line extends Component {
             }
 
 
-
             //绘制node 点
             if (this.icon.enabled) {
-                linePoints[field].forEach(point => {
+                poses.forEach(point => {
 
                     //let node = app.createSphere(10,{fillStyle:_color});
                     let node = app.createCirclePlane(10, { fillStyle: _color });

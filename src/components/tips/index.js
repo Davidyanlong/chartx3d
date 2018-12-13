@@ -205,66 +205,28 @@ class Tips extends Component {
         if (style) {
             str += "<div style='background:" + style + ";margin-right:8px;margin-top:5px;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></div>";
         };
-        _.each(info.value, (value, key) => {
+        _.each(info.rowData, (value, key) => {
+            if (key !== info.field) return;
             str += '<div><span style="margin-right:5px">- ' + key + ':</span><span>' + value + '</span></div>';
         })
 
         str += "</div>";
 
-        // _.each(info.nodes, function (node, i) {
-        //     //value 是null 或者 undefined
-        //     if (!node.value && node.value !== 0) {
-        //         return;
-        //     }; 
-
-
-        //     if( style ){
-        //         str += "<span style='background:" + style + ";margin-right:8px;margin-top:5px;float:left;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></span>";
-        //     };
-        //     str += value + "</div>";
-        // });
-        return str;
-    }
-
-    /*
-    _getDefaultContent_bak( info )
-    {
-
-
-        if( !info.nodes.length ){
-            return null;
-        };
-
-        var str  = "<table style='border:none'>";
-        var self = this;
-
-        if( info.title !== undefined && info.title !== null &&info.title !== "" ){
-            str += "<tr><td colspan='2'>"+ info.title +"</td></tr>"
-        };
-
-        _.each( info.nodes , function( node , i ){
-            if( node.value === undefined || node.value === null ){
+        _.each(info.nodes, function (node, i) {
+            //value 是null 或者 undefined
+            if (!node.value && node.value !== 0) {
                 return;
             };
 
-            
-            str+= "<tr style='color:"+ (node.color || node.fillStyle || node.strokeStyle) +"'>";
-            
-            let tsStyle="style='border:none;white-space:nowrap;word-wrap:normal;'";
-            let label = node.label || node.field || node.name;
-            if( label ){
-                label += "：";
-            } else {
-                label = "";
+
+            if (style) {
+                str += "<span style='background:" + style + ";margin-right:8px;margin-top:5px;float:left;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></span>";
             };
-        
-            str+="<td "+tsStyle+">"+ label +"</td>";
-            str += "<td "+tsStyle+">"+ (typeof node.value == "object" ? JSON.stringify(node.value) : numAddSymbol(node.value)) +"</td></tr>";
+            str += node.value + "</div>";
         });
-        str+="</table>";
         return str;
     }
-    */
+
 
     /**
      *获取back要显示的x
@@ -302,79 +264,7 @@ class Tips extends Component {
 
 
     _tipsPointerShow(e) {
-        var _coord = this.root._coord;
 
-        //目前只实现了直角坐标系的tipsPointer
-        if (!_coord || _coord.type != 'rect') return;
-
-        if (!this.pointer) return;
-
-        var el = this._tipsPointer;
-        var y = _coord.origin.y - _coord.height;
-        var x = 0;
-        if (this.pointer == "line") {
-            x = _coord.origin.x + e.eventInfo.xAxis.x;
-        }
-        if (this.pointer == "region") {
-            x = _coord.origin.x + e.eventInfo.xAxis.x - _coord._xAxis.ceilWidth / 2;
-            if (e.eventInfo.xAxis.ind < 0) {
-                //当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
-                x = _coord.origin.x;
-            }
-        }
-
-        if (!el) {
-            if (this.pointer == "line") {
-                el = new Line({
-                    //xyToInt : false,
-                    context: {
-                        x: x,
-                        y: y,
-                        start: {
-                            x: 0,
-                            y: 0
-                        },
-                        end: {
-                            x: 0,
-                            y: _coord.height
-                        },
-                        lineWidth: 1,
-                        strokeStyle: "#cccccc"
-                    }
-                });
-            };
-            if (this.pointer == "region") {
-                el = new Rect({
-                    //xyToInt : false,
-                    context: {
-                        width: _coord._xAxis.ceilWidth,
-                        height: _coord.height,
-                        x: x,
-                        y: y,
-                        fillStyle: "#cccccc",
-                        globalAlpha: 0.3
-                    }
-                });
-            };
-
-            this.root.graphsSprite.addChild(el, 0);
-            this._tipsPointer = el;
-        } else {
-            if (this.pointerAnim && _coord._xAxis.layoutType != "proportion") {
-                if (el.__animation) {
-                    el.__animation.stop();
-                };
-                el.__animation = el.animate({
-                    x: x,
-                    y: y
-                }, {
-                        duration: 200
-                    });
-            } else {
-                el.context.x = x;
-                el.context.y = y;
-            }
-        }
     }
 
     _tipsPointerHide() {
@@ -390,49 +280,7 @@ class Tips extends Component {
 
     _tipsPointerMove(e) {
 
-        var _coord = this.root._coord;
 
-        //目前只实现了直角坐标系的tipsPointer
-        if (!_coord || _coord.type != 'rect') return;
-
-        if (!this.pointer || !this._tipsPointer) return;
-
-        //console.log("move");
-
-        var el = this._tipsPointer;
-        var x = _coord.origin.x + e.eventInfo.xAxis.x;
-        if (this.pointer == "region") {
-            x = _coord.origin.x + e.eventInfo.xAxis.x - _coord._xAxis.ceilWidth / 2;
-            if (e.eventInfo.xAxis.ind < 0) {
-                //当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
-                x = _coord.origin.x;
-            }
-        };
-        var y = _coord.origin.y - _coord.height;
-
-        if (x == el.__targetX) {
-            return;
-        };
-
-        if (this.pointerAnim && _coord._xAxis.layoutType != "proportion") {
-            if (el.__animation) {
-                el.__animation.stop();
-            };
-            el.__targetX = x;
-            el.__animation = el.animate({
-                x: x,
-                y: y
-            }, {
-                    duration: 200,
-                    onComplete: function () {
-                        delete el.__targetX;
-                        delete el.__animation;
-                    }
-                })
-        } else {
-            el.context.x = x;
-            el.context.y = y;
-        }
     }
 
 

@@ -224,8 +224,11 @@ class Chart3d extends Events {
             let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
+                let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
                 tips.show({
-                    eventInfo: e.data,
+                    eventInfo: _.extend({
+                        title: _title,
+                    }, e.data),
                     pos: {
                         x,
                         y
@@ -246,9 +249,12 @@ class Chart3d extends Events {
 
             let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
+            let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
             if (tips !== null) {
                 tips.show({
-                    eventInfo: e.data,
+                    eventInfo: _.extend({
+                        title: _title,
+                    }, e.data),
                     pos: {
                         x,
                         y
@@ -480,5 +486,5 @@ function onRenderBefore() {
 function onRenderAfter() {
     this.update();
 }
-export default Chart3d ;
+export default Chart3d;
 

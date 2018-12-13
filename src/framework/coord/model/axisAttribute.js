@@ -42,7 +42,9 @@ class AxisAttribute extends Axis {
         let map = this._opt.field.map(item => {
             return item.toString();
         });
-        fields.forEach(field => {
+
+        let _fieldArr = _.isArray(fields) ? fields : [fields];
+        _fieldArr.forEach(field => {
             let index = _.indexOf(map, field.toString());
             result.push(this.dataOrg[index]);
         });

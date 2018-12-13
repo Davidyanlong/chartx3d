@@ -68,14 +68,9 @@ var data = [
 var options = {
     coord : {
         type : "box",
-        //横向的图表，是坐标系横向了
-        //horizontal : true,
 
         xAxis : {
             field : "xfield",
-            label:{
-                rotation  : 30 
-            }
         },
         yAxis : [
             {
@@ -100,54 +95,15 @@ var options = {
         { 
             type : "line",
             field : ["click"] , 
-            yAxisName:"click" ,
-            line : {
-                strokeStyle : "#eeccdd"
-            },
-            fill : {
-                alpha : [ 0.5 , 0 ]
-            },
-            node : {
-                //配置拐点才出现节点
-                corner : true
-            },
-            label : {
-                enabled : true
-            }
+            yAxisName:"click" 
         },{ 
             type : "line",
             field : [["uv","pv"]] , 
-            yAxisName:"uv" ,
-            line : {
-                strokeStyle : "#eeccdd"
-            },
-            fill : {
-                alpha : [ 0.5 , 0 ]
-            },
-            node : {
-                //配置拐点才出现节点
-                corner : true
-            },
-            label : {
-                enabled : true
-            }
+            yAxisName:"uv" 
         },{ 
             type : "line",
             field : ["ppc"] , 
-            yAxisName:"ppc" ,
-            line : {
-                strokeStyle : "#eeccdd"
-            },
-            fill : {
-                alpha : [ 0.5 , 0 ]
-            },
-            node : {
-                //配置拐点才出现节点
-                corner : true
-            },
-            label : {
-                enabled : true
-            }
+            yAxisName:"ppc" 
         }
 
     ]

@@ -62,17 +62,17 @@ const primitive = {
         //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
         geometry.vertices.forEach(vertice => {
             vertice.addScalar(0.5);
-            vertice.z *= -1;
+            //vertice.z *= -1;
         });
-        geometry.faces.forEach(face => {
-            let a = face.a;
-            face.a = face.b;
-            face.b = a;
-        })
-        geometry.normalsNeedUpdate = true;
-        geometry.computeFaceNormals();
+        // geometry.faces.forEach(face => {
+        //     let a = face.a;
+        //     face.a = face.b;
+        //     face.b = a;
+        // })
+        // geometry.normalsNeedUpdate = true;
+        // geometry.computeFaceNormals();
 
-        //更加给定的得数据变换box
+        // //更加给定的得数据变换box
         transMatrix.makeScale(width, height, depth);
 
         geometry.vertices.forEach(vertice => {
@@ -98,15 +98,15 @@ const primitive = {
             vertice.addScalar(0.5);
 
             //vertice.y -= 0.5;
-            vertice.z *= -1;
+            //vertice.z *= -1;
         });
-        geometry.faces.forEach(face => {
-            let a = face.a;
-            face.a = face.b;
-            face.b = a;
-        })
-        geometry.normalsNeedUpdate = true;
-        geometry.computeFaceNormals();
+        // geometry.faces.forEach(face => {
+        //     let a = face.a;
+        //     face.a = face.b;
+        //     face.b = a;
+        // })
+        // geometry.normalsNeedUpdate = true;
+        // geometry.computeFaceNormals();
 
         //更加给定的得数据变换box
         let radius = width * 0.5;
@@ -137,16 +137,16 @@ const primitive = {
 
             vertice.addScalar(0.5);
             //vertice.y -= 0.5;
-            vertice.z *= -1;
+           // vertice.z *= -1;
         });
 
-        geometry.faces.forEach(face => {
-            let a = face.a;
-            face.a = face.b;
-            face.b = a;
-        })
-        geometry.normalsNeedUpdate = true;
-        geometry.computeFaceNormals();
+        // geometry.faces.forEach(face => {
+        //     let a = face.a;
+        //     face.a = face.b;
+        //     face.b = a;
+        // })
+        // geometry.normalsNeedUpdate = true;
+        // geometry.computeFaceNormals();
 
         //更加给定的得数据变换box
         let radius = width * 0.5;

@@ -1,5 +1,5 @@
 
-import { Events, Vector3, Box3, _Math, Matrix4,Vector2 } from "mmgl/src/index";
+import { Events, Vector3, Box3, _Math, Matrix4, Vector2 } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
 
 
@@ -32,7 +32,7 @@ class InertialSystem extends Events {
 
 
 
-        this.fieldMap = {};
+        this.fieldMap = [];
         this.group = root.app.addGroup({ name: 'InertialSystem' });
         _.extend(true, this, this.setDefaultOpts(root.opt));
 
@@ -42,8 +42,106 @@ class InertialSystem extends Events {
         return opts;
     }
 
+    getEnabledFields(fields) {
+        if (fields) {
+            //如果有传参数 fields 进来，那么就把这个指定的 fields 过滤掉 enabled==false的field
+            //只留下enabled的field 结构
+            return this.filterEnabledFields(fields);
+        };
+       
+        // var fmap = {
+        //     left: [], right:[]
+        // };
+
+        // _.each( this.fieldsMap, function( bamboo, b ){
+        //     if( _.isArray( bamboo ) ){
+        //         //多节竹子，堆叠
+
+        //         var align;
+        //         var fields = [];
+
+        //         //设置完fields后，返回这个group属于left还是right的axis
+        //         _.each( bamboo, function( obj, v ){
+        //             if( obj.field && obj.enabled ){
+        //                 align = obj.yAxis.align;
+        //                 fields.push( obj.field );
+        //             }
+        //         } );
+
+        //         fields.length && fmap[ align ].push( fields );
+
+        //     } else {
+        //         //单节棍
+        //         if( bamboo.field && bamboo.enabled ){
+        //             fmap[ bamboo.yAxis.align ].push( bamboo.field );
+        //         }
+        //     };
+        // } );
+
+        // return fmap;
+    }
+
+    filterEnabledFields(fields) {
+        var me = this;
+        var arr = [];
+        
+        if (!_.isArray(fields)) fields = [fields];
+        _.each(fields, function (f) {
+            if (!_.isArray(f)) {
+                if (me.getFieldMap(f).enabled) {
+                    arr.push(f);
+                }
+            } else {
+                //如果这个是个纵向数据，说明就是堆叠配置
+                var varr = [];
+                _.each(f, function (v_f) {
+                    if (me.getFieldMap(v_f).enabled) {
+                        varr.push(v_f);
+                    }
+                });
+                if (varr.length) {
+                    arr.push(varr)
+                }
+            }
+        });
+        return arr;
+    }
+
+    getFieldMap(field) {
+        let searchOpt = null;
+        let fieldMap = null;
+        let get = (maps) => {
+            if (maps) {
+                let zField = this.isExistZAxisField && this.isExistZAxisField();
+                if (zField) {
+                    searchOpt = {
+                        key: zField,
+                        value: field
+                    };
+                } else {
+                    searchOpt = {
+                        key: 'field',
+                        value: field
+                    }
+                }
+
+                _.each(maps, function (map, i) {
+                    if (_.isArray(map)) {
+                        get(map)
+                    } else if (map[searchOpt.key] == searchOpt.value) {
+                        fieldMap = map;
+                        return false;
+                    }
+                });
+            }
+
+        }
+        get(this.fieldsMap);
+        return fieldMap;
+
+    }
     getColor(field) {
-        return this.fieldMap[field] && this.fieldMap[field].color;
+        return this.getFieldMap(field) && this.getFieldMap(field).color;
     }
 
     getBoundbox() {
@@ -180,7 +278,7 @@ let screenToWorld = (function () {
 
         // target.x = (target.x * widthHalf) + widthHalf;
         // target.y = (- (target.y * heightHalf) + heightHalf);
-         return target;
+        return target;
     }
 })();
 

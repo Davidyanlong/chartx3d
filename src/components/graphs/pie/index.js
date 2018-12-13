@@ -154,7 +154,7 @@ class Pie extends Component {
                 me._root.fire({
                     type: 'tipShow',
                     event: e.event,
-                    data: this.userData.info
+                    data: { nodes: [item] }
                 })
             });
             sector.on('mouseout', function (e) {
@@ -162,7 +162,7 @@ class Pie extends Component {
                 me._root.fire({
                     type: 'tipHide',
                     event: e.event,
-                    data: this.userData.info
+                    data: { nodes: [item] }
                 })
             });
 
@@ -170,7 +170,7 @@ class Pie extends Component {
                 me._root.fire({
                     type: 'tipMove',
                     event: e.event,
-                    data: this.userData.info
+                    data: { nodes: [item] }
                 })
             });
 
@@ -204,9 +204,6 @@ class Pie extends Component {
     onMouseOut(e) {
 
         this.material.setValues({ color: this.userData.color });
-
-
-
 
     }
     onClick(e) {
@@ -247,7 +244,7 @@ class Pie extends Component {
         return str;
     }
 
-    
+
 
     _startWidgetLabel() {
         var me = this;
@@ -572,7 +569,7 @@ class Pie extends Component {
         if (!isAdjust) return;
         let maxHeight = _.max(heights);
         this.group.traverse(obj => {
-            if (obj.isMesh && obj.geometry && obj.geometry.type === "DoughnutBufferGeometry") {
+            if (obj.isMesh && obj.geometry && (obj.geometry.type === "DoughnutBufferGeometry" || obj.geometry.type === "DoughnutGeometry")) {
                 let offset = (maxHeight - obj.geometry.parameters.height) * 0.5;
                 obj.position.setY(- offset);
 
