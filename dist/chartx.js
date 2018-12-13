@@ -15622,7 +15622,7 @@ var Chartx3d = (function () {
    * @author bujue
    */
 
-  class Line extends Object3D {
+  class Line$1 extends Object3D {
       constructor(geometry, material) {
           super();
           this.type = 'Line';
@@ -22910,17 +22910,17 @@ var Chartx3d = (function () {
           //box 的中心的在正面下边的中点上,方便对box 高度和深度的变化
           geometry.vertices.forEach(vertice => {
               vertice.addScalar(0.5);
-              //vertice.z *= -1;
+              vertice.z *= -1;
           });
-          // geometry.faces.forEach(face => {
-          //     let a = face.a;
-          //     face.a = face.b;
-          //     face.b = a;
-          // })
-          // geometry.normalsNeedUpdate = true;
-          // geometry.computeFaceNormals();
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
-          // //更加给定的得数据变换box
+          //更加给定的得数据变换box
           transMatrix.makeScale(width, height, depth);
 
           geometry.vertices.forEach(vertice => {
@@ -22946,15 +22946,15 @@ var Chartx3d = (function () {
               vertice.addScalar(0.5);
 
               //vertice.y -= 0.5;
-              //vertice.z *= -1;
+              vertice.z *= -1;
           });
-          // geometry.faces.forEach(face => {
-          //     let a = face.a;
-          //     face.a = face.b;
-          //     face.b = a;
-          // })
-          // geometry.normalsNeedUpdate = true;
-          // geometry.computeFaceNormals();
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
           //更加给定的得数据变换box
           let radius = width * 0.5;
@@ -22985,16 +22985,16 @@ var Chartx3d = (function () {
 
               vertice.addScalar(0.5);
               //vertice.y -= 0.5;
-             // vertice.z *= -1;
+              vertice.z *= -1;
           });
 
-          // geometry.faces.forEach(face => {
-          //     let a = face.a;
-          //     face.a = face.b;
-          //     face.b = a;
-          // })
-          // geometry.normalsNeedUpdate = true;
-          // geometry.computeFaceNormals();
+          geometry.faces.forEach(face => {
+              let a = face.a;
+              face.a = face.b;
+              face.b = a;
+          });
+          geometry.normalsNeedUpdate = true;
+          geometry.computeFaceNormals();
 
           //更加给定的得数据变换box
           let radius = width * 0.5;
@@ -23085,7 +23085,7 @@ var Chartx3d = (function () {
           points.forEach(item => {
               geometry.vertices.push(item);
           });
-          let line = new Line(geometry, material);
+          let line = new Line$1(geometry, material);
           // line.renderOrder=-110;
           // group.add(line);
 
@@ -23479,7 +23479,7 @@ var Chartx3d = (function () {
 
 
 
-          this.fieldMap = [];
+          this.fieldMap = {};
           this.group = root.app.addGroup({ name: 'InertialSystem' });
           _.extend(true, this, this.setDefaultOpts(root.opt));
 
@@ -23489,105 +23489,8 @@ var Chartx3d = (function () {
           return opts;
       }
 
-      getEnabledFields(fields) {
-          if (fields) {
-              //如果有传参数 fields 进来，那么就把这个指定的 fields 过滤掉 enabled==false的field
-              //只留下enabled的field 结构
-              return this.filterEnabledFields(fields);
-          }       
-          // var fmap = {
-          //     left: [], right:[]
-          // };
-
-          // _.each( this.fieldsMap, function( bamboo, b ){
-          //     if( _.isArray( bamboo ) ){
-          //         //多节竹子，堆叠
-
-          //         var align;
-          //         var fields = [];
-
-          //         //设置完fields后，返回这个group属于left还是right的axis
-          //         _.each( bamboo, function( obj, v ){
-          //             if( obj.field && obj.enabled ){
-          //                 align = obj.yAxis.align;
-          //                 fields.push( obj.field );
-          //             }
-          //         } );
-
-          //         fields.length && fmap[ align ].push( fields );
-
-          //     } else {
-          //         //单节棍
-          //         if( bamboo.field && bamboo.enabled ){
-          //             fmap[ bamboo.yAxis.align ].push( bamboo.field );
-          //         }
-          //     };
-          // } );
-
-          // return fmap;
-      }
-
-      filterEnabledFields(fields) {
-          var me = this;
-          var arr = [];
-          
-          if (!_.isArray(fields)) fields = [fields];
-          _.each(fields, function (f) {
-              if (!_.isArray(f)) {
-                  if (me.getFieldMap(f).enabled) {
-                      arr.push(f);
-                  }
-              } else {
-                  //如果这个是个纵向数据，说明就是堆叠配置
-                  var varr = [];
-                  _.each(f, function (v_f) {
-                      if (me.getFieldMap(v_f).enabled) {
-                          varr.push(v_f);
-                      }
-                  });
-                  if (varr.length) {
-                      arr.push(varr);
-                  }
-              }
-          });
-          return arr;
-      }
-
-      getFieldMap(field) {
-          let searchOpt = null;
-          let fieldMap = null;
-          let get = (maps) => {
-              if (maps) {
-                  let zField = this.isExistZAxisField && this.isExistZAxisField();
-                  if (zField) {
-                      searchOpt = {
-                          key: zField,
-                          value: field
-                      };
-                  } else {
-                      searchOpt = {
-                          key: 'field',
-                          value: field
-                      };
-                  }
-
-                  _.each(maps, function (map, i) {
-                      if (_.isArray(map)) {
-                          get(map);
-                      } else if (map[searchOpt.key] == searchOpt.value) {
-                          fieldMap = map;
-                          return false;
-                      }
-                  });
-              }
-
-          };
-          get(this.fieldsMap);
-          return fieldMap;
-
-      }
       getColor(field) {
-          return this.getFieldMap(field) && this.getFieldMap(field).color;
+          return this.fieldMap[field] && this.fieldMap[field].color;
       }
 
       getBoundbox() {
@@ -23724,7 +23627,7 @@ var Chartx3d = (function () {
 
           // target.x = (target.x * widthHalf) + widthHalf;
           // target.y = (- (target.y * heightHalf) + heightHalf);
-          return target;
+           return target;
       }
   })();
 
@@ -25670,9 +25573,7 @@ var Chartx3d = (function () {
           let map = this._opt.field.map(item => {
               return item.toString();
           });
-
-          let _fieldArr = _.isArray(fields) ? fields : [fields];
-          _fieldArr.forEach(field => {
+          fields.forEach(field => {
               let index$$1 = _.indexOf(map, field.toString());
               result.push(this.dataOrg[index$$1]);
           });
@@ -25800,7 +25701,6 @@ var Chartx3d = (function () {
       constructor(root) {
           super(root);
 
-          this.type = "Cartesian3D";
           this.offset = new Vector3(0, 0, 0);
 
           this._coordUI = null;
@@ -26004,115 +25904,41 @@ var Chartx3d = (function () {
 
 
           //y轴的颜色值先预设好
-          // let _allField = [];
-          // opt.yAxis.forEach(yx => {
-          //     yx.field.forEach(fd => {
-          //         if (_.isArray(fd)) {
-          //             fd.forEach(fname => {
-          //                 _allField.push(fname);
-          //             })
-          //         } else {
-          //             _allField.push(fd);
-          //         }
-          //     })
-          // });
+          let _allField = [];
+          opt.yAxis.forEach(yx => {
+              yx.field.forEach(fd => {
+                  if (_.isArray(fd)) {
+                      fd.forEach(fname => {
+                          _allField.push(fname);
+                      });
+                  } else {
+                      _allField.push(fd);
+                  }
+              });
+          });
 
 
-          // let getTheme = this._root.getTheme.bind(this._root);
-          // if (!this.isExistZAxisField()) {
-          //     _allField.forEach((v, i) => {
+          let getTheme = this._root.getTheme.bind(this._root);
+          if (!this.isExistZAxisField()) {
+              _allField.forEach((v, i) => {
 
-          //         this.fieldMap[v] = this.fieldMap[v] || {};
-          //         this.fieldMap[v].color = getTheme(i);
-          //     })
-          // } else {
-          //     debugger
-          //     this.zAxisAttribute.getDataSection().forEach((v, i) => {
+                  this.fieldMap[v] = this.fieldMap[v] || {};
+                  this.fieldMap[v].color = getTheme(i);
+              });
+          } else {
+              this.zAxisAttribute.getDataSection().forEach((v, i) => {
 
-          //         this.fieldMap[v] = this.fieldMap[v] || {};
-          //         this.fieldMap[v].color = getTheme(i);
-          //     })
-          // }
-          this.fieldsMap = this._setFieldsMap();
+                  this.fieldMap[v] = this.fieldMap[v] || {};
+                  this.fieldMap[v].color = getTheme(i);
+              });
+          }
+
 
           this.addLights();
       }
 
-      _setFieldsMap() {
-          var fieldInd = 0;
-          let opt = _.clone(this.coord);
-          let getTheme = this._root.getTheme.bind(this._root);
-          let _set = (fields) => {
-
-              let _zField = this.isExistZAxisField();
-
-
-              if (!fields) {
-                  var yAxis = opt.yAxis;
-                  if (!_.isArray(yAxis)) {
-                      yAxis = [yAxis];
-                  }                fields = [];
-                  _.each(yAxis, function (item, i) {
-                      if (item.field) {
-                          fields = fields.concat(item.field);
-                      }                });
-              }
-              if (_.isString(fields)) {
-                  fields = [fields];
-              }
-              var clone_fields = _.clone(fields);
-              for (var i = 0, l = fields.length; i < l; i++) {
-                  if (_zField) {
-                      //三维数据
-                      let zDataSection = this.zAxisAttribute.getDataSection();
-                      let len = zDataSection.length;
-                      zDataSection.forEach((zf, zInd) => {
-                          if (_.isString(fields[i])) {
-                              clone_fields[i * len + zInd] = {
-                                  field: fields[i],
-                                  enabled: true,
-                                  // yAxis: me._getYaxisOfField(fields[i]),
-                                  color: getTheme(fieldInd),
-                                  ind: fieldInd++,
-                                  zInd: zInd,
-                                  [_zField]: zf
-
-                              };
-                          } else {
-                              clone_fields[i] = _set(fields[i], fieldInd);
-                          }
-                      });
-                  } else {
-                      //二维数据
-                      if (_.isString(fields[i])) {
-
-                          clone_fields[i] = {
-                              field: fields[i],
-                              enabled: true,
-                              // yAxis: me._getYaxisOfField(fields[i]),
-                              color: getTheme(fieldInd),
-                              ind: fieldInd++,
-                              zInd: 0
-                          };
-
-                      }
-                      if (_.isArray(fields[i])) {
-                          clone_fields[i] = _set(fields[i], fieldInd);
-                      }
-                  }
-
-              }
-              return clone_fields;
-          };
-
-          return _set();
-      }
-
-
-
       isExistZAxisField() {
-          if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)
-              && this.coord.zAxis.layoutType !== "proportion") {
+          if (this.coord.zAxis && !_.isEmpty(this.coord.zAxis.field)) {
               return this.coord.zAxis.field
           }
           return false;
@@ -26208,20 +26034,60 @@ var Chartx3d = (function () {
           //orbite target position
           this._root.orbitControls.target.copy(center);
 
+
+          //测试中心点的位置
+          // let helpLine = this._root.renderView.createLine([center.clone()], new Vector3(1, 0, 0), 123, 1, 'red');
+          // let helpLine2 = this._root.renderView.createLine([center.clone()], new Vector3(-1, 0, 0), 500, 1, 'red');
+          // this._root.renderView._scene.add(helpLine);
+          // this._root.renderView._scene.add(helpLine2);
+
       }
 
       addLights() {
           //加入灯光
 
-          var ambientlight = new AmbientLight(0xffffff, 0.5); // soft white light
+          var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
 
           this._root.rootStage.add(ambientlight);
 
           let center = this.center.clone();
           center = this._getWorldPos(center);
           let intensity = 0.5;
-          let lightColor = 0xFFFFFF;
+          let lightColor = 0xcccccc;
           let position = new Vector3(-1, -1, 1);
+
+          // dirLights[0] = new DirectionalLight(lightColor, intensity);
+          // position.multiplyScalar(10000);
+          // dirLights[0].position.copy(position);
+          // dirLights[0].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[0]);
+
+
+          // dirLights[1] = new DirectionalLight(lightColor, intensity);
+          // position = new Vector3(1, -1, 1);
+          // position.multiplyScalar(10000);
+          // dirLights[1].position.copy(position);
+          // dirLights[1].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[1]);
+
+
+          // dirLights[2] = new DirectionalLight(lightColor, intensity);
+          // position = new Vector3(-1, -1, -1);
+          // position.multiplyScalar(10000);
+          // dirLights[2].position.copy(position);
+          // dirLights[2].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[2]);
+
+
+          // dirLights[3] = new DirectionalLight(lightColor, intensity);
+          // position = new Vector3(1, -1, -1);
+          // position.multiplyScalar(10000);
+          // dirLights[3].position.copy(position);
+          // dirLights[3].target.position.copy(center);
+          // this._root.rootStage.add(dirLights[3]);
+
+
+
 
           let pointLight = [];
 
@@ -27671,11 +27537,8 @@ var Chartx3d = (function () {
               let tips = this.getComponent(TipName);
               let { offsetX: x, offsetY: y } = e.event;
               if (tips !== null) {
-                  let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
                   tips.show({
-                      eventInfo: _.extend({
-                          title: _title,
-                      }, e.data),
+                      eventInfo: e.data,
                       pos: {
                           x,
                           y
@@ -27696,12 +27559,9 @@ var Chartx3d = (function () {
 
               let tips = this.getComponent(TipName);
               let { offsetX: x, offsetY: y } = e.event;
-              let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
               if (tips !== null) {
                   tips.show({
-                      eventInfo: _.extend({
-                          title: _title,
-                      }, e.data),
+                      eventInfo: e.data,
                       pos: {
                           x,
                           y
@@ -28214,264 +28074,11 @@ var Chartx3d = (function () {
       }
   }
 
-  class GraphObject extends Component {
-      constructor(chart3d) {
-          super(chart3d.currCoord);
-          //todo 每个图表初始化前最基本的属性放在这里
-          this.enabledField = [];
-          this.drawData = [];
-      }
-      setEnabledField() {
-          let _coord = this._coordSystem;
-          let _zfield = _coord.isExistZAxisField();
-          if (!_zfield) {
-              this.enabledField = this._coordSystem.getEnabledFields(this.field);
-          } else {
-              let zSection = _coord.zAxisAttribute.getDataSection();
-              this.enabledField = this._coordSystem.getEnabledFields(zSection);
-          }
-      }
-
-      dataProcess() {
-          //每一个图型组件在绘制前都需要进行数据处理,提取出来这里统一做首次处理
-          if (this._coordSystem.type == "Cartesian3D") {
-              this._cartesian3DProcess();
-          }
-      }
-
-      _cartesian3DProcess() {
-          let me = this;
-          let _coord = this._coordSystem;
-          let _xAxis = _coord.xAxisAttribute;
-          let _zAxis = _coord.zAxisAttribute;
-          let yAxisInfo = _coord.getYAxis(this.yAxisName);
-          let _yAxis = yAxisInfo.attr;
-
-          let zData, zNativeSection;
-
-
-          //用来计算下面的hLen
-          this.setEnabledField();
-          this.drawData = {};
-
-          var hLen = this.enabledField.length; //每组显示的个数
-
-          //判断是是否提供了Z轴字段,也就是判断数据是二维数据还是三维数据
-          let _zfield = _coord.isExistZAxisField();
-          zNativeSection = _zAxis.getNativeDataSection();
-          if (_zAxis.layoutType === 'proportion') {
-              zData = _.flatten(_zAxis.dataOrg);
-          } else {
-              zData = _zAxis.getDataSection();
-
-          }
-
-
-          //然后计算出对于结构的dataOrg
-
-          function generate(zVal, zInd) {
-              //dataOrg和field是一一对应的
-              let dataOrg = [];
-              let rowDataOf;
-              if (!_zfield) {
-                  dataOrg = me._root.dataFrame.getDataOrg(me.enabledField);
-              } else {
-                  let orgVal = zNativeSection[zInd];
-                  let op = {
-                      [_zfield]: orgVal
-                  };
-
-                  rowDataOf = me._root.dataFrame.getRowDataOf(op);
-                  let arr = [];
-                  arr = rowDataOf.map(item => {
-                      return item[_yAxis.field];
-                  });
-                  dataOrg.push([arr]);
-              }
-
-              _.each(dataOrg, function (hData, b) {
-                  //hData，可以理解为一根竹子 横向的分组数据，这个hData上面还可能有纵向的堆叠
-                  //tempBarData 一根柱子的数据， 这个柱子是个数据，上面可以有n个子元素对应的竹节
-                  var tempBarData = [];
-                  let _vValue = 0;
-                  _.each(hData, function (vSectionData, v) {
-                      tempBarData[v] = [];
-                      //vSectionData 代表某个字段下面的一组数据比如 uv
-
-                      let _dataLen = vSectionData.length;
-
-                      //vSectionData为具体的一个field对应的一组数据
-                      _.each(vSectionData, function (val, i) {
-
-                          _vValue = 0;
-                          if (v > 0) {
-                              for (let t = 0; t < v; t++) {
-                                  _vValue += hData[t][i];
-                              }
-                          }
-
-                          var vCount = val;
-                          if (me.proportion) {
-                              //先计算总量
-                              vCount = 0;
-                              _.each(hData, function (team, ti) {
-                                  vCount += team[i];
-                              });
-                          }
-
-
-                          let z = 0;
-
-                          z = - _zAxis.getPosOfVal(zVal);
-                          zInd = _zAxis.getIndexOfVal(zVal);
-
-                          let _field = null;
-                          if (_zfield) {
-                              _field = me.field.toString();
-                          } else {
-                              _field = me._getTargetField(b, v, i, me.enabledField);
-                          }
-
-                          let rowData = 0;
-                          if (_zfield) {
-                              rowData = rowDataOf[i];
-                          } else {
-                              rowData = me._root.dataFrame.getRowDataAt(i);
-                          }
-
-                          let xVal = rowData[_xAxis.field];
-                          let x = _xAxis.getPosOfVal(xVal);
-
-                          let y = 0, startY = 0;
-                          if (me.proportion) {
-                              y = val / vCount * _yAxis.axisLength;
-                          } else {
-                              y = _yAxis.getPosOfVal(val);
-                              startY = _yAxis.getPosOfVal(_vValue);
-                          }
-
-                          var nodeData = new NodeData({
-                              type: me.type,
-                              value: val,
-                              vInd: v,         //如果是堆叠图的话，这个node在堆叠中得位置
-                              vCount: vCount,
-                              groupIndex:b,
-
-                              field: _field,
-                              xField: _xAxis.field,
-                              zField: _zAxis.field,
-                              dataLen: _dataLen,
-
-                              size: new Vector3(xVal, val, zVal),
-                              pos: new Vector3(x, y, z),
-                              fromPos: new Vector3(x, startY, z),
-                              vValue: _vValue,
-                              hLen:hLen,
-                              iNode: i,
-                              zNode: zInd,
-                              rowData: rowData,
-                              color: _zfield ? _coord.getColor(zVal) : _coord.getColor(_field)
-                          });
-
-
-                          let key = nodeData.field;
-                          if (_zfield) {
-                              key = zVal;
-                          }
-                          if (!me.drawData[key]) {
-                              me.drawData[key] = tempBarData[v];
-                          }
-                          tempBarData[v].push(nodeData);
-
-                      });
-                  });
-
-              });
-          }
-
-
-          let fieldName = this.enabledField.toString();
-          if (!_zfield) {
-              let zInd = _.indexOf(zNativeSection, fieldName);
-              generate(zData[zInd]);
-          } else {
-              zData.forEach((zd, zInd) => {
-                  generate(zd, zInd);
-              });
-          }
-          return me.drawData;
-      }
-      _getTargetField(b, v, i, field) {
-          if (_.isString(field)) {
-              return field;
-          } else if (_.isArray(field)) {
-              var res = field[b];
-              if (_.isString(res)) {
-                  return res;
-              } else if (_.isArray(res)) {
-                  return res[v];
-              }        }
-      }
-
-
-  }
-
-  class NodeData {
-      constructor({ type = null,
-          value = null,
-          vInd = null,
-          vCount = null,
-
-          field = null,
-          xField = null,
-          zField = null,
-          dataLen = 0,
-
-          size,
-          fromPos,
-
-          iNode = null,
-          zNode = null,
-          rowData = null,
-          color = null,
-          vValue = null,
-          pos = null,
-          hLen=null,
-          groupIndex=null } = {}) {
-          this.init(type, value, vInd, vCount, field, xField, zField, dataLen, size, fromPos, iNode, zNode, rowData, color, vValue, pos,hLen,groupIndex);
-      }
-      init(type, value, vInd, vCount, field, xField, zField, dataLen, size, fromPos, iNode, zNode, rowData, color, vValue, pos,hLen,groupIndex) {
-          this.type = type; //图型补充
-          this.value = value; //对于在Y轴上的值
-          this.vInd = vInd; //如果是堆叠图的话，这个node在堆叠中得位置
-          this.vValue = vValue; //堆叠后的值
-
-          this.vCount = vCount; //纵向方向的总数,比瑞堆叠了uv(100),pv(100),那么这个vCount就是200，比例柱状图的话，外部tips定制content的时候需要用到
-
-          this.field = field;  //y轴对应的字段 
-          this.xField = xField; //x轴对应的字段
-          this.zField = zField; //z轴对应的字段 
-          this.dataLen = dataLen;   //该字段对应的数据个数
-          this.hLen = hLen;  //分组数据的总数
-          this.groupIndex = groupIndex;   //分组的索引
-
-          this.size = size || new Vector3(); //图像的大小数据
-          this.pos = pos;  //值转换为位置的数据
-          this.fromPos = fromPos || new Vector3();  //图像的位置
-
-
-          this.iNode = iNode;        //相对于x轴的索引 
-          this.zNode = zNode;        //相对于轴z的索引 
-          this.rowData = rowData;     //本行数据
-          this.color = color;       //颜色值
-      }
-  }
-
   //let renderOrder = 100;
 
-  class Bar extends GraphObject {
+  class Bar extends Component {
       constructor(chart3d, opt) {
-          super(chart3d);
+          super(chart3d.currCoord);
 
           this.type = "bar";
           this._type = "bar3d";
@@ -28520,7 +28127,7 @@ var Chartx3d = (function () {
 
           this.allGroupNum = 1;
           _.extend(true, this, opt);
-          // this.materialMap = new Map();
+         // this.materialMap = new Map();
           this.init();
 
       }
@@ -28528,19 +28135,138 @@ var Chartx3d = (function () {
           this.barsGroup = this._root.app.addGroup({ name: 'bars_gruop' });
 
       }
-      dataProcess() {
-          super.dataProcess();
-          let ceil = this._coordSystem.getCeilSize();
-          let boxDepth = ceil.z * 0.7;
-          for (let field in this.drawData) {
-              let fieldObj = this.drawData[field];
-              fieldObj.forEach(item => {
-                  item.ceil = ceil;
-                  item.boxWidth = ceil.x / item.hLen * 0.7;
-                  item.boxHeight = item.pos.y;
-                  item.boxDepth = boxDepth > item.boxWidth ? item.boxWidth : boxDepth;
-              });
+      computePos() {
+          let me = this;
+          let fields = [], customField = [];
+          if (!_.isArray(this.field)) {
+              fields.push(this.field);
+          } else {
+              fields = this.field.slice(0);
           }
+          this.allGroupNum = fields.length;
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+          let zCustomSection = this._coordSystem.zAxisAttribute._opt.dataSection || [];
+          this.drawPosData = [];
+          let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
+          let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
+          let yAxisAttribute = yAxisInfo.attr;
+
+          let yDatas = yAxisAttribute.dataOrg;
+          //x轴返回的数据是单列
+          if (xDatas.length == 1) {
+              xDatas = _.flatten(xDatas);
+          }
+
+          let yValidData = [];
+
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
+          if (this._coordSystem.coord.zAxis.dataSection) {
+              customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
+          }
+
+          // zSection.forEach((zs, index) => {
+          //     fields.forEach(fd => {
+
+          //         if (zs == fd.toString()) {
+          //             yValidData.push(yDatas[index]);
+          //             if (zCustomSection.length > 0) {
+          //                 customField.push(zCustomSection[index]);
+          //             }
+
+          //         }
+          //     })
+          // })
+          //yDatas = _.flatten(yDatas);
+          //let dd = false;
+          let lastArray = [];
+
+          let DataOrg = function () {
+              //this.org = [];
+              this.isStack = false;
+              //this.stack = [];
+              //具体XYZ的值
+              this.value = null;
+              //堆叠值
+              this.stackValue = null;
+              //堆叠楼层
+              this.floor = 0;
+              //绘制的字段顺序
+              this.level = 0;
+              this.field = '';
+              this.group = null;
+
+              //
+              //this.pos = null;
+          };
+
+          //let ceil = this.getCeilSize();
+          let getZAxiaName = (fieldName) => {
+              let name = '';
+              _.each(zSection, (section = "", num) => {
+                  let ind = section.indexOf(fieldName);
+                  if (ind !== -1) {
+                      name = zSection[num];
+                  }
+              });
+              return name;
+          };
+
+          xDatas.forEach((xd, no) => {
+              lastArray = [];
+              yValidData.forEach((yda, index) => {
+                  let _fd = fields[index];
+                  let fieldName = fields.toString();
+                  let zd = getZAxiaName(fieldName);
+
+                  if (yda.length > 1) {
+                      yda.forEach((ydad, num) => {
+
+                          let ydadd = _.flatten(ydad).slice(0);
+                          let _fdd = _fd[num];
+                          ydadd.forEach((yd, i) => {
+                              if (i === no) {
+                                  let _tmp = new DataOrg();
+                                  _tmp.floor = num;
+                                  _tmp.level = index + num;
+                                  _tmp.field = _fdd;
+                                  _tmp.group = (index + 1);
+                                  if (num > 0) {
+                                      _tmp.isStack = true;
+                                      _tmp.value = new Vector3(xd, yd, zd);
+                                      _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+
+                                  } else {
+                                      _tmp.isStack = true;
+                                      _tmp.stackValue = new Vector3(xd, 0, zd);
+                                      _tmp.value = new Vector3(xd, yd, zd);
+
+                                  }
+                                  me.drawPosData.push(_tmp);
+                              }
+
+                          });
+                          _.flatten(ydad).slice(0).forEach((t, y) => {
+                              lastArray[y] = (lastArray[y] || 0) + t;
+                          });
+                          //lastArray = _.flatten(ydad).slice(0);
+                      });
+
+                  } else {
+                      let _tmp = new DataOrg();
+                      _tmp.field = _fd;
+                      _tmp.group = (index + 1);
+                      _.flatten(yda).slice(0).forEach((yd, i) => {
+                          if (i === no) {
+                              _tmp.value = new Vector3(xd, yd, zd);
+                              me.drawPosData.push(_tmp);
+                          }
+
+                      });
+                  }
+
+              });
+
+          });
       }
       getMaterial(dataOrg) {
           let MaterilBar = null;
@@ -28585,71 +28311,123 @@ var Chartx3d = (function () {
       draw() {
           let me = this;
           let app = this._root.app;
-          this.dataProcess();
+          this.computePos();
+          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+          let ceil = this._coordSystem.getCeilSize();
+          let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
+          let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
+          let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
+
+          let boxWidth = ceil.x / this.allGroupNum * 0.7; //细分后柱子在单元格内的宽度
+          //boxWidth = Math.max(1,boxWidth);
+          let boxDepth = ceil.z * 0.7;
+          //todo 这里考虑如果优化  防止柱子太宽
+          boxDepth = boxDepth > boxWidth ? boxWidth : boxDepth;
+          let boxHeight = 1;
+
           let scale = 0.9; //每个单元格柱子占用的百分比
-          for (let field in this.drawData) {
-              let fieldObj = this.drawData[field];
-              fieldObj.forEach(item => {
-                  let span = item.ceil.x / (item.hLen * 2) * scale;
-                  let step = item.groupIndex * 2 + 1;
 
-                  item.fromPos.setX(item.fromPos.x + (span * step - item.ceil.x * 0.5 * scale) - item.boxWidth * 0.5);
-                  if (this.node.shapeType == 'cylinder' || 'cone' == this.node.shapeType) {
+          this.drawPosData.forEach(dataOrg => {
 
-                      item.fromPos.setZ(item.pos.z - item.boxWidth * 0.5);
-                  } else {
-                      item.fromPos.setZ(item.pos.z - item.boxDepth * 0.5);
-                  }
-                  let boxHeight = Math.max((item.boxHeight), 0.01);
+              let pos = new Vector3();
+              let stack = new Vector3();
+              pos.setX(getXAxisPosition(dataOrg.value.x));
+              pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
+              pos.setZ(getZAxisPosition(dataOrg.value.z));
 
-                  let material = me.getMaterial(item);
-                  let obj = null;
-                  let boundbox = new Box3();
-                  let fromPos = item.fromPos.clone();
-                  if (this.node.shapeType == 'cone') {
-                      obj = app.createCone(item.boxWidth, boxHeight, item.boxDepth, material);
-                      boundbox.setFromObject(obj);
-                      fromPos.x += boundbox.getCenter().x;
-                  } else if (this.node.shapeType == 'cylinder') {
-                      obj = app.createCylinder(item.boxWidth, boxHeight, item.boxDepth, material);
-                      boundbox.setFromObject(obj);
-                      fromPos.x += boundbox.getCenter().x;
-                  } else {
-                      obj = app.createBox(item.boxWidth, boxHeight, item.boxDepth, material);
-                  }
-                  obj.position.copy(fromPos);
-                  this.group.add(obj);
+              let span = ceil.x / (this.allGroupNum * 2) * scale;
+              let step = (dataOrg.group - 1) * 2 + 1;
+
+              stack.setX(pos.x + (span * step - ceil.x * 0.5 * scale) - boxWidth * 0.5);
+              if (this.node.shapeType == 'cylinder' || 'cone' == this.node.shapeType) {
+
+                  stack.setZ(-pos.z + boxWidth * 0.5);
+              } else {
+                  stack.setZ(-pos.z + boxDepth * 0.5);
+              }
+
+              if (dataOrg.isStack) {
+                  stack.setY(getYAxisPosition(dataOrg.stackValue.y, yAxisAttribute));
+
+              } else {
+                  stack.setY(0);
+
+              }
+              boxHeight = Math.max(Math.abs(pos.y), 0.01);
+              //console.log('boxHeight', boxHeight, dataOrg.value.y);
+
+              // MeshLambertMaterial
+              //MeshPhongMaterial
+
+              let material = me.getMaterial(dataOrg);
+              let box = null;
+
+              if (this.node.shapeType == 'cone') {
+                  box = app.createCone(boxWidth, boxHeight, boxDepth, material);
+                  let boundbox = new Box3().setFromObject(box);
+                  stack.x += boundbox.getCenter().x;
+              } else if (this.node.shapeType == 'cylinder') {
+                  box = app.createCylinder(boxWidth, boxHeight, boxDepth, material);
+                  let boundbox = new Box3().setFromObject(box);
+                  stack.x += boundbox.getCenter().x;
+              } else {
+                  box = app.createBox(boxWidth, boxHeight, boxDepth, material);
+
+              }
 
 
-                  obj.on('mouseover', function (e) {
-                      me.onMouseOver.call(this);
-                      me._root.fire({
-                          type: 'tipShow',
-                          event: e.event,
-                          data: item
-                      });
+
+
+              box.position.copy(stack);
+              let { x, y, z } = dataOrg.value;
+              let { x: px, y: py, z: pz } = stack;
+              box.userData.info = {
+                  title: z,
+                  value: {
+                      x,
+                      y,
+                      z
+                  },
+                  pos: {
+                      x: px,
+                      y: py,
+                      z: pz
+                  },
+                  color: this._getColor(this.node.fillStyle, dataOrg)
+              };
+              //box.renderOrder = renderOrder++;
+              this.group.add(box);
+
+
+              box.on('mouseover', function (e) {
+                  me.onMouseOver.call(this);
+                  me._root.fire({
+                      type: 'tipShow',
+                      event: e.event,
+                      data: this.userData.info
                   });
-                  obj.on('mouseout', function (e) {
-                      me.onMouseOut.call(this);
-                      me._root.fire({
-                          type: 'tipHide',
-                          event: e.event,
-                          data: item
-                      });
-                  });
-
-                  obj.on('mousemove', function (e) {
-                      me._root.fire({
-                          type: 'tipMove',
-                          event: e.event,
-                          data: item
-                      });
-                  });
-
-
-                  obj.on('click', this.onClick);
               });
-          }
+              box.on('mouseout', function (e) {
+                  me.onMouseOut.call(this);
+                  me._root.fire({
+                      type: 'tipHide',
+                      event: e.event,
+                      data: this.userData.info
+                  });
+              });
+
+              box.on('mousemove', function (e) {
+                  me._root.fire({
+                      type: 'tipMove',
+                      event: e.event,
+                      data: this.userData.info
+                  });
+              });
+
+
+              box.on('click', this.onClick);
+
+          });
 
       }
       onMouseOver(e) {
@@ -28668,8 +28446,8 @@ var Chartx3d = (function () {
       }
 
       _getColor(c, dataOrg) {
-          let field = dataOrg.field.split(',');
-          var color = this._coordSystem.getColor(field);
+
+          var color = this._coordSystem.getColor(dataOrg.field);
           //field对应的索引，， 取颜色这里不要用i
           if (_.isString(c)) {
               color = c;
@@ -28706,9 +28484,9 @@ var Chartx3d = (function () {
 
   }
 
-  class Line$1 extends GraphObject {
+  class Line$2 extends Component {
       constructor(chart3d, opt) {
-          super(chart3d);
+          super(chart3d.currCoord);
 
           this.type = "line";
           this._type = "line3d";
@@ -28761,30 +28539,195 @@ var Chartx3d = (function () {
           }
           return color;
       }
-      dataProcess() {
-          super.dataProcess();
+
+      computePos() {
+          let me = this;
+          let fields = [], customField = [];
+          if (!_.isArray(this.field)) {
+              fields.push(this.field);
+          } else {
+              fields = this.field.slice(0);
+          }
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+
+          let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
+          this.drawPosData = [];
+          let xDatas = this._coordSystem.xAxisAttribute.dataOrg;
+          let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
+          let yAxisAttribute = yAxisInfo.attr;
+
+          let yDatas = yAxisAttribute.dataOrg;
+          //x轴返回的数据是单列
+          if (xDatas.length == 1) {
+              xDatas = _.flatten(xDatas);
+          }
+          //todo 三维数据这里会有问题,需要整理清楚
+
+
+          let yValidData = [];
+
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
+          if (this._coordSystem.coord.zAxis.dataSection) {
+              customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
+          }
+
+
+          let lastArray = [];
+
+          let DataOrg = function () {
+              //this.org = [];
+              this.isStack = false;
+              //this.stack = [];
+              //具体XYZ的值
+              this.value = null;
+              //堆叠值
+              this.stackValue = null;
+              //堆叠楼层
+              this.floor = 0;
+              //绘制的字段顺序
+              this.level = 0;
+              this.field = '';
+
+              //
+              //this.pos = null;
+          };
+
+          //let ceil = this.getCeilSize();
+
+          let generate = (zd, zInd) => {
+              xDatas.forEach((xd, no) => {
+                  lastArray = [];
+                  yValidData.forEach((yda, index) => {
+                      let _fd = fields[index];
+
+                      if (yda.length > 1) {
+                          yda.forEach((ydad, num) => {
+
+                              let ydadd = _.flatten(ydad).slice(0);
+                              let _fdd = _fd[num];
+                              ydadd.forEach((yd, i) => {
+                                  if (i === no) {
+                                      let _tmp = new DataOrg();
+                                      _tmp.floor = num;
+                                      _tmp.level = index + num;
+                                      _tmp.field = _fdd;
+                                      if (num > 0) {
+                                          _tmp.isStack = true;
+                                          _tmp.value = new Vector3(xd, yd, zd);
+                                          _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+
+                                      } else {
+                                          _tmp.isStack = true;
+                                          _tmp.stackValue = new Vector3(xd, 0, zd);
+                                          _tmp.value = new Vector3(xd, yd, zd);
+
+                                      }
+                                      me.drawPosData.push(_tmp);
+                                  }
+
+                              });
+                              _.flatten(ydad).slice(0).forEach((t, y) => {
+                                  lastArray[y] = (lastArray[y] || 0) + t;
+                              });
+                              //lastArray = _.flatten(ydad).slice(0);
+                          });
+
+                      } else {
+                          let _tmp = new DataOrg();
+                          let searchOpt = {};
+                          let zdd = zd;
+                          if (zNativeSection[zInd] == zd) {
+                              zdd = zd;
+                          } else {
+                              zdd = zNativeSection[zInd];
+                          }
+                          if (me._coordSystem.zAxisAttribute.field) {
+                              searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
+                          }
+                          searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
+                          let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
+                          _tmp.field = zdd;
+                          if (yd.length > 0) {
+                              _tmp.value = new Vector3(xd, yd[0][zdd], zd);
+                              me.drawPosData.push(_tmp);
+                          }
+                      }
+                  });
+              });
+          };
+
+
+          let fieldName = fields.toString();
+          if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              let ind = _.indexOf(zNativeSection, fieldName);
+              generate(zSection[ind], ind);
+          } else {
+
+              zSection.forEach((zd, zInd) => {
+                  generate(zd, zInd);
+              });
+          }
+
+
       }
       draw() {
           let me = this;
           let app = this._root.app;
-          this.dataProcess();
+          let linePoints = {};
+          this.computePos();
+          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+          let ceil = this._coordSystem.getCeilSize();
+          let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
+          let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
+          let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
+          let boxWidth = ceil.x * 0.7;
+          let boxDepth = ceil.z * 0.7;
+          this.drawPosData.forEach(dataOrg => {
+              let pos = new Vector3();
+              let stack = new Vector3();
+              pos.setX(getXAxisPosition(dataOrg.value.x));
+              pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
+              pos.setZ(getZAxisPosition(dataOrg.value.z));
+
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
+              } else {
+                  linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
+              }
+
+              if (dataOrg.isStack) {
+                  stack.setX(pos.x);
+                  stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
+                  stack.setZ(-pos.z);
+
+              } else {
+
+                  stack.setX(pos.x);
+                  stack.setY(pos.y);
+                  stack.setZ(-pos.z);
+
+              }
+
+
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field].push(stack);
+              } else {
+                  linePoints[dataOrg.value.z].push(stack);
+              }
+
+          });
 
           const DIVISONS = 200;
-          for (let field in this.drawData) {
+          for (let field in linePoints) {
               let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
-              let fieldObj = this.drawData[field];
 
               let points = null;
-
-              let poses = fieldObj.map(item => {
-                  return item.pos;
-              });
               if (this.line.enabled) {
                   if (me.line.smooth) {
-                      let curve = new CatmullRomCurve3(poses);
+                      let curve = new CatmullRomCurve3(linePoints[field]);
                       points = curve.getSpacedPoints(DIVISONS);
                   } else {
-                      points = poses;
+                      points = linePoints[field];
                   }
 
 
@@ -28808,9 +28751,10 @@ var Chartx3d = (function () {
               }
 
 
+
               //绘制node 点
               if (this.icon.enabled) {
-                  poses.forEach(point => {
+                  linePoints[field].forEach(point => {
 
                       //let node = app.createSphere(10,{fillStyle:_color});
                       let node = app.createCirclePlane(10, { fillStyle: _color });
@@ -28831,20 +28775,37 @@ var Chartx3d = (function () {
 
   let __lastPosition = null;
 
-  class Area extends GraphObject {
+  class Area extends Component {
       constructor(chart3d, opt) {
-          super(chart3d);
+          super(chart3d.currCoord);
 
           this.type = "area";
           this._type = "area3d";
+
+          // this.line = { //线
+          //     enabled: 1,
+          //     shapeType: "brokenLine",//折线
+          //     strokeStyle: null,
+          //     lineWidth: 2,
+          //     lineType: "solid",
+          //     smooth: true
+          // };
+
+          // this.icon = { //节点 
+          //     enabled: 1, //是否有
+          //     shapeType: "circle",
+          //     corner: false, //模式[false || 0 = 都有节点 | true || 1 = 拐角才有节点]
+          //     radius: 3, //半径 icon 圆点的半径
+          //     fillStyle: '#ffffff',
+          //     strokeStyle: null,
+          //     lineWidth: 2
+          // };
 
           this.area = { //填充
               //            shapeType : "path",
               enabled: 1,
               fillStyle: null,
-              alpha: 0.3,
-              thickness: Infinity,
-              smooth: true
+              alpha: 0.3
           };
 
 
@@ -28865,6 +28826,7 @@ var Chartx3d = (function () {
 
       }
       _getColor(c, dataOrg) {
+
           var color = this._coordSystem.getColor(dataOrg.field);
 
           //field对应的索引，， 取颜色这里不要用i
@@ -28878,52 +28840,277 @@ var Chartx3d = (function () {
           return color;
       }
 
-      dataProcess() {
-          super.dataProcess();
+      computePos() {
+          let me = this;
+          let fields = [], customField = [];
+          if (!_.isArray(this.field)) {
+              fields.push(this.field);
+          } else {
+              fields = this.field.slice(0);
+          }
+          let zSection = this._coordSystem.zAxisAttribute.getDataSection();
+          let zNativeSection = this._coordSystem.zAxisAttribute.getNativeDataSection();
+          this.drawPosData = [];
+
+          let xDatas = this._coordSystem.xAxisAttribute.getDataSection();
+
+          let yAxisInfo = this._coordSystem.getYAxis(this.yAxisName);
+          let yAxisAttribute = yAxisInfo.attr;
+
+          let yDatas = yAxisAttribute.dataOrg;
+          //x轴返回的数据是单列
+          if (xDatas.length == 1) {
+              xDatas = _.flatten(xDatas);
+          }
+          //todo 三维数据这里会有问题,需要整理清楚
+
+
+          let yValidData = [];
+
+          yValidData = yAxisAttribute.getPartDataOrg(this.field);
+          if (this._coordSystem.coord.zAxis.dataSection) {
+              customField = customField.concat(this._coordSystem.coord.zAxis.dataSection);
+          }
+
+
+          let lastArray = [];
+
+          let DataOrg = function () {
+              //this.org = [];
+              this.isStack = false;
+              //this.stack = [];
+              //具体XYZ的值
+              this.value = null;
+              //堆叠值
+              this.stackValue = null;
+              //堆叠楼层
+              this.floor = 0;
+              //绘制的字段顺序
+              this.level = 0;
+              this.field = '';
+
+              //
+              //this.pos = null;
+          };
+
+          //let ceil = this.getCeilSize();
+
+          let generate = (zd, zInd) => {
+              xDatas.forEach((xd, no) => {
+                  lastArray = [];
+                  if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                      yValidData.forEach((yda, index) => {
+                          let _fd = fields[index];
+                          if (yda.length > 1) {
+                              yda.forEach((ydad, num) => {
+
+                                  let ydadd = _.flatten(ydad).slice(0);
+                                  let _fdd = _fd[num];
+                                  ydadd.forEach((yd, i) => {
+                                      if (i === no) {
+                                          let _tmp = new DataOrg();
+                                          _tmp.floor = num;
+                                          _tmp.level = index + num;
+                                          _tmp.field = _fdd;
+                                          if (num > 0) {
+                                              _tmp.isStack = true;
+                                              _tmp.value = new Vector3(xd, yd, zd);
+                                              _tmp.stackValue = new Vector3(xd, lastArray[i], zd);
+
+                                          } else {
+                                              _tmp.isStack = true;
+                                              _tmp.stackValue = new Vector3(xd, 0, zd);
+                                              _tmp.value = new Vector3(xd, yd, zd);
+
+                                          }
+                                          me.drawPosData.push(_tmp);
+                                      }
+
+                                  });
+                                  _.flatten(ydad).slice(0).forEach((t, y) => {
+                                      lastArray[y] = (lastArray[y] || 0) + t;
+                                  });
+                                  //lastArray = _.flatten(ydad).slice(0);
+                              });
+
+                          } else {
+                              let _tmp = new DataOrg();
+                              _tmp.field = _fd;
+                              _.flatten(yda).slice(0).forEach((yd, i) => {
+                                  if (i === no) {
+                                      _tmp.value = new Vector3(xd, yd, zd);
+                                      me.drawPosData.push(_tmp);
+                                  }
+
+                              });
+                          }
+                      });
+                  } else {
+                      let _tmp = new DataOrg();
+                      let searchOpt = {};
+                      let zdd = zd;
+                      if (zNativeSection[zInd] == zd) {
+                          zdd = zd;
+                      } else {
+                          zdd = zNativeSection[zInd];
+                      }
+
+                      searchOpt[me._coordSystem.zAxisAttribute.field] = zdd;
+                      searchOpt[me._coordSystem.xAxisAttribute.field] = xd;
+                      let yd = me._root.dataFrame && me._root.dataFrame.getRowDataOf(searchOpt);
+                      if (yd.length > 0) {
+                          _tmp.value = new Vector3(xd, yd[0][yAxisInfo.opts.field.toString()], zd);
+                          me.drawPosData.push(_tmp);
+                      }
+
+                  }
+
+              });
+          };
+
+
+          let fieldName = fields.toString();
+          if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+              generate(fieldName);
+          } else {
+              zSection.forEach((zd, zInd) => {
+                  generate(zd, zInd);
+              });
+          }
+
 
       }
       draw() {
           let me = this;
           let app = this._root.app;
-          this.dataProcess();
+          let linePoints = {};
+          this.computePos();
+          let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
           let ceil = this._coordSystem.getCeilSize();
-
+          let getXAxisPosition = this._coordSystem.getXAxisPosition.bind(this._coordSystem);
+          let getYAxisPosition = this._coordSystem.getYAxisPosition.bind(this._coordSystem);
+          let getZAxisPosition = this._coordSystem.getZAxisPosition.bind(this._coordSystem);
+          let boxWidth = ceil.x * 0.7;
           let boxDepth = ceil.z * 0.7;
+          this.drawPosData.forEach(dataOrg => {
+              let pos = new Vector3();
+              let stack = new Vector3();
+              pos.setX(getXAxisPosition(dataOrg.value.x));
+              pos.setY(getYAxisPosition(dataOrg.value.y, yAxisAttribute));
+              pos.setZ(getZAxisPosition(dataOrg.value.z));
 
-          const DIVISONS = 200;
-          for (let field in this.drawData) {
-              let _color = this._getColor(null, { field: field }) || "red";
-              let fieldObj = this.drawData[field];
-              let points = null;
-              // // //if (this.line.enabled) {
-              // //     if (me.line.smooth) {
-
-              let poses = fieldObj.map(item => {
-                  return item.pos;
-              });
-              if (this.area.smooth) {
-                  let curve = new CatmullRomCurve3(poses);
-                  points = curve.getSpacedPoints(DIVISONS);
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field] = linePoints[dataOrg.field] || [];
               } else {
-                  points = poses;
+                  linePoints[dataOrg.value.z] = linePoints[dataOrg.value.z] || [];
+              }
+
+              if (dataOrg.isStack) {
+                  stack.setX(pos.x);
+                  stack.setY(getYAxisPosition(dataOrg.stackValue.y + dataOrg.value.y, yAxisAttribute));
+                  stack.setZ(-pos.z);
+
+              } else {
+
+                  stack.setX(pos.x);
+                  stack.setY(pos.y);
+                  stack.setZ(-pos.z);
+
               }
 
 
-              let thickness = Math.max(0.1, Math.min(boxDepth, this.area.thickness));
+              if (_.isEmpty(me._coordSystem.zAxisAttribute.field)) {
+                  linePoints[dataOrg.field].push({
+                      pos: stack.clone(),
+                      val: dataOrg.value.clone()
+                  });
+              } else {
+                  linePoints[dataOrg.value.z].push({
+                      pos: stack.clone(),
+                      val: dataOrg.value.clone()
+                  });
+              }
+
+          });
+
+          const DIVISONS = 200;
+          for (let field in linePoints) {
+              let _color = this._getColor(null, { field: field }) || "red";
+
+              let points = null;
+              // // //if (this.line.enabled) {
+              // //     if (me.line.smooth) {
+              let pos = linePoints[field].map(item => {
+                  return item.pos;
+              });
+              let curve = new CatmullRomCurve3(pos);
+              points = curve.getSpacedPoints(DIVISONS);
+              // //     } else {
+              //points = linePoints[field];
+              // // }
+
+              // debugger;
+
+
+              // let line = 
+
+              // this.group.add(line);
+              // //}
+
+              let thickness = boxDepth;
               //绘制区域
               if (this.area.enabled) {
+                  //let pointArr = [];
+                  // points.forEach(point => {
+                  //     pointArr = pointArr.concat(point.toArray());
+                  // });
                   points.unshift(points[0].clone().setY(0));
                   points.push(points[(points.length - 1)].clone().setY(0));
                   let polygon = app.createArea(points, thickness, { fillStyle: _color });
 
                   polygon.name = "polygon_area_" + field;
-                  polygon.userData = fieldObj;
+                  polygon.userData = {
+                      infos: linePoints[field],
+                      field
+
+                      // values:dataOrg
+                  };
                   let posZ = points[0].z;
+                  // if (points[0].z === 0) {
+                  //     posZ = points[0].z - thickness;
+                  // }else{
                   posZ = posZ - thickness * 0.5;
+                  // }
 
                   polygon.position.setZ(posZ);
                   this.group.add(polygon);
               }
+
+
+
+              //绘制node 点
+              // if (this.icon.enabled) {
+              //     linePoints[field].forEach(point => {
+
+              //         //let node = app.createSphere(10,{fillStyle:_color});
+              //         let node = app.createCirclePlane(10, { fillStyle: _color });
+              //         node.position.copy(point);
+              //         this.group.add(node);
+              //     });
+              // }
+
+              //文字绘制
+              // let fontStyle = { fontSize: 50, fillStyle: _color,strokeStyle:"#fff",lineWidth:1,isBold:true };
+              // let offset = 50;
+              // linePoints[field].forEach(node => {
+              //     let val = yAxisAttribute.getValOfPos(node.y);
+
+              //     let textObj = app.creatSpriteText(val, fontStyle);
+              //     textObj[0].position.copy(node);
+              //     textObj[0].position.setY(offset + textObj[0].position.y);
+              //     this.textGroup.add(textObj[0]);
+              // })
+
 
           }
           me.bindEvent();
@@ -28946,22 +29133,17 @@ var Chartx3d = (function () {
           if (currObj) {
               let pos = currObj.point.clone();
               let locPos = this._coordSystem.group.worldToLocal(pos);
-              let positions = target.userData.map(obj => {
+              let positions = target.userData.infos.map(obj => {
                   return obj.pos;
               });
 
               let currPoint = this._findPoint(positions, locPos);
-              let currInfo = _.find(target.userData, item => {
+              let currInfo = _.find(target.userData.infos, item => {
                   return item.pos.equals(currPoint);
               });
 
               if (!__lastPosition || !currPoint.equals(__lastPosition)) {
-                  this._showLabel(currInfo);
-                  this._root.fire({
-                      type: 'tipShow',
-                      event: e.event,
-                      data: currInfo
-                  });
+                  this._showLabel(currPoint, currInfo.val.y, target.userData.field);
                   __lastPosition = currPoint;
               }
 
@@ -28970,23 +29152,20 @@ var Chartx3d = (function () {
       }
       onMouseOut(e) {
           this.dispose(this.textTempGroup);
-          this._root.fire({
-              type: 'tipHide',
-              event: e.event,
-              data: null
-          });
       }
-      _showLabel(labelInfo) {
+      _showLabel(position, val, field) {
           let app = this._root.app;
-          let val = labelInfo.value;
-          let position = labelInfo.pos;
-
-          let fontStyle = { fontSize: 50, fillStyle: labelInfo.color, strokeStyle: "#ccc", lineWidth: 2, isBold: true };
+          let _color = this._getColor(null, { field: field }) || "red";
+          let fontStyle = { fontSize: 50, fillStyle: _color, strokeStyle: "#ccc", lineWidth: 2, isBold: true };
           let offset = 50;
 
           //干掉上一个显示
           this.dispose(this.textTempGroup);
 
+          //this.
+
+          //let yAxisAttribute = this._coordSystem.getYAxis(this.yAxisName).attr;
+          //let val = yAxisAttribute.getValOfPos(position.y);
           let textObj = app.creatSpriteText(val, fontStyle);
           textObj[0].position.copy(position);
           textObj[0].position.setY(offset + textObj[0].position.y);
@@ -29158,7 +29337,7 @@ var Chartx3d = (function () {
                   me._root.fire({
                       type: 'tipShow',
                       event: e.event,
-                      data: { nodes: [item] }
+                      data: this.userData.info
                   });
               });
               sector.on('mouseout', function (e) {
@@ -29166,7 +29345,7 @@ var Chartx3d = (function () {
                   me._root.fire({
                       type: 'tipHide',
                       event: e.event,
-                      data: { nodes: [item] }
+                      data: this.userData.info
                   });
               });
 
@@ -29174,7 +29353,7 @@ var Chartx3d = (function () {
                   me._root.fire({
                       type: 'tipMove',
                       event: e.event,
-                      data: { nodes: [item] }
+                      data: this.userData.info
                   });
               });
 
@@ -29207,6 +29386,9 @@ var Chartx3d = (function () {
       onMouseOut(e) {
 
           this.material.setValues({ color: this.userData.color });
+
+
+
 
       }
       onClick(e) {
@@ -29247,7 +29429,7 @@ var Chartx3d = (function () {
           return str;
       }
 
-
+      
 
       _startWidgetLabel() {
           var me = this;
@@ -29569,7 +29751,7 @@ var Chartx3d = (function () {
           if (!isAdjust) return;
           let maxHeight = _.max(heights);
           this.group.traverse(obj => {
-              if (obj.isMesh && obj.geometry && (obj.geometry.type === "DoughnutBufferGeometry" || obj.geometry.type === "DoughnutGeometry")) {
+              if (obj.isMesh && obj.geometry && obj.geometry.type === "DoughnutBufferGeometry") {
                   let offset = (maxHeight - obj.geometry.parameters.height) * 0.5;
                   obj.position.setY(- offset);
 
@@ -29804,26 +29986,66 @@ var Chartx3d = (function () {
           str += "<div style='line-height:1.5;font-size:12px;padding:0 4px;'>";
           if (style) {
               str += "<div style='background:" + style + ";margin-right:8px;margin-top:5px;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></div>";
-          }        _.each(info.rowData, (value, key) => {
-              if (key !== info.field) return;
+          }        _.each(info.value, (value, key) => {
               str += '<div><span style="margin-right:5px">- ' + key + ':</span><span>' + value + '</span></div>';
           });
 
           str += "</div>";
 
-          _.each(info.nodes, function (node, i) {
-              //value 是null 或者 undefined
-              if (!node.value && node.value !== 0) {
-                  return;
-              }
+          // _.each(info.nodes, function (node, i) {
+          //     //value 是null 或者 undefined
+          //     if (!node.value && node.value !== 0) {
+          //         return;
+          //     }; 
 
-              if (style) {
-                  str += "<span style='background:" + style + ";margin-right:8px;margin-top:5px;float:left;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></span>";
-              }            str += node.value + "</div>";
-          });
+
+          //     if( style ){
+          //         str += "<span style='background:" + style + ";margin-right:8px;margin-top:5px;float:left;width:8px;height:8px;border-radius:4px;overflow:hidden;font-size:0;'></span>";
+          //     };
+          //     str += value + "</div>";
+          // });
           return str;
       }
 
+      /*
+      _getDefaultContent_bak( info )
+      {
+
+
+          if( !info.nodes.length ){
+              return null;
+          };
+
+          var str  = "<table style='border:none'>";
+          var self = this;
+
+          if( info.title !== undefined && info.title !== null &&info.title !== "" ){
+              str += "<tr><td colspan='2'>"+ info.title +"</td></tr>"
+          };
+
+          _.each( info.nodes , function( node , i ){
+              if( node.value === undefined || node.value === null ){
+                  return;
+              };
+
+              
+              str+= "<tr style='color:"+ (node.color || node.fillStyle || node.strokeStyle) +"'>";
+              
+              let tsStyle="style='border:none;white-space:nowrap;word-wrap:normal;'";
+              let label = node.label || node.field || node.name;
+              if( label ){
+                  label += "：";
+              } else {
+                  label = "";
+              };
+          
+              str+="<td "+tsStyle+">"+ label +"</td>";
+              str += "<td "+tsStyle+">"+ (typeof node.value == "object" ? JSON.stringify(node.value) : numAddSymbol(node.value)) +"</td></tr>";
+          });
+          str+="</table>";
+          return str;
+      }
+      */
 
       /**
        *获取back要显示的x
@@ -29861,7 +30083,76 @@ var Chartx3d = (function () {
 
 
       _tipsPointerShow(e) {
+          var _coord = this.root._coord;
 
+          //目前只实现了直角坐标系的tipsPointer
+          if (!_coord || _coord.type != 'rect') return;
+
+          if (!this.pointer) return;
+
+          var el = this._tipsPointer;
+          var y = _coord.origin.y - _coord.height;
+          var x = 0;
+          if (this.pointer == "line") {
+              x = _coord.origin.x + e.eventInfo.xAxis.x;
+          }
+          if (this.pointer == "region") {
+              x = _coord.origin.x + e.eventInfo.xAxis.x - _coord._xAxis.ceilWidth / 2;
+              if (e.eventInfo.xAxis.ind < 0) {
+                  //当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
+                  x = _coord.origin.x;
+              }
+          }
+
+          if (!el) {
+              if (this.pointer == "line") {
+                  el = new Line({
+                      //xyToInt : false,
+                      context: {
+                          x: x,
+                          y: y,
+                          start: {
+                              x: 0,
+                              y: 0
+                          },
+                          end: {
+                              x: 0,
+                              y: _coord.height
+                          },
+                          lineWidth: 1,
+                          strokeStyle: "#cccccc"
+                      }
+                  });
+              }            if (this.pointer == "region") {
+                  el = new Rect({
+                      //xyToInt : false,
+                      context: {
+                          width: _coord._xAxis.ceilWidth,
+                          height: _coord.height,
+                          x: x,
+                          y: y,
+                          fillStyle: "#cccccc",
+                          globalAlpha: 0.3
+                      }
+                  });
+              }
+              this.root.graphsSprite.addChild(el, 0);
+              this._tipsPointer = el;
+          } else {
+              if (this.pointerAnim && _coord._xAxis.layoutType != "proportion") {
+                  if (el.__animation) {
+                      el.__animation.stop();
+                  }                el.__animation = el.animate({
+                      x: x,
+                      y: y
+                  }, {
+                          duration: 200
+                      });
+              } else {
+                  el.context.x = x;
+                  el.context.y = y;
+              }
+          }
       }
 
       _tipsPointerHide() {
@@ -29877,7 +30168,46 @@ var Chartx3d = (function () {
 
       _tipsPointerMove(e) {
 
+          var _coord = this.root._coord;
 
+          //目前只实现了直角坐标系的tipsPointer
+          if (!_coord || _coord.type != 'rect') return;
+
+          if (!this.pointer || !this._tipsPointer) return;
+
+          //console.log("move");
+
+          var el = this._tipsPointer;
+          var x = _coord.origin.x + e.eventInfo.xAxis.x;
+          if (this.pointer == "region") {
+              x = _coord.origin.x + e.eventInfo.xAxis.x - _coord._xAxis.ceilWidth / 2;
+              if (e.eventInfo.xAxis.ind < 0) {
+                  //当没有任何数据的时候， e.eventInfo.xAxis.ind==-1
+                  x = _coord.origin.x;
+              }
+          }        var y = _coord.origin.y - _coord.height;
+
+          if (x == el.__targetX) {
+              return;
+          }
+          if (this.pointerAnim && _coord._xAxis.layoutType != "proportion") {
+              if (el.__animation) {
+                  el.__animation.stop();
+              }            el.__targetX = x;
+              el.__animation = el.animate({
+                  x: x,
+                  y: y
+              }, {
+                      duration: 200,
+                      onComplete: function () {
+                          delete el.__targetX;
+                          delete el.__animation;
+                      }
+                  });
+          } else {
+              el.context.x = x;
+              el.context.y = y;
+          }
       }
 
 
@@ -30092,7 +30422,7 @@ var Chartx3d = (function () {
   global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
 
   global.registerComponent(Bar, 'graphs', 'bar', 3);
-  global.registerComponent(Line$1, 'graphs', 'line', 3);
+  global.registerComponent(Line$2, 'graphs', 'line', 3);
   global.registerComponent(Area, 'graphs', 'area', 3);
   global.registerComponent(Pie, 'graphs', 'pie', 3);
 
