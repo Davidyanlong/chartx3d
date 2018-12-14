@@ -140,6 +140,7 @@ class XAxis extends Component {
             me._formatTextSection[i] = me._getFormatText(val, i);
         });
 
+
         if (this.label.rotation != 0) {
             //如果是旋转的文本，那么以右边为旋转中心点
             this.label.textAlign = "right";
@@ -210,7 +211,7 @@ class XAxis extends Component {
             if (_faceInfo.back.visible) {
                 origin = new Vector3(0, height, 0);
                 _tickLineDir = new Vector3(0, 0, 1);
-               
+
             } else {
                 origin = new Vector3(0, height, -depth)
                 _tickLineDir = new Vector3(0, 0, -1);
@@ -245,7 +246,7 @@ class XAxis extends Component {
             this._axisLine.setLength(this.axisAttribute.axisLength);
             this._axisLine.setGroupName('xAxisLine')
             this._axisLine.drawStart();
-            
+
             this.group.add(this._axisLine.group);
 
             //初始化tickLine
@@ -269,9 +270,22 @@ class XAxis extends Component {
             //this._tickText.initData(this._axisLine,this.axisAttribute);
             this._tickText.drawStart(this._formatTextSection);
 
-           this._root.labelGroup.add(this._tickText.group)
+            this._root.labelGroup.add(this._tickText.group)
             //this.group.add(this._tickText.group);
+
+            this._tickText.labels.forEach((label, a) => {
+                _.isFunction(this.filter) && this.filter({
+                    layoutData: this.axisAttribute.dataSectionLayout,
+                    index: a,
+                    label: label,
+                    line: this._tickLine.lines[a]
+                });
+            })
+
+
+
         }
+
     }
     _getName() {
         // if ( this.title.content ) {
@@ -292,9 +306,26 @@ class XAxis extends Component {
         //     }
         // }
     }
+    // evade() {
+    //     //label个数
+    //     let num = this.axisAttribute.dataSectionLayout.length;
+    //     //轴长
 
 
-    
+    //     let labels = this._tickText.labels;
+    //     let orgPoint1 = this._tickText.getTextPos(labels[0].userData.text);
+    //     let orgPoint2 = this._tickText.getTextPos(labels[labels.length - 1].userData.text);
+    //     let point1 = this._coordSystem.positionToScreen(orgPoint1.clone());
+    //     let point2 = this._coordSystem.positionToScreen(orgPoint2.clone());
+    //     //屏幕空间下的轴长
+    //     let lengthInScreen = point2.distanceTo(point1);
+
+    //     console.log(lengthInScreen);
+
+    //     debugger
+
+    // }
+
     draw() {
 
         this._axisLine.draw();
@@ -313,13 +344,13 @@ class XAxis extends Component {
         this._root.orbitControls.off('change', this._onChangeBind);
         this._onChangeBind = null;
     }
-    resetData(){
+    resetData() {
         this._initData(this.axisAttribute);
         //this.getOrigin();
 
         this._axisLine.resetData();
         this._tickLine.resetData(this._axisLine, this.axisAttribute);
-        this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+        this._tickText.resetData(this._axisLine, this.axisAttribute, this._formatTextSection);
     }
 }
 

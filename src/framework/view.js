@@ -107,7 +107,6 @@ class View {
     getVisableSize(currPosition = new Vector3()) {
 
         let result = { width: 0, height: 0, ratio: 0 };
-
         if (this.mode == "ortho") {
             result.width = Math.round(this._camera.right - this._camera.left);
             result.height = Math.round(this._camera.top - this._camera.bottom);

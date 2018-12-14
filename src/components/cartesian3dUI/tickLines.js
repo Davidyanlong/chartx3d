@@ -24,6 +24,8 @@ class TickLines extends Component {
 
         this._tickLine = null;
 
+        this.lines = [];
+
         this.group.visible = !!opts.enabled;
     }
     initData(axis, attribute) {
@@ -60,7 +62,13 @@ class TickLines extends Component {
         this.dir = dir;
     }
     drawStart() {
+        this.lines = [];
         this._tickLine = this._root.app.createLine(this.origins, this.dir, this._length, this.lineWidth, this.color);
+        this._tickLine.traverse(obj => {
+            if (obj.isLine2) {
+                this.lines.push(obj);
+            }
+        });
     }
     update() {
         let origins = this.origins;
@@ -85,6 +93,7 @@ class TickLines extends Component {
                 obj.geometry.setPositions(_.flatten(triangleVertices));
                 obj.position.copy(origins[i]);
                 i++;
+
             }
         })
 
@@ -95,6 +104,7 @@ class TickLines extends Component {
         this.group.add(this._tickLine);
     }
     dispose() {
+        this.lines = [];
         let remove = [];
         this.group.traverse((obj) => {
             if (obj.isLine2) {
@@ -115,6 +125,7 @@ class TickLines extends Component {
 
     }
     resetData(axis, attribute) {
+        this.lines = [];
         this.initData(axis, attribute);
         this.dispose();
         this.drawStart();

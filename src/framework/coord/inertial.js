@@ -258,7 +258,7 @@ let positionToScreen = (function () {
 
 let screenToWorld = (function () {
     let matrix = new Matrix4();
-
+    //可能有问题,未测试
     return function (dx, dy) {
         let pCam = this._root.renderView._camera;
         const width = this._root.width;

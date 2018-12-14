@@ -32,6 +32,7 @@ class TickTexts extends Component {
 
         this.group.visible = !!opts.enabled;
         this.group.add(this._tickTextGroup);
+        this.labels = [];
     }
 
 
@@ -83,8 +84,8 @@ class TickTexts extends Component {
         let { fontSize, fontColor: color } = me;
         let zDir = new Vector3(0, 0, -1);
         this.texts = texts || this.texts;
-
-        let labels = app.creatSpriteText(texts, { fontSize, fillStyle:color });
+        this.labels = [];
+        let labels = app.creatSpriteText(texts, { fontSize, fillStyle: color });
 
         labels.forEach((label, index) => {
             label.userData.position = me.origins[index].clone();
@@ -95,6 +96,7 @@ class TickTexts extends Component {
                 //更新坐标后的位置
 
                 let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+                this.userData.pos = pos.clone();
                 //屏幕的位置
                 let textSize = this.userData.size;
                 let halfwidth = textSize[0] * 0.5;
@@ -127,6 +129,7 @@ class TickTexts extends Component {
                 this.updateMatrixWorld(true);
             }
             me._tickTextGroup.add(label);
+            this.labels.push(label);
         });
 
     }
@@ -140,6 +143,7 @@ class TickTexts extends Component {
     }
 
     dispose() {
+        this.labels = [];
         let remove = [];
         this.group.traverse((obj) => {
             if (obj.isSprite) {
@@ -163,6 +167,7 @@ class TickTexts extends Component {
 
     }
     resetData(axis, attribute, texts) {
+        this.labels = [];
         this.initData(axis, attribute);
         this.dispose();
         this.drawStart(texts);

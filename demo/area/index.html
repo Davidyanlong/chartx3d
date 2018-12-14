@@ -74,6 +74,12 @@ var options = {
 
         xAxis : {
             field : "ds",
+            filter:function(e){
+                if(e.label.userData.text%3!=0){
+                    e.label.visible= false;
+                    e.line.visible=false;
+                }
+            }
         },
         yAxis:{
             middleweight:[16,50,100,200,300,550,1500,2500,6000],
@@ -86,9 +92,9 @@ var options = {
         },
         controls:{
             boxWidth:2000,
-            boxDepth:2000,
+            boxDepth:1000,
             alpha: 15,    //绕X轴旋转
-            beta: 10,      //绕Y轴旋转
+            beta: 20,      //绕Y轴旋转
         }
     },
     graphs : [
@@ -115,7 +121,9 @@ var options = {
     },
 ],
 tips:{
-    
+    content(e){
+        return "活跃数:"+e.value;
+    } 
 }
       
 };
