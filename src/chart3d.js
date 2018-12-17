@@ -84,7 +84,7 @@ class Chart3d extends Events {
 
         this._initRenderer(rendererOpts);
 
-
+        window.camera = this.renderView._camera;
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
         let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
 
