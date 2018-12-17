@@ -2,6 +2,12 @@ import { Component, _ } from '../../Component';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3, Math as _Math, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 0;
+let __mouseout_pieEvent = null,
+    __mouseover_pieEvent = null,
+    __mousemove_pieEvent = null,
+    __click_pieEvent = null;
+
+
 
 class Pie extends Component {
     constructor(chart3d, opt) {
@@ -140,6 +146,8 @@ class Pie extends Component {
 
             sector.userData.midAngle = item.midAngle;
             //sector.renderOrder = renderOrder++;
+            sector.name = Pie._pie_prefix + item.iNode;
+            sector.userData.info = item;
 
             //如果设置了高度取相应的数据,需要给定一些间距,防止z-fighting,尤其室圆心位置
             if (item.heightField && item.innerRadius == 0) {
@@ -149,37 +157,6 @@ class Pie extends Component {
                 sector.position.set(x, 0, z);
             }
 
-            sector.on('mouseover', function (e) {
-                me.onMouseOver.call(this, item);
-                me._root.fire({
-                    type: 'tipShow',
-                    event: e.event,
-                    data: { nodes: [item] }
-                })
-            });
-            sector.on('mouseout', function (e) {
-                me.onMouseOut.call(this, item);
-                me._root.fire({
-                    type: 'tipHide',
-                    event: e.event,
-                    data: { nodes: [item] }
-                })
-            });
-
-            sector.on('mousemove', function (e) {
-                me._root.fire({
-                    type: 'tipMove',
-                    event: e.event,
-                    data: { nodes: [item] }
-                })
-            });
-
-
-            sector.on('click', function (e) {
-                me.onClick.call(this, item);
-            });
-
-
             this.group.add(sector);
 
         })
@@ -187,43 +164,84 @@ class Pie extends Component {
         if (this.label.enabled) {
             this._startWidgetLabel();
         };
-
+        this.bindEvent();
     }
 
-    onMouseOver(e) {
-        //上下文中的this 是bar 对象
-        this.userData.color = this.material.color.clone();
-        //高亮
-        let tempColor = {};
-        this.material.color.getHSL(tempColor);
-        this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.05) });
+    bindEvent() {
+        let me = this;
 
+        __mouseover_pieEvent = function (e) {
+            //上下文中的this 是bar 对象
+            this.userData.color = this.material.color.clone();
+            //高亮
+            let tempColor = {};
+            this.material.color.getHSL(tempColor);
+            this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.05) });
 
+            let _data = this.userData.info;
+            me._root.fire({
+                type: 'tipShow',
+                event: e.event,
+                data: { nodes: [_data] }
+            });
 
-    }
-    onMouseOut(e) {
+            me.fire({ type: 'sectorover', data: _data });
+        };
 
-        this.material.setValues({ color: this.userData.color });
+        __mouseout_pieEvent = function (e) {
+            this.material.setValues({ color: this.userData.color });
+            let _data = this.userData.info;
+            me._root.fire({
+                type: 'tipHide',
+                event: e.event,
+                data: { nodes: [_data] }
+            });
+            me.fire({ type: 'sectorout', data: _data });
+        };
 
-    }
-    onClick(e) {
-        if (!this.userData.isChecked) {
-            this.userData.isChecked = true;
-            //移动位置
-            let moveDis = e.moveDis;
-            let pos = this.position.clone();
-            this.userData.orgPosition = pos;
-            let x = moveDis * Math.cos(_Math.degToRad(this.userData.midAngle));
-            let z = moveDis * Math.sin(_Math.degToRad(this.userData.midAngle));
-            this.position.set(x, pos.y, z)
-        } else {
-            this.userData.isChecked = false;
-            if (this.userData.orgPosition) {
-                this.position.copy(this.userData.orgPosition);
+        __mousemove_pieEvent = function (e) {
+            let _data = this.userData.info;
+            me._root.fire({
+                type: 'tipMove',
+                event: e.event,
+                data: { nodes: [_data] }
+            });
+            me.fire({ type: 'sectormove', data: _data });
+        };
+
+        __click_pieEvent = function (e) {
+            let _data = this.userData.info;
+
+            if (!this.userData.isChecked) {
+                this.userData.isChecked = true;
+                //移动位置
+                let moveDis = _data.moveDis;
+                let pos = this.position.clone();
+                this.userData.orgPosition = pos;
+                let x = moveDis * Math.cos(_Math.degToRad(this.userData.midAngle));
+                let z = moveDis * Math.sin(_Math.degToRad(this.userData.midAngle));
+                this.position.set(x, pos.y, z)
+            } else {
+                this.userData.isChecked = false;
+                if (this.userData.orgPosition) {
+                    this.position.copy(this.userData.orgPosition);
+                }
             }
+
+            me.fire({ type: 'sectorclick', data: _data });
         }
-        //this.fire(e)
+
+        this.group.traverse(sector => {
+            if (sector.name && sector.name.includes(Pie._pie_prefix)) {
+                sector.on('mouseover', __mouseover_pieEvent);
+                sector.on('mouseout', __mouseout_pieEvent);
+
+                sector.on('mousemove', __mousemove_pieEvent);
+                sector.on('click', __click_pieEvent);
+            }
+        });
     }
+
 
     _getLabelText(itemData) {
         var str;
@@ -578,15 +596,13 @@ class Pie extends Component {
     }
     dispose() {
 
-        this.group.traverse((obj) => {
-            if (obj.has('click', this.onClick)) {
-                obj.off('click', this.onClick);
-            }
-            if (obj.has('mouseover', this.onMouseOver)) {
-                obj.off('mouseover', this.onMouseOver);
-            }
-            if (obj.has('mouseout', this.onMouseOut)) {
-                obj.off('mouseout', this.onMouseOut);
+        this.group.traverse((sector) => {
+            if (sector.name && sector.name.includes(Pie._pie_prefix)) {
+                sector.off('mouseover', __mouseover_pieEvent);
+                sector.off('mouseout', __mouseout_pieEvent);
+
+                sector.off('mousemove', __mousemove_pieEvent);
+                sector.off('click', __click_pieEvent);
             }
         })
 
@@ -607,5 +623,7 @@ class Pie extends Component {
 
 
 }
+
+Pie._pie_prefix = "pie_one_";
 
 export default Pie;

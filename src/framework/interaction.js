@@ -117,15 +117,18 @@ class Interaction extends Events {
 
         isChange = true;
         let { x, y } = e;
+        
         if (x == this.lastPos.x && y == this.lastPos.y) {
             isClick = true;
             this.fire({ type: 'click', event: event });
+           // console.log('click');
         }
-
-        this.fire({ type: 'refresh' });
+        setTimeout(()=>{
+            this.fire({ type: 'refresh' });
+        },16);
 
         EVENT = event;
-        // console.log('click');
+        //console.log('refresh');
 
     }
 

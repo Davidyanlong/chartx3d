@@ -27484,15 +27484,18 @@ var Chartx3d = (function () {
 
           isChange = true;
           let { x, y } = e;
+          
           if (x == this.lastPos.x && y == this.lastPos.y) {
               isClick = true;
               this.fire({ type: 'click', event: event });
+             // console.log('click');
           }
-
-          this.fire({ type: 'refresh' });
+          setTimeout(()=>{
+              this.fire({ type: 'refresh' });
+          },16);
 
           EVENT = event;
-          // console.log('click');
+          //console.log('refresh');
 
       }
 
@@ -27507,6 +27510,8 @@ var Chartx3d = (function () {
       }
 
   }
+
+  let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null;
 
   let _cid = 0;
   class Chart3d extends Events {
@@ -27652,7 +27657,9 @@ var Chartx3d = (function () {
           for (let t = 0; t < opts.graphs.length; t++) {
               let key = opts.graphs[t].type;
               let comp = this.componentModules.get('graphs', key);
-              this.addComponent(comp, opts.graphs[t]);
+              if (comp) {
+                  this.addComponent(comp, opts.graphs[t]);
+              }
 
           }
           //加载其他组件
@@ -27667,7 +27674,9 @@ var Chartx3d = (function () {
                   }
               } else {
                   let comp = this.componentModules.get(p);
-                  this.addComponent(comp, opts[p]);
+                  if (comp) {
+                      this.addComponent(comp, opts[p]);
+                  }
               }
           }
 
@@ -27712,8 +27721,7 @@ var Chartx3d = (function () {
       bindEvent() {
 
           const TipName = 'Tips';
-
-          this.on('tipShow', (e) => {
+          __tipShowEvent = (e) => {
               let tips = this.getComponent(TipName);
               let { offsetX: x, offsetY: y } = e.event;
               if (tips !== null) {
@@ -27728,17 +27736,16 @@ var Chartx3d = (function () {
                       }
                   });
               }
-          });
-          this.on('tipHide', (e) => {
+          };
+
+          __tipHideEvent = (e) => {
 
               let tips = this.getComponent(TipName);
               if (tips !== null) {
                   tips.hide();
               }
-          });
-
-
-          this.on('tipMove', (e) => {
+          };
+          __tipMoveEvent = (e) => {
 
               let tips = this.getComponent(TipName);
               let { offsetX: x, offsetY: y } = e.event;
@@ -27754,7 +27761,10 @@ var Chartx3d = (function () {
                       }
                   });
               }
-          });
+          };
+          this.on('tipShow', __tipShowEvent);
+          this.on('tipHide', __tipHideEvent);
+          this.on('tipMove', __tipMoveEvent);
 
       }
 
@@ -27908,6 +27918,11 @@ var Chartx3d = (function () {
       }
 
       dispose() {
+
+          //销毁默认绑定的事件
+          this.off('tipShow', __tipShowEvent);
+          this.off('tipHide', __tipHideEvent);
+          this.off('tipMove', __tipMoveEvent);
 
           //先销毁坐标系统
           this.currCoord.dispose();
@@ -28514,7 +28529,7 @@ var Chartx3d = (function () {
   }
 
   //let renderOrder = 100;
-
+  let __mouseover_barEvent = null, __mouseout_barEvent = null, __mousemove_barEvent = null, __click_barEvemt = null;
   class Bar extends GraphObject {
       constructor(chart3d, opt) {
           super(chart3d);
@@ -28663,54 +28678,68 @@ var Chartx3d = (function () {
                   } else {
                       obj = app.createBox(item.boxWidth, boxHeight, item.boxDepth, material);
                   }
+                  obj.name = Bar._bar_prefix + this.node.shapeType + "_" + item.vInd + "_" + item.iNode;
+                  obj.userData.info = item;
                   obj.position.copy(fromPos);
                   this.group.add(obj);
 
-
-                  obj.on('mouseover', function (e) {
-                      me.onMouseOver.call(this);
-                      me._root.fire({
-                          type: 'tipShow',
-                          event: e.event,
-                          data: item
-                      });
-                  });
-                  obj.on('mouseout', function (e) {
-                      me.onMouseOut.call(this);
-                      me._root.fire({
-                          type: 'tipHide',
-                          event: e.event,
-                          data: item
-                      });
-                  });
-
-                  obj.on('mousemove', function (e) {
-                      me._root.fire({
-                          type: 'tipMove',
-                          event: e.event,
-                          data: item
-                      });
-                  });
-
-
-                  obj.on('click', this.onClick);
               });
+
           }
+          this.bindEvent();
 
       }
-      onMouseOver(e) {
-          //上下文中的this 是bar 对象
-          this.userData.color = this.material.color.clone();
-          //高亮
-          let tempColor = {};
-          this.material.color.getHSL(tempColor);
-          this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
-      }
-      onMouseOut() {
-          this.material.setValues({ color: this.userData.color });
-      }
-      onClick(e) {
-          //this.fire(e)
+
+      bindEvent() {
+          let me = this;
+          __mouseover_barEvent = function (e) {
+              //上下文中的this 是bar 对象
+              this.userData.color = this.material.color.clone();
+              //高亮
+              let tempColor = {};
+              this.material.color.getHSL(tempColor);
+              this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
+
+              me._root.fire({
+                  type: 'tipShow',
+                  event: e.event,
+                  data: this.userData.info
+              });
+
+              me.fire({ type: 'barover', data: this.userData.info });
+          };
+          __mouseout_barEvent = function (e) {
+              this.material.setValues({ color: this.userData.color });
+              me._root.fire({
+                  type: 'tipHide',
+                  event: e.event,
+                  data: this.userData.info
+              });
+              me.fire({ type: 'barout', data: this.userData.info });
+          };
+
+          __mousemove_barEvent = function (e) {
+              me._root.fire({
+                  type: 'tipMove',
+                  event: e.event,
+                  data: this.userData.info
+              });
+              me.fire({ type: 'barmove', data: this.userData.info });
+          };
+
+          __click_barEvemt = function (e) {
+              me.fire({ type: 'barclick', data: this.userData.info });
+          };
+
+          this.group.traverse(obj => {
+              if (obj.name && obj.name.includes(Bar._bar_prefix)) {
+                  obj.on('mouseover', __mouseover_barEvent);
+                  obj.on('mouseout', __mouseout_barEvent);
+
+                  obj.on('mousemove', __mousemove_barEvent);
+                  obj.on('click', __click_barEvemt);
+              }
+          });
       }
 
       _getColor(c, dataOrg) {
@@ -28730,14 +28759,11 @@ var Chartx3d = (function () {
 
           //this.materialMap.clear();
           this.group.traverse((obj) => {
-              if (obj.has('click', this.onClick)) {
-                  obj.off('click', this.onClick);
-              }
-              if (obj.has('mouseover', this.onMouseOver)) {
-                  obj.off('mouseover', this.onMouseOver);
-              }
-              if (obj.has('mouseout', this.onMouseOut)) {
-                  obj.off('mouseout', this.onMouseOut);
+              if (obj.name && obj.name.includes(Bar._bar_prefix)) {
+                  obj.off('click', __click_barEvemt);
+                  obj.off('mouseover', __mouseover_barEvent);
+                  obj.off('mouseout', __mouseout_barEvent);
+                  obj.off('mousemove', __mousemove_barEvent);
               }
           });
 
@@ -28751,6 +28777,7 @@ var Chartx3d = (function () {
       }
 
   }
+  Bar._bar_prefix = "bar_one_";
 
   class Line$1 extends GraphObject {
       constructor(chart3d, opt) {
@@ -28877,6 +28904,8 @@ var Chartx3d = (function () {
 
   let __lastPosition = null;
 
+  let __mousemove_areaEvent = null, __mouseout_areaEvent = null;
+
   class Area extends GraphObject {
       constructor(chart3d, opt) {
           super(chart3d);
@@ -28962,7 +28991,7 @@ var Chartx3d = (function () {
                   points.push(points[(points.length - 1)].clone().setY(0));
                   let polygon = app.createArea(points, thickness, { fillStyle: _color });
 
-                  polygon.name = "polygon_area_" + field;
+                  polygon.name = Area._area_prefix + field;
                   polygon.userData = fieldObj;
                   let posZ = points[0].z;
                   posZ = posZ - thickness * 0.5;
@@ -28975,51 +29004,62 @@ var Chartx3d = (function () {
           me.bindEvent();
       }
       bindEvent() {
+
+          __mousemove_areaEvent = (e) => {
+              let currObj = e.intersects[0];
+              let target = e.target;
+              if (currObj) {
+                  let pos = currObj.point.clone();
+                  let locPos = this._coordSystem.group.worldToLocal(pos);
+                  let positions = target.userData.map(obj => {
+                      return obj.pos;
+                  });
+
+                  let currPoint = this._findPoint(positions, locPos);
+                  let currInfo = _.find(target.userData, item => {
+                      return item.pos.equals(currPoint);
+                  });
+
+                  if (!__lastPosition || !currPoint.equals(__lastPosition)) {
+                      this._showLabel(currInfo);
+                      this._root.fire({
+                          type: 'tipShow',
+                          event: e.event,
+                          data: currInfo
+                      });
+                      __lastPosition = currPoint;
+                      this.fire({ type: 'showLable', data: currInfo });
+                  }
+                  this.fire({ type: 'mousemove' });
+                  // console.log(currPoint);
+              }
+          };
+
+          __mouseout_areaEvent = (e) => {
+              if (this.textTempGroup) {
+
+                  this.textTempGroup.traverse(item => {
+                      item.on('removed', (e) => {
+                          this.fire({ type: 'hideLable', data: e.target.userData });
+                      });
+                  });
+                  this.dispose(this.textTempGroup);
+              }
+
+              this._root.fire({
+                  type: 'tipHide',
+                  event: e.event,
+                  data: null
+              });
+              this.fire({ type: 'mouseout' });
+          };
+
+
           this.group.traverse(obj => {
-              if (obj.name && obj.name.includes("polygon_area_")) {
-                  obj.on('mousemove', (e) => {
-                      this.onMouseMove(e);
-                  });
-                  obj.on("mouseout", (e) => {
-                      this.onMouseOut(e);
-                  });
+              if (obj.name && obj.name.includes(Area._area_prefix)) {
+                  obj.on('mousemove', __mousemove_areaEvent);
+                  obj.on("mouseout", __mouseout_areaEvent);
               }
-          });
-      }
-      onMouseMove(e) {
-          let currObj = e.intersects[0];
-          let target = e.target;
-          if (currObj) {
-              let pos = currObj.point.clone();
-              let locPos = this._coordSystem.group.worldToLocal(pos);
-              let positions = target.userData.map(obj => {
-                  return obj.pos;
-              });
-
-              let currPoint = this._findPoint(positions, locPos);
-              let currInfo = _.find(target.userData, item => {
-                  return item.pos.equals(currPoint);
-              });
-
-              if (!__lastPosition || !currPoint.equals(__lastPosition)) {
-                  this._showLabel(currInfo);
-                  this._root.fire({
-                      type: 'tipShow',
-                      event: e.event,
-                      data: currInfo
-                  });
-                  __lastPosition = currPoint;
-              }
-
-              // console.log(currPoint);
-          }
-      }
-      onMouseOut(e) {
-          this.dispose(this.textTempGroup);
-          this._root.fire({
-              type: 'tipHide',
-              event: e.event,
-              data: null
           });
       }
       _showLabel(labelInfo) {
@@ -29056,7 +29096,30 @@ var Chartx3d = (function () {
           this.dispose();
           this.draw();
       }
+      dispose(group) {
+
+          //删除所有事件
+          //this.off('') __mouseMoveEvent
+          group = group || this.group;
+          group.traverse(obj => {
+              if (obj.name && obj.name.includes(Area._area_prefix)) {
+                  obj.off('mousemove', __mouseMoveEvent);
+                  obj.off("mouseout", __mouseOutEvent);
+              }
+          });
+
+          super.dispose(group);
+      }
   }
+
+  Area._area_prefix = 'polygon_area_';
+
+  let __mouseout_pieEvent = null,
+      __mouseover_pieEvent = null,
+      __mousemove_pieEvent = null,
+      __click_pieEvent = null;
+
+
 
   class Pie extends Component {
       constructor(chart3d, opt) {
@@ -29160,7 +29223,6 @@ var Chartx3d = (function () {
 
       }
       draw() {
-          let me = this;
           let app = this._root.app;
           let attr = this._coordSystem.dataAttribute;
           let heights = [];
@@ -29190,6 +29252,8 @@ var Chartx3d = (function () {
 
               sector.userData.midAngle = item.midAngle;
               //sector.renderOrder = renderOrder++;
+              sector.name = Pie._pie_prefix + item.iNode;
+              sector.userData.info = item;
 
               //如果设置了高度取相应的数据,需要给定一些间距,防止z-fighting,尤其室圆心位置
               if (item.heightField && item.innerRadius == 0) {
@@ -29199,80 +29263,90 @@ var Chartx3d = (function () {
                   sector.position.set(x, 0, z);
               }
 
-              sector.on('mouseover', function (e) {
-                  me.onMouseOver.call(this, item);
-                  me._root.fire({
-                      type: 'tipShow',
-                      event: e.event,
-                      data: { nodes: [item] }
-                  });
-              });
-              sector.on('mouseout', function (e) {
-                  me.onMouseOut.call(this, item);
-                  me._root.fire({
-                      type: 'tipHide',
-                      event: e.event,
-                      data: { nodes: [item] }
-                  });
-              });
-
-              sector.on('mousemove', function (e) {
-                  me._root.fire({
-                      type: 'tipMove',
-                      event: e.event,
-                      data: { nodes: [item] }
-                  });
-              });
-
-
-              sector.on('click', function (e) {
-                  me.onClick.call(this, item);
-              });
-
-
               this.group.add(sector);
 
           });
           this.adjustPosition(heights);
           if (this.label.enabled) {
               this._startWidgetLabel();
-          }
+          }        this.bindEvent();
       }
 
-      onMouseOver(e) {
-          //上下文中的this 是bar 对象
-          this.userData.color = this.material.color.clone();
-          //高亮
-          let tempColor = {};
-          this.material.color.getHSL(tempColor);
-          this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.05) });
+      bindEvent() {
+          let me = this;
 
+          __mouseover_pieEvent = function (e) {
+              //上下文中的this 是bar 对象
+              this.userData.color = this.material.color.clone();
+              //高亮
+              let tempColor = {};
+              this.material.color.getHSL(tempColor);
+              this.material.setValues({ color: new Color$1().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.05) });
 
+              let _data = this.userData.info;
+              me._root.fire({
+                  type: 'tipShow',
+                  event: e.event,
+                  data: { nodes: [_data] }
+              });
 
-      }
-      onMouseOut(e) {
+              me.fire({ type: 'sectorover', data: _data });
+          };
 
-          this.material.setValues({ color: this.userData.color });
+          __mouseout_pieEvent = function (e) {
+              this.material.setValues({ color: this.userData.color });
+              let _data = this.userData.info;
+              me._root.fire({
+                  type: 'tipHide',
+                  event: e.event,
+                  data: { nodes: [_data] }
+              });
+              me.fire({ type: 'sectorout', data: _data });
+          };
 
-      }
-      onClick(e) {
-          if (!this.userData.isChecked) {
-              this.userData.isChecked = true;
-              //移动位置
-              let moveDis = e.moveDis;
-              let pos = this.position.clone();
-              this.userData.orgPosition = pos;
-              let x = moveDis * Math.cos(_Math.degToRad(this.userData.midAngle));
-              let z = moveDis * Math.sin(_Math.degToRad(this.userData.midAngle));
-              this.position.set(x, pos.y, z);
-          } else {
-              this.userData.isChecked = false;
-              if (this.userData.orgPosition) {
-                  this.position.copy(this.userData.orgPosition);
+          __mousemove_pieEvent = function (e) {
+              let _data = this.userData.info;
+              me._root.fire({
+                  type: 'tipMove',
+                  event: e.event,
+                  data: { nodes: [_data] }
+              });
+              me.fire({ type: 'sectormove', data: _data });
+          };
+
+          __click_pieEvent = function (e) {
+              let _data = this.userData.info;
+
+              if (!this.userData.isChecked) {
+                  this.userData.isChecked = true;
+                  //移动位置
+                  let moveDis = _data.moveDis;
+                  let pos = this.position.clone();
+                  this.userData.orgPosition = pos;
+                  let x = moveDis * Math.cos(_Math.degToRad(this.userData.midAngle));
+                  let z = moveDis * Math.sin(_Math.degToRad(this.userData.midAngle));
+                  this.position.set(x, pos.y, z);
+              } else {
+                  this.userData.isChecked = false;
+                  if (this.userData.orgPosition) {
+                      this.position.copy(this.userData.orgPosition);
+                  }
               }
-          }
-          //this.fire(e)
+
+              me.fire({ type: 'sectorclick', data: _data });
+          };
+
+          this.group.traverse(sector => {
+              if (sector.name && sector.name.includes(Pie._pie_prefix)) {
+                  sector.on('mouseover', __mouseover_pieEvent);
+                  sector.on('mouseout', __mouseout_pieEvent);
+
+                  sector.on('mousemove', __mousemove_pieEvent);
+                  sector.on('click', __click_pieEvent);
+              }
+          });
       }
+
 
       _getLabelText(itemData) {
           var str;
@@ -29624,15 +29698,13 @@ var Chartx3d = (function () {
       }
       dispose() {
 
-          this.group.traverse((obj) => {
-              if (obj.has('click', this.onClick)) {
-                  obj.off('click', this.onClick);
-              }
-              if (obj.has('mouseover', this.onMouseOver)) {
-                  obj.off('mouseover', this.onMouseOver);
-              }
-              if (obj.has('mouseout', this.onMouseOut)) {
-                  obj.off('mouseout', this.onMouseOut);
+          this.group.traverse((sector) => {
+              if (sector.name && sector.name.includes(Pie._pie_prefix)) {
+                  sector.off('mouseover', __mouseover_pieEvent);
+                  sector.off('mouseout', __mouseout_pieEvent);
+
+                  sector.off('mousemove', __mousemove_pieEvent);
+                  sector.off('click', __click_pieEvent);
               }
           });
 
@@ -29653,6 +29725,8 @@ var Chartx3d = (function () {
 
 
   }
+
+  Pie._pie_prefix = "pie_one_";
 
   class Tips extends Component {
       constructor(chart3d, opt) {
