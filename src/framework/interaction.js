@@ -39,11 +39,7 @@ class Interaction extends Events {
         // calculate objects intersecting the picking ray
         var intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-        // for (var i = 0; i < intersects.length; i++) {
-
-        //     intersects[i].object.material.color.set(0xff0000);
-
-        // }
+        console.log(intersects.length);
         if (intersects.length > 0) {
             if (this.target) {
                 this.target.fire({ type: 'mousemove', event: EVENT, intersects });
