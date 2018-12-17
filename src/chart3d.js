@@ -14,6 +14,7 @@ import { Interaction } from './framework/interaction';
 import { Vector3 } from 'mmgl/src/index';
 import { MainView, LabelView } from './constants';
 
+let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null;
 
 let _cid = 0;
 class Chart3d extends Events {
@@ -159,7 +160,9 @@ class Chart3d extends Events {
         for (let t = 0; t < opts.graphs.length; t++) {
             let key = opts.graphs[t].type;
             let comp = this.componentModules.get('graphs', key);
-            this.addComponent(comp, opts.graphs[t]);
+            if (comp) {
+                this.addComponent(comp, opts.graphs[t]);
+            }
 
         }
         //加载其他组件
@@ -174,7 +177,9 @@ class Chart3d extends Events {
                 }
             } else {
                 let comp = this.componentModules.get(p);
-                this.addComponent(comp, opts[p]);
+                if (comp) {
+                    this.addComponent(comp, opts[p]);
+                }
             }
         }
 
@@ -219,8 +224,7 @@ class Chart3d extends Events {
     bindEvent() {
 
         const TipName = 'Tips';
-
-        this.on('tipShow', (e) => {
+        __tipShowEvent = (e) => {
             let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
@@ -235,17 +239,16 @@ class Chart3d extends Events {
                     }
                 })
             }
-        })
-        this.on('tipHide', (e) => {
+        };
+
+        __tipHideEvent = (e) => {
 
             let tips = this.getComponent(TipName);
             if (tips !== null) {
                 tips.hide();
             }
-        })
-
-
-        this.on('tipMove', (e) => {
+        };
+        __tipMoveEvent = (e) => {
 
             let tips = this.getComponent(TipName);
             let { offsetX: x, offsetY: y } = e.event;
@@ -261,7 +264,10 @@ class Chart3d extends Events {
                     }
                 })
             }
-        })
+        }
+        this.on('tipShow', __tipShowEvent);
+        this.on('tipHide', __tipHideEvent)
+        this.on('tipMove', __tipMoveEvent)
 
     }
 
@@ -418,6 +424,11 @@ class Chart3d extends Events {
     }
 
     dispose() {
+
+        //销毁默认绑定的事件
+        this.off('tipShow', __tipShowEvent);
+        this.off('tipHide', __tipHideEvent)
+        this.off('tipMove', __tipMoveEvent)
 
         //先销毁坐标系统
         this.currCoord.dispose();

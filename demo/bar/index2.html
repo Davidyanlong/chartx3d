@@ -7,6 +7,7 @@
     <title>xChart demo -- bar</title>
     <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <script type="text/javascript" src="./pixelmatch.js"></script>
     <style>
         html,
         body {
@@ -20,13 +21,14 @@
     <button onclick="run()">运行</button>
     <button onclick="destroy()">销毁</button>
     <button onclick="reset()">reset</button>
+    <button onclick="test()">test</button>
 
     <div style="width:100%;clear:both">
-        <div class="test-c" style="float:left;width:50%;">
+        <div class="test-c" style="float:left;width:500px;">
             <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
         </div>
 
-        <div class="test-c" style="float:right;width:50%">
+        <div class="test-c" style="float:right;width:500px">
             <div id="canvasTest2" style='width:100%;height:600px;position:relative;'></div>
         </div>
     </div>
@@ -180,7 +182,7 @@
                 label: {
                     textAlign: "center",
                     format: function (val) {
-                        return val;
+                        return val+'';
                         // return val%2==0? "x\nodfdfdfdfsdfo":val;
                     }
                 }
@@ -289,4 +291,37 @@
         bar.resetData(data1);
         line.resetData(data1);
     }
+    function test() {
+        let width = bar.canvasDom.width;
+        let height = bar.canvasDom.height;
+        let diffCtx = document.createElement('canvas').getContext('2d');
+        let gl = bar.renderer.gl;
+        let gl2 = line.renderer.gl;
+        // var img1 = barCtx.getImageData(0, 0, width, height),
+        //     img2 = lineCtx.getImageData(0, 0, width, height),
+        diff = diffCtx.createImageData(width, height);
+        diffCtx.canvas.width = 500;
+        diffCtx.canvas.height = 600;
+        diffCtx.canvas.style.cssText=" transform: rotateX(180deg);"
+
+
+        var pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+        gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+        //console.log(pixels);
+
+        var pixels2 = new Uint8Array(gl2.drawingBufferWidth * gl2.drawingBufferHeight * 4);
+        gl2.readPixels(0, 0, gl2.drawingBufferWidth, gl2.drawingBufferHeight, gl2.RGBA, gl2.UNSIGNED_BYTE, pixels2);
+
+        let diffcount = pixelmatch(pixels, pixels2, diff.data, width, height, { threshold: 0.1 });
+        console.log(diffcount);
+        if(diffcount>0){
+            diffCtx.putImageData(diff, 0, 0);
+
+document.body.appendChild(diffCtx.canvas);
+        }
+      
+    }
+
+
+
 </script>

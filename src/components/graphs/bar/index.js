@@ -3,7 +3,7 @@ import { GraphObject, _ } from '../graph';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3 } from 'mmgl/src/index';
 
 //let renderOrder = 100;
-
+let __mouseover_barEvent = null, __mouseout_barEvent = null, __mousemove_barEvent = null, __click_barEvemt = null
 class Bar extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -152,54 +152,69 @@ class Bar extends GraphObject {
                 } else {
                     obj = app.createBox(item.boxWidth, boxHeight, item.boxDepth, material);
                 }
+                obj.name = Bar._bar_prefix + this.node.shapeType + "_" + item.vInd + "_" + item.iNode
+                obj.userData.info = item;
                 obj.position.copy(fromPos);
                 this.group.add(obj);
 
-
-                obj.on('mouseover', function (e) {
-                    me.onMouseOver.call(this);
-                    me._root.fire({
-                        type: 'tipShow',
-                        event: e.event,
-                        data: item
-                    })
-                });
-                obj.on('mouseout', function (e) {
-                    me.onMouseOut.call(this);
-                    me._root.fire({
-                        type: 'tipHide',
-                        event: e.event,
-                        data: item
-                    })
-                });
-
-                obj.on('mousemove', function (e) {
-                    me._root.fire({
-                        type: 'tipMove',
-                        event: e.event,
-                        data: item
-                    })
-                });
-
-
-                obj.on('click', this.onClick);
             })
+
+        };
+
+        this.bindEvent();
+
+    }
+
+    bindEvent() {
+        let me = this;
+        __mouseover_barEvent = function (e) {
+            //上下文中的this 是bar 对象
+            this.userData.color = this.material.color.clone();
+            //高亮
+            let tempColor = {};
+            this.material.color.getHSL(tempColor);
+            this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
+
+            me._root.fire({
+                type: 'tipShow',
+                event: e.event,
+                data: this.userData.info
+            });
+
+            me.fire({ type: 'barover', data: this.userData.info });
+        };
+        __mouseout_barEvent = function (e) {
+            this.material.setValues({ color: this.userData.color });
+            me._root.fire({
+                type: 'tipHide',
+                event: e.event,
+                data: this.userData.info
+            });
+            me.fire({ type: 'barout', data: this.userData.info });
+        };
+
+        __mousemove_barEvent = function (e) {
+            me._root.fire({
+                type: 'tipMove',
+                event: e.event,
+                data: this.userData.info
+            });
+            me.fire({ type: 'barmove', data: this.userData.info });
         }
 
-    }
-    onMouseOver(e) {
-        //上下文中的this 是bar 对象
-        this.userData.color = this.material.color.clone();
-        //高亮
-        let tempColor = {};
-        this.material.color.getHSL(tempColor);
-        this.material.setValues({ color: new Color().setHSL(tempColor.h, tempColor.s, tempColor.l + 0.1) });
-    }
-    onMouseOut() {
-        this.material.setValues({ color: this.userData.color });
-    }
-    onClick(e) {
-        //this.fire(e)
+        __click_barEvemt = function (e) {
+            me.fire({ type: 'barclick', data: this.userData.info });
+        }
+
+        this.group.traverse(obj => {
+            if (obj.name && obj.name.includes(Bar._bar_prefix)) {
+                obj.on('mouseover', __mouseover_barEvent);
+                obj.on('mouseout', __mouseout_barEvent);
+
+                obj.on('mousemove', __mousemove_barEvent);
+                obj.on('click', __click_barEvemt);
+            }
+        });
     }
 
     _getColor(c, dataOrg) {
@@ -222,14 +237,11 @@ class Bar extends GraphObject {
 
         //this.materialMap.clear();
         this.group.traverse((obj) => {
-            if (obj.has('click', this.onClick)) {
-                obj.off('click', this.onClick);
-            }
-            if (obj.has('mouseover', this.onMouseOver)) {
-                obj.off('mouseover', this.onMouseOver);
-            }
-            if (obj.has('mouseout', this.onMouseOut)) {
-                obj.off('mouseout', this.onMouseOut);
+            if (obj.name && obj.name.includes(Bar._bar_prefix)) {
+                obj.off('click', __click_barEvemt);
+                obj.off('mouseover', __mouseover_barEvent);
+                obj.off('mouseout', __mouseout_barEvent);
+                obj.off('mousemove', __mousemove_barEvent);
             }
         })
 
@@ -243,6 +255,6 @@ class Bar extends GraphObject {
     }
 
 }
-
+Bar._bar_prefix = "bar_one_";
 export default Bar;
 

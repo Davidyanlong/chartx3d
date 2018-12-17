@@ -4,6 +4,8 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 let renderOrder = 100;
 let __lastPosition = null;
 
+let __mousemove_areaEvent = null, __mouseout_areaEvent = null;
+
 class Area extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -92,7 +94,7 @@ class Area extends GraphObject {
                 points.push(points[(points.length - 1)].clone().setY(0));
                 let polygon = app.createArea(points, thickness, { fillStyle: _color });
 
-                polygon.name = "polygon_area_" + field;
+                polygon.name = Area._area_prefix + field;
                 polygon.userData = fieldObj;
                 let posZ = points[0].z;
                 posZ = posZ - thickness * 0.5;
@@ -105,51 +107,62 @@ class Area extends GraphObject {
         me.bindEvent();
     }
     bindEvent() {
-        this.group.traverse(obj => {
-            if (obj.name && obj.name.includes("polygon_area_")) {
-                obj.on('mousemove', (e) => {
-                    this.onMouseMove(e);
+
+        __mousemove_areaEvent = (e) => {
+            let currObj = e.intersects[0];
+            let target = e.target;
+            if (currObj) {
+                let pos = currObj.point.clone();
+                let locPos = this._coordSystem.group.worldToLocal(pos);
+                let positions = target.userData.map(obj => {
+                    return obj.pos;
                 });
-                obj.on("mouseout", (e) => {
-                    this.onMouseOut(e);
-                })
-            }
-        })
-    }
-    onMouseMove(e) {
-        let currObj = e.intersects[0];
-        let target = e.target;
-        if (currObj) {
-            let pos = currObj.point.clone();
-            let locPos = this._coordSystem.group.worldToLocal(pos);
-            let positions = target.userData.map(obj => {
-                return obj.pos;
-            });
 
-            let currPoint = this._findPoint(positions, locPos);
-            let currInfo = _.find(target.userData, item => {
-                return item.pos.equals(currPoint);
+                let currPoint = this._findPoint(positions, locPos);
+                let currInfo = _.find(target.userData, item => {
+                    return item.pos.equals(currPoint);
+                })
+
+                if (!__lastPosition || !currPoint.equals(__lastPosition)) {
+                    this._showLabel(currInfo);
+                    this._root.fire({
+                        type: 'tipShow',
+                        event: e.event,
+                        data: currInfo
+                    })
+                    __lastPosition = currPoint;
+                    this.fire({ type: 'showLable', data: currInfo });
+                }
+                this.fire({ type: 'mousemove' })
+                // console.log(currPoint);
+            }
+        };
+
+        __mouseout_areaEvent = (e) => {
+            if (this.textTempGroup) {
+
+                this.textTempGroup.traverse(item => {
+                    item.on('removed', (e) => {
+                        this.fire({ type: 'hideLable', data: e.target.userData });
+                    })
+                })
+                this.dispose(this.textTempGroup);
+            }
+
+            this._root.fire({
+                type: 'tipHide',
+                event: e.event,
+                data: null
             })
-
-            if (!__lastPosition || !currPoint.equals(__lastPosition)) {
-                this._showLabel(currInfo);
-                this._root.fire({
-                    type: 'tipShow',
-                    event: e.event,
-                    data: currInfo
-                })
-                __lastPosition = currPoint;
-            }
-
-            // console.log(currPoint);
+            this.fire({ type: 'mouseout' });
         }
-    }
-    onMouseOut(e) {
-        this.dispose(this.textTempGroup);
-        this._root.fire({
-            type: 'tipHide',
-            event: e.event,
-            data: null
+
+
+        this.group.traverse(obj => {
+            if (obj.name && obj.name.includes(Area._area_prefix)) {
+                obj.on('mousemove', __mousemove_areaEvent);
+                obj.on("mouseout", __mouseout_areaEvent);
+            }
         })
     }
     _showLabel(labelInfo) {
@@ -186,6 +199,22 @@ class Area extends GraphObject {
         this.dispose();
         this.draw();
     }
+    dispose(group) {
+
+        //删除所有事件
+        //this.off('') __mouseMoveEvent
+        group = group || this.group;
+        group.traverse(obj => {
+            if (obj.name && obj.name.includes(Area._area_prefix)) {
+                obj.off('mousemove', __mouseMoveEvent);
+                obj.off("mouseout", __mouseOutEvent);
+            }
+        })
+
+        super.dispose(group);
+    }
 }
+
+Area._area_prefix = 'polygon_area_';
 
 export default Area;
