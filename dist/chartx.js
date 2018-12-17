@@ -27900,6 +27900,12 @@ var Chartx3d = (function () {
        * 比如如果是 datazoom 触发的， 就会有 trigger数据{ name:'datazoom', left:1,right:1 }
        */
       resetData(data, dataTrigger) {
+
+           //销毁默认绑定的事件
+           this.off('tipShow', __tipShowEvent);
+           this.off('tipHide', __tipHideEvent);
+           this.off('tipMove', __tipMoveEvent);
+
           if (data) {
               this._data = parse2MatrixData$1(data);
               this.dataFrame = this._initData(this._data, this.opt);
