@@ -27468,6 +27468,19 @@ var Chartx3d = (function () {
           scope._onMouseupbind = null;
           scope._onMouseMovebind = null;
 
+
+
+          this.raycaster = null;
+          this.currMousePos = null;
+
+          this.camera = null;
+          this.scene = null;
+          this.target = null;
+          this.domElement = null;
+
+
+          this.lastPos = null;
+
           isChange = false;
           isMouseOver = false;
           isMouseOut = false;
