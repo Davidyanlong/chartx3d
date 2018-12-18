@@ -29114,12 +29114,11 @@ var Chartx3d = (function () {
       dispose(group) {
 
           //删除所有事件
-          //this.off('') __mouseMoveEvent
           group = group || this.group;
           group.traverse(obj => {
               if (obj.name && obj.name.includes(Area._area_prefix)) {
-                  obj.off('mousemove', __mouseMoveEvent);
-                  obj.off("mouseout", __mouseOutEvent);
+                  obj.off('mousemove', __mousemove_areaEvent);
+                  obj.off("mouseout", __mouseout_areaEvent);
               }
           });
 
