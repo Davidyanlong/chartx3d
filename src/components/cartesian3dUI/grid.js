@@ -10,7 +10,7 @@ class Grid extends Component {
     constructor(_cartesionUI) {
         super(_cartesionUI._coordSystem);
 
-
+        this.name = "Grid";
         let opt = this._opt = this._coordSystem.coord.grid;
         this.coord = this._coordSystem.coord;
 
@@ -82,7 +82,7 @@ class Grid extends Component {
         if (!me.enabled) return;
         const _coordSystem = this._coordSystem;
         let _faceInfo = this._cartesionUI.getFaceInfo();
-  
+
 
         if (me.fill.enabled) {
 
@@ -132,7 +132,7 @@ class Grid extends Component {
         ySection.forEach(item => {
             let posY = item.pos;
             LinesVectors.push(new Vector3(this.width, posY, 0));
-            LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+            LinesVectors.push(new Vector3(this.width, posY, -this.depth));
         })
 
         zSection.forEach(item => {
@@ -148,7 +148,7 @@ class Grid extends Component {
         xSection.forEach(item => {
             let posX = item.pos;
             LinesVectors.push(new Vector3(posX, this.height, 0));
-            LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+            LinesVectors.push(new Vector3(posX, this.height, -this.depth));
         })
 
         zSection.forEach(item => {
@@ -163,9 +163,9 @@ class Grid extends Component {
         //绘制下面的线条
         LinesVectors = [];
         xSection.forEach(item => {
-            let posX =item.pos;
+            let posX = item.pos;
             LinesVectors.push(new Vector3(posX, 0, 0));
-            LinesVectors.push(new Vector3(posX, 0,-this.depth));
+            LinesVectors.push(new Vector3(posX, 0, -this.depth));
         })
 
         zSection.forEach(item => {
@@ -197,14 +197,14 @@ class Grid extends Component {
         LinesVectors = [];
         xSection.forEach(item => {
             let posX = item.pos;
-            LinesVectors.push(new Vector3(posX, 0,-this.depth));
-            LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+            LinesVectors.push(new Vector3(posX, 0, -this.depth));
+            LinesVectors.push(new Vector3(posX, this.height, -this.depth));
         })
 
         ySection.forEach(item => {
             let posY = item.pos;
-            LinesVectors.push(new Vector3(0, posY,-this.depth));
-            LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+            LinesVectors.push(new Vector3(0, posY, -this.depth));
+            LinesVectors.push(new Vector3(this.width, posY, -this.depth));
         })
         lines = app.createCommonLine(LinesVectors, this.line);
         me.backGroup.add(lines);
@@ -221,7 +221,7 @@ class Grid extends Component {
         this._onChangeBind = null;
     }
 
-    resetData(){
+    resetData() {
         this.dispose();
 
         this.width = this._coordSystem.xAxisAttribute.axisLength;

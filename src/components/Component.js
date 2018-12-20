@@ -3,11 +3,11 @@ import { _ } from 'mmvis/src/index';
 
 //组件的标准
 class Component extends Events {
-    constructor(_coordSystem) {
+    constructor(_coordSystem, root) {
         super();
 
         this._coordSystem = _coordSystem;
-        this._root = _coordSystem._root;
+        this._root = _coordSystem ? _coordSystem._root : root;
 
         // //每一个组件存放在一个Group中
         // this.group = new Group();

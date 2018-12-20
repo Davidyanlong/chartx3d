@@ -10,6 +10,7 @@ class Area extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
+        this.name = "Area";
         this.type = "area";
         this._type = "area3d";
 

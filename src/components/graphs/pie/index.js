@@ -13,6 +13,7 @@ class Pie extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
 
+        this.name='Pie';
         this.type = "pie3d";
 
         this._type = "pie";

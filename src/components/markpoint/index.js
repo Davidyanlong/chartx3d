@@ -8,6 +8,8 @@ class MarkPoint extends Component {
         super(chart3d.currCoord);
 
         this.opt = opt;
+        
+        this.name = 'MarkPoint';
         this.type = "markline";
         this.markTo = null;
         this.active = 'max';   //max,min

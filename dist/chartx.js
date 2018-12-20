@@ -23811,11 +23811,11 @@ var Chartx3d = (function () {
 
   //组件的标准
   class Component extends Events {
-      constructor(_coordSystem) {
+      constructor(_coordSystem, root) {
           super();
 
           this._coordSystem = _coordSystem;
-          this._root = _coordSystem._root;
+          this._root = _coordSystem ? _coordSystem._root : root;
 
           // //每一个组件存放在一个Group中
           // this.group = new Group();
@@ -23866,6 +23866,7 @@ var Chartx3d = (function () {
       constructor(_coordSystem, opts) {
           super(_coordSystem);
 
+          this.name = "AxisLine";
           //轴的起点
           this.origin = new Vector3(0, 0, 0);
 
@@ -23955,11 +23956,11 @@ var Chartx3d = (function () {
           }
       }
 
-      resetData(){
+      resetData() {
           //dataOrg更改数据轴线暂时不需要更新
       }
 
-     
+
 
   }
 
@@ -23967,6 +23968,7 @@ var Chartx3d = (function () {
       constructor(_coordSystem, opts) {
           super(_coordSystem);
 
+          this.name = 'TickLines';
           //点的起点位置集合
           this.origins = [];
 
@@ -24101,6 +24103,7 @@ var Chartx3d = (function () {
       constructor(_coordSystem, opts) {
           super(_coordSystem);
 
+          this.name = 'TickTexts';
           //起点位置集合
           this.origins = [];
           this.texts = [];
@@ -24278,6 +24281,7 @@ var Chartx3d = (function () {
       constructor(_cartesionUI, opt) {
           super(_cartesionUI._coordSystem);
 
+          this.name = 'YAxis';
           this._opt = opt;
           this._coord = this._coordSystem.coord || {};
           this._cartesionUI = _cartesionUI;
@@ -24332,7 +24336,7 @@ var Chartx3d = (function () {
           this.boundboxSize = new Vector3();
           this.axisAttribute = this._coordSystem.yAxisAttribute[this.name];
 
-          
+
           _.extend(true, this, opt);
 
           this.init(opt);
@@ -24573,7 +24577,7 @@ var Chartx3d = (function () {
 
           this._axisLine.resetData();
           this._tickLine.resetData(this._axisLine, this.axisAttribute);
-          this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+          this._tickText.resetData(this._axisLine, this.axisAttribute, this._formatTextSection);
       }
 
 
@@ -24583,6 +24587,9 @@ var Chartx3d = (function () {
   class XAxis extends Component {
       constructor(_cartesionUI) {
           super(_cartesionUI._coordSystem);
+          
+          this.name='XAxis';
+          
           let opt = this._opt = this._coordSystem.coord.xAxis;
 
           this._cartesionUI = _cartesionUI;
@@ -24926,6 +24933,8 @@ var Chartx3d = (function () {
   class ZAxis extends Component {
       constructor(_cartesionUI) {
           super(_cartesionUI._coordSystem);
+          
+          this.name='ZAxis';
 
           let opt = this._opt = this._coordSystem.coord.zAxis;
           this._cartesionUI = _cartesionUI;
@@ -25339,7 +25348,7 @@ var Chartx3d = (function () {
       constructor(_cartesionUI) {
           super(_cartesionUI._coordSystem);
 
-
+          this.name = "Grid";
           let opt = this._opt = this._coordSystem.coord.grid;
           this.coord = this._coordSystem.coord;
 
@@ -25411,7 +25420,7 @@ var Chartx3d = (function () {
           if (!me.enabled) return;
           const _coordSystem = this._coordSystem;
           let _faceInfo = this._cartesionUI.getFaceInfo();
-    
+
 
           if (me.fill.enabled) {
 
@@ -25461,7 +25470,7 @@ var Chartx3d = (function () {
           ySection.forEach(item => {
               let posY = item.pos;
               LinesVectors.push(new Vector3(this.width, posY, 0));
-              LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+              LinesVectors.push(new Vector3(this.width, posY, -this.depth));
           });
 
           zSection.forEach(item => {
@@ -25477,7 +25486,7 @@ var Chartx3d = (function () {
           xSection.forEach(item => {
               let posX = item.pos;
               LinesVectors.push(new Vector3(posX, this.height, 0));
-              LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+              LinesVectors.push(new Vector3(posX, this.height, -this.depth));
           });
 
           zSection.forEach(item => {
@@ -25492,9 +25501,9 @@ var Chartx3d = (function () {
           //绘制下面的线条
           LinesVectors = [];
           xSection.forEach(item => {
-              let posX =item.pos;
+              let posX = item.pos;
               LinesVectors.push(new Vector3(posX, 0, 0));
-              LinesVectors.push(new Vector3(posX, 0,-this.depth));
+              LinesVectors.push(new Vector3(posX, 0, -this.depth));
           });
 
           zSection.forEach(item => {
@@ -25526,14 +25535,14 @@ var Chartx3d = (function () {
           LinesVectors = [];
           xSection.forEach(item => {
               let posX = item.pos;
-              LinesVectors.push(new Vector3(posX, 0,-this.depth));
-              LinesVectors.push(new Vector3(posX, this.height,-this.depth));
+              LinesVectors.push(new Vector3(posX, 0, -this.depth));
+              LinesVectors.push(new Vector3(posX, this.height, -this.depth));
           });
 
           ySection.forEach(item => {
               let posY = item.pos;
-              LinesVectors.push(new Vector3(0, posY,-this.depth));
-              LinesVectors.push(new Vector3(this.width, posY,-this.depth));
+              LinesVectors.push(new Vector3(0, posY, -this.depth));
+              LinesVectors.push(new Vector3(this.width, posY, -this.depth));
           });
           lines = app.createCommonLine(LinesVectors, this.line);
           me.backGroup.add(lines);
@@ -25550,7 +25559,7 @@ var Chartx3d = (function () {
           this._onChangeBind = null;
       }
 
-      resetData(){
+      resetData() {
           this.dispose();
 
           this.width = this._coordSystem.xAxisAttribute.axisLength;
@@ -25565,6 +25574,7 @@ var Chartx3d = (function () {
       constructor(_coordSystem) {
           super(_coordSystem);
 
+
           //坐标轴实例
           this._xAxis = null;
           this._yAxis = [];
@@ -25575,6 +25585,7 @@ var Chartx3d = (function () {
           let opt = _coordSystem.coord;
 
           this.type = "cartesian3d";
+          this.name = 'Cartesian3DUI';
 
           this.horizontal = false;
 
@@ -25749,9 +25760,9 @@ var Chartx3d = (function () {
           this._yAxis.forEach(_yAxis => {
               _yAxis.resetData();
           });
-           this._xAxis.resetData();
-           this._zAxis.resetData();
-           this._grid.resetData();
+          this._xAxis.resetData();
+          this._zAxis.resetData();
+          this._grid.resetData();
       }
 
   }
@@ -26487,18 +26498,6 @@ var Chartx3d = (function () {
           this._coordUI.resetData();
       }
   }
-
-  const _colors$1 = ["#ff8533","#73ace6","#82d982","#e673ac","#cd6bed","#8282d9","#c0e650","#e6ac73","#6bcded","#73e6ac","#ed6bcd","#9966cc"];
-  var theme = {
-      colors : _colors$1,
-      set : function( colors ){
-          this.colors = colors;
-          return this.colors;
-      },
-      get : function( ){
-          return this.colors
-      }
-  };
 
   // This set of controls performs orbiting, dollying (zooming), and panning.
   // Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
@@ -27641,7 +27640,7 @@ var Chartx3d = (function () {
           this.app = null;
           this.currCoord = null;
 
-          this._theme = theme.colors.slice(0);
+          //this._theme = theme.colors.slice(0);
 
           //初始化画布
           this._createDomContainer(node);
@@ -27751,6 +27750,14 @@ var Chartx3d = (function () {
           let opts = this.opt;
           this.components = [];
 
+          //先初始化皮肤组件
+          if ('theme' in opts) {
+              let theme = this.componentModules.get('theme');
+              if (theme) {
+                  this.addComponent(theme, opts.theme);
+              }
+          }
+
           //先初始化坐标系
           let coord = this.componentModules.get('coord', opts.coord.type);
           if (!coord) {
@@ -27813,14 +27820,29 @@ var Chartx3d = (function () {
       }
 
 
-      getComponent(name) {
-          let _cmp = null;
+      getComponent(query) {
+          let cmp = this.getComponents(query)[0];
+          return !cmp ? null : cmp
+      }
+      getComponents(query) {
+          let arr = [];
+          let result = true;
           this.components.forEach(cmp => {
-              if (cmp.constructor.name == name) {
-                  _cmp = cmp;
+              result = true;
+              for (let key in query) {
+                  if (_.isString(cmp[key]) && _.isString(query[key])) {
+                      result = result && cmp[key].toLowerCase() == query[key].toLowerCase();
+                  } else {
+                      result = result && cmp[key] == query[key];
+                  }
+              }
+              if (result) {
+                  arr.push(cmp);
               }
           });
-          return _cmp;
+
+          return arr;
+
       }
 
       bindEvent() {
@@ -27831,7 +27853,7 @@ var Chartx3d = (function () {
 
           const TipName = 'Tips';
           __tipShowEvent = (e) => {
-              let tips = this.getComponent(TipName);
+              let tips = this.getComponent({ name: TipName });
               let { offsetX: x, offsetY: y } = e.event;
               if (tips !== null) {
                   let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
@@ -27849,14 +27871,14 @@ var Chartx3d = (function () {
 
           __tipHideEvent = (e) => {
 
-              let tips = this.getComponent(TipName);
+              let tips = this.getComponent({ name: TipName });
               if (tips !== null) {
                   tips.hide();
               }
           };
           __tipMoveEvent = (e) => {
 
-              let tips = this.getComponent(TipName);
+              let tips = this.getComponent({ name: TipName });
               let { offsetX: x, offsetY: y } = e.event;
               let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
               if (tips !== null) {
@@ -27959,9 +27981,12 @@ var Chartx3d = (function () {
 
       //ind 如果有就获取对应索引的具体颜色值
       getTheme(ind) {
-          var colors = this._theme;
-          if (ind != undefined) {
-              return colors[ind % colors.length]
+          var colors = global.getGlobalTheme();
+          var _theme = this.getComponent({ name: 'theme' });
+          if (_theme) {
+              colors = _theme.get();
+          }        if (ind != undefined) {
+              return colors[ind % colors.length] || "#ccc";
           }        return colors;
       }
 
@@ -28703,6 +28728,7 @@ var Chartx3d = (function () {
       constructor(chart3d, opt) {
           super(chart3d);
 
+          this.name='Bar';
           this.type = "bar";
           this._type = "bar3d";
 
@@ -28952,6 +28978,7 @@ var Chartx3d = (function () {
       constructor(chart3d, opt) {
           super(chart3d);
 
+          this.name='Line';
           this.type = "line";
           this._type = "line3d";
 
@@ -29078,6 +29105,7 @@ var Chartx3d = (function () {
       constructor(chart3d, opt) {
           super(chart3d);
 
+          this.name = "Area";
           this.type = "area";
           this._type = "area3d";
 
@@ -29292,6 +29320,7 @@ var Chartx3d = (function () {
       constructor(chart3d, opt) {
           super(chart3d.currCoord);
 
+          this.name='Pie';
           this.type = "pie3d";
 
           this._type = "pie";
@@ -29836,6 +29865,7 @@ var Chartx3d = (function () {
 
           super(chart3d.currCoord);
 
+          this.name = 'Tips';
           this.type = 'tips3d';
           this.tipDomContainer = chart3d.domView;
           this.cW = chart3d.width;  //容器的width
@@ -30112,6 +30142,8 @@ var Chartx3d = (function () {
           super(chart3d.currCoord);
 
           this.opt = opt;
+          
+          this.name = 'MarkPoint';
           this.type = "markline";
           this.markTo = null;
           this.active = 'max';   //max,min
@@ -30314,7 +30346,9 @@ var Chartx3d = (function () {
   class Legend extends Component {
       constructor(chart3d, opt) {
           super(chart3d.currCoord);
-          this.name = "legend";
+
+
+          this.name = "Legend";
           this.type = "legend3d";
 
           this.opt = opt;
@@ -30611,6 +30645,46 @@ var Chartx3d = (function () {
   }
   Legend._legend_prefix = "legend_field_";
 
+  /**
+   * 皮肤组件，不是一个具体的ui组件
+   */
+
+  class Theme extends Component {
+      constructor(chart3d, theme) {
+      
+          super(chart3d.currCoord,chart3d);
+
+          this.name = "Theme";
+          this.colors = theme || [];
+      }
+
+      set(colors) {
+          this.colors = colors;
+          return this.colors;
+      }
+
+      get(ind) {
+          var colors = this.colors;
+          if (!_.isArray(colors)) {
+              colors = [colors];
+          }        return colors;
+      }
+
+      mergeTo(colors) {
+          if (!colors) {
+              colors = [];
+          }        for (var i = 0, l = this.colors.length; i < l; i++) {
+              if (colors[i]) {
+                  colors[i] = this.colors[i];
+              } else {
+                  colors.push(this.colors[i]);
+              }
+          }
+          return colors;
+      }
+
+  }
+
   global.registerComponent(Chart3d, 'chart', 3);
 
   //global.registerComponent( emptyCoord, 'coord' );
@@ -30624,6 +30698,7 @@ var Chartx3d = (function () {
 
 
 
+  global.registerComponent(Theme, 'theme', 3);
   global.registerComponent(Tips, 'tips', 3);
   global.registerComponent(MarkPoint, 'markpoint', 3);
   global.registerComponent(Legend, 'legend', 3);

@@ -5,6 +5,7 @@ class TickLines extends Component {
     constructor(_coordSystem, opts) {
         super(_coordSystem);
 
+        this.name = 'TickLines';
         //点的起点位置集合
         this.origins = [];
 

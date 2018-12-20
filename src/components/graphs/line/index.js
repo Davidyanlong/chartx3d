@@ -7,6 +7,7 @@ class Line extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
+        this.name='Line';
         this.type = "line";
         this._type = "line3d";
 

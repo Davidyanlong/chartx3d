@@ -10,6 +10,7 @@ class YAxis extends Component {
     constructor(_cartesionUI, opt) {
         super(_cartesionUI._coordSystem);
 
+        this.name = 'YAxis';
         this._opt = opt;
         this._coord = this._coordSystem.coord || {};
         this._cartesionUI = _cartesionUI;
@@ -64,7 +65,7 @@ class YAxis extends Component {
         this.boundboxSize = new Vector3();
         this.axisAttribute = this._coordSystem.yAxisAttribute[this.name];
 
-        
+
         _.extend(true, this, opt);
 
         this.init(opt);
@@ -310,7 +311,7 @@ class YAxis extends Component {
 
         this._axisLine.resetData();
         this._tickLine.resetData(this._axisLine, this.axisAttribute);
-        this._tickText.resetData(this._axisLine, this.axisAttribute,this._formatTextSection);
+        this._tickText.resetData(this._axisLine, this.axisAttribute, this._formatTextSection);
     }
 
 

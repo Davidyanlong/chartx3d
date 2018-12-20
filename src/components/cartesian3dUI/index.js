@@ -9,6 +9,7 @@ class Cartesian3DUI extends Component {
     constructor(_coordSystem) {
         super(_coordSystem);
 
+
         //坐标轴实例
         this._xAxis = null;
         this._yAxis = [];
@@ -19,6 +20,7 @@ class Cartesian3DUI extends Component {
         let opt = _coordSystem.coord;
 
         this.type = "cartesian3d";
+        this.name = 'Cartesian3DUI';
 
         this.horizontal = false;
 
@@ -195,9 +197,9 @@ class Cartesian3DUI extends Component {
         this._yAxis.forEach(_yAxis => {
             _yAxis.resetData();
         })
-         this._xAxis.resetData();
-         this._zAxis.resetData();
-         this._grid.resetData();
+        this._xAxis.resetData();
+        this._zAxis.resetData();
+        this._grid.resetData();
     }
 
 }

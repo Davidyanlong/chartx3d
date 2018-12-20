@@ -8,6 +8,7 @@ class Bar extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
+        this.name='Bar';
         this.type = "bar";
         this._type = "bar3d";
 

@@ -1,11 +1,11 @@
 import $ from '../lib/dom';
-import { _, dataFrame } from 'mmvis/src/index';
+import { _, dataFrame, global } from 'mmvis/src/index';
 import { parse2MatrixData } from "../utils/tools"
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Cartesian3D } from './framework/coord/cartesian3d';
 import { Component } from './components/Component';
-import theme from './theme';
+//import theme from './theme';
 
 
 import { Events } from 'mmgl/src/index';
@@ -46,7 +46,7 @@ class Chart3d extends Events {
         this.app = null;
         this.currCoord = null;
 
-        this._theme = theme.colors.slice(0);
+        //this._theme = theme.colors.slice(0);
 
         //初始化画布
         this._createDomContainer(node);
@@ -156,6 +156,14 @@ class Chart3d extends Events {
         let opts = this.opt;
         this.components = [];
 
+        //先初始化皮肤组件
+        if ('theme' in opts) {
+            let theme = this.componentModules.get('theme');
+            if (theme) {
+                this.addComponent(theme, opts.theme);
+            }
+        }
+
         //先初始化坐标系
         let coord = this.componentModules.get('coord', opts.coord.type)
         if (!coord) {
@@ -218,14 +226,29 @@ class Chart3d extends Events {
     }
 
 
-    getComponent(name) {
-        let _cmp = null;
+    getComponent(query) {
+        let cmp = this.getComponents(query)[0];
+        return !cmp ? null : cmp
+    }
+    getComponents(query) {
+        let arr = [];
+        let result = true;
         this.components.forEach(cmp => {
-            if (cmp.constructor.name == name) {
-                _cmp = cmp;
+            result = true;
+            for (let key in query) {
+                if (_.isString(cmp[key]) && _.isString(query[key])) {
+                    result = result && cmp[key].toLowerCase() == query[key].toLowerCase();
+                } else {
+                    result = result && cmp[key] == query[key];
+                }
             }
-        })
-        return _cmp;
+            if (result) {
+                arr.push(cmp);
+            }
+        });
+
+        return arr;
+
     }
 
     bindEvent() {
@@ -236,7 +259,7 @@ class Chart3d extends Events {
 
         const TipName = 'Tips';
         __tipShowEvent = (e) => {
-            let tips = this.getComponent(TipName);
+            let tips = this.getComponent({ name: TipName });
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
                 let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
@@ -254,14 +277,14 @@ class Chart3d extends Events {
 
         __tipHideEvent = (e) => {
 
-            let tips = this.getComponent(TipName);
+            let tips = this.getComponent({ name: TipName });
             if (tips !== null) {
                 tips.hide();
             }
         };
         __tipMoveEvent = (e) => {
 
-            let tips = this.getComponent(TipName);
+            let tips = this.getComponent({ name: TipName });
             let { offsetX: x, offsetY: y } = e.event;
             let _title = e.data.xField ? e.data.rowData[e.data.xField] : "";
             if (tips !== null) {
@@ -364,9 +387,13 @@ class Chart3d extends Events {
 
     //ind 如果有就获取对应索引的具体颜色值
     getTheme(ind) {
-        var colors = this._theme;
+        var colors = global.getGlobalTheme();
+        var _theme = this.getComponent({ name: 'theme' });
+        if (_theme) {
+            colors = _theme.get();
+        };
         if (ind != undefined) {
-            return colors[ind % colors.length]
+            return colors[ind % colors.length] || "#ccc";
         };
         return colors;
     }

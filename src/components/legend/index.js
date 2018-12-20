@@ -6,7 +6,9 @@ let __legend_clickEvent = null;
 class Legend extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
-        this.name = "legend";
+
+
+        this.name = "Legend";
         this.type = "legend3d";
 
         this.opt = opt;

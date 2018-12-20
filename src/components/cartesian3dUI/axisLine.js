@@ -5,6 +5,7 @@ class AxisLine extends Component {
     constructor(_coordSystem, opts) {
         super(_coordSystem);
 
+        this.name = "AxisLine";
         //轴的起点
         this.origin = new Vector3(0, 0, 0);
 
@@ -94,11 +95,11 @@ class AxisLine extends Component {
         }
     }
 
-    resetData(){
+    resetData() {
         //dataOrg更改数据轴线暂时不需要更新
     }
 
-   
+
 
 }
 

@@ -6,6 +6,7 @@ class TickTexts extends Component {
     constructor(_coordSystem, opts) {
         super(_coordSystem);
 
+        this.name = 'TickTexts';
         //起点位置集合
         this.origins = [];
         this.texts = [];

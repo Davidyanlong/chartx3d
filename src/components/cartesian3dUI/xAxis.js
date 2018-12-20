@@ -9,6 +9,9 @@ import { numAddSymbol } from '../../../utils/tools';
 class XAxis extends Component {
     constructor(_cartesionUI) {
         super(_cartesionUI._coordSystem);
+        
+        this.name='XAxis';
+        
         let opt = this._opt = this._coordSystem.coord.xAxis;
 
         this._cartesionUI = _cartesionUI;

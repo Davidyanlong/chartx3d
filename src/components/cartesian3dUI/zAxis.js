@@ -10,6 +10,8 @@ import { numAddSymbol } from '../../../utils/tools';
 class ZAxis extends Component {
     constructor(_cartesionUI) {
         super(_cartesionUI._coordSystem);
+        
+        this.name='ZAxis';
 
         let opt = this._opt = this._coordSystem.coord.zAxis;
         this._cartesionUI = _cartesionUI;
