@@ -44,8 +44,8 @@
     "cloudBuild": true
   },
   "dependencies": {
-    "mmgl": "0.0.41",
-    "mmvis":"0.0.19"
+    "mmgl": "0.0.42",
+    "mmvis": "0.0.25"
   },
   "scripts": {
     "rollup": "node rollup.config.js",

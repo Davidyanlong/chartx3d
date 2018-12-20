@@ -24,6 +24,11 @@
 <!--bootstrap end-->
 <script type="text/javascript" src="../../lib/demo.js"></script>
 <link rel="stylesheet" href="../../lib/demo.css">
+<style type="text/css">
+    canvas{
+        border:1px solid red;
+    }
+</style>
 </head>
 <body >
 
@@ -101,7 +106,8 @@ var options = {
             var node = info.nodes[0];
             return node.label+"："+node.percentage+"%"
         }
-    }
+    },
+    legend: {}
 };
 
 window.chart = Chartx3d.create("canvasTest" , data , options);

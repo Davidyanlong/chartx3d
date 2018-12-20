@@ -1,159 +1,118 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
-<title>xChart demo -- bar</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <title>xChart demo -- bar</title>
 
-<script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="../../dist/chartx.js"></script>
-<!-- codemirror -->
-<script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
-<script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
-<link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
-<link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
-<link rel="stylesheet" href="../../lib/codemirror/docs.css">
-<!-- codemirror end -->
-<!--bootstrap-->
-<script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
-<link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
-<link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
-<link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
-<!--bootstrap end-->
-<script type="text/javascript" src="../../lib/demo.js"></script>
-<link rel="stylesheet" href="../../lib/demo.css">
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <!-- codemirror -->
+    <script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
+    <link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
+    <link rel="stylesheet" href="../../lib/codemirror/docs.css">
+    <!-- codemirror end -->
+    <!--bootstrap-->
+    <script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
+    <!--bootstrap end-->
+    <script type="text/javascript" src="../../lib/demo.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
 </head>
-<body >
 
-<table>
-    <tr>
-        <td id="td-vl">
-            <form><textarea id="code" name="code">
+<body>
+
+    <table>
+        <tr>
+            <td id="td-vl">
+                <form><textarea id="code" name="code">
 
 //chart的数据格式，xChart中所有的图表数据格式都是这样的二维数组，
 //第一行是表头。
-var data= [
-            ["day", "time"  ,"uv" ,"pv" ,"click", "ppc"],
-            [ 1      , 1  , 101 , 300  , 33    , 0.2],
-            [ 1      , 2  , 101 , 300  , 33    , 0.2],
-            [ 1      , 3  , 101 , 300  , 33    , 0.2],
-            [ 1      , 4  , 101 , 300  , 33    , 0.2],
-            [ 1      , 5  , 101 , 300  , 33    , 0.2],
-            [ 1      , 6  , 101 , 300  , 33    , 0.2],
-            [ 1      , 7  , 101 , 300  , 33    , 0.2],
-            [ 1      , 8  , 101 , 300  , 33    , 0.2],
-            [ 1      , 9  , 101 , 300  , 33    , 0.2],
+var data = [];
+// Parametric curve
+for (var t = 0; t < 25; t += 1) {
+    var x = (1 + 0.25 * Math.cos(75 * t)) * Math.cos(t);
+    var y = (1 + 0.25 * Math.cos(75 * t)) * Math.sin(t);
+    var z = t + 2.0 * Math.sin(75 * t);
+    data.push({x, y, z});
+}
+console.log(data.length);
 
-            [ 2      , 1  , 101 , 300  , 33    , 0.2],
-            [ 2      , 2  , 101 , 300  , 33    , 0.2],
-            [ 2      , 3  , 101 , 300  , 33    , 0.2],
-            [ 2      , 4  , 101 , 300  , 33    , 0.2],
-            [ 2      , 5  , 101 , 300  , 33    , 0.2],
-            [ 2      , 6  , 101 , 300  , 33    , 0.2],
-            [ 2      , 7  , 101 , 300  , 33    , 0.2],
-            [ 2      , 8  , 101 , 300  , 33    , 0.2],
-            [ 2      , 9  , 101 , 300  , 33    , 0.2],
 
-            
-                
-        ];
-
-/*
-var data = [
-    { xfield : 1, uv: null, pv: undefined, click: null },
-    { xfield : 2, uv: 0, pv: "", click: ""},
-    { xfield : 3, uv: 23, pv: 145, click : undefined },
-    { xfield : 4, uv : 232, pv: 32, click : 123 },
-    { xfield : 5, uv : 232, pv: 123, click : 63 },
-    { xfield : 6, uv : 43, pv: 213, click : 42 },
-    { xfield : 7, uv : 23, pv: 152, click : 62 },
-    { xfield : 8, uv : 122, pv: 53, click : 35 },
-    { xfield : 9, uv : 23, pv: 45, click : 103 },
-    { xfield : 10, uv : 64, pv: 75, click : 74 },
-    { xfield : 11, uv : 212, pv: 74, click : 43 },
-    { xfield : 12, uv : undefined, pv: 19, click : 7 }
-]
-*/
 
 var options = {
-    controls:{
-        autoRotate:false 
-    },
     coord : {
-        type : "cartesian3d",
-        //横向的图表，是坐标系横向了
-        //horizontal : true,
-
+        type : "box",
         xAxis : {
-            field : "time",
-            label:{
-                format:function(val){
-                    return val + '点'
-                }
-            }
+            field : "x",
+            layoutType:"proportion",
+            dataSection:[-1.5,-1,-0.5,0,0.5,1,1.5]
+        },
+        yAxis:{
+            name : "z",
+            layoutType : "proportion",
+            dataSection : [-1.5,-1,-0.5,0,0.5,1,1.5]
         },
         
         zAxis:{
-            field:'day',
-            lable:{
-                format:function(val){
-                    return val + '日'
-                }
-            }
+             field: "y",
+             layoutType: "proportion",
+             dataSection: [-1.5,-1,-0.5,0,0.5,1,1.5]
         }
     },
     graphs : [
         { 
             type : "line",
-            field : ["click"] , 
-            yAxisName:"click" ,
-            line : {
-                strokeStyle : "#eeccdd"
+            field : "z",
+            yAxisName:"z",
+            line:{
+                smooth:false
             },
-            fill : {
-                alpha : [ 0.5 , 0 ]
+            area:{
+                enabled:false
             },
-            node : {
-                //配置拐点才出现节点
-                corner : true
-            },
-            label : {
-                enabled : true
-            }
+            icon:{
+                enabled:false 
+            }  
         }
 
     ]
       
 };
 
-window.line = Chartx.create("canvasTest" , data , options)
+window.line = Chartx3d.create("canvasTest" , data , options)
 
 
             </textarea></form>
-        </td>
-        <td style="padding:0 10px;" id="td-vr">
-            <div id="chartdemo-r">
-            <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
-                <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
+            </td>
+            <td style="padding:0 10px;" id="td-vr">
+                <div id="chartdemo-r">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
+                        <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
 
-                <h4>折线图（bar chart）</h4>
-                <p>
-                    联系人：@不决
-                </p>
-            </div>
-            <div  class="test-c">
-                <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
-            </div>
+                        <h4>折线图（bar chart）</h4>
+                        <p>
+                            联系人：@不决
+                        </p>
+                    </div>
+                    <div class="test-c">
+                        <div id="canvasTest" style='width:100%;height:600px;position:relative;'></div>
+                    </div>
 
-            </div>
-        </td>
-    </tr>
-</table>
+                </div>
+            </td>
+        </tr>
+    </table>
 
 
-</body> 
+</body>
+
 </html>
-
-

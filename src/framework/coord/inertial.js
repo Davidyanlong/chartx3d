@@ -29,7 +29,8 @@ class InertialSystem extends Events {
             back: 0
         }
 
-
+        this.width = root.width;
+        this.height = root.height;
 
 
         this.fieldMap = [];
@@ -48,7 +49,7 @@ class InertialSystem extends Events {
             //只留下enabled的field 结构
             return this.filterEnabledFields(fields);
         };
-       
+
         // var fmap = {
         //     left: [], right:[]
         // };
@@ -84,7 +85,7 @@ class InertialSystem extends Events {
     filterEnabledFields(fields) {
         var me = this;
         var arr = [];
-        
+
         if (!_.isArray(fields)) fields = [fields];
         _.each(fields, function (f) {
             if (!_.isArray(f)) {
@@ -144,6 +145,32 @@ class InertialSystem extends Events {
         return this.getFieldMap(field) && this.getFieldMap(field).color;
     }
 
+    getLegendData() {
+        var me = this;
+        var data = [];
+        _.each(_.flatten(me.fieldsMap), function (map, i) {
+            //因为yAxis上面是可以单独自己配置field的，所以，这部分要过滤出 legend data
+            var isGraphsField = false;
+            _.each(me.graphs, function (gopt) {
+                if (_.indexOf(_.flatten([gopt.field]), map.field) > -1) {
+                    isGraphsField = true;
+                    return false;
+                }
+            });
+
+            if (isGraphsField) {
+                data.push({
+                    enabled: map.enabled,
+                    name: map.field,
+                    field: map.field,
+                    ind: map.ind,
+                    color: map.color,
+                    yAxis: map.yAxis
+                });
+            }
+        });
+        return data;
+    }
     getBoundbox() {
 
         let _boundbox = new Box3();

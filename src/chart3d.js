@@ -14,7 +14,7 @@ import { Interaction } from './framework/interaction';
 import { Vector3 } from 'mmgl/src/index';
 import { MainView, LabelView } from './constants';
 
-let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null;
+let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null, __redraw = null;
 
 let _cid = 0;
 class Chart3d extends Events {
@@ -84,9 +84,9 @@ class Chart3d extends Events {
 
         this._initRenderer(rendererOpts);
 
-        window.camera = this.renderView._camera;
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-        let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
+        let interaction = this.interaction = new Interaction(this.renderView, this.view);
+        let interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
 
 
         controls.minDistance = controlOpts.minDistance;
@@ -118,6 +118,12 @@ class Chart3d extends Events {
         this.app._framework.on('renderafter', this._onRenderAfterBind)
 
         interaction.on('refresh', this._onChangeBind);
+
+
+        this._onRenderAfterLabelBind = onRenderAfter.bind(interactionLabel);
+        this.app._framework.on('renderafter', this._onRenderAfterLabelBind)
+
+        interactionLabel.on('refresh', this._onChangeBind);
 
         // //同步主相机的位置和方向
         // controls.on('change', (e) => {
@@ -211,6 +217,7 @@ class Chart3d extends Events {
 
     }
 
+
     getComponent(name) {
         let _cmp = null;
         this.components.forEach(cmp => {
@@ -222,6 +229,10 @@ class Chart3d extends Events {
     }
 
     bindEvent() {
+        __redraw = (e) => {
+            this.draw();
+        }
+        this.on('redraw', __redraw);
 
         const TipName = 'Tips';
         __tipShowEvent = (e) => {
@@ -406,10 +417,11 @@ class Chart3d extends Events {
      */
     resetData(data, dataTrigger) {
 
-         //销毁默认绑定的事件
-         this.off('tipShow', __tipShowEvent);
-         this.off('tipHide', __tipHideEvent)
-         this.off('tipMove', __tipMoveEvent)
+        //销毁默认绑定的事件
+        this.off('tipShow', __tipShowEvent);
+        this.off('tipHide', __tipHideEvent)
+        this.off('tipMove', __tipMoveEvent)
+        this.off('redraw', __redraw);
 
         if (data) {
             this._data = parse2MatrixData(data);
@@ -461,12 +473,16 @@ class Chart3d extends Events {
         this._onRenderAfterBind = null;
 
         this.interaction.off('refresh', this._onChangeBind);
+        this.interactionLabel.off('refresh', this._onChangeBind);
         this._onChangeBind = null;
+
+
 
         window.removeEventListener('resize', this._onWindowResizeBind, false);
         this._onWindowResizeBind = null;
 
         this.interaction.dispose();
+        this.interactionLabel.dispose();
         this.orbitControls.dispose();
 
         this.app.dispose();

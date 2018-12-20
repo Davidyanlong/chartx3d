@@ -3,6 +3,7 @@ import { polar as Polar } from 'mmvis/src/index'
 class PolarAttribute extends Polar {
     constructor(opt, dataFrame) {
         super(opt, dataFrame)
+        this.field = opt.field || null;
         this.height = 0;
     }
 

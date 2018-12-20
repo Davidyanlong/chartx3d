@@ -67,7 +67,9 @@ class Framework extends Events {
                 }
                 // if(this.layers.length>1 && index!==this.layers.length-1){}
                 // else{
-
+                // if(view._camera.type==="OrthographicCamera"){
+                //     debugger
+                // }
                 this.renderer.render(view._scene, view._camera)
                 //}
 

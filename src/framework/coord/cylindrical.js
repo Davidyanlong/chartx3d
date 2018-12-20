@@ -1,6 +1,7 @@
 import { InertialSystem } from "./inertial";
 import { Vector3, AmbientLight, DirectionalLight, PointLight, Math as _Math } from "mmgl/src/index";
 import { PolarAttribute } from "./model/polarAttribute";
+import { _ } from "mmvis/src/index";
 
 
 /**
@@ -16,7 +17,7 @@ class Cylindrical extends InertialSystem {
         super(root);
 
         //这里暂时没有使用到坐标系的相关操作,预留
-        this.height = 0;
+        //this.height = 0;
         this.r = 0;
 
         this._coordUI = null;
@@ -24,8 +25,36 @@ class Cylindrical extends InertialSystem {
         this.group.name = 'cylindricalcoordinates';
     }
 
-    setDefaultOpts(opts) {
-        return opts
+    setDefaultOpts(opt) {
+        var coord = {
+            rAxis: {
+                field: []
+            }
+        };
+
+        //根据graphs.field 来 配置 coord.rAxis.field -------------------
+        if (!_.isArray(coord.rAxis.field)) {
+            coord.rAxis.field = [coord.rAxis.field];
+        };
+        if (opt.graphs) {
+            //有graphs的就要用找到这个graphs.field来设置coord.rAxis
+            var arrs = [];
+            _.each(opt.graphs, function (graphs) {
+                if (graphs.field) {
+                    //没有配置field的话就不绘制这个 graphs了
+                    var _fs = graphs.field;
+                    if (!_.isArray(_fs)) {
+                        _fs = [_fs];
+                    };
+                    arrs = arrs.concat(_fs);
+                };
+            });
+        };
+        coord.rAxis.field = coord.rAxis.field.concat(arrs);
+
+        opt.coord = _.extend(true, coord, opt.coord);
+
+        return opt
     }
 
     init() {
@@ -33,8 +62,32 @@ class Cylindrical extends InertialSystem {
         //由于部分配置来自与图形本身,这里暂不传人配置
         this.dataAttribute = new PolarAttribute({}, this._root.dataFrame);
         this.dataAttribute.registTheme(this._root.getTheme.bind(this._root));
+
         this.addLights();
         this.updatePosition();
+    }
+    getLegendData() {
+        var legendData = [
+            //{name: "uv", style: "#ff8533", enabled: true, ind: 0}
+        ];
+
+        this.dataAttribute.layoutData.forEach(item => {
+            legendData.push(item);
+        })
+        // _.each( this.graphs, function( _g ){
+        //     _.each( _g.getLegendData(), function( item ){
+
+        //         if( _.find( legendData , function( d ){
+        //             return d.name == item.name
+        //         } ) ) return;
+
+        //         var data = _.extend(true, {}, item);
+        //         data.color = item.fillStyle || item.color || item.style;
+
+        //         legendData.push( data )
+        //     } );
+        // } );
+        return legendData;
     }
     getBoundbox() {
 
@@ -165,11 +218,11 @@ class Cylindrical extends InertialSystem {
 
     resetData() {
         this.dataAttribute.resetData();
-        
+
         this.dataAttribute.registTheme(this._root.getTheme.bind(this._root));
         this.dataAttribute.setDataFrame(this._root.dataFrame);
         //UI组件resetData
-      
+
     }
 
 }

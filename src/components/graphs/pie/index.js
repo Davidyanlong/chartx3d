@@ -63,7 +63,7 @@ class Pie extends Component {
 
         this.startAngle = -90;
         this.allAngles = 360;
-
+        this.isInit = true;
         this.init(opt);
 
     }
@@ -78,7 +78,7 @@ class Pie extends Component {
         attr.setOption(Object.assign({}, this));
         //已经在坐标系中传入构造函数中这里可以不传
         attr.setDataFrame();
-        this.textGroup = this._root.app.addGroup({ name: 'texts_gruop' });
+        this.textGroup = this._root.app.addGroup({ name: 'pie_texts_gruop' });
         this._root.labelGroup.add(this.textGroup);
     }
     _computerProps() {
@@ -120,11 +120,16 @@ class Pie extends Component {
         let app = this._root.app;
         let attr = this._coordSystem.dataAttribute;
         let heights = [];
+
+
         attr.calculateProps();
         this.data = attr.getLayoutData();
+        
+        this.dispose();
+        this.dispose(this.textGroup);
 
         this.data.forEach((item, i) => {
-
+            if (!item.enabled) return;
             //文本格式化
             item.labelText = this._getLabelText(item);
 
@@ -394,6 +399,7 @@ class Pie extends Component {
         for (var i = 0; i < indexs.length; i++) {
             currentIndex = indexs[i];
             var itemData = data[currentIndex];
+            
             var outCircleRadius = itemData.outRadius + itemData.moveDis;
 
             //若Y值小于最小值，不画text    
@@ -464,76 +470,6 @@ class Pie extends Component {
             label[0].userData.dir = new Vector3(itemData.outx, 0, itemData.outy).sub(new Vector3(itemData.centerx, 0, itemData.centery))
             label[0].userData.dir.normalize();
             labels.push(label[0]);
-
-
-
-            // var path = new Path({
-            //     context: {
-            //         lineType: 'solid',
-            //         path: pathStr,
-            //         lineWidth: 1,
-            //         strokeStyle: itemData.fillStyle
-            //     }
-            // });
-
-            //指示文字
-            /*
-            var textTxt = itemData.labelText;
-            //如果用户format过，那么就用用户指定的格式
-            //如果没有就默认拼接
-            if( !this._graphs.label.format ){
-                if( textTxt ){
-                    textTxt = textTxt + "：" + itemData.percentage + "%" 
-                } else {
-                    textTxt = itemData.percentage + "%" 
-                }
-            };
-            */
-
-            // var textTxt = itemData.labelText;
-            // var branchTxt = document.createElement("div");
-            // branchTxt.style.cssText = " ;position:absolute;left:-1000px;top:-1000px;color:" + itemData.fillStyle + ""
-            // branchTxt.innerHTML = textTxt;
-            // me.domContainer.appendChild(branchTxt);
-            // bwidth = branchTxt.offsetWidth;
-            // bheight = branchTxt.offsetHeight;
-
-            // bx = isleft ? -adjustX : adjustX;
-            // by = currentY;
-
-            // switch (quadrant) {
-            //     case 1:
-            //         bx += textOffsetX;
-            //         by -= bheight / 2;
-            //         break;
-            //     case 2:
-            //         bx -= (bwidth + textOffsetX);
-            //         by -= bheight / 2;
-            //         break;
-            //     case 3:
-            //         bx -= (bwidth + textOffsetX);
-            //         by -= bheight / 2;
-            //         break;
-            //     case 4:
-            //         bx += textOffsetX;
-            //         by -= bheight / 2;
-            //         break;
-            // };
-
-            // branchTxt.style.left = bx + me.origin.x + "px";
-            // branchTxt.style.top = by + me.origin.y + "px";
-
-            // me.textSp.addChild(path);
-
-            // me.textList.push({
-            //     width: bwidth,
-            //     height: bheight,
-            //     x: bx + me.origin.x,
-            //     y: by + me.origin.y,
-            //     data: itemData,
-            //     textTxt: textTxt,
-            //     textEle: branchTxt
-            // });
         }
 
         labels.forEach((label, index) => {
@@ -594,9 +530,9 @@ class Pie extends Component {
             }
         })
     }
-    dispose() {
-
-        this.group.traverse((sector) => {
+    dispose(group) {
+        group = group || this.group;
+        group.traverse((sector) => {
             if (sector.name && sector.name.includes(Pie._pie_prefix)) {
                 sector.off('mouseover', __mouseover_pieEvent);
                 sector.off('mouseout', __mouseout_pieEvent);
@@ -607,7 +543,7 @@ class Pie extends Component {
         })
 
 
-        super.dispose();
+        super.dispose(group);
 
     }
     resetData() {

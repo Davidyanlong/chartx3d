@@ -1,19 +1,15 @@
 import { Events, Raycaster, Vector2 } from 'mmgl/src/index';
-//避免多次触发
-let isChange = false;
-let isMouseOver = false;
-let isMouseOut = false;
-let isClick = false;
-let EVENT = null;
+
 class Interaction extends Events {
-    constructor(scene, camera, domElement) {
+    constructor(view, domElement) {
         super();
         let scope = this;
         this.raycaster = new Raycaster();
         this.currMousePos = new Vector2();
 
-        this.camera = camera;
-        this.scene = scene;
+        this.camera = view.getCamera();
+        this.scene = view.getScene();
+        this.view = view;
         this.target = null;
         this.domElement = (domElement !== undefined) ? domElement : document;
 
@@ -26,12 +22,21 @@ class Interaction extends Events {
         this.domElement.addEventListener('mouseup', this._onMouseupbind, false);
 
         this.lastPos = null;
+        //避免多次触发
+        this.isChange = false;
+        this.isMouseOver = false;
+        this.isMouseOut = false;
+        this.isClick = false;
+        this.EVENT = null;
 
     }
     update() {
-        if (!isChange) return;
+        this.camera = this.view.getCamera();
+        if (!this.isChange) return;
 
-        isChange = false;
+        this.isChange = false;
+
+        this.camera.updateMatrixWorld();
 
         // update the picking ray with the camera and mouse position
         this.raycaster.setFromCamera(this.currMousePos, this.camera);
@@ -39,38 +44,41 @@ class Interaction extends Events {
         // calculate objects intersecting the picking ray
         var intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-        console.log(intersects.length);
         if (intersects.length > 0) {
+            // if (this.camera.type === "OrthographicCamera") {
+            //     debugger
+            // }
+           // console.log('Interaction debug', intersects.length)
             if (this.target) {
-                this.target.fire({ type: 'mousemove', event: EVENT, intersects });
+                this.target.fire({ type: 'mousemove', event: this.EVENT, intersects });
             }
             if (intersects[0].object == this.target) {
-                if (!isMouseOver) {
-                    this.target.fire({ type: 'mouseover', event: EVENT, intersects });
-                    isMouseOver = true;
-                    isMouseOut = false;
+                if (!this.isMouseOver) {
+                    this.target.fire({ type: 'mouseover', event: this.EVENT, intersects });
+                    this.isMouseOver = true;
+                    this.isMouseOut = false;
                 }
-                if (isClick) {
-                    this.target.fire({ type: 'click', event: EVENT, intersects });
-                    isClick = false;
+                if (this.isClick) {
+                    this.target.fire({ type: 'click', event: this.EVENT, intersects });
+                    this.isClick = false;
                 }
 
             } else {
-                if (this.target !== null && !isMouseOut) {
-                    this.target.fire({ type: 'mouseout', event: EVENT, intersects });
-                    isMouseOut = true;
-                    isMouseOver = false;
+                if (this.target !== null && !this.isMouseOut) {
+                    this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
+                    this.isMouseOut = true;
+                    this.isMouseOver = false;
                     // console.log({ type: 'mouseout' })
                 }
                 this.target = intersects[0].object;
             }
 
         } else {
-            if (this.target !== null && !isMouseOut) {
-                this.target.fire({ type: 'mouseout', event: EVENT, intersects });
+            if (this.target !== null && !this.isMouseOut) {
+                this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
                 this.target = null;
-                isMouseOut = true;
-                isMouseOver = false;
+                this.isMouseOut = true;
+                this.isMouseOver = false;
                 //console.log({ type: 'mouseout' })
             }
         }
@@ -110,33 +118,33 @@ class Interaction extends Events {
 
         this.lastPos = null;
 
-        isChange = false;
-        isMouseOver = false;
-        isMouseOut = false;
-        isClick = false;
-        EVENT = null;
+        this.isChange = false;
+        this.isMouseOver = false;
+        this.isMouseOut = false;
+        this.isClick = false;
+        this.EVENT = null;
     }
     onMousedown(e) {
-        //isClick = true;
-        EVENT = event;
+        //this.isClick = true;
+        this.EVENT = event;
         let { x, y } = e;
         this.lastPos = { x, y };
     }
     onMouseup(e) {
 
-        isChange = true;
+        this.isChange = true;
         let { x, y } = e;
-        
-        if (x == this.lastPos.x && y == this.lastPos.y) {
-            isClick = true;
-            this.fire({ type: 'click', event: event });
-           // console.log('click');
-        }
-        setTimeout(()=>{
-            this.fire({ type: 'refresh' });
-        },16);
 
-        EVENT = event;
+        if (x == this.lastPos.x && y == this.lastPos.y) {
+            this.isClick = true;
+            this.fire({ type: 'click', event: event });
+            // console.log('click');
+        }
+        setTimeout(() => {
+            this.fire({ type: 'refresh' });
+        }, 16);
+
+        this.EVENT = event;
         //console.log('refresh');
 
     }
@@ -147,8 +155,8 @@ class Interaction extends Events {
         this.currMousePos.y = -(event.offsetY / this.domElement.clientHeight) * 2 + 1;
         this.fire({ type: 'move', event: event });
         this.fire({ type: 'refresh' });
-        EVENT = event;
-        isChange = true;
+        this.EVENT = event;
+        this.isChange = true;
     }
 
 }

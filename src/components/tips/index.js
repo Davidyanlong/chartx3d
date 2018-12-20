@@ -5,6 +5,7 @@ class Tips extends Component {
 
         super(chart3d.currCoord);
 
+        this.type = 'tips3d';
         this.tipDomContainer = chart3d.domView;
         this.cW = chart3d.width;  //容器的width
         this.cH = chart3d.height;  //容器的height

@@ -73,7 +73,6 @@ class Line extends GraphObject {
         for (let field in this.drawData) {
             let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
             let fieldObj = this.drawData[field];
-
             let points = null;
 
             let poses = fieldObj.map(item => {

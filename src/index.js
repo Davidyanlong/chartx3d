@@ -18,6 +18,7 @@ import Pie from "./components/graphs/pie/index"
 // //components
 import Tips from "./components/tips/index"
 import MarkPoint from "./components/markpoint/index"
+import Legend from "./components/legend/index"
 
 
 global.registerComponent(Chart3d, 'chart', 3);
@@ -35,6 +36,7 @@ global.registerComponent(Pie, 'graphs', 'pie', 3);
 
 global.registerComponent(Tips, 'tips', 3);
 global.registerComponent(MarkPoint, 'markpoint', 3);
+global.registerComponent(Legend, 'legend', 3);
 
 
 

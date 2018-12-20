@@ -547,6 +547,7 @@ var Chartx3d = (function () {
           // ]
           this._opt = _.clone(opt);
           this.dataOrg = dataOrg || [];
+          this.sectionHandler = null;
           this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
           this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
 
@@ -662,7 +663,7 @@ var Chartx3d = (function () {
           var me = this;
 
           //如果用户没有配置dataSection，或者用户传了，但是传了个空数组，则自己组装dataSection
-          if (_.isEmpty(_dataSection) &&  _.isEmpty(this._opt.dataSection)) {
+          if (_.isEmpty(_dataSection) && _.isEmpty(this._opt.dataSection)) {
               if (this.layoutType == "proportion") {
 
                   var arr = this._getDataSection();
@@ -692,8 +693,12 @@ var Chartx3d = (function () {
                           ai--;
                           al--;
                       }                }
-                  this.dataSection = dataSection.section(arr, 3);
-
+                  if( _.isFunction( this.sectionHandler ) ){
+                      this.dataSection = this.sectionHandler( arr );
+                  }
+                  if( !this.dataSection || !this.dataSection.length ){
+                      this.dataSection = dataSection.section(arr, 3);
+                  }
                   if (this.symmetric) {
                       //可能得到的区间是偶数， 非对称，强行补上
                       var _min = _.min(this.dataSection);
@@ -1148,7 +1153,6 @@ var Chartx3d = (function () {
               if (this.layoutType == "proportion") {
                   cellLength = 1;
               } else {
-
                   //默认按照 peak 也就是柱状图的需要的布局方式
                   cellLength = axisLength / cellCount;
                   if (this.layoutType == "rule") {
@@ -1187,9 +1191,11 @@ var Chartx3d = (function () {
           if (this.layoutType == "proportion") {
               cellCount = this.axisLength;
           } else {
+
               if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
                   cellCount = this.dataOrg[0][0].length;
-              }        }        this._cellCount = cellCount;
+              }
+          }        this._cellCount = cellCount;
           return cellCount;
       }
 
@@ -1258,11 +1264,9 @@ var Chartx3d = (function () {
       }
       //检测第一个数据是否为一个array, 否就是传入了一个json格式的数据
       if( data.length > 0 && !_.isArray( data[0] ) ){
-          data = parse2MatrixData(data);
-          dataFrame.length = data.length;
-      } else {
-          dataFrame.length = data.length - 1;
-      }
+          data = parse2MatrixData( data );
+      }    dataFrame.length = data.length - 1;
+
       //设置好数据区间end值
       dataFrame.range.end = dataFrame.length - 1;
       //然后检查opts中是否有dataZoom.range
@@ -1592,10 +1596,10 @@ var Chartx3d = (function () {
           if( is3dOpt( _opt ) ){
               dimension = 3;
           }
-          var componentModules = me.getComponentModules( dimension );
+          var componentModules = me._getComponentModules( dimension );
 
           //如果用户没有配置coord，说明这个图表是一个默认目标系的图表，比如标签云
-          var Chart = me.getComponentModule('chart', dimension);
+          var Chart = me._getComponentModule('chart', dimension);
 
           //try {
               chart = new Chart( el, data, opt, componentModules );
@@ -1675,7 +1679,7 @@ var Chartx3d = (function () {
               //所有3d组件,同上
           }
       },
-      getComponentModules( dimension ){
+      _getComponentModules( dimension ){
           var comps = this.components.c_2d;
           if( dimension == 3 ){
               comps = this.components.c_3d;
@@ -1685,7 +1689,9 @@ var Chartx3d = (function () {
               comps.get = function( name, type ){
                   if( !type ){
                       type = "empty";
-                  }                var _module = comps.modules[ name ];
+                  }                name = name.toLowerCase();
+                  type = type.toLowerCase();
+                  var _module = comps.modules[ name ];
                   if( _module && _module[type] ){
                       return _module[type]
                   }            };
@@ -1701,6 +1707,7 @@ var Chartx3d = (function () {
       {
           var dimension = 2;
           var type = "empty";
+          
 
           if( arguments.length == 3 ){
               var arg2 = arguments[2];
@@ -1716,14 +1723,18 @@ var Chartx3d = (function () {
               if( arguments[3] == 3 ){
                   dimension = 3;
               }        }        
-          var comps = this.getComponentModules( dimension ).modules;
+          var comps = this._getComponentModules( dimension ).modules;
+
+          name = name.toLowerCase();
+          type = type.toLowerCase();
 
           var _comp = comps[ name ];
           if( !_comp ){
               _comp = comps[ name ] = {
                   
               };
-          }        if( !_comp[ type ] ){
+          }
+          if( !_comp[ type ] ){
               _comp[ type ] = compModule;
           }        return comps;
       },
@@ -1733,7 +1744,7 @@ var Chartx3d = (function () {
        * @param { dimension,type } 后面可以传传两个参数 
        * @param { dimension } 如果有三个参数，那么第二个肯定是type，第三个肯定是dimension 
        */
-      getComponentModule( name ){
+      _getComponentModule( name ){
           var dimension = 2;
           var type = "empty";
 
@@ -1751,8 +1762,9 @@ var Chartx3d = (function () {
               if( arguments[2] == 3 ){
                   dimension = 3;
               }        }
-          var _comp = this.getComponentModules( dimension ).modules[ name ];
-
+          name = name.toLowerCase();
+          type = type.toLowerCase();
+          var _comp = this._getComponentModules( dimension ).modules[ name ];
           return _comp ? _comp[ type ] : undefined;
       }
   };
@@ -2717,7 +2729,7 @@ var Chartx3d = (function () {
       }
   }
 
-  var version = "0.0.41";
+  var version = "0.0.42";
 
   const REVISION = version;
 
@@ -14960,9 +14972,30 @@ var Chartx3d = (function () {
           return triangle.a.equals(this.a) && triangle.b.equals(this.b) && triangle.c.equals(this.c);
 
       }
+      static getUV(point, p1, p2, p3, uv1, uv2, uv3, target) {
+          return getUV.call(this, point, p1, p2, p3, uv1, uv2, uv3, target)
+      }
 
   }
 
+  let getUV = (function () {
+
+      var barycoord = new Vector3();
+
+      return function getUV(point, p1, p2, p3, uv1, uv2, uv3, target) {
+
+          this.getBarycoord(point, p1, p2, p3, barycoord);
+
+          target.set(0, 0);
+          target.addScaledVector(uv1, barycoord.x);
+          target.addScaledVector(uv2, barycoord.y);
+          target.addScaledVector(uv3, barycoord.z);
+
+          return target;
+
+      };
+
+  })();
   let getBarycoord = (function () {
 
       var v0 = new Vector3();
@@ -16684,7 +16717,6 @@ var Chartx3d = (function () {
   }
 
   let raycast$3 = (function () {
-
       var intersectPoint = new Vector3();
       var worldScale = new Vector3();
       var mvPosition = new Vector3();
@@ -16787,7 +16819,8 @@ var Chartx3d = (function () {
 
       };
 
-  });
+  }
+  )();
 
   class TextTexture extends Texture {
       constructor(
@@ -22397,7 +22430,9 @@ var Chartx3d = (function () {
                   }
                   // if(this.layers.length>1 && index!==this.layers.length-1){}
                   // else{
-
+                  // if(view._camera.type==="OrthographicCamera"){
+                  //     debugger
+                  // }
                   this.renderer.render(view._scene, view._camera);
                   //}
 
@@ -22483,6 +22518,19 @@ var Chartx3d = (function () {
   const MainView = 'main_view';
   const LabelView = 'label_view';
 
+  //停靠位置
+  const DUCK = {
+      LEFT: 'left',
+      TOP: 'top',
+      BOTTOM: 'bottom',
+      RIGHT: 'right',
+      CENTER: 'center',
+      TOPLEFT: 'topLeft',
+      TOPRIGHT: 'topRight',
+      BOTTOMLEFT: 'bottomLeft',
+      BOTTOMRIGHT: 'bottomRight'
+  };
+
   class View {
       constructor(_frameWork, viewName) {
 
@@ -22507,6 +22555,13 @@ var Chartx3d = (function () {
 
           //todo:相机变化需要派发事件出来
 
+      }
+
+      getCamera() {
+          return this._camera;
+      }
+      getScene() {
+          return this._scene;
       }
 
       setSize(width, height) {
@@ -23475,7 +23530,8 @@ var Chartx3d = (function () {
               back: 0
           };
 
-
+          this.width = root.width;
+          this.height = root.height;
 
 
           this.fieldMap = [];
@@ -23493,7 +23549,7 @@ var Chartx3d = (function () {
               //如果有传参数 fields 进来，那么就把这个指定的 fields 过滤掉 enabled==false的field
               //只留下enabled的field 结构
               return this.filterEnabledFields(fields);
-          }       
+          }
           // var fmap = {
           //     left: [], right:[]
           // };
@@ -23529,7 +23585,7 @@ var Chartx3d = (function () {
       filterEnabledFields(fields) {
           var me = this;
           var arr = [];
-          
+
           if (!_.isArray(fields)) fields = [fields];
           _.each(fields, function (f) {
               if (!_.isArray(f)) {
@@ -23589,6 +23645,32 @@ var Chartx3d = (function () {
           return this.getFieldMap(field) && this.getFieldMap(field).color;
       }
 
+      getLegendData() {
+          var me = this;
+          var data = [];
+          _.each(_.flatten(me.fieldsMap), function (map, i) {
+              //因为yAxis上面是可以单独自己配置field的，所以，这部分要过滤出 legend data
+              var isGraphsField = false;
+              _.each(me.graphs, function (gopt) {
+                  if (_.indexOf(_.flatten([gopt.field]), map.field) > -1) {
+                      isGraphsField = true;
+                      return false;
+                  }
+              });
+
+              if (isGraphsField) {
+                  data.push({
+                      enabled: map.enabled,
+                      name: map.field,
+                      field: map.field,
+                      ind: map.ind,
+                      color: map.color,
+                      yAxis: map.yAxis
+                  });
+              }
+          });
+          return data;
+      }
       getBoundbox() {
 
           let _boundbox = new Box3();
@@ -27366,21 +27448,16 @@ var Chartx3d = (function () {
 
   }
 
-  //避免多次触发
-  let isChange = false;
-  let isMouseOver = false;
-  let isMouseOut = false;
-  let isClick = false;
-  let EVENT = null;
   class Interaction extends Events {
-      constructor(scene, camera, domElement) {
+      constructor(view, domElement) {
           super();
           let scope = this;
           this.raycaster = new Raycaster$$1();
           this.currMousePos = new Vector2();
 
-          this.camera = camera;
-          this.scene = scene;
+          this.camera = view.getCamera();
+          this.scene = view.getScene();
+          this.view = view;
           this.target = null;
           this.domElement = (domElement !== undefined) ? domElement : document;
 
@@ -27393,12 +27470,21 @@ var Chartx3d = (function () {
           this.domElement.addEventListener('mouseup', this._onMouseupbind, false);
 
           this.lastPos = null;
+          //避免多次触发
+          this.isChange = false;
+          this.isMouseOver = false;
+          this.isMouseOut = false;
+          this.isClick = false;
+          this.EVENT = null;
 
       }
       update() {
-          if (!isChange) return;
+          this.camera = this.view.getCamera();
+          if (!this.isChange) return;
 
-          isChange = false;
+          this.isChange = false;
+
+          this.camera.updateMatrixWorld();
 
           // update the picking ray with the camera and mouse position
           this.raycaster.setFromCamera(this.currMousePos, this.camera);
@@ -27406,38 +27492,41 @@ var Chartx3d = (function () {
           // calculate objects intersecting the picking ray
           var intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-          console.log(intersects.length);
           if (intersects.length > 0) {
+              // if (this.camera.type === "OrthographicCamera") {
+              //     debugger
+              // }
+             // console.log('Interaction debug', intersects.length)
               if (this.target) {
-                  this.target.fire({ type: 'mousemove', event: EVENT, intersects });
+                  this.target.fire({ type: 'mousemove', event: this.EVENT, intersects });
               }
               if (intersects[0].object == this.target) {
-                  if (!isMouseOver) {
-                      this.target.fire({ type: 'mouseover', event: EVENT, intersects });
-                      isMouseOver = true;
-                      isMouseOut = false;
+                  if (!this.isMouseOver) {
+                      this.target.fire({ type: 'mouseover', event: this.EVENT, intersects });
+                      this.isMouseOver = true;
+                      this.isMouseOut = false;
                   }
-                  if (isClick) {
-                      this.target.fire({ type: 'click', event: EVENT, intersects });
-                      isClick = false;
+                  if (this.isClick) {
+                      this.target.fire({ type: 'click', event: this.EVENT, intersects });
+                      this.isClick = false;
                   }
 
               } else {
-                  if (this.target !== null && !isMouseOut) {
-                      this.target.fire({ type: 'mouseout', event: EVENT, intersects });
-                      isMouseOut = true;
-                      isMouseOver = false;
+                  if (this.target !== null && !this.isMouseOut) {
+                      this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
+                      this.isMouseOut = true;
+                      this.isMouseOver = false;
                       // console.log({ type: 'mouseout' })
                   }
                   this.target = intersects[0].object;
               }
 
           } else {
-              if (this.target !== null && !isMouseOut) {
-                  this.target.fire({ type: 'mouseout', event: EVENT, intersects });
+              if (this.target !== null && !this.isMouseOut) {
+                  this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
                   this.target = null;
-                  isMouseOut = true;
-                  isMouseOver = false;
+                  this.isMouseOut = true;
+                  this.isMouseOver = false;
                   //console.log({ type: 'mouseout' })
               }
           }
@@ -27477,33 +27566,33 @@ var Chartx3d = (function () {
 
           this.lastPos = null;
 
-          isChange = false;
-          isMouseOver = false;
-          isMouseOut = false;
-          isClick = false;
-          EVENT = null;
+          this.isChange = false;
+          this.isMouseOver = false;
+          this.isMouseOut = false;
+          this.isClick = false;
+          this.EVENT = null;
       }
       onMousedown(e) {
-          //isClick = true;
-          EVENT = event;
+          //this.isClick = true;
+          this.EVENT = event;
           let { x, y } = e;
           this.lastPos = { x, y };
       }
       onMouseup(e) {
 
-          isChange = true;
+          this.isChange = true;
           let { x, y } = e;
-          
-          if (x == this.lastPos.x && y == this.lastPos.y) {
-              isClick = true;
-              this.fire({ type: 'click', event: event });
-             // console.log('click');
-          }
-          setTimeout(()=>{
-              this.fire({ type: 'refresh' });
-          },16);
 
-          EVENT = event;
+          if (x == this.lastPos.x && y == this.lastPos.y) {
+              this.isClick = true;
+              this.fire({ type: 'click', event: event });
+              // console.log('click');
+          }
+          setTimeout(() => {
+              this.fire({ type: 'refresh' });
+          }, 16);
+
+          this.EVENT = event;
           //console.log('refresh');
 
       }
@@ -27514,13 +27603,13 @@ var Chartx3d = (function () {
           this.currMousePos.y = -(event.offsetY / this.domElement.clientHeight) * 2 + 1;
           this.fire({ type: 'move', event: event });
           this.fire({ type: 'refresh' });
-          EVENT = event;
-          isChange = true;
+          this.EVENT = event;
+          this.isChange = true;
       }
 
   }
 
-  let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null;
+  let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null, __redraw = null;
 
   let _cid = 0;
   class Chart3d extends Events {
@@ -27590,9 +27679,9 @@ var Chartx3d = (function () {
 
           this._initRenderer(rendererOpts);
 
-          window.camera = this.renderView._camera;
           let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-          let interaction = this.interaction = new Interaction(this.rootStage, this.renderView._camera, this.view);
+          let interaction = this.interaction = new Interaction(this.renderView, this.view);
+          let interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
 
 
           controls.minDistance = controlOpts.minDistance;
@@ -27624,6 +27713,12 @@ var Chartx3d = (function () {
           this.app._framework.on('renderafter', this._onRenderAfterBind);
 
           interaction.on('refresh', this._onChangeBind);
+
+
+          this._onRenderAfterLabelBind = onRenderAfter.bind(interactionLabel);
+          this.app._framework.on('renderafter', this._onRenderAfterLabelBind);
+
+          interactionLabel.on('refresh', this._onChangeBind);
 
           // //同步主相机的位置和方向
           // controls.on('change', (e) => {
@@ -27717,6 +27812,7 @@ var Chartx3d = (function () {
 
       }
 
+
       getComponent(name) {
           let _cmp = null;
           this.components.forEach(cmp => {
@@ -27728,6 +27824,10 @@ var Chartx3d = (function () {
       }
 
       bindEvent() {
+          __redraw = (e) => {
+              this.draw();
+          };
+          this.on('redraw', __redraw);
 
           const TipName = 'Tips';
           __tipShowEvent = (e) => {
@@ -27910,10 +28010,11 @@ var Chartx3d = (function () {
        */
       resetData(data, dataTrigger) {
 
-           //销毁默认绑定的事件
-           this.off('tipShow', __tipShowEvent);
-           this.off('tipHide', __tipHideEvent);
-           this.off('tipMove', __tipMoveEvent);
+          //销毁默认绑定的事件
+          this.off('tipShow', __tipShowEvent);
+          this.off('tipHide', __tipHideEvent);
+          this.off('tipMove', __tipMoveEvent);
+          this.off('redraw', __redraw);
 
           if (data) {
               this._data = parse2MatrixData$1(data);
@@ -27964,12 +28065,16 @@ var Chartx3d = (function () {
           this._onRenderAfterBind = null;
 
           this.interaction.off('refresh', this._onChangeBind);
+          this.interactionLabel.off('refresh', this._onChangeBind);
           this._onChangeBind = null;
+
+
 
           window.removeEventListener('resize', this._onWindowResizeBind, false);
           this._onWindowResizeBind = null;
 
           this.interaction.dispose();
+          this.interactionLabel.dispose();
           this.orbitControls.dispose();
 
           this.app.dispose();
@@ -28040,6 +28145,7 @@ var Chartx3d = (function () {
   class PolarAttribute extends Polar {
       constructor(opt, dataFrame$$1) {
           super(opt, dataFrame$$1);
+          this.field = opt.field || null;
           this.height = 0;
       }
 
@@ -28101,7 +28207,7 @@ var Chartx3d = (function () {
           super(root);
 
           //这里暂时没有使用到坐标系的相关操作,预留
-          this.height = 0;
+          //this.height = 0;
           this.r = 0;
 
           this._coordUI = null;
@@ -28109,8 +28215,32 @@ var Chartx3d = (function () {
           this.group.name = 'cylindricalcoordinates';
       }
 
-      setDefaultOpts(opts) {
-          return opts
+      setDefaultOpts(opt) {
+          var coord = {
+              rAxis: {
+                  field: []
+              }
+          };
+
+          //根据graphs.field 来 配置 coord.rAxis.field -------------------
+          if (!_.isArray(coord.rAxis.field)) {
+              coord.rAxis.field = [coord.rAxis.field];
+          }        if (opt.graphs) {
+              //有graphs的就要用找到这个graphs.field来设置coord.rAxis
+              var arrs = [];
+              _.each(opt.graphs, function (graphs) {
+                  if (graphs.field) {
+                      //没有配置field的话就不绘制这个 graphs了
+                      var _fs = graphs.field;
+                      if (!_.isArray(_fs)) {
+                          _fs = [_fs];
+                      }                    arrs = arrs.concat(_fs);
+                  }            });
+          }        coord.rAxis.field = coord.rAxis.field.concat(arrs);
+
+          opt.coord = _.extend(true, coord, opt.coord);
+
+          return opt
       }
 
       init() {
@@ -28118,8 +28248,32 @@ var Chartx3d = (function () {
           //由于部分配置来自与图形本身,这里暂不传人配置
           this.dataAttribute = new PolarAttribute({}, this._root.dataFrame);
           this.dataAttribute.registTheme(this._root.getTheme.bind(this._root));
+
           this.addLights();
           this.updatePosition();
+      }
+      getLegendData() {
+          var legendData = [
+              //{name: "uv", style: "#ff8533", enabled: true, ind: 0}
+          ];
+
+          this.dataAttribute.layoutData.forEach(item => {
+              legendData.push(item);
+          });
+          // _.each( this.graphs, function( _g ){
+          //     _.each( _g.getLegendData(), function( item ){
+
+          //         if( _.find( legendData , function( d ){
+          //             return d.name == item.name
+          //         } ) ) return;
+
+          //         var data = _.extend(true, {}, item);
+          //         data.color = item.fillStyle || item.color || item.style;
+
+          //         legendData.push( data )
+          //     } );
+          // } );
+          return legendData;
       }
       getBoundbox() {
 
@@ -28250,11 +28404,11 @@ var Chartx3d = (function () {
 
       resetData() {
           this.dataAttribute.resetData();
-          
+
           this.dataAttribute.registTheme(this._root.getTheme.bind(this._root));
           this.dataAttribute.setDataFrame(this._root.dataFrame);
           //UI组件resetData
-        
+
       }
 
   }
@@ -28861,7 +29015,6 @@ var Chartx3d = (function () {
           for (let field in this.drawData) {
               let _color = this._getColor(this.line.strokeStyle, { field: field }) || "red";
               let fieldObj = this.drawData[field];
-
               let points = null;
 
               let poses = fieldObj.map(item => {
@@ -29189,7 +29342,7 @@ var Chartx3d = (function () {
 
           this.startAngle = -90;
           this.allAngles = 360;
-
+          this.isInit = true;
           this.init(opt);
 
       }
@@ -29204,7 +29357,7 @@ var Chartx3d = (function () {
           attr.setOption(Object.assign({}, this));
           //已经在坐标系中传入构造函数中这里可以不传
           attr.setDataFrame();
-          this.textGroup = this._root.app.addGroup({ name: 'texts_gruop' });
+          this.textGroup = this._root.app.addGroup({ name: 'pie_texts_gruop' });
           this._root.labelGroup.add(this.textGroup);
       }
       _computerProps() {
@@ -29240,11 +29393,16 @@ var Chartx3d = (function () {
           let app = this._root.app;
           let attr = this._coordSystem.dataAttribute;
           let heights = [];
+
+
           attr.calculateProps();
           this.data = attr.getLayoutData();
+          
+          this.dispose();
+          this.dispose(this.textGroup);
 
           this.data.forEach((item, i) => {
-
+              if (!item.enabled) return;
               //文本格式化
               item.labelText = this._getLabelText(item);
 
@@ -29511,6 +29669,7 @@ var Chartx3d = (function () {
           for (var i = 0; i < indexs.length; i++) {
               currentIndex = indexs[i];
               var itemData = data[currentIndex];
+              
               var outCircleRadius = itemData.outRadius + itemData.moveDis;
 
               //若Y值小于最小值，不画text    
@@ -29580,76 +29739,6 @@ var Chartx3d = (function () {
               label[0].userData.dir = new Vector3(itemData.outx, 0, itemData.outy).sub(new Vector3(itemData.centerx, 0, itemData.centery));
               label[0].userData.dir.normalize();
               labels.push(label[0]);
-
-
-
-              // var path = new Path({
-              //     context: {
-              //         lineType: 'solid',
-              //         path: pathStr,
-              //         lineWidth: 1,
-              //         strokeStyle: itemData.fillStyle
-              //     }
-              // });
-
-              //指示文字
-              /*
-              var textTxt = itemData.labelText;
-              //如果用户format过，那么就用用户指定的格式
-              //如果没有就默认拼接
-              if( !this._graphs.label.format ){
-                  if( textTxt ){
-                      textTxt = textTxt + "：" + itemData.percentage + "%" 
-                  } else {
-                      textTxt = itemData.percentage + "%" 
-                  }
-              };
-              */
-
-              // var textTxt = itemData.labelText;
-              // var branchTxt = document.createElement("div");
-              // branchTxt.style.cssText = " ;position:absolute;left:-1000px;top:-1000px;color:" + itemData.fillStyle + ""
-              // branchTxt.innerHTML = textTxt;
-              // me.domContainer.appendChild(branchTxt);
-              // bwidth = branchTxt.offsetWidth;
-              // bheight = branchTxt.offsetHeight;
-
-              // bx = isleft ? -adjustX : adjustX;
-              // by = currentY;
-
-              // switch (quadrant) {
-              //     case 1:
-              //         bx += textOffsetX;
-              //         by -= bheight / 2;
-              //         break;
-              //     case 2:
-              //         bx -= (bwidth + textOffsetX);
-              //         by -= bheight / 2;
-              //         break;
-              //     case 3:
-              //         bx -= (bwidth + textOffsetX);
-              //         by -= bheight / 2;
-              //         break;
-              //     case 4:
-              //         bx += textOffsetX;
-              //         by -= bheight / 2;
-              //         break;
-              // };
-
-              // branchTxt.style.left = bx + me.origin.x + "px";
-              // branchTxt.style.top = by + me.origin.y + "px";
-
-              // me.textSp.addChild(path);
-
-              // me.textList.push({
-              //     width: bwidth,
-              //     height: bheight,
-              //     x: bx + me.origin.x,
-              //     y: by + me.origin.y,
-              //     data: itemData,
-              //     textTxt: textTxt,
-              //     textEle: branchTxt
-              // });
           }
 
           labels.forEach((label, index) => {
@@ -29710,9 +29799,9 @@ var Chartx3d = (function () {
               }
           });
       }
-      dispose() {
-
-          this.group.traverse((sector) => {
+      dispose(group) {
+          group = group || this.group;
+          group.traverse((sector) => {
               if (sector.name && sector.name.includes(Pie._pie_prefix)) {
                   sector.off('mouseover', __mouseover_pieEvent);
                   sector.off('mouseout', __mouseout_pieEvent);
@@ -29723,7 +29812,7 @@ var Chartx3d = (function () {
           });
 
 
-          super.dispose();
+          super.dispose(group);
 
       }
       resetData() {
@@ -29747,6 +29836,7 @@ var Chartx3d = (function () {
 
           super(chart3d.currCoord);
 
+          this.type = 'tips3d';
           this.tipDomContainer = chart3d.domView;
           this.cW = chart3d.width;  //容器的width
           this.cH = chart3d.height;  //容器的height
@@ -30219,6 +30309,308 @@ var Chartx3d = (function () {
 
   }
 
+  //const Circle = Canvax.Shapes.Circle
+  let __legend_clickEvent = null;
+  class Legend extends Component {
+      constructor(chart3d, opt) {
+          super(chart3d.currCoord);
+          this.name = "legend";
+          this.type = "legend3d";
+
+          this.opt = opt;
+
+          /* data的数据结构为
+          [
+              //descartes中用到的时候还会带入yAxis
+              {name: "uv", color: "#ff8533", field: '' ...如果手动传入数据只需要前面这三个 enabled: true, ind: 0, } //外部只需要传field和fillStyle就行了 activate是内部状态
+          ]
+          */
+          this.data = null;
+
+          //一般来讲，比如柱状图折线图等，是按照传入的field来分组来设置图例的，那么legend.field都是null
+          //但是还有一种情况就是，是按照同一个field中的数据去重后来分组的，比如散点图中sex属性的男女两个分组作为图例，
+          //以及pie饼图中的每个数据的name字段都是作为一个图例
+          //那么就想要给legend主动设置一个field字段，然后legend自己从dataFrame中拿到这个field的数据来去重，然后分组做为图例
+          //这是一个很屌的设计
+          this.field = null;
+
+          this.margin = {
+              top: 10, right: 10, bottom: 10, left: 10
+          };
+
+          this.icon = {
+              height: 22,
+              width: "auto",
+              shapeType: "circle",
+              radius: 5,
+              lineWidth: 1,
+              fillStyle: "#999",
+              onChecked: function () { },
+              onUnChecked: function () { }
+          };
+
+          this.label = {
+              textAlign: "left",
+              textBaseline: "middle",
+              fillStyle: "#333", //obj.color
+              cursor: "pointer",
+              fontSize: 14,
+              format: function (name, info) {
+                  return name
+              }
+          };
+
+          //this.onChecked=function(){};
+          //this.onUnChecked=function(){};
+
+          this._labelColor = "#999";
+          // this.position = "right"; //图例所在的方向top,right,bottom,left
+          this.direction = "h"; //横向 top,bottom --> h left,right -- >v
+
+          this.position = DUCK.TOPLEFT; //left top  bottom right  center  topLeft  topRight bottomLeft  bottomRight
+          this.offsetX = 0;
+          this.offsetY = 0;
+
+
+          _.extend(true, this, {
+              icon: {
+                  onChecked: function (obj) {
+                  },
+                  onUnChecked: function (obj) {
+                  }
+              }
+          }, opt);
+
+          this.isInit = true;
+
+
+
+      }
+
+      _getLegendData(opt) {
+          var legendData = opt.data;
+          if (legendData) {
+              _.each(legendData, function (item, i) {
+                  item.enabled = true;
+                  item.ind = i;
+              });
+              delete opt.data;
+          } else {
+              legendData = this._coordSystem.getLegendData();
+          }        return legendData || [];
+      }
+
+      layout() {
+          let currCoord = this._coordSystem;
+
+          // if (this.direction == "h") {
+          //     app.padding[this.position] += (this.height + this.margin.top + this.margin.bottom);
+          // } else {
+          //     app.padding[this.position] += (this.width + this.margin.left + this.margin.right);
+          // };
+
+          //default lefttop
+          var pos = {
+              x: currCoord.padding.left + this.margin.left,
+              y: currCoord.padding.top + this.margin.top
+          };
+
+          switch (this.position && this.position.toLocaleLowerCase()) {
+              case DUCK.TOPRIGHT.toLocaleLowerCase():
+                  pos.x = currCoord.width - this.width - currCoord.padding.right - this.margin.right;
+                  pos.y = currCoord.padding.top + this.margin.top;
+                  break;
+              case DUCK.BOTTOMLEFT.toLocaleLowerCase():
+                  pos.x = currCoord.padding.left + this.margin.left;
+                  pos.y = currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height;
+                  break;
+              case DUCK.BOTTOMRIGHT.toLocaleLowerCase():
+                  pos.x = currCoord.width - this.width - currCoord.padding.right - this.margin.right;
+                  pos.y = currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height;
+                  break;
+              case DUCK.LEFT.toLocaleLowerCase():
+                  pos.x = currCoord.padding.left + this.margin.left;
+                  pos.y = (currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height) * 0.5;
+                  break;
+              case DUCK.RIGHT.toLocaleLowerCase():
+                  pos.x = currCoord.width - this.width - currCoord.padding.right - this.margin.right;
+                  pos.y = (currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height) * 0.5;
+                  break;
+              case DUCK.TOP.toLocaleLowerCase():
+                  pos.x = (currCoord.width - this.width - currCoord.padding.right - this.margin.right) * 0.5;
+                  pos.y = currCoord.padding.top + this.margin.top;
+                  break;
+              case DUCK.BOTTOM.toLocaleLowerCase():
+                  pos.x = (currCoord.width - this.width - currCoord.padding.right - this.margin.right) * 0.5;
+                  pos.y = currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height;
+                  break;
+              case DUCK.CENTER.toLocaleLowerCase():
+                  pos.x = (currCoord.width - this.width - currCoord.padding.right - this.margin.right) * 0.5;
+                  pos.y = (currCoord.height - currCoord.padding.bottom - this.margin.bottom - this.height) * 0.5;
+
+          }
+
+          pos.x += this.offsetX;
+          pos.y += this.offsetY;
+          this.pos = pos;
+      }
+
+
+      draw() {
+          this.widget();
+          this.layout();
+          this.group.position.set(this.pos.x, this.pos.y, 0);
+
+      }
+
+      widget() {
+          var me = this;
+          let app = this._root.app;
+          let currCoord = this._coordSystem;
+          if (this.isInit) {
+              this.isInit = false;
+              this.data = this._getLegendData(this.opt);
+
+          }
+          var viewWidth = currCoord.width - currCoord.padding.left - currCoord.padding.right - this.margin.left - this.margin.right;
+          var viewHeight = currCoord.height - currCoord.padding.top - currCoord.padding.bottom - this.margin.top - this.margin.bottom;
+
+          var maxItemWidth = 0;
+          var width = 0, height = 0;
+          var x = 0, y = 0;
+          var rows = 1;
+          this.dispose();
+          var isOver = false; //如果legend过多
+          __legend_clickEvent = this._getInfoHandler.bind(this);
+          _.each(this.data, function (obj, i) {
+
+              if (isOver) return;
+
+              var _icon = app.createCirclePlane(me.icon.radius, {
+                  fillStyle: !obj.enabled ? "#ccc" : (obj.color || me._labelColor)
+              });
+              _icon.name = Legend._legend_prefix + "icon_" + i;
+              _icon.position.set(me.icon.radius, me.icon.height / 3, 0);
+
+              _icon.on("click", __legend_clickEvent);
+
+              let txtArr = app.creatSpriteText(me.label.format(obj.name || obj.label, obj), {
+                  fillStyle: me.label.fillStyle,
+                  fontSize: me.label.fontSize,
+                  textAlign: me.label.textAlign,
+                  textBaseline: me.label.textBaseline,
+              });
+              let txt = txtArr[0];
+              txt.name = Legend._legend_prefix + "txt_" + i;
+
+              txt.on("click", __legend_clickEvent);
+
+              var txtW = txt.userData.size && txt.userData.size[0];
+              var itemW = txtW + me.icon.radius * 3 + 20;
+              txt.position.set(me.icon.radius * 3 + txtW * 0.5, me.icon.height / 3, 0);
+              maxItemWidth = Math.max(maxItemWidth, itemW);
+
+              var spItemC = {
+                  height: me.icon.height
+              };
+              if (me.direction == "v") {
+                  if (y + me.icon.height > viewHeight) {
+                      if (x > viewWidth) {
+                          isOver = true;
+                          return;
+                      }                    x += maxItemWidth;
+                      y = 0;
+                  }                spItemC.x = x;
+                  spItemC.y = y;
+                  y += me.icon.height;
+                  height = Math.max(height, y);
+              } else {
+                  //横向排布
+                  if (x + itemW > viewWidth) {
+                      if (me.icon.height * (rows + 1) > viewHeight) {
+                          isOver = true;
+                          return;
+                      }
+                      x = 0;
+                      rows++;
+                  }
+                  spItemC.x = x;
+                  spItemC.y = me.icon.height * (rows - 1);
+                  x += itemW;
+                  width = Math.max(width, x);
+              }
+              // var sprite = new Canvax.Display.Sprite({
+              //     id: "legend_field_" + i,
+              //     context: spItemC
+              // });
+
+              let _group = app.addGroup({
+                  name: Legend._legend_prefix + i
+              });
+              _group.position.set(spItemC.x, spItemC.y, 0);
+              _group.userData.info = obj;
+              _group.add(_icon);
+              _group.add(txt);
+              me.group.add(_group);
+
+              // sprite.context.width = itemW;
+              // me.sprite.addChild(sprite);
+
+              // sprite.on("click", function (e) {
+
+              //     //只有一个field的时候，不支持取消
+              //     if (_.filter(me.data, function (obj) { return obj.enabled }).length == 1) {
+              //         if (obj.enabled) {
+              //             return;
+              //         }
+              //     };
+
+              //     obj.enabled = !obj.enabled;
+
+              //     _icon.context.fillStyle = !obj.enabled ? "#ccc" : (obj.color || me._labelColor);
+
+              if (obj.enabled) {
+                  me.icon.onChecked(obj);
+              } else {
+                  me.icon.onUnChecked(obj);
+              }
+              // });
+
+          });
+
+          if (this.direction == "h") {
+              me.width = width;
+              me.height = me.icon.height * rows;
+          } else {
+              me.width = x + maxItemWidth;
+              me.height = height;
+          }
+
+          this._root.labelGroup.add(this.group);
+          //me.width = me.sprite.context.width  = width;
+          //me.height = me.sprite.context.height = height;
+      }
+
+      _getInfoHandler(e) {
+          let info = e.target.parent.userData.info;
+          if (info) {
+              info.enabled = !info.enabled;
+              this._root.fire({ type: 'redraw', data: info });
+          }
+      }
+      dispose(group) {
+          group = group || this.group;
+          this.group.traverse(obj => {
+              if (obj.name.indexOf(Legend._legend_prefix) !== -1) {
+                  obj.off('click', __legend_clickEvent);
+              }
+          });
+          super.dispose(group);
+
+      }
+  }
+  Legend._legend_prefix = "legend_field_";
+
   global.registerComponent(Chart3d, 'chart', 3);
 
   //global.registerComponent( emptyCoord, 'coord' );
@@ -30234,6 +30626,7 @@ var Chartx3d = (function () {
 
   global.registerComponent(Tips, 'tips', 3);
   global.registerComponent(MarkPoint, 'markpoint', 3);
+  global.registerComponent(Legend, 'legend', 3);
 
 
 

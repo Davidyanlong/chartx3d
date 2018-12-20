@@ -36,6 +36,13 @@ class View {
 
     }
 
+    getCamera() {
+        return this._camera;
+    }
+    getScene() {
+        return this._scene;
+    }
+
     setSize(width, height) {
         this.width = width;
         this.height = height;
