@@ -3490,8 +3490,8 @@ function () {
   }, {
     key: "unproject",
     value: function unproject(camera, matrix) {
-      matrix.getInverse(camera.projectionMatrix);
-      return this.applyMatrix4(matrix).applyMatrix4(camera.matrixWorld);
+      matrix.multiplyMatrices(camera.matrixWorld, matrix.getInverse(camera.projectionMatrix));
+      return this.applyMatrix4(matrix);
     }
   }, {
     key: "transformDirection",
