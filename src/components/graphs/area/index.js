@@ -1,4 +1,5 @@
 import { GraphObject, _ } from '../graph';
+import { findNearPoint } from "../../../../utils/tools";
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 100;
@@ -119,7 +120,7 @@ class Area extends GraphObject {
                     return obj.pos;
                 });
 
-                let currPoint = this._findPoint(positions, locPos);
+                let currPoint = findNearPoint(positions, locPos);
                 let currInfo = _.find(target.userData, item => {
                     return item.pos.equals(currPoint);
                 })
@@ -183,19 +184,7 @@ class Area extends GraphObject {
         this.textTempGroup.add(textObj[0]);
 
     }
-    _findPoint(points, point) {
-        let minDistance = Infinity;
-        let result = new Vector3();
-        points.forEach(p => {
-            let distance = point.distanceTo(p);
-            if (minDistance > distance) {
-                minDistance = distance;
-                result.copy(p);
-            }
-        })
-        return result;
 
-    }
     resetData() {
         this.dispose();
         this.draw();

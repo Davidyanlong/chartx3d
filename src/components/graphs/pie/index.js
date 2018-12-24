@@ -13,7 +13,7 @@ class Pie extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
 
-        this.name='Pie';
+        this.name = 'Pie';
         this.type = "pie3d";
 
         this._type = "pie";
@@ -125,7 +125,7 @@ class Pie extends Component {
 
         attr.calculateProps();
         this.data = attr.getLayoutData();
-        
+
         this.dispose();
         this.dispose(this.textGroup);
 
@@ -400,7 +400,7 @@ class Pie extends Component {
         for (var i = 0; i < indexs.length; i++) {
             currentIndex = indexs[i];
             var itemData = data[currentIndex];
-            
+
             var outCircleRadius = itemData.outRadius + itemData.moveDis;
 
             //若Y值小于最小值，不画text    
@@ -474,9 +474,9 @@ class Pie extends Component {
         }
 
         labels.forEach((label, index) => {
+            label.userData.position = label.userData.position
             label.matrixWorldNeedsUpdate = false;
             label.onBeforeRender = function (render, scene, camera) {
-
                 //     //更新坐标后的位置
                 let cross = me._coordSystem.getQuadrantByDir(this.userData.dir.clone());
                 let pos = me._coordSystem.positionToScreen(this.userData.position.clone());
@@ -492,13 +492,13 @@ class Pie extends Component {
                 if (cross.y > 0) {
                     // let flag = isSameDir < 0 ? 1 : -1;
                     pos.setX(pos.x - halfwidth - me.label.offset);
-                    label.position.copy(pos);
+                   // this.position.copy(pos);
                 }
                 //left
                 if (cross.y < 0) {
                     // let flag = isSameDir < 0 ? -1 : 1;
                     pos.setX(pos.x + halfwidth + me.label.offset);
-                    label.position.copy(pos);
+                   // this.position.copy(pos);
                 }
                 // if (me.verticalAlign == 'top') {
                 //     pos.setY(pos.y - halfHeight);
@@ -514,6 +514,7 @@ class Pie extends Component {
             }
             this.textGroup.add(label);
         });
+
 
     }
 

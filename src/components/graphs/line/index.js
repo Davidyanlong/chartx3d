@@ -7,7 +7,7 @@ class Line extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
-        this.name='Line';
+        this.name = 'Line';
         this.type = "line";
         this._type = "line3d";
 
@@ -77,6 +77,9 @@ class Line extends GraphObject {
             let points = null;
 
             let poses = fieldObj.map(item => {
+                if (item.vInd > 0) {
+                    return new Vector3().copy(item.pos).setY(item.pos.y + item.fromPos.y);
+                }
                 return item.pos;
             });
             if (this.line.enabled) {
@@ -122,6 +125,10 @@ class Line extends GraphObject {
 
 
         }
+        this.bindEvent();
+    }
+    bindEvent() {
+
     }
     resetData() {
         this.dispose();

@@ -1,5 +1,5 @@
 
-import { Events, Vector3, Box3, _Math, Matrix4, Vector2 } from "mmgl/src/index";
+import { Events, Vector3, Box3, Matrix4, Vector2 } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
 
 
@@ -287,16 +287,15 @@ let screenToWorld = (function () {
     let matrix = new Matrix4();
     //可能有问题,未测试
     return function (dx, dy) {
-        let pCam = this._root.renderView._camera;
-        const width = this._root.width;
-        const height = this._root.height;
+        let pCam = this._root.renderView.getCamera();
+        const widthHalf = this._root.width * 0.5;
+        const heightHalf = this._root.height * 0.5;
         let mouse = new Vector2();
-
-        mouse.x = (dx / width) * 2 - 1;
-        mouse.y = -(dy / height) * 2 + 1;
+        mouse.x = dx / widthHalf - 1;
+        mouse.y = -dy / heightHalf + 1;
         //新建一个三维单位向量 假设z方向就是0.5
         //根据照相机，把这个向量转换到视点坐标系
-
+        
         var target = new Vector3(mouse.x, mouse.y, 0.5).unproject(pCam, matrix);
 
         // let target = this.group.localToWorld(pos);

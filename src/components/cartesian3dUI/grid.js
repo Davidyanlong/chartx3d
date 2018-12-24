@@ -4,7 +4,6 @@ import { AxisLine } from './axisLine';
 import { Vector3, TextTexture, MeshBasicMaterial, BackSide, FrontSide, Mesh, Math as _Math, PlaneGeometry, DoubleSide, Box3 } from 'mmgl/src/index';
 import { TickLines } from './tickLines';
 
-import { numAddSymbol } from '../../../utils/tools';
 
 class Grid extends Component {
     constructor(_cartesionUI) {

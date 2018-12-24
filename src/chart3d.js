@@ -1,17 +1,13 @@
-import $ from '../lib/dom';
-import { _, dataFrame, global } from 'mmvis/src/index';
-import { parse2MatrixData } from "../utils/tools"
+import { _, dataFrame, global,  $ } from 'mmvis/src/index';
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Cartesian3D } from './framework/coord/cartesian3d';
 import { Component } from './components/Component';
-//import theme from './theme';
 
 
 import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
 import { Interaction } from './framework/interaction';
-import { Vector3 } from 'mmgl/src/index';
 import { MainView, LabelView } from './constants';
 
 let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null, __redraw = null;
@@ -51,13 +47,13 @@ class Chart3d extends Events {
         //初始化画布
         this._createDomContainer(node);
 
-        //初始化数据
-        //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
-        //还是 data = [ {xfiled, 2016, yfield: 1111} ]，这样的格式，
-        //通过parse2MatrixData最终转换的是data = [ ['xfield','yfield'] , ['2016', 111]] 这样 chartx的数据格式
-        //后面有些地方比如 一些graphs中会使用dataFrame.org，， 那么这个dataFrame.org和_data的区别是，
-        //_data是全量数据， dataFrame.org是_data经过dataZoom运算过后的子集
-        this._data = parse2MatrixData(data);
+        // //初始化数据
+        // //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
+        // //还是 data = [ {xfiled, 2016, yfield: 1111} ]，这样的格式，
+        // //通过parse2MatrixData最终转换的是data = [ ['xfield','yfield'] , ['2016', 111]] 这样 chartx的数据格式
+        // //后面有些地方比如 一些graphs中会使用dataFrame.org，， 那么这个dataFrame.org和_data的区别是，
+        // //_data是全量数据， dataFrame.org是_data经过dataZoom运算过后的子集
+        // this._data = parse2MatrixData(data);
 
         //三维引擎初始化
         this.app = new Application(this.width, this.height);
@@ -71,7 +67,7 @@ class Chart3d extends Events {
         this.components = [];
 
         this.inited = false;
-        this.dataFrame = this._initData(this._data, {}); //每个图表的数据集合 都 存放在dataFrame中。
+        this.dataFrame = this._initData(this.data, {}); //每个图表的数据集合 都 存放在dataFrame中。
 
         this.initComponent();
 
@@ -407,8 +403,9 @@ class Chart3d extends Events {
         _.extend(true, this.opt, opt);
         //数据初始化
         if (data) {
-            this._data = parse2MatrixData(data);
-            this.dataFrame = this._initData(this._data, {});
+            this.data = data;
+            //this._data = parse2MatrixData(data);
+            this.dataFrame = this._initData(this.data, {});
         };
 
 
@@ -451,8 +448,9 @@ class Chart3d extends Events {
         this.off('redraw', __redraw);
 
         if (data) {
-            this._data = parse2MatrixData(data);
-            this.dataFrame = this._initData(this._data, this.opt);
+            this.data= data;
+            //this._data = parse2MatrixData(data);
+            this.dataFrame = this._initData(this.data, this.opt);
         };
         this.currCoord.resetData();
         this.components.forEach(cmp => {

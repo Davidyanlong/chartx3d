@@ -231,40 +231,10 @@ class Cartesian3D extends InertialSystem {
         this.zAxisAttribute.setDataSection()
         this.zAxisAttribute.setAxisLength(depth);
 
-
-        //y轴的颜色值先预设好
-        // let _allField = [];
-        // opt.yAxis.forEach(yx => {
-        //     yx.field.forEach(fd => {
-        //         if (_.isArray(fd)) {
-        //             fd.forEach(fname => {
-        //                 _allField.push(fname);
-        //             })
-        //         } else {
-        //             _allField.push(fd);
-        //         }
-        //     })
-        // });
-
-
-        // let getTheme = this._root.getTheme.bind(this._root);
-        // if (!this.isExistZAxisField()) {
-        //     _allField.forEach((v, i) => {
-
-        //         this.fieldMap[v] = this.fieldMap[v] || {};
-        //         this.fieldMap[v].color = getTheme(i);
-        //     })
-        // } else {
-        //     debugger
-        //     this.zAxisAttribute.getDataSection().forEach((v, i) => {
-
-        //         this.fieldMap[v] = this.fieldMap[v] || {};
-        //         this.fieldMap[v].color = getTheme(i);
-        //     })
-        // }
         this.fieldsMap = this._setFieldsMap();
 
         this.addLights();
+        this.bindEvent();
     }
 
     _setFieldsMap() {
@@ -557,6 +527,19 @@ class Cartesian3D extends InertialSystem {
         return ceil;
 
     }
+    bindEvent() {
+        let interaction = this._root.interaction;
+        if (interaction) {
+            interaction.on('move', (e) => {
+                let dx = e.event.offsetX;
+                let dy = e.event.offsetY;
+                let pos = this.screenToWorld(dx, dy);
+                console.log(dx, dy, pos);
+            })
+        }
+    }
+
+
 
     dispose() {
 

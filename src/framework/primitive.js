@@ -36,7 +36,10 @@ import {
     Line2,
     Sprite,
 
-    Earcut
+    Earcut,
+
+    LinearFilter,
+    RepeatWrapping
 } from 'mmgl/src/index';
 
 import { _ } from "mmvis/src/index";
@@ -137,7 +140,7 @@ const primitive = {
 
             vertice.addScalar(0.5);
             //vertice.y -= 0.5;
-           // vertice.z *= -1;
+            // vertice.z *= -1;
         });
 
         // geometry.faces.forEach(face => {
@@ -392,12 +395,14 @@ const primitive = {
         let texture = new Texture();
         texture.image = renderFont.canvas;
 
-        // texture.wrapS = RepeatWrapping;
-        // texture.wrapT = RepeatWrapping;
-        // texture.minFilter = LinearFilter;
-        // texture.magFilter = LinearFilter;
+        texture.wrapS = RepeatWrapping;
+        texture.wrapT = RepeatWrapping;
+        texture.minFilter = LinearFilter;
+        texture.magFilter = LinearFilter;
         texture.needsUpdate = true;
+
         let spriteMatrial = new SpriteMaterial({
+            color: fontStyle.fillStyle,
             map: texture,
             transparent: true,
             depthWrite: false
