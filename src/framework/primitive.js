@@ -21,6 +21,7 @@ import {
     DoughnutGeometry,
     Shape,
     ExtrudeBufferGeometry,
+    PlaneGeometry,
 
     MeshLambertMaterial,
     MeshBasicMaterial,
@@ -39,7 +40,8 @@ import {
     Earcut,
 
     LinearFilter,
-    RepeatWrapping
+    RepeatWrapping,
+    FrontSide
 } from 'mmgl/src/index';
 
 import { _ } from "mmvis/src/index";
@@ -47,6 +49,7 @@ import { RenderFont } from './renderFont';
 
 const getBasicMaterial = () => {
     return new MeshBasicMaterial({
+        color:0xffffff*Math.random()
     });
 }
 
@@ -166,7 +169,7 @@ const primitive = {
     },
 
     //创建一个面
-    createPlane(width = 1, height = 1, materials = undefined, showInfo = {}, group = undefined, faceStyle = {}) {
+    createPlane(width = 1, height = 1, materials = undefined, showInfo = {dir:new Vector3()}, group = undefined, faceStyle = {}) {
 
         if (!materials) {
 
@@ -451,7 +454,7 @@ const primitive = {
                 color: faceStyle.fillStyle || 0xffffff * Math.random(),
                 side: DoubleSide,
                 transparent: true,
-                opacity: faceStyle.alpha || 0.5,
+                opacity: faceStyle.alpha || 0.2,
                 // polygonOffset: true,
                 // polygonOffsetFactor: 1,
                 // polygonOffsetUnits: 0.1,

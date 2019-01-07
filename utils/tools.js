@@ -21,11 +21,11 @@ function numAddSymbol($n, $s) {
 }
 
 //从一堆点中找到最近的一个点
-function findNearPoint(points, point) {
+function findNearPointX(points, point) {
     let minDistance = Infinity;
     let result = new Vector3();
     points.forEach(p => {
-        let distance = point.distanceTo(p);
+        let distance = Math.abs(point.x - p.x);
         if (minDistance > distance) {
             minDistance = distance;
             result.copy(p);
@@ -34,10 +34,25 @@ function findNearPoint(points, point) {
     return result;
 
 }
+
+
+/** 
+* 
+* @param hex 例如:"#23ff45" 
+* @param opacity 透明度 
+* @returns {string} 
+*/
+function hexToRgba(hex, opacity) {
+    return "rgba(" + parseInt("0x" + hex.slice(1, 3)) + "," + parseInt("0x" + hex.slice(3, 5)) + "," + parseInt("0x" + hex.slice(5, 7)) + "," + opacity + ")";
+}
+
+
+
 export {
     numAddSymbol,
     cloneOptions,
     cloneData,
     is3dOpt,
-    findNearPoint
+    findNearPointX,
+    hexToRgba
 };

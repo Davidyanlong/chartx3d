@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <title>xChart demo -- heatmap</title>
+
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <!-- <script type="text/javascript" src="//at.alicdn.com/chart/70_iife_2.js"></script> -->
+    <!-- codemirror -->
+    <script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
+    <link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
+    <link rel="stylesheet" href="../../lib/codemirror/docs.css">
+    <!-- codemirror end -->
+    <!--bootstrap-->
+    <script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
+    <!--bootstrap end-->
+    <script type="text/javascript" src="../../lib/demo.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
+    <style>
+        canvas {
+            border: gray 1px solid;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table>
+        <tr>
+            <td id="td-vl">
+                <form><textarea id="code" name="code">
+
+
+    //构建数据
+    let creatives=['创意A','创意B','创意C','创意D','创意E','创意F'];
+    let targets=['定向一','定向二','定向三','定向四','定向五','定向六','定向七','定向八','定向九','定向十','定向十一'];
+    let resources=['资源包1','资源包2','资源包3','资源包4','资源包5','资源包6'];             
+    let  data=  [];
+
+    computeData();
+
+
+//三色分别是： #385ACC（创意和定向）     #CC377C  （创意和资源包） #FA7836（资源包和定向）
+    
+ var options = {
+        coord : {
+            type : "cube",
+
+            
+            xAxis : {
+                field : "target",
+               // dataSection:targets   
+            },
+            yAxis :{
+                   field : "creative",
+                 //  dataSection:creatives
+                },
+            zAxis:{
+                field : "resource", 
+                //dataSection:resources 
+            },
+            controls:{
+                alpha: 5,    //绕X轴旋转
+                beta: 5,      //绕Y轴旋转
+                gamma: 0      //绕Z轴旋转
+            }
+          
+        },
+        graphs : [
+            { 
+                type : "heatmap",     //名称或者 Heatmap
+                field:'score',
+                face:'front',      //绘制在box的那个面上 
+                colorScheme:'#385ACC',    //色系(其他的颜色自动计算)
+                    
+            },
+            { 
+                type : "heatmap",     //名称或者 Heatmap
+                field:'score',
+                face:'back',      //绘制在box的那个面上 
+                colorScheme:'#385ACC',    //色系(其他的颜色自动计算)
+                
+        },
+          { 
+            type : "heatmap",     //名称或者 Heatmap
+            field:'score',
+            face:'top',      //绘制在box的那个面上 
+            colorScheme:'#FA7836',    //色系(其他的颜色自动计算)      
+        },
+        //{ 
+        //    type : "heatmap",     //名称或者 Heatmap
+        //    field:'score',
+        //    face:'bottom',      //绘制在box的那个面上 
+        //    colorScheme:'#FA7836',    //色系(其他的颜色自动计算)      
+        //},
+        { 
+            type : "heatmap",     //名称或者 Heatmap
+            field:'score',
+            face:'right',      //绘制在box的那个面上 
+            colorScheme:'#CC377C',    //色系(其他的颜色自动计算)      
+        },
+       // { 
+       //     type : "heatmap",     //名称或者 Heatmap
+       //     field:'score',
+       //     face:'left',      //绘制在box的那个面上 
+       //     colorScheme:'#CC377C',    //色系(其他的颜色自动计算)      
+       // }
+    
+        ],
+        tips:{
+            //content(e){ 
+            // debugger   
+            //}
+        }
+          
+    };
+
+window.heatmap = Chartx3d.create("canvasTest" , data , options)
+
+            function rotationCube(val){
+                if(val==1){
+                    heatmap.currCoord.fire({type:'toFront'});
+                }
+                if(val==2){
+                    heatmap.currCoord.fire({type:'toRight'});
+                }
+                if(val==3){
+                    heatmap.currCoord.fire({type:'toTop'});
+                }
+            }
+
+            heatmap.currCoord.on('planeclick',(e)=>{
+                console.log(e);
+            })
+
+            function computeData(){
+                data=  [];
+                let cs = creatives.concat([]);
+                cs.length = Math.floor(Math.random()*creatives.length+1);
+                let ts = targets.concat([]);
+                ts.length = Math.floor(Math.random()*targets.length+1);
+                let rs = resources.concat([]);
+                rs.length = Math.floor(Math.random()*resources.length+1);
+                //（创意和定向）
+                cs.forEach(creative=>{
+                   ts.forEach(target=>{
+                       data.push({
+                           creative,
+                           target,
+                           resource:'',
+                           score:Math.floor(Math.random()*10+1)
+                       }) 
+                   })
+                });
+           
+                //（创意和资源包）
+                cs.forEach(creative=>{
+                   rs.forEach(resource=>{
+                       data.push({
+                           creative,
+                           target:'',
+                           resource,
+                           score:Math.floor(Math.random()*10+1)
+                       }) 
+                   })
+                });
+                
+                //（资源包和定向）
+                rs.forEach(resource=>{
+                   ts.forEach(target=>{
+                       data.push({
+                           creative:'',
+                           target,
+                           resource,
+                           score:Math.floor(Math.random()*10+1)
+                       }) 
+                   })
+                });
+            }
+
+            function resetData(){
+               computeData();
+               heatmap.resetData(data);
+            }
+
+            </textarea></form>
+            </td>
+            <td style="padding:0 10px;" id="td-vr">
+                <div id="chartdemo-r">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
+                        <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
+
+                        <h4>魔方-热力图（bar chart）</h4>
+                        <p>
+                            联系人：@不决
+                        </p>
+                    </div>
+
+                    <div class="test-c">
+                        <div style="margin:5px 0 15px 50px">
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="1" onchange="rotationCube(1)" checked>
+                                创意-定向
+                            </label>
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="2" onchange="rotationCube(2)">
+                                创意-资源包
+                            </label>
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="3" onchange="rotationCube(3)">
+                                资源包-定向
+                            </label>
+                            <button class="btn btn-primary" onclick="resetData()">更新数据</button>
+                        </div>
+                        <div id="canvasTest" style='width:800px;height:400px;position:relative;'></div>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+</body>
+
+</html>

@@ -85,16 +85,18 @@ class Chart3d extends Events {
         let interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
 
 
-        controls.minDistance = controlOpts.minDistance;
-        controls.maxDistance = controlOpts.maxDistance;
+        // controls.minDistance = controlOpts.minDistance;
+        // controls.maxDistance = controlOpts.maxDistance;
 
-        controls.minZoom = controlOpts.minZoom;
-        controls.maxZoom = controlOpts.maxZoom;
-        controls.enableDamping = true;
-        controls.enablePan = false;
-        controls.enableKeys = false;
-        controls.autoRotate = controlOpts.autoRotate;
-        controls.autoRotateSpeed = 1.0
+        // controls.minZoom = controlOpts.minZoom;
+        // controls.maxZoom = controlOpts.maxZoom;
+        // controls.enableDamping = true;
+        // controls.enablePan = false;
+        // controls.enableKeys = false;
+        // controls.autoRotate = controlOpts.autoRotate;
+        // controls.autoRotateSpeed = 1.0;
+
+        _.extend(true, controls, controlOpts);
 
         //自动旋转时间
         // window.setTimeout(() => {

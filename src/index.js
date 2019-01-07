@@ -7,12 +7,14 @@ import Chart3d from './chart3d';
 //坐标系
 import Box from './components/coord/box';
 import Polar3D from './components/coord/polar3d';
+import Cube from './components/coord/cube';
 
 //graphs
 import Bar from "./components/graphs/bar/index";
 import Line from "./components/graphs/line/index"
 import Area from "./components/graphs/area/index"
 import Pie from "./components/graphs/pie/index"
+import Heatmap  from "./components/graphs/heatmap/index"
 
 
 // //components
@@ -27,11 +29,13 @@ global.registerComponent(Chart3d, 'chart', 3);
 //global.registerComponent( emptyCoord, 'coord' );
 global.registerComponent(Box, 'coord', 'box', 3);
 global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
+global.registerComponent(Cube,'coord','cube',3);
 
 global.registerComponent(Bar, 'graphs', 'bar', 3);
 global.registerComponent(Line, 'graphs', 'line', 3);
 global.registerComponent(Area, 'graphs', 'area', 3);
 global.registerComponent(Pie, 'graphs', 'pie', 3);
+global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
 
 
 

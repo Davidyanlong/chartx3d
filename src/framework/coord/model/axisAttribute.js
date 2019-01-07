@@ -4,6 +4,8 @@ class AxisAttribute extends Axis {
     constructor(opt, dataOrg) {
         super(opt, dataOrg);
         this.field = opt.field || null;
+        this.exclude = opt.exclude || '';
+
         if ("middleweight" in opt) {
             this.setMiddleweight(opt.middleweight);
         }
@@ -13,7 +15,13 @@ class AxisAttribute extends Axis {
     setDataSection(dataSection) {
         super.setDataSection(dataSection);
         if (this.layoutType !== 'proportion') {
-            this.dataSection = _.uniq(this.dataSection);//this._getDataSection();
+            this.dataSection = _.uniq(this.dataSection); //this._getDataSection();
+            //空数据需要去除
+            this.dataSection.forEach((item, i) => {
+                if (item === this.exclude) {
+                    this.dataSection.splice(i, 1);
+                }
+            })
             this.dataSectionGroup = [this.dataSection];
         }
     }

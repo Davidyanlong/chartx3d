@@ -77,7 +77,7 @@ class View {
         let controlsOpts = this.controls;
 
         let aspect = this.aspect;
-        let frustumSize = controlsOpts.boxHeight;
+        //let frustumSize = controlsOpts.boxHeight;
         let distance = controlsOpts.distance;
 
         if (mode === 'perspective') {
@@ -95,7 +95,8 @@ class View {
 
         } else {
             //给定一个大的投影空间,方便数据的计算
-            this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
+            //this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
+            this._camera = new OrthographicCamera( controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2,  controlsOpts.boxHeight / 2,  controlsOpts.boxHeight / - 2, this.near, this.far);
             this._camera.position.set(0, 0, distance);
         }
 

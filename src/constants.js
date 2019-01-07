@@ -15,3 +15,12 @@ export const DUCK = {
     BOTTOMLEFT: 'bottomLeft',
     BOTTOMRIGHT: 'bottomRight'
 }
+//立方体六个面的名称
+export const FaceNames = {
+    LEFT: 'left',
+    RIGHT: 'right',
+    TOP: 'top',
+    BOTTOM: 'bottom',
+    FRONT: 'front',
+    BACK: 'back'
+}

@@ -1,5 +1,5 @@
 
-import { Events, Vector3, Box3, Matrix4, Vector2 } from "mmgl/src/index";
+import { Events, Vector3, Box3, Matrix4, Vector2, Math as _Math, AmbientLight, DirectionalLight, PointLight, } from "mmgl/src/index";
 import { _ } from 'mmvis/src/index';
 
 
@@ -41,6 +41,117 @@ class InertialSystem extends Events {
 
     setDefaultOpts(opts) {
         return opts;
+    }
+    init() {
+
+    }
+    addLights() {
+        //加入灯光
+
+        var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+
+        this._root.rootStage.add(ambientlight);
+
+        let center = this.center.clone();
+        center = this._getWorldPos(center);
+        //center.setY(0);
+
+        //     let dirLights = [];
+        let intensity = 0.5;
+        let lightColor = 0xcccccc;
+        //     let position = new Vector3(-1, -1, 1);
+
+        //     dirLights[0] = new DirectionalLight(lightColor, intensity);
+        //     position.multiplyScalar(10000);
+        //     dirLights[0].position.copy(position);
+        //     dirLights[0].target.position.copy(center);
+        //    // this._root.rootStage.add(dirLights[0]);
+
+
+        //     dirLights[1] = new DirectionalLight(lightColor, intensity);
+        //     position = new Vector3(1, -1, 1);
+        //     position.multiplyScalar(10000);
+        //     dirLights[1].position.copy(position);
+        //     dirLights[1].target.position.copy(center);
+        //     this._root.rootStage.add(dirLights[1]);
+
+
+        //     dirLights[2] = new DirectionalLight(lightColor, intensity);
+        //     position = new Vector3(-1, -1, -1);
+        //     position.multiplyScalar(10000);
+        //     dirLights[2].position.copy(position);
+        //     dirLights[2].target.position.copy(center);
+        //     this._root.rootStage.add(dirLights[2]);
+
+
+        //     dirLights[3] = new DirectionalLight(lightColor, intensity);
+        //     position = new Vector3(1, -1, -1);
+        //     position.multiplyScalar(10000);
+        //     dirLights[3].position.copy(position);
+        //     dirLights[3].target.position.copy(center);
+        //     this._root.rootStage.add(dirLights[3]);
+
+
+
+
+        let pointLight = [];
+
+        pointLight[0] = new PointLight(lightColor, intensity);
+        let position = new Vector3(-1, 1, 1);
+        position.multiplyScalar(10000);
+        pointLight[0].position.copy(position);
+        this._root.rootStage.add(pointLight[0]);
+
+
+        pointLight[1] = new PointLight(lightColor, intensity);
+        position = new Vector3(1, 1, 1);
+        position.multiplyScalar(10000);
+        pointLight[1].position.copy(position);
+        this._root.rootStage.add(pointLight[1]);
+
+
+        pointLight[2] = new PointLight(lightColor, intensity);
+        position = new Vector3(-1, 1, -1);
+        position.multiplyScalar(10000);
+        pointLight[2].position.copy(position);
+        this._root.rootStage.add(pointLight[2]);
+
+
+        pointLight[3] = new PointLight(lightColor, intensity);
+        position = new Vector3(1, 1, -1);
+        position.multiplyScalar(1000);
+        pointLight[3].position.copy(position);
+        this._root.rootStage.add(pointLight[3]);
+
+    }
+    updatePosition(center) {
+
+        //更新相机姿态
+        center = center || this.center.clone();
+        center = this._getWorldPos(center);
+        let _renderView = this._root.renderView;
+        let _camera = _renderView._camera;
+
+        //相机默认的旋转角度
+        let dist = _camera.position.distanceTo(center);
+        let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
+        let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
+
+        let y = dist * Math.sin(phi);
+        let temp = dist * Math.cos(phi);
+        let x = temp * Math.sin(theta);
+        let z = temp * Math.cos(theta);
+        //平移实现以中心点为圆心的旋转结果
+        let newPos = new Vector3(x, y, z);
+        newPos.add(center);
+        _camera.position.copy(newPos);
+        //相机朝向中心点 
+        _camera.lookAt(center);
+
+
+        //orbite target position
+        this._root.orbitControls.target.copy(center);
+
     }
 
     getEnabledFields(fields) {
@@ -176,21 +287,24 @@ class InertialSystem extends Events {
         let _boundbox = new Box3();
 
         let _opt = this._root.opt.coord.controls;
-        let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
+        //let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
+        let _height = _opt.boxHeight;
         let _width = _opt.boxWidth;
         let _depth = _opt.boxDepth;
-
+        
         //斜边
         let _hypotenuse = _opt.distance || (new Vector3(_width, 0, _depth)).length();
 
         let _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
 
         let minX = - _width * 0.5 + this.padding.left * _ratio;
-        let minY = - _frustumSize * 0.5 + this.padding.bottom * _ratio;
+        // let minY = - _frustumSize * 0.5 + this.padding.bottom * _ratio;
+        let minY = - _height * 0.5 + this.padding.bottom * _ratio;
         let minZ = this.padding.front - _hypotenuse * 0.5 - _depth;
 
         let maxX = _width * 0.5 - this.padding.right * _ratio;
-        let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+        //let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+        let maxY = _height * 0.5 - this.padding.top * _ratio;
         let maxZ = - _hypotenuse * 0.5 + this.padding.back;
 
         _boundbox.min.set(minX, minY, minZ);
@@ -209,9 +323,10 @@ class InertialSystem extends Events {
     }
 
     getSize() {
-        if (this.boundbox) {
-            this.size = this.boundbox.getSize();
+        if (this.boundbox.isEmpty()) {
+            this.boundbox = this.getBoundbox();
         }
+        this.size = this.boundbox.getSize();
         return this.size;
     }
 
@@ -230,10 +345,6 @@ class InertialSystem extends Events {
     }
     drawUI() {
         // this._root.initComponent();
-    }
-
-    draw() {
-        this._root.draw();
     }
     dispose() {
 
@@ -295,7 +406,7 @@ let screenToWorld = (function () {
         mouse.y = -dy / heightHalf + 1;
         //新建一个三维单位向量 假设z方向就是0.5
         //根据照相机，把这个向量转换到视点坐标系
-        
+
         var target = new Vector3(mouse.x, mouse.y, 0.5).unproject(pCam, matrix);
 
         // let target = this.group.localToWorld(pos);

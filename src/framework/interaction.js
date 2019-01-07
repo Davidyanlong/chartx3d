@@ -43,12 +43,21 @@ class Interaction extends Events {
 
         // calculate objects intersecting the picking ray
         var intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        //console.log(intersects.length)
+        //没有绑定事件的不往下计算
+        if (intersects.length > 0) {
+            intersects.forEach((item, i) => {
+                if (!item.object._listeners) {
+                    intersects.splice(i, 1);
+                }
+            })
+        }
 
         if (intersects.length > 0) {
             // if (this.camera.type === "OrthographicCamera") {
             //     debugger
             // }
-           // console.log('Interaction debug', intersects.length)
+            // console.log('Interaction debug', intersects.length)
             if (this.target) {
                 this.target.fire({ type: 'mousemove', event: this.EVENT, intersects });
             }

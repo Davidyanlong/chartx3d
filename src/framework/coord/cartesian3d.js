@@ -385,35 +385,35 @@ class Cartesian3D extends InertialSystem {
 
     }
 
-    updatePosition() {
+    // updatePosition() {
 
-        //更新相机姿态
-        let center = this.center.clone();
-        center = this._getWorldPos(center);
-        let _renderView = this._root.renderView;
-        let _camera = _renderView._camera;
+    //     //更新相机姿态
+    //     let center = this.center.clone();
+    //     center = this._getWorldPos(center);
+    //     let _renderView = this._root.renderView;
+    //     let _camera = _renderView._camera;
 
-        //相机默认的旋转角度
-        let dist = _camera.position.distanceTo(center);
-        let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
-        let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
+    //     //相机默认的旋转角度
+    //     let dist = _camera.position.distanceTo(center);
+    //     let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
+    //     let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
 
-        let y = dist * Math.sin(phi);
-        let temp = dist * Math.cos(phi);
-        let x = temp * Math.sin(theta);
-        let z = temp * Math.cos(theta);
-        //平移实现以中心点为圆心的旋转结果
-        let newPos = new Vector3(x, y, z);
-        newPos.add(center);
-        _camera.position.copy(newPos);
-        //相机朝向中心点 
-        _camera.lookAt(center);
+    //     let y = dist * Math.sin(phi);
+    //     let temp = dist * Math.cos(phi);
+    //     let x = temp * Math.sin(theta);
+    //     let z = temp * Math.cos(theta);
+    //     //平移实现以中心点为圆心的旋转结果
+    //     let newPos = new Vector3(x, y, z);
+    //     newPos.add(center);
+    //     _camera.position.copy(newPos);
+    //     //相机朝向中心点 
+    //     _camera.lookAt(center);
 
 
-        //orbite target position
-        this._root.orbitControls.target.copy(center);
+    //     //orbite target position
+    //     this._root.orbitControls.target.copy(center);
 
-    }
+    // }
 
     addLights() {
         //加入灯光
@@ -534,7 +534,7 @@ class Cartesian3D extends InertialSystem {
                 let dx = e.event.offsetX;
                 let dy = e.event.offsetY;
                 let pos = this.screenToWorld(dx, dy);
-                console.log(dx, dy, pos);
+               // console.log(dx, dy, pos);
             })
         }
     }

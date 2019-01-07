@@ -1,5 +1,5 @@
 import { GraphObject, _ } from '../graph';
-import { findNearPoint } from "../../../../utils/tools";
+import { findNearPointX } from "../../../../utils/tools";
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 100;
@@ -91,7 +91,7 @@ class Area extends GraphObject {
 
             let thickness = Math.max(0.1, Math.min(boxDepth, this.area.thickness));
             //绘制区域
-            if (this.area.enabled) {
+            
                 points.unshift(points[0].clone().setY(0));
                 points.push(points[(points.length - 1)].clone().setY(0));
                 let polygon = app.createArea(points, thickness, { fillStyle: _color });
@@ -100,10 +100,10 @@ class Area extends GraphObject {
                 polygon.userData = fieldObj;
                 let posZ = points[0].z;
                 posZ = posZ - thickness * 0.5;
-
+                polygon.visible = !!this.area.enabled;
                 polygon.position.setZ(posZ);
                 this.group.add(polygon);
-            }
+           
 
         }
         me.bindEvent();
@@ -120,7 +120,7 @@ class Area extends GraphObject {
                     return obj.pos;
                 });
 
-                let currPoint = findNearPoint(positions, locPos);
+                let currPoint = findNearPointX(positions, locPos);
                 let currInfo = _.find(target.userData, item => {
                     return item.pos.equals(currPoint);
                 })

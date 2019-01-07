@@ -32,7 +32,7 @@
     "rollup-plugin-uglify": "6.0.0",
     "rollup-plugin-json": "3.1.0",
     "rollup-watch": "4.3.1",
-    "rollup-plugin-terser":"^3.0.0",
+    "rollup-plugin-terser": "^3.0.0",
     "der-server": "0.0.10"
   },
   "magixCliConfig": {
@@ -40,10 +40,10 @@
   },
   "dependencies": {
     "mmgl": "0.0.42",
-    "mmvis": "^0.0.27"
+    "mmvis": "file:../mmvis"
   },
   "scripts": {
-    "rollup": "rollup -c",
+    "rollup": "NODE_ENV=dev rollup -c",
     "build": "NODE_ENV=production rollup -c",
     "dev": "NODE_ENV=dev rollup -c -w",
     "build:watch": "onchange 'src/**/**' -- npm run dev"

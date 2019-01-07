@@ -1,6 +1,6 @@
 
 import { Component, _ } from '../Component';
-import { Vector3 } from 'mmgl/src/index';
+import { Vector3, Math as _Math } from 'mmgl/src/index';
 
 class TickTexts extends Component {
     constructor(_coordSystem, opts) {
@@ -15,7 +15,7 @@ class TickTexts extends Component {
 
         this.fontSize = opts.fontSize || 12;
 
-        this.rotation = 0;
+        this.rotation = opts.rotation || 0;
 
         this.origin = null;
 
@@ -34,6 +34,7 @@ class TickTexts extends Component {
         this.group.visible = !!opts.enabled;
         this.group.add(this._tickTextGroup);
         this.labels = [];
+        this.autoUpdataPostion = false;
     }
 
 
@@ -90,45 +91,77 @@ class TickTexts extends Component {
 
         labels.forEach((label, index) => {
             label.userData.position = me.origins[index].clone();
-            label.matrixWorldNeedsUpdate = false;
-            label.onBeforeRender = function (render, scene, camera) {
-                me.updataOrigins();
 
-                //更新坐标后的位置
 
-                let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
-                this.userData.pos = pos.clone();
-                //屏幕的位置
-                let textSize = this.userData.size;
-                let halfwidth = textSize[0] * 0.5;
-                let halfHeight = textSize[1] * 0.5
+            if (me.autoUpdataPostion) {
+                let _dir = this._coordSystem.getDirection()
+                label.position.copy(me.origins[index].clone());
 
-                let camearDir = new Vector3();
-                camera.getWorldDirection(camearDir);
-                let isSameDir = zDir.dot(camearDir);
+                if (this.textAlign === 'right') {
+                    // if (_dir === 'FRONT') {
+                    //     label.position.sub(new Vector3(label.userData.size[0] * 0.5, 0, 0));
+                    // }
+                    // if (_dir === 'RIGHT') {
+                    //     label.position.sub(new Vector3(0, 0, -label.userData.size[0] * 0.5))
+                    // }
+                    label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[0] * 0.5))
 
-                if (me.textAlign == 'right') {
-                    let flag = isSameDir < 0 ? 1 : -1;
-                    pos.setX(pos.x + halfwidth * flag);
-                    label.position.copy(pos);
                 }
-                if (me.textAlign == 'left') {
-                    let flag = isSameDir < 0 ? -1 : 1;
-                    pos.setX(pos.x + halfwidth * flag);
-                    label.position.copy(pos);
-                }
-                if (me.verticalAlign == 'top') {
-                    pos.setY(pos.y - halfHeight);
-                    label.position.copy(pos);
-                }
-                if (me.verticalAlign == 'bottom') {
-                    pos.setY(pos.y + halfHeight);
-                    label.position.copy(pos);
+                if (this.textAlign === 'center') {
+                    label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
                 }
 
-                this.position.copy(pos);
-                this.updateMatrixWorld(true);
+                // label.material.rotation = _Math.degToRad(this.rotation);
+                // label.center.set(1,0.5);
+                //旋转后的位置便宜
+                // if(this.rotation!==0){
+                //    let offsetX= label.userData.size[0] * 0.5 * Math.cos(_Math.degToRad(this.rotation));
+                //    let offsetY= label.userData.size[0]* 0.5 * Math.sin(_Math.degToRad(this.rotation));
+                //    label.position.sub(new Vector3(offsetX,offsetY,0));
+                // }
+
+            } else {
+                label.matrixWorldNeedsUpdate = false;
+                label.onBeforeRender = function (render, scene, camera) {
+                    me.updataOrigins();
+
+                    //更新坐标后的位置
+
+                    let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+                    this.userData.pos = pos.clone();
+                    //屏幕的位置
+                    let textSize = this.userData.size;
+                    let halfwidth = textSize[0] * 0.5;
+                    let halfHeight = textSize[1] * 0.5
+
+                    let camearDir = new Vector3();
+                    camera.getWorldDirection(camearDir);
+                    let isSameDir = zDir.dot(camearDir);
+
+                    if (me.textAlign == 'right') {
+                        let flag = isSameDir < 0 ? 1 : -1;
+                        pos.setX(pos.x + halfwidth * flag);
+                        label.position.copy(pos);
+                    }
+                    if (me.textAlign == 'left') {
+                        let flag = isSameDir < 0 ? -1 : 1;
+                        pos.setX(pos.x + halfwidth * flag);
+                        label.position.copy(pos);
+                    }
+                    if (me.verticalAlign == 'top') {
+                        pos.setY(pos.y - halfHeight);
+                        label.position.copy(pos);
+                    }
+                    if (me.verticalAlign == 'bottom') {
+                        pos.setY(pos.y + halfHeight);
+                        label.position.copy(pos);
+                    }
+
+                    this.position.copy(pos);
+                    this.updateMatrixWorld(true);
+                }
             }
+
             me._tickTextGroup.add(label);
             this.labels.push(label);
         });
