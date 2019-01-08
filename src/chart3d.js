@@ -255,12 +255,17 @@ class Chart3d extends Events {
 
     bindEvent() {
         __redraw = (e) => {
+            if (this.currCoord) {
+                this.currCoord.fire({ type: 'legendchange', data: e.data });
+            }
             this.draw();
         }
-        this.on('redraw', __redraw);
+        this.on('legendchange', __redraw);
 
         const TipName = 'Tips';
+      
         __tipShowEvent = (e) => {
+            
             let tips = this.getComponent({ name: TipName });
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
@@ -448,10 +453,10 @@ class Chart3d extends Events {
     resetData(data, dataTrigger) {
 
         //销毁默认绑定的事件
-        this.off('tipShow', __tipShowEvent);
-        this.off('tipHide', __tipHideEvent)
-        this.off('tipMove', __tipMoveEvent)
-        this.off('redraw', __redraw);
+        // this.off('tipShow', __tipShowEvent);
+        // this.off('tipHide', __tipHideEvent)
+        // this.off('tipMove', __tipMoveEvent)
+        //this.off('legendchange', __redraw);
 
         if (data) {
             this.data = data;

@@ -5,13 +5,6 @@ import { CubeUI } from '../cubeUI/index.js';
 import { AxisAttribute } from '../../framework/coord/model/axisAttribute';
 import { Vector3, AmbientLight, DirectionalLight, PointLight, Matrix4, Math as _Math } from "mmgl/src/index";
 
-
-/**
- * 1.文字太长省略号实现
- * 
- */
-
-
 class Cube extends InertialSystem {
     constructor(root) {
         super(root)
@@ -20,7 +13,7 @@ class Cube extends InertialSystem {
 
         this.availableGraph = {
             widthRatio: 0.8,
-            heightRatio: 0.8
+            heightRatio: 0.7
         }
 
         this.DefaultControls = {
@@ -60,7 +53,6 @@ class Cube extends InertialSystem {
         root.renderView.project('ortho');
         this.init();
 
-     
 
     }
     //基类调用 初始化配置
@@ -126,14 +118,7 @@ class Cube extends InertialSystem {
         this.bindEvent();
     }
     bindEvent() {
-        let controlOps = this._root.opt.coord.controls;
         let second = 0.5;
-        let {
-            alpha,    //绕X轴旋转
-            beta,      //绕Y轴旋转
-            gamma      //绕Z轴旋转
-        } = controlOps;
-
         let duration = 1000 * second; // 持续的时间
         let rotationCube = this.rotationCube();
 
@@ -141,9 +126,7 @@ class Cube extends InertialSystem {
             rotationCube(5, 5, 0, duration);
         });
         this.on('toRight', (e) => {
-
             rotationCube(5, 95, 0, duration);
-
         })
         this.on('toTop', (e) => {
             rotationCube(95, 0, 5, duration);
@@ -158,12 +141,23 @@ class Cube extends InertialSystem {
                         cmp.cancelSelect();
                     }
                 }
-
             }
+        })
 
+        this.on('legendchange', (e) => {
+            let face = e.data && e.data.face
+            let mapEvent = {
+                top: 'toTop',
+                front: 'toFront',
+                right: 'toRight'
+            }
+            if (!face) return;
 
+            this.fire({ type: mapEvent[face] });
 
         })
+
+
 
     }
     rotationCube() {
@@ -249,6 +243,9 @@ class Cube extends InertialSystem {
     }
 
     initCoordUI() {
+        if (this._coordUI) {
+            this._coordUI.dispose();
+        }
         this._coordUI = new CubeUI(this);
         this.group.add(this._coordUI.group);
 
@@ -264,7 +261,7 @@ class Cube extends InertialSystem {
         return {
             width: width * this.availableGraph.widthRatio,
             height: height * this.availableGraph.heightRatio,
-            depth: Math.min(width,height) * this.availableGraph.heightRatio
+            depth: Math.min(width, height) * this.availableGraph.heightRatio
         }
     }
     getOriginPosition(dir) {

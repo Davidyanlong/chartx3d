@@ -3,7 +3,6 @@ import { GraphObject, _ } from '../graph';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3 } from 'mmgl/src/index';
 
 //let renderOrder = 100;
-let __mouseover_barEvent = null, __mouseout_barEvent = null, __mousemove_barEvent = null, __click_barEvemt = null
 class Bar extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -168,7 +167,7 @@ class Bar extends GraphObject {
 
     bindEvent() {
         let me = this;
-        __mouseover_barEvent = function (e) {
+        this.__mouseover = function (e) {
             //上下文中的this 是bar 对象
             this.userData.color = this.material.color.clone();
             //高亮
@@ -184,7 +183,7 @@ class Bar extends GraphObject {
 
             me.fire({ type: 'barover', data: this.userData.info });
         };
-        __mouseout_barEvent = function (e) {
+        this.__mouseout = function (e) {
             this.material.setValues({ color: this.userData.color });
             me._root.fire({
                 type: 'tipHide',
@@ -194,7 +193,7 @@ class Bar extends GraphObject {
             me.fire({ type: 'barout', data: this.userData.info });
         };
 
-        __mousemove_barEvent = function (e) {
+        this.__mousemove = function (e) {
             me._root.fire({
                 type: 'tipMove',
                 event: e.event,
@@ -203,17 +202,17 @@ class Bar extends GraphObject {
             me.fire({ type: 'barmove', data: this.userData.info });
         }
 
-        __click_barEvemt = function (e) {
+        this.__click = function (e) {
             me.fire({ type: 'barclick', data: this.userData.info });
         }
 
         this.group.traverse(obj => {
             if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-                obj.on('mouseover', __mouseover_barEvent);
-                obj.on('mouseout', __mouseout_barEvent);
+                obj.on('mouseover', this.__mouseover);
+                obj.on('mouseout', this.__mouseout);
 
-                obj.on('mousemove', __mousemove_barEvent);
-                obj.on('click', __click_barEvemt);
+                obj.on('mousemove', this.__mousemove);
+                obj.on('click', this.__click);
             }
         });
     }
@@ -239,10 +238,10 @@ class Bar extends GraphObject {
         //this.materialMap.clear();
         this.group.traverse((obj) => {
             if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-                obj.off('click', __click_barEvemt);
-                obj.off('mouseover', __mouseover_barEvent);
-                obj.off('mouseout', __mouseout_barEvent);
-                obj.off('mousemove', __mousemove_barEvent);
+                obj.off('click', this.__click);
+                obj.off('mouseover', this.__mouseover);
+                obj.off('mouseout', this.__mouseout);
+                obj.off('mousemove', this.__mousemove);
             }
         })
 

@@ -4,7 +4,6 @@ import { Vector3, PlaneGeometry, MeshLambertMaterial, MeshBasicMaterial, MeshPho
 import { RenderFont } from '../../../framework/renderFont';
 import { hexToRgba } from '../../../../utils/tools'
 
-let __mouseover_heatmapEvent = null, __mouseout_heatmapEvent = null, __mousemove_heatmapEvent = null, __click_heatmapEvemt = null
 class Heatmap extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -38,8 +37,6 @@ class Heatmap extends GraphObject {
 
     }
     init() {
-
-
         this.planeGroup = this._root.app.addGroup({
             name: 'plane_groups'
         });
@@ -173,8 +170,7 @@ class Heatmap extends GraphObject {
 
 
     draw() {
-        let app = this._root.app;
-
+        this.dispose();
         this.drawData.forEach((item, i) => {
 
             let score = item.data[this.field] || 0.5;
@@ -206,7 +202,7 @@ class Heatmap extends GraphObject {
         let isTrigger = function () {
             return me._coordSystem.getDirection() === me.face.toLowerCase();
         }
-        __mouseover_heatmapEvent = function (e) {
+        this.__mouseover = function (e) {
             if (!isTrigger()) return;
             //let score = this.userData.info.data[me.field] || 1;
             this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
@@ -219,7 +215,7 @@ class Heatmap extends GraphObject {
 
             me.fire({ type: 'planeover', data: this.userData.info });
         };
-        __mouseout_heatmapEvent = function (e) {
+        this.__mouseout = function (e) {
             if (!isTrigger()) return;
             let score = this.userData.info.data[me.field] || 1;
             if (!this.userData.select) {
@@ -236,7 +232,7 @@ class Heatmap extends GraphObject {
             me.fire({ type: 'planeout', data: this.userData.info });
         };
 
-        __mousemove_heatmapEvent = function (e) {
+        this.__mousemove = function (e) {
             if (!isTrigger()) return;
             me._root.fire({
                 type: 'tipMove',
@@ -246,7 +242,7 @@ class Heatmap extends GraphObject {
             me.fire({ type: 'planemove', data: this.userData.info });
         }
 
-        __click_heatmapEvemt = function (e) {
+        this.__click = function (e) {
             if (!isTrigger()) return;
 
             me.cancelSelect();
@@ -260,11 +256,11 @@ class Heatmap extends GraphObject {
 
         this.group.traverse(obj => {
             if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + this.face)) {
-                obj.on('mouseover', __mouseover_heatmapEvent);
-                obj.on('mouseout', __mouseout_heatmapEvent);
+                obj.on('mouseover', this.__mouseover);
+                obj.on('mouseout', this.__mouseout);
 
-                obj.on('mousemove', __mousemove_heatmapEvent);
-                obj.on('click', __click_heatmapEvemt);
+                obj.on('mousemove', this.__mousemove);
+                obj.on('click', this.__click);
             }
         });
     }
@@ -366,19 +362,22 @@ class Heatmap extends GraphObject {
         });
     }
     dispose(group) {
-
         //删除所有事件
+
         group = group || this.group;
         group.traverse(obj => {
+
             if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + this.face)) {
-                obj.off('mouseover', __mouseover_heatmapEvent);
-                obj.off('mouseout', __mouseout_heatmapEvent);
+                obj.off('mouseover', this.__mouseover);
+                obj.off('mouseout', this.__mouseout);
 
-                obj.off('mousemove', __mousemove_heatmapEvent);
-                obj.off('click', __click_heatmapEvemt);
+                obj.off('mousemove', this.__mousemove);
+                obj.off('click', this.__click);
             }
-        })
-
+        });
+        let highMaterial = this.getMaterial(this.colorScheme, 10, this.area.highColor);
+        highMaterial.dispose();
+        //this.materialMap = null;
         super.dispose(group);
     }
 

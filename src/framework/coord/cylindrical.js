@@ -1,5 +1,5 @@
 import { InertialSystem } from "./inertial";
-import { Vector3,  Math as _Math } from "mmgl/src/index";
+import { Vector3, Math as _Math } from "mmgl/src/index";
 import { PolarAttribute } from "./model/polarAttribute";
 import { _ } from "mmvis/src/index";
 
@@ -71,7 +71,8 @@ class Cylindrical extends InertialSystem {
             //{name: "uv", style: "#ff8533", enabled: true, ind: 0}
         ];
 
-        this.dataAttribute.layoutData.forEach(item => {
+        this.dataAttribute.layoutData.forEach((item, i) => {
+            item.ind = i;
             legendData.push(item);
         })
         // _.each( this.graphs, function( _g ){

@@ -2,13 +2,6 @@ import { Component, _ } from '../../Component';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3, Math as _Math, CatmullRomCurve3 } from 'mmgl/src/index';
 
 let renderOrder = 0;
-let __mouseout_pieEvent = null,
-    __mouseover_pieEvent = null,
-    __mousemove_pieEvent = null,
-    __click_pieEvent = null;
-
-
-
 class Pie extends Component {
     constructor(chart3d, opt) {
         super(chart3d.currCoord);
@@ -176,7 +169,7 @@ class Pie extends Component {
     bindEvent() {
         let me = this;
 
-        __mouseover_pieEvent = function (e) {
+        this.__mouseover = function (e) {
             //上下文中的this 是bar 对象
             this.userData.color = this.material.color.clone();
             //高亮
@@ -194,7 +187,7 @@ class Pie extends Component {
             me.fire({ type: 'sectorover', data: _data });
         };
 
-        __mouseout_pieEvent = function (e) {
+        this.__mouseout = function (e) {
             this.material.setValues({ color: this.userData.color });
             let _data = this.userData.info;
             me._root.fire({
@@ -205,7 +198,7 @@ class Pie extends Component {
             me.fire({ type: 'sectorout', data: _data });
         };
 
-        __mousemove_pieEvent = function (e) {
+        this.__mousemove = function (e) {
             let _data = this.userData.info;
             me._root.fire({
                 type: 'tipMove',
@@ -215,7 +208,7 @@ class Pie extends Component {
             me.fire({ type: 'sectormove', data: _data });
         };
 
-        __click_pieEvent = function (e) {
+        this.__click = function (e) {
             let _data = this.userData.info;
 
             if (!this.userData.isChecked) {
@@ -239,11 +232,11 @@ class Pie extends Component {
 
         this.group.traverse(sector => {
             if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-                sector.on('mouseover', __mouseover_pieEvent);
-                sector.on('mouseout', __mouseout_pieEvent);
+                sector.on('mouseover', this.__mouseover);
+                sector.on('mouseout', this.__mouseout);
 
-                sector.on('mousemove', __mousemove_pieEvent);
-                sector.on('click', __click_pieEvent);
+                sector.on('mousemove', this.__mousemove);
+                sector.on('click', this.__click);
             }
         });
     }
@@ -536,11 +529,11 @@ class Pie extends Component {
         group = group || this.group;
         group.traverse((sector) => {
             if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-                sector.off('mouseover', __mouseover_pieEvent);
-                sector.off('mouseout', __mouseout_pieEvent);
+                sector.off('mouseover', this.__mouseover);
+                sector.off('mouseout', this.__mouseout);
 
-                sector.off('mousemove', __mousemove_pieEvent);
-                sector.off('click', __click_pieEvent);
+                sector.off('mousemove', this.__mousemove);
+                sector.off('click', this.__click);
             }
         })
 

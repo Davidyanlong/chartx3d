@@ -23584,6 +23584,13 @@ var Chartx3d = (function () {
           this.group = this._root.app.addGroup({
               name: this.constructor.name.toLowerCase() + '_root'
           });
+
+
+          this.__mouseover = null;
+          this.__mouseout = null;
+          this.__mousemove = null;
+          this.__click = null;
+
       }
       setGroupName(name) {
           this.group.name = name;
@@ -23612,6 +23619,10 @@ var Chartx3d = (function () {
               }
 
           }
+          this.__mouseover = null;
+          this.__mouseout = null;
+          this.__mousemove = null;
+          this.__click = null;
       }
       draw() {
           //基类不实现
@@ -27326,7 +27337,7 @@ var Chartx3d = (function () {
           //没有绑定事件的不往下计算
           if (intersects.length > 0) {
               intersects.forEach((item, i) => {
-                  if (!item.object._listeners) {
+                  if (_.isEmpty(item.object._listeners)) {
                       intersects.splice(i, 1);
                   }
               });
@@ -27694,12 +27705,17 @@ var Chartx3d = (function () {
 
       bindEvent() {
           __redraw = (e) => {
+              if (this.currCoord) {
+                  this.currCoord.fire({ type: 'legendchange', data: e.data });
+              }
               this.draw();
           };
-          this.on('redraw', __redraw);
+          this.on('legendchange', __redraw);
 
           const TipName = 'Tips';
+        
           __tipShowEvent = (e) => {
+              
               let tips = this.getComponent({ name: TipName });
               let { offsetX: x, offsetY: y } = e.event;
               if (tips !== null) {
@@ -27884,10 +27900,10 @@ var Chartx3d = (function () {
       resetData(data, dataTrigger) {
 
           //销毁默认绑定的事件
-          this.off('tipShow', __tipShowEvent);
-          this.off('tipHide', __tipHideEvent);
-          this.off('tipMove', __tipMoveEvent);
-          this.off('redraw', __redraw);
+          // this.off('tipShow', __tipShowEvent);
+          // this.off('tipHide', __tipHideEvent)
+          // this.off('tipMove', __tipMoveEvent)
+          //this.off('legendchange', __redraw);
 
           if (data) {
               this.data = data;
@@ -28138,7 +28154,8 @@ var Chartx3d = (function () {
               //{name: "uv", style: "#ff8533", enabled: true, ind: 0}
           ];
 
-          this.dataAttribute.layoutData.forEach(item => {
+          this.dataAttribute.layoutData.forEach((item, i) => {
+              item.ind = i;
               legendData.push(item);
           });
           // _.each( this.graphs, function( _g ){
@@ -28472,6 +28489,11 @@ var Chartx3d = (function () {
           this._tickLine.draw();
           this._tickText.draw();
       }
+      dispose() {
+          this._tickLine.dispose();
+          this._tickText.dispose();
+          this.axisAttribute = null;
+      }
       resetData() {
           this._initData();
           this.axisAttribute = this._coordSystem.getAxisAttribute(this.field);
@@ -28708,6 +28730,17 @@ var Chartx3d = (function () {
 
 
       }
+      dispose() {
+
+          for (let key in FaceNames) {
+              let name = FaceNames[key];
+              this.faceAxises[name].forEach(axis => {
+                  axis.dispose();
+              });
+          }
+          this.faceAxises = null;
+          super.dispose(this.box);
+      }
       resetData() {
 
           for (let key in FaceNames) {
@@ -28720,12 +28753,6 @@ var Chartx3d = (function () {
       }
   }
 
-  /**
-   * 1.文字太长省略号实现
-   * 
-   */
-
-
   class Cube extends InertialSystem {
       constructor(root) {
           super(root);
@@ -28734,7 +28761,7 @@ var Chartx3d = (function () {
 
           this.availableGraph = {
               widthRatio: 0.8,
-              heightRatio: 0.8
+              heightRatio: 0.7
           };
 
           this.DefaultControls = {
@@ -28774,7 +28801,6 @@ var Chartx3d = (function () {
           root.renderView.project('ortho');
           this.init();
 
-       
 
       }
       //基类调用 初始化配置
@@ -28840,9 +28866,7 @@ var Chartx3d = (function () {
           this.bindEvent();
       }
       bindEvent() {
-          let controlOps = this._root.opt.coord.controls;
           let second = 0.5;
-
           let duration = 1000 * second; // 持续的时间
           let rotationCube = this.rotationCube();
 
@@ -28850,9 +28874,7 @@ var Chartx3d = (function () {
               rotationCube(5, 5, 0, duration);
           });
           this.on('toRight', (e) => {
-
               rotationCube(5, 95, 0, duration);
-
           });
           this.on('toTop', (e) => {
               rotationCube(95, 0, 5, duration);
@@ -28867,12 +28889,23 @@ var Chartx3d = (function () {
                           cmp.cancelSelect();
                       }
                   }
-
               }
+          });
 
+          this.on('legendchange', (e) => {
+              let face = e.data && e.data.face;
+              let mapEvent = {
+                  top: 'toTop',
+                  front: 'toFront',
+                  right: 'toRight'
+              };
+              if (!face) return;
 
+              this.fire({ type: mapEvent[face] });
 
           });
+
+
 
       }
       rotationCube() {
@@ -28958,6 +28991,9 @@ var Chartx3d = (function () {
       }
 
       initCoordUI() {
+          if (this._coordUI) {
+              this._coordUI.dispose();
+          }
           this._coordUI = new CubeUI(this);
           this.group.add(this._coordUI.group);
 
@@ -28973,7 +29009,7 @@ var Chartx3d = (function () {
           return {
               width: width * this.availableGraph.widthRatio,
               height: height * this.availableGraph.heightRatio,
-              depth: Math.min(width,height) * this.availableGraph.heightRatio
+              depth: Math.min(width, height) * this.availableGraph.heightRatio
           }
       }
       getOriginPosition(dir) {
@@ -29345,7 +29381,6 @@ var Chartx3d = (function () {
   }
 
   //let renderOrder = 100;
-  let __mouseover_barEvent = null, __mouseout_barEvent = null, __mousemove_barEvent = null, __click_barEvemt = null;
   class Bar extends GraphObject {
       constructor(chart3d, opt) {
           super(chart3d);
@@ -29509,7 +29544,7 @@ var Chartx3d = (function () {
 
       bindEvent() {
           let me = this;
-          __mouseover_barEvent = function (e) {
+          this.__mouseover = function (e) {
               //上下文中的this 是bar 对象
               this.userData.color = this.material.color.clone();
               //高亮
@@ -29525,7 +29560,7 @@ var Chartx3d = (function () {
 
               me.fire({ type: 'barover', data: this.userData.info });
           };
-          __mouseout_barEvent = function (e) {
+          this.__mouseout = function (e) {
               this.material.setValues({ color: this.userData.color });
               me._root.fire({
                   type: 'tipHide',
@@ -29535,7 +29570,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'barout', data: this.userData.info });
           };
 
-          __mousemove_barEvent = function (e) {
+          this.__mousemove = function (e) {
               me._root.fire({
                   type: 'tipMove',
                   event: e.event,
@@ -29544,17 +29579,17 @@ var Chartx3d = (function () {
               me.fire({ type: 'barmove', data: this.userData.info });
           };
 
-          __click_barEvemt = function (e) {
+          this.__click = function (e) {
               me.fire({ type: 'barclick', data: this.userData.info });
           };
 
           this.group.traverse(obj => {
               if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-                  obj.on('mouseover', __mouseover_barEvent);
-                  obj.on('mouseout', __mouseout_barEvent);
+                  obj.on('mouseover', this.__mouseover);
+                  obj.on('mouseout', this.__mouseout);
 
-                  obj.on('mousemove', __mousemove_barEvent);
-                  obj.on('click', __click_barEvemt);
+                  obj.on('mousemove', this.__mousemove);
+                  obj.on('click', this.__click);
               }
           });
       }
@@ -29577,10 +29612,10 @@ var Chartx3d = (function () {
           //this.materialMap.clear();
           this.group.traverse((obj) => {
               if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-                  obj.off('click', __click_barEvemt);
-                  obj.off('mouseover', __mouseover_barEvent);
-                  obj.off('mouseout', __mouseout_barEvent);
-                  obj.off('mousemove', __mousemove_barEvent);
+                  obj.off('click', this.__click);
+                  obj.off('mouseover', this.__mouseover);
+                  obj.off('mouseout', this.__mouseout);
+                  obj.off('mousemove', this.__mousemove);
               }
           });
 
@@ -29597,7 +29632,6 @@ var Chartx3d = (function () {
   Bar._bar_prefix = "bar_one_";
 
   let __lastPosition = null;
-  let __mousemove_lineEvent = null, __mouseout_lineEvent = null;
   class Line$1 extends GraphObject {
       constructor(chart3d, opt) {
           super(chart3d);
@@ -29736,7 +29770,7 @@ var Chartx3d = (function () {
           this.bindEvent();
       }
       bindEvent() {
-          __mousemove_lineEvent = (e) => {
+          this.__mousemove = (e) => {
               let currObj = e.intersects[0];
               let target = e.target;
               if (currObj) {
@@ -29772,7 +29806,7 @@ var Chartx3d = (function () {
                   // console.log(currPoint);
               }
           };
-          __mouseout_lineEvent = (e) => {
+         this.__mouseout = (e) => {
               if (this.textTempGroup) ;
 
               this._root.fire({
@@ -29783,8 +29817,8 @@ var Chartx3d = (function () {
               this.fire({ type: 'mouseout' });
           };
           this.areaGroup.traverse(obj => {
-              obj.on('mousemove', __mousemove_lineEvent);
-              obj.on("mouseout", __mouseout_lineEvent);
+              obj.on('mousemove', this.__mousemove);
+              obj.on("mouseout", this.__mouseout);
           });
 
           this.on('showLable', (e) => {
@@ -29812,6 +29846,13 @@ var Chartx3d = (function () {
               });
           });
       }
+      dispose(){
+          this.areaGroup.traverse(obj => {
+              obj.off('mousemove', this.__mousemove);
+              obj.off("mouseout", this.__mouseout);
+          });
+          super.dispose();
+      }
       resetData() {
           this.dispose();
           this.draw();
@@ -29819,8 +29860,6 @@ var Chartx3d = (function () {
   }
 
   let __lastPosition$1 = null;
-
-  let __mousemove_areaEvent = null, __mouseout_areaEvent = null;
 
   class Area extends GraphObject {
       constructor(chart3d, opt) {
@@ -29903,26 +29942,26 @@ var Chartx3d = (function () {
 
               let thickness = Math.max(0.1, Math.min(boxDepth, this.area.thickness));
               //绘制区域
-              
-                  points.unshift(points[0].clone().setY(0));
-                  points.push(points[(points.length - 1)].clone().setY(0));
-                  let polygon = app.createArea(points, thickness, { fillStyle: _color });
 
-                  polygon.name = Area._area_prefix + field;
-                  polygon.userData = fieldObj;
-                  let posZ = points[0].z;
-                  posZ = posZ - thickness * 0.5;
-                  polygon.visible = !!this.area.enabled;
-                  polygon.position.setZ(posZ);
-                  this.group.add(polygon);
-             
+              points.unshift(points[0].clone().setY(0));
+              points.push(points[(points.length - 1)].clone().setY(0));
+              let polygon = app.createArea(points, thickness, { fillStyle: _color });
+
+              polygon.name = Area._area_prefix + field;
+              polygon.userData = fieldObj;
+              let posZ = points[0].z;
+              posZ = posZ - thickness * 0.5;
+              polygon.visible = !!this.area.enabled;
+              polygon.position.setZ(posZ);
+              this.group.add(polygon);
+
 
           }
           me.bindEvent();
       }
       bindEvent() {
 
-          __mousemove_areaEvent = (e) => {
+          this.__mousemove = (e) => {
               let currObj = e.intersects[0];
               let target = e.target;
               if (currObj) {
@@ -29952,7 +29991,7 @@ var Chartx3d = (function () {
               }
           };
 
-          __mouseout_areaEvent = (e) => {
+          this.__mouseout = (e) => {
               if (this.textTempGroup) {
 
                   this.textTempGroup.traverse(item => {
@@ -29974,8 +30013,8 @@ var Chartx3d = (function () {
 
           this.group.traverse(obj => {
               if (obj.name && obj.name.includes(Area._area_prefix)) {
-                  obj.on('mousemove', __mousemove_areaEvent);
-                  obj.on("mouseout", __mouseout_areaEvent);
+                  obj.on('mousemove', this.__mousemove);
+                  obj.on("mouseout", this.__mouseout);
               }
           });
       }
@@ -30007,8 +30046,8 @@ var Chartx3d = (function () {
           group = group || this.group;
           group.traverse(obj => {
               if (obj.name && obj.name.includes(Area._area_prefix)) {
-                  obj.off('mousemove', __mousemove_areaEvent);
-                  obj.off("mouseout", __mouseout_areaEvent);
+                  obj.off('mousemove', this.__mousemove);
+                  obj.off("mouseout", this.__mouseout);
               }
           });
 
@@ -30017,13 +30056,6 @@ var Chartx3d = (function () {
   }
 
   Area._area_prefix = 'polygon_area_';
-
-  let __mouseout_pieEvent = null,
-      __mouseover_pieEvent = null,
-      __mousemove_pieEvent = null,
-      __click_pieEvent = null;
-
-
 
   class Pie extends Component {
       constructor(chart3d, opt) {
@@ -30185,7 +30217,7 @@ var Chartx3d = (function () {
       bindEvent() {
           let me = this;
 
-          __mouseover_pieEvent = function (e) {
+          this.__mouseover = function (e) {
               //上下文中的this 是bar 对象
               this.userData.color = this.material.color.clone();
               //高亮
@@ -30203,7 +30235,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'sectorover', data: _data });
           };
 
-          __mouseout_pieEvent = function (e) {
+          this.__mouseout = function (e) {
               this.material.setValues({ color: this.userData.color });
               let _data = this.userData.info;
               me._root.fire({
@@ -30214,7 +30246,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'sectorout', data: _data });
           };
 
-          __mousemove_pieEvent = function (e) {
+          this.__mousemove = function (e) {
               let _data = this.userData.info;
               me._root.fire({
                   type: 'tipMove',
@@ -30224,7 +30256,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'sectormove', data: _data });
           };
 
-          __click_pieEvent = function (e) {
+          this.__click = function (e) {
               let _data = this.userData.info;
 
               if (!this.userData.isChecked) {
@@ -30248,11 +30280,11 @@ var Chartx3d = (function () {
 
           this.group.traverse(sector => {
               if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-                  sector.on('mouseover', __mouseover_pieEvent);
-                  sector.on('mouseout', __mouseout_pieEvent);
+                  sector.on('mouseover', this.__mouseover);
+                  sector.on('mouseout', this.__mouseout);
 
-                  sector.on('mousemove', __mousemove_pieEvent);
-                  sector.on('click', __click_pieEvent);
+                  sector.on('mousemove', this.__mousemove);
+                  sector.on('click', this.__click);
               }
           });
       }
@@ -30542,11 +30574,11 @@ var Chartx3d = (function () {
           group = group || this.group;
           group.traverse((sector) => {
               if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-                  sector.off('mouseover', __mouseover_pieEvent);
-                  sector.off('mouseout', __mouseout_pieEvent);
+                  sector.off('mouseover', this.__mouseover);
+                  sector.off('mouseout', this.__mouseout);
 
-                  sector.off('mousemove', __mousemove_pieEvent);
-                  sector.off('click', __click_pieEvent);
+                  sector.off('mousemove', this.__mousemove);
+                  sector.off('click', this.__click);
               }
           });
 
@@ -30570,7 +30602,6 @@ var Chartx3d = (function () {
 
   Pie._pie_prefix = "pie_one_";
 
-  let __mouseover_heatmapEvent = null, __mouseout_heatmapEvent = null, __mousemove_heatmapEvent = null, __click_heatmapEvemt = null;
   class Heatmap extends GraphObject {
       constructor(chart3d, opt) {
           super(chart3d);
@@ -30604,8 +30635,6 @@ var Chartx3d = (function () {
 
       }
       init() {
-
-
           this.planeGroup = this._root.app.addGroup({
               name: 'plane_groups'
           });
@@ -30739,8 +30768,7 @@ var Chartx3d = (function () {
 
 
       draw() {
-          let app = this._root.app;
-
+          this.dispose();
           this.drawData.forEach((item, i) => {
 
               let score = item.data[this.field] || 0.5;
@@ -30772,7 +30800,7 @@ var Chartx3d = (function () {
           let isTrigger = function () {
               return me._coordSystem.getDirection() === me.face.toLowerCase();
           };
-          __mouseover_heatmapEvent = function (e) {
+          this.__mouseover = function (e) {
               if (!isTrigger()) return;
               //let score = this.userData.info.data[me.field] || 1;
               this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
@@ -30785,7 +30813,7 @@ var Chartx3d = (function () {
 
               me.fire({ type: 'planeover', data: this.userData.info });
           };
-          __mouseout_heatmapEvent = function (e) {
+          this.__mouseout = function (e) {
               if (!isTrigger()) return;
               let score = this.userData.info.data[me.field] || 1;
               if (!this.userData.select) {
@@ -30802,7 +30830,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'planeout', data: this.userData.info });
           };
 
-          __mousemove_heatmapEvent = function (e) {
+          this.__mousemove = function (e) {
               if (!isTrigger()) return;
               me._root.fire({
                   type: 'tipMove',
@@ -30812,7 +30840,7 @@ var Chartx3d = (function () {
               me.fire({ type: 'planemove', data: this.userData.info });
           };
 
-          __click_heatmapEvemt = function (e) {
+          this.__click = function (e) {
               if (!isTrigger()) return;
 
               me.cancelSelect();
@@ -30826,11 +30854,11 @@ var Chartx3d = (function () {
 
           this.group.traverse(obj => {
               if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + this.face)) {
-                  obj.on('mouseover', __mouseover_heatmapEvent);
-                  obj.on('mouseout', __mouseout_heatmapEvent);
+                  obj.on('mouseover', this.__mouseover);
+                  obj.on('mouseout', this.__mouseout);
 
-                  obj.on('mousemove', __mousemove_heatmapEvent);
-                  obj.on('click', __click_heatmapEvemt);
+                  obj.on('mousemove', this.__mousemove);
+                  obj.on('click', this.__click);
               }
           });
       }
@@ -30932,19 +30960,22 @@ var Chartx3d = (function () {
           });
       }
       dispose(group) {
-
           //删除所有事件
+
           group = group || this.group;
           group.traverse(obj => {
-              if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + this.face)) {
-                  obj.off('mouseover', __mouseover_heatmapEvent);
-                  obj.off('mouseout', __mouseout_heatmapEvent);
 
-                  obj.off('mousemove', __mousemove_heatmapEvent);
-                  obj.off('click', __click_heatmapEvemt);
+              if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + this.face)) {
+                  obj.off('mouseover', this.__mouseover);
+                  obj.off('mouseout', this.__mouseout);
+
+                  obj.off('mousemove', this.__mousemove);
+                  obj.off('click', this.__click);
               }
           });
-
+          let highMaterial = this.getMaterial(this.colorScheme, 10, this.area.highColor);
+          highMaterial.dispose();
+          //this.materialMap = null;
           super.dispose(group);
       }
 
@@ -31008,6 +31039,7 @@ var Chartx3d = (function () {
           // });
           // var self = this;
           this.group.on("removed", () => {
+              this._removeContent();
               this._tipDom = null;
           });
           console.log('tips component loaded!');
@@ -31111,6 +31143,7 @@ var Chartx3d = (function () {
           me._tipDom.style.cssText += "; -moz-box-shadow:1px 1px 3px " + me.strokeStyle + "; -webkit-box-shadow:1px 1px 3px " + me.strokeStyle + "; box-shadow:1px 1px 3px " + me.strokeStyle + ";";
           me._tipDom.style.cssText += "; border:none;white-space:nowrap;word-wrap:normal;";
           me._tipDom.style.cssText += "; text-align:left;";
+         
           me.tipDomContainer.appendChild(this._tipDom);
       }
 
@@ -31450,6 +31483,8 @@ var Chartx3d = (function () {
           this.name = "Legend";
           this.type = "legend3d";
 
+          this.mode = 'checkbox';  //checkbox  radio
+
           this.opt = opt;
 
           /* data的数据结构为
@@ -31524,7 +31559,7 @@ var Chartx3d = (function () {
           var legendData = opt.data;
           if (legendData) {
               _.each(legendData, function (item, i) {
-                  item.enabled = true;
+                  item.enabled = 'enabled' in item ? item.enabled : true;
                   item.ind = i;
               });
               delete opt.data;
@@ -31607,12 +31642,11 @@ var Chartx3d = (function () {
           }
           var viewWidth = currCoord.width - currCoord.padding.left - currCoord.padding.right - this.margin.left - this.margin.right;
           var viewHeight = currCoord.height - currCoord.padding.top - currCoord.padding.bottom - this.margin.top - this.margin.bottom;
-
+          this.dispose();
           var maxItemWidth = 0;
           var width = 0, height = 0;
           var x = 0, y = 0;
           var rows = 1;
-          this.dispose();
           var isOver = false; //如果legend过多
           __legend_clickEvent = this._getInfoHandler.bind(this);
           _.each(this.data, function (obj, i) {
@@ -31726,10 +31760,25 @@ var Chartx3d = (function () {
 
       _getInfoHandler(e) {
           let info = e.target.parent.userData.info;
-          if (info) {
-              info.enabled = !info.enabled;
-              this._root.fire({ type: 'redraw', data: info });
+          if (this.mode === 'radio') {
+              _.each(this.data, item => {
+                  if (item.ind !== info.ind) {
+                      item.enabled = false;
+                  } else {
+                      item.enabled = true;
+                  }
+              });
           }
+
+          if (this.mode === 'checkbox') {
+              info.enabled = !info.enabled;
+          }
+
+          if (info) {
+             // this._root.fire({ type: 'redraw', data: info });
+              this._root.fire({ type: 'legendchange', data: info });
+          }
+
       }
       dispose(group) {
           group = group || this.group;

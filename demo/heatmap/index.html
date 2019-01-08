@@ -136,6 +136,25 @@
             //content(e){ 
             // debugger   
             //}
+        },
+        legend:{
+            mode:'radio',
+            data:[{
+                color:'#385ACC',
+                name:'创意-定向',
+                face:'front',
+                enabled:true
+            },{
+                color:'#CC377C',
+                name:'创意-资源包',
+                face:'right',
+                enabled:false
+            },{
+                color:'#FA7836',
+                name:'资源包-定向',
+                face:'top',
+                enabled:false
+            }]
         }
           
     };
@@ -238,7 +257,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
                             </label>
                             <button class="btn btn-primary" onclick="resetData()">更新数据</button>
                         </div>
-                        <div id="canvasTest" style='width:800px;height:400px;position:relative;'></div>
+                        <div id="canvasTest" style='width:600px;height:400px;position:relative;'></div>
                     </div>
 
                 </div>

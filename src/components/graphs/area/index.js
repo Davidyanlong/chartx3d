@@ -5,8 +5,6 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 let renderOrder = 100;
 let __lastPosition = null;
 
-let __mousemove_areaEvent = null, __mouseout_areaEvent = null;
-
 class Area extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -91,26 +89,26 @@ class Area extends GraphObject {
 
             let thickness = Math.max(0.1, Math.min(boxDepth, this.area.thickness));
             //绘制区域
-            
-                points.unshift(points[0].clone().setY(0));
-                points.push(points[(points.length - 1)].clone().setY(0));
-                let polygon = app.createArea(points, thickness, { fillStyle: _color });
 
-                polygon.name = Area._area_prefix + field;
-                polygon.userData = fieldObj;
-                let posZ = points[0].z;
-                posZ = posZ - thickness * 0.5;
-                polygon.visible = !!this.area.enabled;
-                polygon.position.setZ(posZ);
-                this.group.add(polygon);
-           
+            points.unshift(points[0].clone().setY(0));
+            points.push(points[(points.length - 1)].clone().setY(0));
+            let polygon = app.createArea(points, thickness, { fillStyle: _color });
+
+            polygon.name = Area._area_prefix + field;
+            polygon.userData = fieldObj;
+            let posZ = points[0].z;
+            posZ = posZ - thickness * 0.5;
+            polygon.visible = !!this.area.enabled;
+            polygon.position.setZ(posZ);
+            this.group.add(polygon);
+
 
         }
         me.bindEvent();
     }
     bindEvent() {
 
-        __mousemove_areaEvent = (e) => {
+        this.__mousemove = (e) => {
             let currObj = e.intersects[0];
             let target = e.target;
             if (currObj) {
@@ -140,7 +138,7 @@ class Area extends GraphObject {
             }
         };
 
-        __mouseout_areaEvent = (e) => {
+        this.__mouseout = (e) => {
             if (this.textTempGroup) {
 
                 this.textTempGroup.traverse(item => {
@@ -162,8 +160,8 @@ class Area extends GraphObject {
 
         this.group.traverse(obj => {
             if (obj.name && obj.name.includes(Area._area_prefix)) {
-                obj.on('mousemove', __mousemove_areaEvent);
-                obj.on("mouseout", __mouseout_areaEvent);
+                obj.on('mousemove', this.__mousemove);
+                obj.on("mouseout", this.__mouseout);
             }
         })
     }
@@ -195,8 +193,8 @@ class Area extends GraphObject {
         group = group || this.group;
         group.traverse(obj => {
             if (obj.name && obj.name.includes(Area._area_prefix)) {
-                obj.off('mousemove', __mousemove_areaEvent);
-                obj.off("mouseout", __mouseout_areaEvent);
+                obj.off('mousemove', this.__mousemove);
+                obj.off("mouseout", this.__mouseout);
             }
         })
 

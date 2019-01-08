@@ -11,6 +11,8 @@ class Legend extends Component {
         this.name = "Legend";
         this.type = "legend3d";
 
+        this.mode = 'checkbox';  //checkbox  radio
+
         this.opt = opt;
 
         /* data的数据结构为
@@ -85,7 +87,7 @@ class Legend extends Component {
         var legendData = opt.data;
         if (legendData) {
             _.each(legendData, function (item, i) {
-                item.enabled = true;
+                item.enabled = 'enabled' in item ? item.enabled : true;
                 item.ind = i;
             });
             delete opt.data;
@@ -169,12 +171,11 @@ class Legend extends Component {
         }
         var viewWidth = currCoord.width - currCoord.padding.left - currCoord.padding.right - this.margin.left - this.margin.right;
         var viewHeight = currCoord.height - currCoord.padding.top - currCoord.padding.bottom - this.margin.top - this.margin.bottom;
-
+        this.dispose();
         var maxItemWidth = 0;
         var width = 0, height = 0;
         var x = 0, y = 0;
         var rows = 1;
-        this.dispose();
         var isOver = false; //如果legend过多
         __legend_clickEvent = this._getInfoHandler.bind(this);
         _.each(this.data, function (obj, i) {
@@ -292,10 +293,25 @@ class Legend extends Component {
 
     _getInfoHandler(e) {
         let info = e.target.parent.userData.info
-        if (info) {
-            info.enabled = !info.enabled;
-            this._root.fire({ type: 'redraw', data: info });
+        if (this.mode === 'radio') {
+            _.each(this.data, item => {
+                if (item.ind !== info.ind) {
+                    item.enabled = false;
+                } else {
+                    item.enabled = true;
+                }
+            })
         }
+
+        if (this.mode === 'checkbox') {
+            info.enabled = !info.enabled;
+        }
+
+        if (info) {
+           // this._root.fire({ type: 'redraw', data: info });
+            this._root.fire({ type: 'legendchange', data: info })
+        }
+
     }
     dispose(group) {
         group = group || this.group;

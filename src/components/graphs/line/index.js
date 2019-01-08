@@ -4,7 +4,6 @@ import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide,
 
 let renderOrder = 100;
 let __lastPosition = null;
-let __mousemove_lineEvent = null, __mouseout_lineEvent = null;
 class Line extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
@@ -146,7 +145,7 @@ class Line extends GraphObject {
         this.bindEvent();
     }
     bindEvent() {
-        __mousemove_lineEvent = (e) => {
+        this.__mousemove = (e) => {
             let currObj = e.intersects[0];
             let target = e.target;
             if (currObj) {
@@ -182,7 +181,7 @@ class Line extends GraphObject {
                 // console.log(currPoint);
             }
         };
-        __mouseout_lineEvent = (e) => {
+       this.__mouseout = (e) => {
             if (this.textTempGroup) {
 
                 // this.textTempGroup.traverse(item => {
@@ -201,8 +200,8 @@ class Line extends GraphObject {
             this.fire({ type: 'mouseout' });
         }
         this.areaGroup.traverse(obj => {
-            obj.on('mousemove', __mousemove_lineEvent);
-            obj.on("mouseout", __mouseout_lineEvent);
+            obj.on('mousemove', this.__mousemove);
+            obj.on("mouseout", this.__mouseout);
         })
 
         this.on('showLable', (e) => {
@@ -229,6 +228,13 @@ class Line extends GraphObject {
                 }
             })
         })
+    }
+    dispose(){
+        this.areaGroup.traverse(obj => {
+            obj.off('mousemove', this.__mousemove);
+            obj.off("mouseout", this.__mouseout);
+        });
+        super.dispose();
     }
     resetData() {
         this.dispose();

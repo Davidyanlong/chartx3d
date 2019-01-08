@@ -232,6 +232,17 @@ class CubeUI extends Component {
 
 
     }
+    dispose() {
+
+        for (let key in FaceNames) {
+            let name = FaceNames[key];
+            this.faceAxises[name].forEach(axis => {
+                axis.dispose();
+            });
+        }
+        this.faceAxises = null;
+        super.dispose(this.box);
+    }
     resetData() {
 
         for (let key in FaceNames) {

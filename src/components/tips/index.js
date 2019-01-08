@@ -49,6 +49,7 @@ class Tips extends Component {
         // });
         // var self = this;
         this.group.on("removed", () => {
+            this._removeContent();
             this._tipDom = null;
         });
         console.log('tips component loaded!');
@@ -156,6 +157,7 @@ class Tips extends Component {
         me._tipDom.style.cssText += "; -moz-box-shadow:1px 1px 3px " + me.strokeStyle + "; -webkit-box-shadow:1px 1px 3px " + me.strokeStyle + "; box-shadow:1px 1px 3px " + me.strokeStyle + ";"
         me._tipDom.style.cssText += "; border:none;white-space:nowrap;word-wrap:normal;"
         me._tipDom.style.cssText += "; text-align:left;"
+       
         me.tipDomContainer.appendChild(this._tipDom);
     }
 

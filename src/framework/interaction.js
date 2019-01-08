@@ -1,5 +1,5 @@
 import { Events, Raycaster, Vector2 } from 'mmgl/src/index';
-
+import { _ } from 'mmvis/src/index';
 class Interaction extends Events {
     constructor(view, domElement) {
         super();
@@ -47,7 +47,7 @@ class Interaction extends Events {
         //没有绑定事件的不往下计算
         if (intersects.length > 0) {
             intersects.forEach((item, i) => {
-                if (!item.object._listeners) {
+                if (_.isEmpty(item.object._listeners)) {
                     intersects.splice(i, 1);
                 }
             })

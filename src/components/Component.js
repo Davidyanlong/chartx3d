@@ -15,6 +15,13 @@ class Component extends Events {
         this.group = this._root.app.addGroup({
             name: this.constructor.name.toLowerCase() + '_root'
         });
+
+
+        this.__mouseover = null;
+        this.__mouseout = null;
+        this.__mousemove = null;
+        this.__click = null;
+
     }
     setGroupName(name) {
         this.group.name = name;
@@ -43,6 +50,10 @@ class Component extends Events {
             }
 
         }
+        this.__mouseover = null;
+        this.__mouseout = null;
+        this.__mousemove = null;
+        this.__click = null;
     }
     draw() {
         //基类不实现

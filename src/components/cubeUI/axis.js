@@ -150,6 +150,11 @@ class Axis extends Component {
         this._tickLine.draw();
         this._tickText.draw();
     }
+    dispose() {
+        this._tickLine.dispose();
+        this._tickText.dispose();
+        this.axisAttribute = null;
+    }
     resetData() {
         this._initData();
         this.axisAttribute = this._coordSystem.getAxisAttribute(this.field);
