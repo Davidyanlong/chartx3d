@@ -23961,9 +23961,11 @@ var Chartx3d = (function () {
                   if (this.textAlign === 'center') {
                       label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5));
                   }
+                  if (this.rotation !== 0) {
+                      label.material.rotation = _Math.degToRad(this.rotation);
+                      label.center.set(1, 0.5);
+                  }
 
-                  // label.material.rotation = _Math.degToRad(this.rotation);
-                  // label.center.set(1,0.5);
                   //旋转后的位置便宜
                   // if(this.rotation!==0){
                   //    let offsetX= label.userData.size[0] * 0.5 * Math.cos(_Math.degToRad(this.rotation));
@@ -28337,6 +28339,7 @@ var Chartx3d = (function () {
               rotation: 0,
               format: null,
               offset: 0,
+              maxLength: 0,
               textAlign: "center",       //水平方向对齐: left  right center 
               verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
               lineHeight: 1
@@ -28352,7 +28355,6 @@ var Chartx3d = (function () {
 
           //tickLine 的方向
           this._tickLineDir = null;
-
 
           _.extend(true, this, opt);
 
@@ -28399,13 +28401,35 @@ var Chartx3d = (function () {
           var res;
           if (_.isFunction(this.label.format)) {
               res = this.label.format.apply(this, arguments);
+
           } else {
+              if (this.label.maxLength > 0) {
+                  if (val.length > this.label.maxLength) {
+                      res = "";
+                      let i = 0;
+                      let l = val.length;
+                      while (l--) {
+                          if (i < this.label.maxLength) {
+                              res += (val + '').charAt(val.length - l);
+                              i++;
+                          } else {
+                              res += '\n';
+                              res += (val + '').charAt(val.length - l);
+                              i = 0;
+                          }
+
+
+                      }
+
+                  }
+              }
+
+          }
+          if (!res) {
               res = val;
           }
 
-          if (!res) {
-              res = val;
-          }        return res;
+          return res;
       }
       initModules() {
 
@@ -28727,7 +28751,7 @@ var Chartx3d = (function () {
           };
           //默认坐标系原点偏移
           //默认Y轴文字最大预留160,X轴文字最大100
-          this.offset = new Vector3(Math.min(160, this.width * 0.2), Math.min(100, this.height * 0.2), 0);
+          this.offset = new Vector3(Math.min(160, this.width * 0.1), Math.min(100, this.height * 0.1), 0);
           //this.offset.set(0,0,0);
           //构建的数据集
           this._attributes = [];
@@ -28749,26 +28773,29 @@ var Chartx3d = (function () {
                   layoutType: "peak", //"peak",  
                   label: {
                       textAlign: "center",       //水平方向对齐: left  right center 
-                      offset: 5
+                      offset: 2
                   }
               },
               yAxis: {
                   layoutType: "peak", //"peak",
                   label: {
                       textAlign: "right",
-                      offset: 5
+                      offset: 2
                   }
               },
               zAxis: {
                   layoutType: "peak",
                   label: {
                       textAlign: "center",
-                      offset: 5
+                      offset: 2
                   }
               }
           };
 
           opts.coord = _.extend(true, defaultCoord, opts.coord);
+          if (opts.coord.offset) {
+              this.offset.copy(opts.coord.offset);
+          }
           return opts;
       }
       init() {
@@ -29047,7 +29074,7 @@ var Chartx3d = (function () {
           this.zAxisAttribute.setDataSection();
           this.zAxisAttribute.calculateProps();
 
-          
+
 
           //UI组件resetData
           this._coordUI.resetData();

@@ -42,8 +42,8 @@
 
 
     //构建数据
-    let creatives=['创意A','创意B','创意C','创意D','创意E','创意F'];
-    let targets=['定向一','定向二','定向三','定向四','定向五','定向六','定向七','定向八','定向九','定向十','定向十一'];
+    let creatives=['创意A创意A创意A创意A','创意B创意B创意B创意B创意B','创意C','创意D','创意E','创意F'];
+    let targets=['定向一定向一定向一定向一定向一定向一','定向二','定向三','定向四','定向五','定向六','定向七','定向八','定向九','定向十','定向十一'];
     let resources=['资源包1','资源包2','资源包3','资源包4','资源包5','资源包6'];             
     let  data=  [];
 
@@ -59,10 +59,18 @@
             
             xAxis : {
                 field : "target",
+                label:{
+                    rotation:10,
+                    maxLength:6
+                 },
+               
                // dataSection:targets   
             },
             yAxis :{
                    field : "creative",
+                   label:{
+                    maxLength:10
+                   }
                  //  dataSection:creatives
                 },
             zAxis:{
@@ -140,7 +148,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
             }
 
             heatmap.currCoord.on('planeclick',(e)=>{
-                console.log(e);
+                alert(JSON.stringify(e.data.rowData));
             })
 
             function computeData(){
@@ -193,6 +201,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
                heatmap.resetData(data);
             }
 
+            
             </textarea></form>
             </td>
             <td style="padding:0 10px;" id="td-vr">

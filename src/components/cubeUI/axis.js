@@ -28,6 +28,7 @@ class Axis extends Component {
             rotation: 0,
             format: null,
             offset: 0,
+            maxLength: 0,
             textAlign: "center",       //水平方向对齐: left  right center 
             verticalAlign: 'bottom',  //垂直方向对齐 top bottom middle
             lineHeight: 1
@@ -43,7 +44,6 @@ class Axis extends Component {
 
         //tickLine 的方向
         this._tickLineDir = null;
-
 
         _.extend(true, this, opt);
 
@@ -90,13 +90,34 @@ class Axis extends Component {
         var res;
         if (_.isFunction(this.label.format)) {
             res = this.label.format.apply(this, arguments);
-        } else {
-            res = val
-        }
 
+        } else {
+            if (this.label.maxLength > 0) {
+                if (val.length > this.label.maxLength) {
+                    res = "";
+                    let i = 0;
+                    let l = val.length;
+                    while (l--) {
+                        if (i < this.label.maxLength) {
+                            res += (val + '').charAt(val.length - l);
+                            i++;
+                        } else {
+                            res += '\n';
+                            res += (val + '').charAt(val.length - l);
+                            i = 0;
+                        }
+
+
+                    }
+
+                }
+            }
+
+        }
         if (!res) {
             res = val;
-        };
+        }
+
         return res;
     }
     initModules() {

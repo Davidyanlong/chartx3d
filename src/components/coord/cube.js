@@ -48,7 +48,7 @@ class Cube extends InertialSystem {
         }
         //默认坐标系原点偏移
         //默认Y轴文字最大预留160,X轴文字最大100
-        this.offset = new Vector3(Math.min(160, this.width * 0.2), Math.min(100, this.height * 0.2), 0);
+        this.offset = new Vector3(Math.min(160, this.width * 0.1), Math.min(100, this.height * 0.1), 0);
         //this.offset.set(0,0,0);
         //构建的数据集
         this._attributes = [];
@@ -70,26 +70,29 @@ class Cube extends InertialSystem {
                 layoutType: "peak", //"peak",  
                 label: {
                     textAlign: "center",       //水平方向对齐: left  right center 
-                    offset: 5
+                    offset: 2
                 }
             },
             yAxis: {
                 layoutType: "peak", //"peak",
                 label: {
                     textAlign: "right",
-                    offset: 5
+                    offset: 2
                 }
             },
             zAxis: {
                 layoutType: "peak",
                 label: {
                     textAlign: "center",
-                    offset: 5
+                    offset: 2
                 }
             }
         };
 
         opts.coord = _.extend(true, defaultCoord, opts.coord);
+        if (opts.coord.offset) {
+            this.offset.copy(opts.coord.offset);
+        }
         return opts;
     }
     init() {
@@ -373,7 +376,7 @@ class Cube extends InertialSystem {
         this.zAxisAttribute.setDataSection();
         this.zAxisAttribute.calculateProps();
 
-        
+
 
         //UI组件resetData
         this._coordUI.resetData();

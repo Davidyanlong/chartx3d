@@ -110,9 +110,11 @@ class TickTexts extends Component {
                 if (this.textAlign === 'center') {
                     label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
                 }
+                if (this.rotation !== 0) {
+                    label.material.rotation = _Math.degToRad(this.rotation);
+                    label.center.set(1, 0.5);
+                }
 
-                // label.material.rotation = _Math.degToRad(this.rotation);
-                // label.center.set(1,0.5);
                 //旋转后的位置便宜
                 // if(this.rotation!==0){
                 //    let offsetX= label.userData.size[0] * 0.5 * Math.cos(_Math.degToRad(this.rotation));
