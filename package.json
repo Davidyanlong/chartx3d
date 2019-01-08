@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "mmgl": "0.0.42",
-    "mmvis": "0.0.37"
+    "mmvis": "0.0.38"
   },
   "scripts": {
     "rollup": "NODE_ENV=dev rollup -c",
