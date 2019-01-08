@@ -1,4 +1,4 @@
-import { _, dataFrame, global,  $ } from 'mmvis/src/index';
+import { _, dataFrame, global, $ } from 'mmvis/src/index';
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Cartesian3D } from './framework/coord/cartesian3d';
@@ -99,9 +99,13 @@ class Chart3d extends Events {
         _.extend(true, controls, controlOpts);
 
         //自动旋转时间
-        // window.setTimeout(() => {
-        //     controls.autoRotate = false;
-        // }, 15000);
+        if (controls.autoRotate) {
+            debugger
+            window.setTimeout(() => {
+                controls.autoRotate = false;
+            }, 15000);
+        }
+
 
         //如果发生交互停止自动旋转
         controls.on('start', onStart);
@@ -450,7 +454,7 @@ class Chart3d extends Events {
         this.off('redraw', __redraw);
 
         if (data) {
-            this.data= data;
+            this.data = data;
             //this._data = parse2MatrixData(data);
             this.dataFrame = this._initData(this.data, this.opt);
         };

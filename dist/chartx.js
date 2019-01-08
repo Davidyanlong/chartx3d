@@ -27538,9 +27538,13 @@ var Chartx3d = (function () {
           _.extend(true, controls, controlOpts);
 
           //自动旋转时间
-          // window.setTimeout(() => {
-          //     controls.autoRotate = false;
-          // }, 15000);
+          if (controls.autoRotate) {
+              debugger
+              window.setTimeout(() => {
+                  controls.autoRotate = false;
+              }, 15000);
+          }
+
 
           //如果发生交互停止自动旋转
           controls.on('start', onStart);
@@ -27886,7 +27890,7 @@ var Chartx3d = (function () {
           this.off('redraw', __redraw);
 
           if (data) {
-              this.data= data;
+              this.data = data;
               //this._data = parse2MatrixData(data);
               this.dataFrame = this._initData(this.data, this.opt);
           }        this.currCoord.resetData();
