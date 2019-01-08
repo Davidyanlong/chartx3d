@@ -186,7 +186,7 @@ class CubeUI extends Component {
                     color: '#FFFFFF'
                 });
             }
-            let geometry = new BoxGeometry(width, height, height);
+            let geometry = new BoxGeometry(width, height, depth);
             this.box = new Mesh(geometry, getBasicMaterial());
 
         }

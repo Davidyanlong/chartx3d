@@ -56,32 +56,33 @@ class Heatmap extends GraphObject {
 
         if (this.face === FaceNames.BACK) {
             this.group.rotateY(_Math.degToRad(180));
-            this.group.translateZ(height);
+            this.group.translateZ(depth);
             this.group.translateX(-width);
         }
 
         if (this.face === FaceNames.TOP) {
             this.group.rotateX(_Math.degToRad(-90));
-            this.group.translateY(-height);
+            this.group.translateY(-height * 0.5 - depth * 0.5);
+            this.group.translateZ(height * 0.5 - depth * 0.5);
         }
 
         if (this.face === FaceNames.BOTTOM) {
             this.group.rotateX(_Math.degToRad(90));
-            this.group.translateZ(height);
+            this.group.translateZ(depth);
         }
 
         if (this.face === FaceNames.RIGHT) {
             this.group.rotateY(_Math.degToRad(90));
 
-            this.group.translateX(-width * 0.5 - height * 0.5);
-            this.group.translateZ(height * 0.5);
+            this.group.translateX(-width * 0.5 - depth * 0.5);
+            this.group.translateZ(width * 0.5 - depth * 0.5);
 
         }
         if (this.face === FaceNames.LEFT) {
             this.group.rotateY(_Math.degToRad(-90));
 
             this.group.translateX(width * 0.5 - height * 0.5);
-            this.group.translateZ(height * 0.5 + width * 0.5);
+            this.group.translateZ(depth * 0.5 + width * 0.5);
 
         }
 
@@ -99,7 +100,7 @@ class Heatmap extends GraphObject {
         let dataFrame = this._root.dataFrame;
         this.drawData = [];
         let origin = this._coordSystem.getOriginPosition(this.face.toLowerCase());
-       
+
 
         if (this.face === FaceNames.FRONT) {
             data1 = xData.concat([]);
@@ -151,7 +152,7 @@ class Heatmap extends GraphObject {
                     [data1.attr.field]: xd.val,
                     [data2.attr.field]: yd.val
                 });
-                if(!rowDatas.length) return;
+                if (!rowDatas.length) return;
                 let score = rowDatas[0][this.field] || 1;
 
                 this.drawData.push({
@@ -311,7 +312,7 @@ class Heatmap extends GraphObject {
         texture.magFilter = LinearFilter;
         texture.anisotropy = 1;
         texture.needsUpdate = true;
-        
+
         let textMatrial = new MeshPhongMaterial({
             color: fontStyle.fillStyle,
             map: texture,

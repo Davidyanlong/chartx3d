@@ -112,7 +112,7 @@ class Cube extends InertialSystem {
 
         this.zAxisAttribute = new AxisAttribute(opt.zAxis, this.getAxisDataFrame(opt.zAxis.field));
         this.zAxisAttribute.setDataSection();
-        this.zAxisAttribute.setAxisLength(size.height);
+        this.zAxisAttribute.setAxisLength(size.depth);
 
         this._attributes.push(this.zAxisAttribute);
 
@@ -264,13 +264,12 @@ class Cube extends InertialSystem {
         return {
             width: width * this.availableGraph.widthRatio,
             height: height * this.availableGraph.heightRatio,
-            depth: height * this.availableGraph.heightRatio
+            depth: Math.min(width,height) * this.availableGraph.heightRatio
         }
     }
     getOriginPosition(dir) {
 
         let { width, height, depth } = this.getGraphAreaSize();
-
         let origin = new Vector3();
         dir = dir || this.getDirection();
         //正面
