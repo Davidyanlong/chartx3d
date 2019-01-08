@@ -900,7 +900,7 @@ function () {
           }
 
           if (arr.length == 1) {
-            arr.push(arr[0] * 2);
+            arr.push(arr[0] * .5);
           }
 
           if (this.waterLine) {
@@ -1703,7 +1703,7 @@ function dataFrame (data, opt) {
     }
 
     if (expCount) {
-      for (var i = dataFrame.range.start; i < dataFrame.range.end; i++) {
+      for (var i = dataFrame.range.start; i <= dataFrame.range.end; i++) {
         var matchNum = 0;
 
         _.each(dataFrame.data, function (fd) {
@@ -1740,7 +1740,7 @@ function dataFrame (data, opt) {
   return dataFrame;
 }
 
-var RESOLUTION = window.devicePixelRatio || 1;
+var RESOLUTION = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
 var addOrRmoveEventHand = function addOrRmoveEventHand(domHand, ieHand) {
   if (document[domHand]) {
@@ -1894,11 +1894,13 @@ var cloneData = function cloneData(data) {
 };
 
 var is3dOpt = function is3dOpt(opt) {
-  var chartx3dCoordTypes = ["box", "polar3d"];
+  var chartx3dCoordTypes = ["box", "polar3d", "cube"];
   return opt.coord && opt.coord.type && chartx3dCoordTypes.indexOf(opt.coord.type) > -1;
 };
 
 //图表皮肤
+var globalAnimationEnabled = true; //是否开启全局的动画开关
+
 var global = {
   create: function create(el, _data, _opt) {
     var chart = null;
@@ -2128,6 +2130,12 @@ var global = {
     var _comp = this._getComponentModules(dimension).modules[name];
 
     return _comp ? _comp[type] : undefined;
+  },
+  setAnimationEnabled: function setAnimationEnabled(bool) {
+    globalAnimationEnabled = bool;
+  },
+  getAnimationEnabled: function getAnimationEnabled(bool) {
+    return globalAnimationEnabled;
   }
 };
 
@@ -3031,7 +3039,7 @@ var CullFaceNone = 0;
 var CullFaceBack = 1;
 var CullFaceFront = 2;
 
-var FrontSide$1 = 0;
+var FrontSide = 0;
 var BackSide = 1;
 var DoubleSide = 2; //blending 
 
@@ -13540,7 +13548,7 @@ function (_Events) {
     _this.depthTest = true;
     _this.depthWrite = true;
     _this.blending = NormalBlending;
-    _this.side = FrontSide$1;
+    _this.side = FrontSide;
     _this.vertexColors = NoColors;
     _this.visible = true;
     _this.needsUpdate = true;
@@ -16055,7 +16063,7 @@ function (_BufferGeometry) {
   return CircleBufferGeometry;
 }(BufferGeometry);
 
-var PlaneGeometry$1 =
+var PlaneGeometry =
 /*#__PURE__*/
 function (_Geometry) {
   _inherits(PlaneGeometry, _Geometry);
@@ -20786,7 +20794,16 @@ var DUCK = {
   TOPLEFT: 'topLeft',
   TOPRIGHT: 'topRight',
   BOTTOMLEFT: 'bottomLeft',
-  BOTTOMRIGHT: 'bottomRight'
+  BOTTOMRIGHT: 'bottomRight' //立方体六个面的名称
+
+};
+var FaceNames = {
+  LEFT: 'left',
+  RIGHT: 'right',
+  TOP: 'top',
+  BOTTOM: 'bottom',
+  FRONT: 'front',
+  BACK: 'back'
 };
 
 var View =
@@ -20855,8 +20872,8 @@ function () {
     value: function project(mode) {
       this.mode = mode;
       var controlsOpts = this.controls;
-      var aspect = this.aspect;
-      var frustumSize = controlsOpts.boxHeight;
+      var aspect = this.aspect; //let frustumSize = controlsOpts.boxHeight;
+
       var distance = controlsOpts.distance;
 
       if (mode === 'perspective') {
@@ -20868,7 +20885,8 @@ function () {
         this._camera.position.set(0, 0, distance);
       } else {
         //给定一个大的投影空间,方便数据的计算
-        this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / -2, this.near, this.far);
+        //this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
+        this._camera = new OrthographicCamera(controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2, controlsOpts.boxHeight / 2, controlsOpts.boxHeight / -2, this.near, this.far);
 
         this._camera.position.set(0, 0, distance);
       } // console.info("getVisableSize", this.getVisableSize());
@@ -21224,7 +21242,9 @@ function () {
 }();
 
 var getBasicMaterial = function getBasicMaterial() {
-  return new MeshBasicMaterial$$1({});
+  return new MeshBasicMaterial$$1({
+    color: 0xffffff * Math.random()
+  });
 }; //基本图元
 
 
@@ -21322,7 +21342,9 @@ var primitive = {
     var width = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
     var height = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
     var materials = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-    var showInfo = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+    var showInfo = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {
+      dir: new Vector3()
+    };
     var group = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : undefined;
     var faceStyle = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : {};
 
@@ -21564,7 +21586,7 @@ var primitive = {
         color: faceStyle.fillStyle || 0xffffff * Math.random(),
         side: DoubleSide,
         transparent: true,
-        opacity: faceStyle.alpha || 0.5,
+        opacity: faceStyle.alpha || 0.2,
         // polygonOffset: true,
         // polygonOffsetFactor: 1,
         // polygonOffsetUnits: 0.1,
@@ -21788,6 +21810,109 @@ function (_Events) {
       return opts;
     }
   }, {
+    key: "init",
+    value: function init() {}
+  }, {
+    key: "addLights",
+    value: function addLights() {
+      //加入灯光
+      var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+
+      this._root.rootStage.add(ambientlight);
+
+      var center = this.center.clone();
+      center = this._getWorldPos(center); //center.setY(0);
+      //     let dirLights = [];
+
+      var intensity = 0.5;
+      var lightColor = 0xcccccc; //     let position = new Vector3(-1, -1, 1);
+      //     dirLights[0] = new DirectionalLight(lightColor, intensity);
+      //     position.multiplyScalar(10000);
+      //     dirLights[0].position.copy(position);
+      //     dirLights[0].target.position.copy(center);
+      //    // this._root.rootStage.add(dirLights[0]);
+      //     dirLights[1] = new DirectionalLight(lightColor, intensity);
+      //     position = new Vector3(1, -1, 1);
+      //     position.multiplyScalar(10000);
+      //     dirLights[1].position.copy(position);
+      //     dirLights[1].target.position.copy(center);
+      //     this._root.rootStage.add(dirLights[1]);
+      //     dirLights[2] = new DirectionalLight(lightColor, intensity);
+      //     position = new Vector3(-1, -1, -1);
+      //     position.multiplyScalar(10000);
+      //     dirLights[2].position.copy(position);
+      //     dirLights[2].target.position.copy(center);
+      //     this._root.rootStage.add(dirLights[2]);
+      //     dirLights[3] = new DirectionalLight(lightColor, intensity);
+      //     position = new Vector3(1, -1, -1);
+      //     position.multiplyScalar(10000);
+      //     dirLights[3].position.copy(position);
+      //     dirLights[3].target.position.copy(center);
+      //     this._root.rootStage.add(dirLights[3]);
+
+      var pointLight = [];
+      pointLight[0] = new PointLight(lightColor, intensity);
+      var position = new Vector3(-1, 1, 1);
+      position.multiplyScalar(10000);
+      pointLight[0].position.copy(position);
+
+      this._root.rootStage.add(pointLight[0]);
+
+      pointLight[1] = new PointLight(lightColor, intensity);
+      position = new Vector3(1, 1, 1);
+      position.multiplyScalar(10000);
+      pointLight[1].position.copy(position);
+
+      this._root.rootStage.add(pointLight[1]);
+
+      pointLight[2] = new PointLight(lightColor, intensity);
+      position = new Vector3(-1, 1, -1);
+      position.multiplyScalar(10000);
+      pointLight[2].position.copy(position);
+
+      this._root.rootStage.add(pointLight[2]);
+
+      pointLight[3] = new PointLight(lightColor, intensity);
+      position = new Vector3(1, 1, -1);
+      position.multiplyScalar(1000);
+      pointLight[3].position.copy(position);
+
+      this._root.rootStage.add(pointLight[3]);
+    }
+  }, {
+    key: "updatePosition",
+    value: function updatePosition(center) {
+      //更新相机姿态
+      center = center || this.center.clone();
+      center = this._getWorldPos(center);
+      var _renderView = this._root.renderView;
+      var _camera = _renderView._camera; //相机默认的旋转角度
+
+      var dist = _camera.position.distanceTo(center);
+
+      var phi = _Math.degToRad(_renderView.controls.alpha); //(90-lat)*(Math.PI/180),
+
+
+      var theta = _Math.degToRad(_renderView.controls.beta); // (lng+180)*(Math.PI/180),
+
+
+      var y = dist * Math.sin(phi);
+      var temp = dist * Math.cos(phi);
+      var x = temp * Math.sin(theta);
+      var z = temp * Math.cos(theta); //平移实现以中心点为圆心的旋转结果
+
+      var newPos = new Vector3(x, y, z);
+      newPos.add(center);
+
+      _camera.position.copy(newPos); //相机朝向中心点 
+
+
+      _camera.lookAt(center); //orbite target position
+
+
+      this._root.orbitControls.target.copy(center);
+    }
+  }, {
     key: "getEnabledFields",
     value: function getEnabledFields(fields) {
       if (fields) {
@@ -21928,10 +22053,9 @@ function (_Events) {
     value: function getBoundbox() {
       var _boundbox = new Box3();
 
-      var _opt = this._root.opt.coord.controls;
+      var _opt = this._root.opt.coord.controls; //let _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
 
-      var _frustumSize = this._root.renderView.mode == 'ortho' ? _opt.boxHeight * 0.8 : _opt.boxHeight;
-
+      var _height = _opt.boxHeight;
       var _width = _opt.boxWidth;
       var _depth = _opt.boxDepth; //斜边
 
@@ -21939,11 +22063,13 @@ function (_Events) {
 
       var _ratio = this._root.renderView.getVisableSize(new Vector3(0, 0, -_hypotenuse)).ratio;
 
-      var minX = -_width * 0.5 + this.padding.left * _ratio;
-      var minY = -_frustumSize * 0.5 + this.padding.bottom * _ratio;
+      var minX = -_width * 0.5 + this.padding.left * _ratio; // let minY = - _frustumSize * 0.5 + this.padding.bottom * _ratio;
+
+      var minY = -_height * 0.5 + this.padding.bottom * _ratio;
       var minZ = this.padding.front - _hypotenuse * 0.5 - _depth;
-      var maxX = _width * 0.5 - this.padding.right * _ratio;
-      var maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+      var maxX = _width * 0.5 - this.padding.right * _ratio; //let maxY = _frustumSize * 0.5 - this.padding.top * _ratio;
+
+      var maxY = _height * 0.5 - this.padding.top * _ratio;
       var maxZ = -_hypotenuse * 0.5 + this.padding.back;
 
       _boundbox.min.set(minX, minY, minZ);
@@ -21964,10 +22090,11 @@ function (_Events) {
   }, {
     key: "getSize",
     value: function getSize() {
-      if (this.boundbox) {
-        this.size = this.boundbox.getSize();
+      if (this.boundbox.isEmpty()) {
+        this.boundbox = this.getBoundbox();
       }
 
+      this.size = this.boundbox.getSize();
       return this.size;
     }
   }, {
@@ -21985,11 +22112,6 @@ function (_Events) {
   }, {
     key: "drawUI",
     value: function drawUI() {// this._root.initComponent();
-    }
-  }, {
-    key: "draw",
-    value: function draw() {
-      this._root.draw();
     }
   }, {
     key: "dispose",
@@ -22409,7 +22531,7 @@ function (_Component) {
     _this.texts = [];
     _this.fontColor = opts.fontColor || '#333';
     _this.fontSize = opts.fontSize || 12;
-    _this.rotation = 0;
+    _this.rotation = opts.rotation || 0;
     _this.origin = null;
     _this.textAlign = opts.textAlign;
     _this.verticalAlign = opts.verticalAlign;
@@ -22424,6 +22546,7 @@ function (_Component) {
     _this.group.add(_this._tickTextGroup);
 
     _this.labels = [];
+    _this.autoUpdataPostion = false;
     return _this;
   }
 
@@ -22496,48 +22619,80 @@ function (_Component) {
       });
       labels.forEach(function (label, index) {
         label.userData.position = me.origins[index].clone();
-        label.matrixWorldNeedsUpdate = false;
 
-        label.onBeforeRender = function (render, scene, camera) {
-          me.updataOrigins(); //更新坐标后的位置
+        if (me.autoUpdataPostion) {
+          var _dir = _this2._coordSystem.getDirection();
 
-          var pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+          label.position.copy(me.origins[index].clone());
 
-          this.userData.pos = pos.clone(); //屏幕的位置
-
-          var textSize = this.userData.size;
-          var halfwidth = textSize[0] * 0.5;
-          var halfHeight = textSize[1] * 0.5;
-          var camearDir = new Vector3();
-          camera.getWorldDirection(camearDir);
-          var isSameDir = zDir.dot(camearDir);
-
-          if (me.textAlign == 'right') {
-            var flag = isSameDir < 0 ? 1 : -1;
-            pos.setX(pos.x + halfwidth * flag);
-            label.position.copy(pos);
+          if (_this2.textAlign === 'right') {
+            // if (_dir === 'FRONT') {
+            //     label.position.sub(new Vector3(label.userData.size[0] * 0.5, 0, 0));
+            // }
+            // if (_dir === 'RIGHT') {
+            //     label.position.sub(new Vector3(0, 0, -label.userData.size[0] * 0.5))
+            // }
+            label.position.sub(_this2.dir.clone().multiplyScalar(-label.userData.size[0] * 0.5));
           }
 
-          if (me.textAlign == 'left') {
-            var _flag = isSameDir < 0 ? -1 : 1;
-
-            pos.setX(pos.x + halfwidth * _flag);
-            label.position.copy(pos);
+          if (_this2.textAlign === 'center') {
+            label.position.sub(_this2.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5));
           }
 
-          if (me.verticalAlign == 'top') {
-            pos.setY(pos.y - halfHeight);
-            label.position.copy(pos);
-          }
+          if (_this2.rotation !== 0) {
+            label.material.rotation = _Math.degToRad(_this2.rotation);
+            label.center.set(1, 0.5);
+          } //旋转后的位置便宜
+          // if(this.rotation!==0){
+          //    let offsetX= label.userData.size[0] * 0.5 * Math.cos(_Math.degToRad(this.rotation));
+          //    let offsetY= label.userData.size[0]* 0.5 * Math.sin(_Math.degToRad(this.rotation));
+          //    label.position.sub(new Vector3(offsetX,offsetY,0));
+          // }
 
-          if (me.verticalAlign == 'bottom') {
-            pos.setY(pos.y + halfHeight);
-            label.position.copy(pos);
-          }
+        } else {
+          label.matrixWorldNeedsUpdate = false;
 
-          this.position.copy(pos);
-          this.updateMatrixWorld(true);
-        };
+          label.onBeforeRender = function (render, scene, camera) {
+            me.updataOrigins(); //更新坐标后的位置
+
+            var pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
+
+            this.userData.pos = pos.clone(); //屏幕的位置
+
+            var textSize = this.userData.size;
+            var halfwidth = textSize[0] * 0.5;
+            var halfHeight = textSize[1] * 0.5;
+            var camearDir = new Vector3();
+            camera.getWorldDirection(camearDir);
+            var isSameDir = zDir.dot(camearDir);
+
+            if (me.textAlign == 'right') {
+              var flag = isSameDir < 0 ? 1 : -1;
+              pos.setX(pos.x + halfwidth * flag);
+              label.position.copy(pos);
+            }
+
+            if (me.textAlign == 'left') {
+              var _flag = isSameDir < 0 ? -1 : 1;
+
+              pos.setX(pos.x + halfwidth * _flag);
+              label.position.copy(pos);
+            }
+
+            if (me.verticalAlign == 'top') {
+              pos.setY(pos.y - halfHeight);
+              label.position.copy(pos);
+            }
+
+            if (me.verticalAlign == 'bottom') {
+              pos.setY(pos.y + halfHeight);
+              label.position.copy(pos);
+            }
+
+            this.position.copy(pos);
+            this.updateMatrixWorld(true);
+          };
+        }
 
         me._tickTextGroup.add(label);
 
@@ -22620,11 +22775,11 @@ function numAddSymbol($n, $s) {
 } //从一堆点中找到最近的一个点
 
 
-function findNearPoint(points, point) {
+function findNearPointX(points, point) {
   var minDistance = Infinity;
   var result = new Vector3();
   points.forEach(function (p) {
-    var distance = point.distanceTo(p);
+    var distance = Math.abs(point.x - p.x);
 
     if (minDistance > distance) {
       minDistance = distance;
@@ -22632,6 +22787,17 @@ function findNearPoint(points, point) {
     }
   });
   return result;
+}
+/** 
+* 
+* @param hex 例如:"#23ff45" 
+* @param opacity 透明度 
+* @returns {string} 
+*/
+
+
+function hexToRgba(hex, opacity) {
+  return "rgba(" + parseInt("0x" + hex.slice(1, 3)) + "," + parseInt("0x" + hex.slice(3, 5)) + "," + parseInt("0x" + hex.slice(5, 7)) + "," + opacity + ")";
 }
 
 var YAxis =
@@ -24310,6 +24476,7 @@ function (_Axis) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(AxisAttribute).call(this, opt, dataOrg));
     _this.field = opt.field || null;
+    _this.exclude = opt.exclude || '';
 
     if ("middleweight" in opt) {
       _this.setMiddleweight(opt.middleweight);
@@ -24322,11 +24489,19 @@ function (_Axis) {
   _createClass(AxisAttribute, [{
     key: "setDataSection",
     value: function setDataSection(dataSection$$1) {
+      var _this2 = this;
+
       _get(_getPrototypeOf(AxisAttribute.prototype), "setDataSection", this).call(this, dataSection$$1);
 
       if (this.layoutType !== 'proportion') {
         this.dataSection = _.uniq(this.dataSection); //this._getDataSection();
+        //空数据需要去除
 
+        this.dataSection.forEach(function (item, i) {
+          if (item === _this2.exclude) {
+            _this2.dataSection.splice(i, 1);
+          }
+        });
         this.dataSectionGroup = [this.dataSection];
       }
     }
@@ -24357,7 +24532,7 @@ function (_Axis) {
   }, {
     key: "getPartDataOrg",
     value: function getPartDataOrg(fields) {
-      var _this2 = this;
+      var _this3 = this;
 
       var result = [];
 
@@ -24370,7 +24545,7 @@ function (_Axis) {
       _fieldArr.forEach(function (field) {
         var index$$1 = _.indexOf(map, field.toString());
 
-        result.push(_this2.dataOrg[index$$1]);
+        result.push(_this3.dataOrg[index$$1]);
       });
 
       return result;
@@ -24885,40 +25060,30 @@ function (_InertialSystem) {
       this.boundbox = this.getBoundbox();
       this.setWorldOrigin();
       this.updatePosition();
-    }
-  }, {
-    key: "updatePosition",
-    value: function updatePosition() {
-      //更新相机姿态
-      var center = this.center.clone();
-      center = this._getWorldPos(center);
-      var _renderView = this._root.renderView;
-      var _camera = _renderView._camera; //相机默认的旋转角度
+    } // updatePosition() {
+    //     //更新相机姿态
+    //     let center = this.center.clone();
+    //     center = this._getWorldPos(center);
+    //     let _renderView = this._root.renderView;
+    //     let _camera = _renderView._camera;
+    //     //相机默认的旋转角度
+    //     let dist = _camera.position.distanceTo(center);
+    //     let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
+    //     let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
+    //     let y = dist * Math.sin(phi);
+    //     let temp = dist * Math.cos(phi);
+    //     let x = temp * Math.sin(theta);
+    //     let z = temp * Math.cos(theta);
+    //     //平移实现以中心点为圆心的旋转结果
+    //     let newPos = new Vector3(x, y, z);
+    //     newPos.add(center);
+    //     _camera.position.copy(newPos);
+    //     //相机朝向中心点 
+    //     _camera.lookAt(center);
+    //     //orbite target position
+    //     this._root.orbitControls.target.copy(center);
+    // }
 
-      var dist = _camera.position.distanceTo(center);
-
-      var phi = _Math.degToRad(_renderView.controls.alpha); //(90-lat)*(Math.PI/180),
-
-
-      var theta = _Math.degToRad(_renderView.controls.beta); // (lng+180)*(Math.PI/180),
-
-
-      var y = dist * Math.sin(phi);
-      var temp = dist * Math.cos(phi);
-      var x = temp * Math.sin(theta);
-      var z = temp * Math.cos(theta); //平移实现以中心点为圆心的旋转结果
-
-      var newPos = new Vector3(x, y, z);
-      newPos.add(center);
-
-      _camera.position.copy(newPos); //相机朝向中心点 
-
-
-      _camera.lookAt(center); //orbite target position
-
-
-      this._root.orbitControls.target.copy(center);
-    }
   }, {
     key: "addLights",
     value: function addLights() {
@@ -25044,9 +25209,8 @@ function (_InertialSystem) {
           var dx = e.event.offsetX;
           var dy = e.event.offsetY;
 
-          var pos = _this4.screenToWorld(dx, dy);
+          var pos = _this4.screenToWorld(dx, dy); // console.log(dx, dy, pos);
 
-          console.log(dx, dy, pos);
         });
       }
     }
@@ -25875,7 +26039,16 @@ function (_Events) {
 
       this.raycaster.setFromCamera(this.currMousePos, this.camera); // calculate objects intersecting the picking ray
 
-      var intersects = this.raycaster.intersectObjects(this.scene.children, true);
+      var intersects = this.raycaster.intersectObjects(this.scene.children, true); //console.log(intersects.length)
+      //没有绑定事件的不往下计算
+
+      if (intersects.length > 0) {
+        intersects.forEach(function (item, i) {
+          if (!item.object._listeners) {
+            intersects.splice(i, 1);
+          }
+        });
+      }
 
       if (intersects.length > 0) {
         // if (this.camera.type === "OrthographicCamera") {
@@ -26099,20 +26272,22 @@ function (_Events) {
 
       var controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
       var interaction = this.interaction = new Interaction(this.renderView, this.view);
-      var interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
-      controls.minDistance = controlOpts.minDistance;
-      controls.maxDistance = controlOpts.maxDistance;
-      controls.minZoom = controlOpts.minZoom;
-      controls.maxZoom = controlOpts.maxZoom;
-      controls.enableDamping = true;
-      controls.enablePan = false;
-      controls.enableKeys = false;
-      controls.autoRotate = controlOpts.autoRotate;
-      controls.autoRotateSpeed = 1.0; //自动旋转时间
+      var interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view); // controls.minDistance = controlOpts.minDistance;
+      // controls.maxDistance = controlOpts.maxDistance;
+      // controls.minZoom = controlOpts.minZoom;
+      // controls.maxZoom = controlOpts.maxZoom;
+      // controls.enableDamping = true;
+      // controls.enablePan = false;
+      // controls.enableKeys = false;
+      // controls.autoRotate = controlOpts.autoRotate;
+      // controls.autoRotateSpeed = 1.0;
+
+      _.extend(true, controls, controlOpts); //自动旋转时间
       // window.setTimeout(() => {
       //     controls.autoRotate = false;
       // }, 15000);
       //如果发生交互停止自动旋转
+
 
       controls.on('start', onStart); //有交互开始渲染
 
@@ -26599,6 +26774,10 @@ function (_Cartesian3D) {
       //正交投影缩小的最小值
       maxZoom: 1.5,
       //正交投影放大的最大值
+      enableDamping: true,
+      enablePan: false,
+      enableKeys: false,
+      autoRotateSpeed: 1.0,
       alpha: 10,
       //绕X轴旋转
       beta: 40,
@@ -26781,107 +26960,86 @@ function (_InertialSystem) {
     value: function getBoundbox() {
       this.boundbox = _get(_getPrototypeOf(Cylindrical.prototype), "getBoundbox", this).call(this);
       return this.boundbox;
-    }
-  }, {
-    key: "addLights",
-    value: function addLights() {
-      //加入灯光
-      var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+    } // addLights() {
+    //     //加入灯光
+    //     var ambientlight = new AmbientLight(0xffffff, 0.8); // soft white light
+    //     this._root.rootStage.add(ambientlight);
+    //     let center = this.center.clone();
+    //     center = this._getWorldPos(center);
+    //     //center.setY(0);
+    //     //     let dirLights = [];
+    //     let intensity = 0.5;
+    //     let lightColor = 0xcccccc;
+    //     //     let position = new Vector3(-1, -1, 1);
+    //     //     dirLights[0] = new DirectionalLight(lightColor, intensity);
+    //     //     position.multiplyScalar(10000);
+    //     //     dirLights[0].position.copy(position);
+    //     //     dirLights[0].target.position.copy(center);
+    //     //    // this._root.rootStage.add(dirLights[0]);
+    //     //     dirLights[1] = new DirectionalLight(lightColor, intensity);
+    //     //     position = new Vector3(1, -1, 1);
+    //     //     position.multiplyScalar(10000);
+    //     //     dirLights[1].position.copy(position);
+    //     //     dirLights[1].target.position.copy(center);
+    //     //     this._root.rootStage.add(dirLights[1]);
+    //     //     dirLights[2] = new DirectionalLight(lightColor, intensity);
+    //     //     position = new Vector3(-1, -1, -1);
+    //     //     position.multiplyScalar(10000);
+    //     //     dirLights[2].position.copy(position);
+    //     //     dirLights[2].target.position.copy(center);
+    //     //     this._root.rootStage.add(dirLights[2]);
+    //     //     dirLights[3] = new DirectionalLight(lightColor, intensity);
+    //     //     position = new Vector3(1, -1, -1);
+    //     //     position.multiplyScalar(10000);
+    //     //     dirLights[3].position.copy(position);
+    //     //     dirLights[3].target.position.copy(center);
+    //     //     this._root.rootStage.add(dirLights[3]);
+    //     let pointLight = [];
+    //     pointLight[0] = new PointLight(lightColor, intensity);
+    //     let position = new Vector3(-1, 1, 1);
+    //     position.multiplyScalar(10000);
+    //     pointLight[0].position.copy(position);
+    //     this._root.rootStage.add(pointLight[0]);
+    //     pointLight[1] = new PointLight(lightColor, intensity);
+    //     position = new Vector3(1, 1, 1);
+    //     position.multiplyScalar(10000);
+    //     pointLight[1].position.copy(position);
+    //     this._root.rootStage.add(pointLight[1]);
+    //     pointLight[2] = new PointLight(lightColor, intensity);
+    //     position = new Vector3(-1, 1, -1);
+    //     position.multiplyScalar(10000);
+    //     pointLight[2].position.copy(position);
+    //     this._root.rootStage.add(pointLight[2]);
+    //     pointLight[3] = new PointLight(lightColor, intensity);
+    //     position = new Vector3(1, 1, -1);
+    //     position.multiplyScalar(1000);
+    //     pointLight[3].position.copy(position);
+    //     this._root.rootStage.add(pointLight[3]);
+    // }
+    // updatePosition() {
+    //     //更新相机姿态
+    //     let center = this.center.clone();
+    //     center = this._getWorldPos(center);
+    //     let _renderView = this._root.renderView;
+    //     let _camera = _renderView._camera;
+    //     //相机默认的旋转角度
+    //     let dist = _camera.position.distanceTo(center);
+    //     let phi = _Math.degToRad(_renderView.controls.alpha);   //(90-lat)*(Math.PI/180),
+    //     let theta = _Math.degToRad(_renderView.controls.beta);   // (lng+180)*(Math.PI/180),
+    //     let y = dist * Math.sin(phi);
+    //     let temp = dist * Math.cos(phi);
+    //     let x = temp * Math.sin(theta);
+    //     let z = temp * Math.cos(theta);
+    //     //平移实现以中心点为圆心的旋转结果
+    //     let newPos = new Vector3(x, y, z);
+    //     newPos.add(center);
+    //     _camera.position.copy(newPos);
+    //     //相机朝向中心点 
+    //     _camera.lookAt(center);
+    //     //orbite target position
+    //     this._root.orbitControls.target.copy(center);
+    // }
 
-      this._root.rootStage.add(ambientlight);
-
-      var center = this.center.clone();
-      center = this._getWorldPos(center); //center.setY(0);
-      //     let dirLights = [];
-
-      var intensity = 0.5;
-      var lightColor = 0xcccccc; //     let position = new Vector3(-1, -1, 1);
-      //     dirLights[0] = new DirectionalLight(lightColor, intensity);
-      //     position.multiplyScalar(10000);
-      //     dirLights[0].position.copy(position);
-      //     dirLights[0].target.position.copy(center);
-      //    // this._root.rootStage.add(dirLights[0]);
-      //     dirLights[1] = new DirectionalLight(lightColor, intensity);
-      //     position = new Vector3(1, -1, 1);
-      //     position.multiplyScalar(10000);
-      //     dirLights[1].position.copy(position);
-      //     dirLights[1].target.position.copy(center);
-      //     this._root.rootStage.add(dirLights[1]);
-      //     dirLights[2] = new DirectionalLight(lightColor, intensity);
-      //     position = new Vector3(-1, -1, -1);
-      //     position.multiplyScalar(10000);
-      //     dirLights[2].position.copy(position);
-      //     dirLights[2].target.position.copy(center);
-      //     this._root.rootStage.add(dirLights[2]);
-      //     dirLights[3] = new DirectionalLight(lightColor, intensity);
-      //     position = new Vector3(1, -1, -1);
-      //     position.multiplyScalar(10000);
-      //     dirLights[3].position.copy(position);
-      //     dirLights[3].target.position.copy(center);
-      //     this._root.rootStage.add(dirLights[3]);
-
-      var pointLight = [];
-      pointLight[0] = new PointLight(lightColor, intensity);
-      var position = new Vector3(-1, 1, 1);
-      position.multiplyScalar(10000);
-      pointLight[0].position.copy(position);
-
-      this._root.rootStage.add(pointLight[0]);
-
-      pointLight[1] = new PointLight(lightColor, intensity);
-      position = new Vector3(1, 1, 1);
-      position.multiplyScalar(10000);
-      pointLight[1].position.copy(position);
-
-      this._root.rootStage.add(pointLight[1]);
-
-      pointLight[2] = new PointLight(lightColor, intensity);
-      position = new Vector3(-1, 1, -1);
-      position.multiplyScalar(10000);
-      pointLight[2].position.copy(position);
-
-      this._root.rootStage.add(pointLight[2]);
-
-      pointLight[3] = new PointLight(lightColor, intensity);
-      position = new Vector3(1, 1, -1);
-      position.multiplyScalar(1000);
-      pointLight[3].position.copy(position);
-
-      this._root.rootStage.add(pointLight[3]);
-    }
-  }, {
-    key: "updatePosition",
-    value: function updatePosition() {
-      //更新相机姿态
-      var center = this.center.clone();
-      center = this._getWorldPos(center);
-      var _renderView = this._root.renderView;
-      var _camera = _renderView._camera; //相机默认的旋转角度
-
-      var dist = _camera.position.distanceTo(center);
-
-      var phi = _Math.degToRad(_renderView.controls.alpha); //(90-lat)*(Math.PI/180),
-
-
-      var theta = _Math.degToRad(_renderView.controls.beta); // (lng+180)*(Math.PI/180),
-
-
-      var y = dist * Math.sin(phi);
-      var temp = dist * Math.cos(phi);
-      var x = temp * Math.sin(theta);
-      var z = temp * Math.cos(theta); //平移实现以中心点为圆心的旋转结果
-
-      var newPos = new Vector3(x, y, z);
-      newPos.add(center);
-
-      _camera.position.copy(newPos); //相机朝向中心点 
-
-
-      _camera.lookAt(center); //orbite target position
-
-
-      this._root.orbitControls.target.copy(center);
-    }
   }, {
     key: "getQuadrantByDir",
     value: function getQuadrantByDir(dir) {
@@ -26954,6 +27112,938 @@ function (_Cylindrical) {
 
   return Polar3D;
 }(Cylindrical);
+
+var Axis =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Axis, _Component);
+
+  function Axis(_cubeUI, opt) {
+    var _this;
+
+    _classCallCheck(this, Axis);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Axis).call(this, _cubeUI._coordSystem));
+    _this.name = 'Axis';
+    _this._cubeUI = _cubeUI;
+    _this.enabled = true;
+    _this.tickLine = {
+      enabled: 1,
+      lineWidth: 1,
+      //线宽像素
+      lineLength: 5,
+      //线长(空间单位)
+      strokeStyle: '#333',
+      offset: 0 //空间单位
+
+    };
+    _this.label = {
+      enabled: 1,
+      fontColor: '#333',
+      fontSize: 12,
+      rotation: 0,
+      format: null,
+      offset: 0,
+      maxLength: 0,
+      textAlign: "center",
+      //水平方向对齐: left  right center 
+      verticalAlign: 'bottom',
+      //垂直方向对齐 top bottom middle
+      lineHeight: 1
+    }; //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
+
+    _this.filter = null; //function(params){}; 
+    //原点
+
+    _this._origin = null; //轴的方向
+
+    _this._axisDir = null; //tickLine 的方向
+
+    _this._tickLineDir = null;
+
+    _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+
+    _this.axisAttribute = _this._coordSystem.getAxisAttribute(opt.field); //默认不显示
+
+    _this.group.visible = false;
+
+    _this.init();
+
+    return _this;
+  }
+
+  _createClass(Axis, [{
+    key: "setVisibel",
+    value: function setVisibel(val) {
+      this.group.visible = !!val;
+    }
+  }, {
+    key: "setOrigin",
+    value: function setOrigin(pos) {
+      this._origin = pos;
+    }
+  }, {
+    key: "setAxisDir",
+    value: function setAxisDir(dir) {
+      this._axisDir = dir;
+    }
+  }, {
+    key: "setTickLineDir",
+    value: function setTickLineDir(dir) {
+      this._tickLineDir = dir;
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      this._initData();
+    }
+  }, {
+    key: "_initData",
+    value: function _initData() {
+      var _this2 = this;
+
+      this.field = this.axisAttribute.field;
+      this.dataSection = this.axisAttribute.dataSection;
+      this._formatTextSection = [];
+      this._textElements = [];
+      this.dataSection.forEach(function (val, i) {
+        _this2._formatTextSection[i] = _this2._getFormatText(val, i);
+      });
+    }
+  }, {
+    key: "_getFormatText",
+    value: function _getFormatText(val, i) {
+      var res;
+
+      if (_.isFunction(this.label.format)) {
+        res = this.label.format.apply(this, arguments);
+      } else {
+        if (this.label.maxLength > 0) {
+          if (val.length > this.label.maxLength) {
+            res = "";
+            var _i = 0;
+            var l = val.length;
+
+            while (l--) {
+              if (_i < this.label.maxLength) {
+                res += (val + '').charAt(val.length - l);
+                _i++;
+              } else {
+                res += '\n';
+                res += (val + '').charAt(val.length - l);
+                _i = 0;
+              }
+            }
+          }
+        }
+      }
+
+      if (!res) {
+        res = val;
+      }
+
+      return res;
+    }
+  }, {
+    key: "initModules",
+    value: function initModules() {
+      var _coordSystem = this._coordSystem;
+      this._tickLine = new TickLines(_coordSystem, this.tickLine);
+
+      this._tickLine.setDir(this._tickLineDir);
+
+      this._tickLine.initData({
+        dir: this._axisDir,
+        origin: this._origin
+      }, this.axisAttribute);
+
+      this._tickLine.drawStart();
+
+      this.group.add(this._tickLine.group); //初始化tickText
+
+      var opt = _.clone(this.label);
+
+      opt.offset = this._tickLineDir.clone().multiplyScalar(opt.offset);
+      this._tickText = new TickTexts(_coordSystem, opt);
+
+      this._tickText.offset.add(this._tickLineDir.clone().multiplyScalar(this.tickLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset));
+
+      this._tickText.setDir(this._tickLineDir);
+
+      this._tickText.initData({
+        dir: this._axisDir,
+        origin: this._origin
+      }, this.axisAttribute);
+
+      this._tickText.autoUpdataPostion = true;
+
+      this._tickText.drawStart(this._formatTextSection);
+
+      this.group.add(this._tickText.group);
+    }
+  }, {
+    key: "draw",
+    value: function draw() {
+      this._tickLine.draw();
+
+      this._tickText.draw();
+    }
+  }, {
+    key: "resetData",
+    value: function resetData() {
+      this._initData();
+
+      this.axisAttribute = this._coordSystem.getAxisAttribute(this.field);
+
+      this._tickLine.resetData({
+        dir: this._axisDir,
+        origin: this._origin
+      }, this.axisAttribute);
+
+      this._tickText.resetData({
+        dir: this._axisDir,
+        origin: this._origin
+      }, this.axisAttribute, this._formatTextSection);
+
+      this._tickText.autoUpdataPostion = true;
+    }
+  }]);
+
+  return Axis;
+}(Component);
+
+var CubeUI =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(CubeUI, _Component);
+
+  function CubeUI(_coordSystem) {
+    var _this;
+
+    _classCallCheck(this, CubeUI);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(CubeUI).call(this, _coordSystem));
+    _this.name = 'CubeUI';
+    _this.faceAxises = {};
+
+    for (var key in FaceNames) {
+      _this.faceAxises[FaceNames[key]] = [];
+    }
+
+    _this.init();
+
+    return _this;
+  }
+
+  _createClass(CubeUI, [{
+    key: "init",
+    value: function init() {
+      this._initModules();
+    }
+  }, {
+    key: "_initModules",
+    value: function _initModules() {
+      var _coordSystem = this._coordSystem;
+      var opt = null;
+      var axises = this.faceAxises; //_dir === 'FRONT'
+
+      {
+        var origin = _coordSystem.getOriginPosition(FaceNames.FRONT); //初始化X轴
+
+
+        opt = _.clone(_coordSystem.coord.xAxis);
+        var xAxis = new Axis(this, opt);
+        xAxis.setOrigin(origin.clone());
+        xAxis.setAxisDir(new Vector3(1, 0, 0));
+        xAxis.setTickLineDir(new Vector3(0, -1, 0));
+        xAxis.initModules();
+        this.group.add(xAxis.group);
+        axises[FaceNames.FRONT].push(xAxis); //初始化Y轴
+
+        opt = _.clone(_coordSystem.coord.yAxis);
+        var yAxis = new Axis(this, opt);
+        yAxis.setOrigin(origin.clone());
+        yAxis.setAxisDir(new Vector3(0, 1, 0));
+        yAxis.setTickLineDir(new Vector3(-1, 0, 0));
+        yAxis.initModules();
+        this.group.add(yAxis.group);
+        axises[FaceNames.FRONT].push(yAxis);
+      } //_dir === 'BACK'
+
+      {
+        var _origin = _coordSystem.getOriginPosition(FaceNames.BACK); //初始化X轴
+
+
+        opt = _.clone(_coordSystem.coord.xAxis);
+
+        var _xAxis = new Axis(this, opt);
+
+        _xAxis.setOrigin(_origin.clone());
+
+        _xAxis.setAxisDir(new Vector3(-1, 0, 0));
+
+        _xAxis.setTickLineDir(new Vector3(0, -1, 0));
+
+        _xAxis.initModules();
+
+        this.group.add(_xAxis.group);
+        axises[FaceNames.BACK].push(_xAxis); //初始化Y轴
+
+        opt = _.clone(_coordSystem.coord.yAxis);
+
+        var _yAxis = new Axis(this, opt);
+
+        _yAxis.setOrigin(_origin.clone());
+
+        _yAxis.setAxisDir(new Vector3(0, 1, 0));
+
+        _yAxis.setTickLineDir(new Vector3(1, 0, 0));
+
+        _yAxis.initModules();
+
+        this.group.add(_yAxis.group);
+        axises[FaceNames.BACK].push(_yAxis);
+      } //_dir === 'LEFT'
+
+      {
+        var _origin2 = _coordSystem.getOriginPosition(FaceNames.LEFT); //初始化X轴 实际为Z轴
+
+
+        opt = _.clone(_coordSystem.coord.zAxis);
+
+        var _xAxis2 = new Axis(this, opt);
+
+        _xAxis2.setOrigin(_origin2.clone());
+
+        _xAxis2.setAxisDir(new Vector3(0, 0, 1));
+
+        _xAxis2.setTickLineDir(new Vector3(0, -1, 0));
+
+        _xAxis2.initModules();
+
+        this.group.add(_xAxis2.group);
+        axises[FaceNames.LEFT].push(_xAxis2); //初始化Y轴
+
+        opt = _.clone(_coordSystem.coord.yAxis);
+        opt.label.textAlign = 'right';
+
+        var _yAxis2 = new Axis(this, opt);
+
+        _yAxis2.setOrigin(_origin2.clone());
+
+        _yAxis2.setAxisDir(new Vector3(0, 1, 0));
+
+        _yAxis2.setTickLineDir(new Vector3(0, 0, -1));
+
+        _yAxis2.initModules();
+
+        this.group.add(_yAxis2.group);
+        axises[FaceNames.LEFT].push(_yAxis2);
+      } //_dir === 'RIGHT'
+
+      {
+        var _origin3 = _coordSystem.getOriginPosition(FaceNames.RIGHT); //初始化X轴 实际为Z轴
+
+
+        opt = _.clone(_coordSystem.coord.zAxis);
+
+        var _xAxis3 = new Axis(this, opt);
+
+        _xAxis3.setOrigin(_origin3.clone());
+
+        _xAxis3.setAxisDir(new Vector3(0, 0, -1));
+
+        _xAxis3.setTickLineDir(new Vector3(0, -1, 0));
+
+        _xAxis3.initModules();
+
+        this.group.add(_xAxis3.group);
+        axises[FaceNames.RIGHT].push(_xAxis3); //初始化Y轴
+
+        opt = _.clone(_coordSystem.coord.yAxis);
+
+        var _yAxis3 = new Axis(this, opt);
+
+        _yAxis3.setOrigin(_origin3.clone());
+
+        _yAxis3.setAxisDir(new Vector3(0, 1, 0));
+
+        _yAxis3.setTickLineDir(new Vector3(0, 0, 1));
+
+        _yAxis3.initModules();
+
+        this.group.add(_yAxis3.group);
+        axises[FaceNames.RIGHT].push(_yAxis3);
+      } //_dir === 'TOP'
+
+      {
+        var _origin4 = _coordSystem.getOriginPosition(FaceNames.TOP); //初始化X轴
+
+
+        opt = _.clone(_coordSystem.coord.xAxis);
+
+        var _xAxis4 = new Axis(this, opt);
+
+        _xAxis4.setOrigin(_origin4.clone());
+
+        _xAxis4.setAxisDir(new Vector3(1, 0, 0));
+
+        _xAxis4.setTickLineDir(new Vector3(0, 0, 1));
+
+        _xAxis4.initModules();
+
+        this.group.add(_xAxis4.group);
+        axises[FaceNames.TOP].push(_xAxis4); //初始化Y轴 实际为Z轴
+
+        opt = _.clone(_coordSystem.coord.zAxis);
+        opt.label.textAlign = 'right';
+
+        var _yAxis4 = new Axis(this, opt);
+
+        _yAxis4.setOrigin(_origin4.clone());
+
+        _yAxis4.setAxisDir(new Vector3(0, 0, -1));
+
+        _yAxis4.setTickLineDir(new Vector3(-1, 0, 0));
+
+        _yAxis4.initModules();
+
+        this.group.add(_yAxis4.group);
+        axises[FaceNames.TOP].push(_yAxis4);
+      } //_dir === 'BOTTOM'
+
+      {
+        var _origin5 = _coordSystem.getOriginPosition(FaceNames.BOTTOM); //初始化X轴
+
+
+        opt = _.clone(_coordSystem.coord.xAxis);
+
+        var _xAxis5 = new Axis(this, opt);
+
+        _xAxis5.setOrigin(_origin5.clone());
+
+        _xAxis5.setAxisDir(new Vector3(1, 0, 0));
+
+        _xAxis5.setTickLineDir(new Vector3(0, 0, -1));
+
+        _xAxis5.initModules();
+
+        this.group.add(_xAxis5.group);
+        axises[FaceNames.BOTTOM].push(_xAxis5); //初始化Y轴 实际为Z轴
+
+        opt = _.clone(_coordSystem.coord.zAxis);
+        opt.label.textAlign = 'right';
+
+        var _yAxis5 = new Axis(this, opt);
+
+        _yAxis5.setOrigin(_origin5.clone());
+
+        _yAxis5.setAxisDir(new Vector3(0, 0, 1));
+
+        _yAxis5.setTickLineDir(new Vector3(-1, 0, 0));
+
+        _yAxis5.initModules();
+
+        this.group.add(_yAxis5.group);
+        axises[FaceNames.BOTTOM].push(_yAxis5);
+      }
+      {
+        var _this$_coordSystem$ge = this._coordSystem.getGraphAreaSize(),
+            width = _this$_coordSystem$ge.width,
+            height = _this$_coordSystem$ge.height,
+            depth = _this$_coordSystem$ge.depth;
+
+        var getBasicMaterial = function getBasicMaterial() {
+          return new MeshPhongMaterial({
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 0.1,
+            color: '#FFFFFF'
+          });
+        };
+
+        var geometry = new BoxGeometry(width, height, height);
+        this.box = new Mesh(geometry, getBasicMaterial());
+      }
+    }
+  }, {
+    key: "hideAxis",
+    value: function hideAxis() {
+      for (var key in FaceNames) {
+        var name = FaceNames[key];
+        this.faceAxises[name].forEach(function (axis) {
+          axis.setVisibel(false);
+        });
+      }
+    }
+  }, {
+    key: "showAxis",
+    value: function showAxis() {
+      var _this2 = this;
+
+      var dir = this._coordSystem.getDirection();
+
+      var _loop = function _loop(key) {
+        var name = FaceNames[key];
+
+        _this2.faceAxises[name].forEach(function (axis) {
+          axis.setVisibel(false);
+
+          if (name == dir) {
+            axis.setVisibel(true);
+          }
+        });
+      };
+
+      for (var key in FaceNames) {
+        _loop(key);
+      }
+    }
+  }, {
+    key: "draw",
+    value: function draw() {
+      var _this3 = this;
+
+      // let app = this._root.app;
+      // app._framework.on('renderbefore', () => {
+      //     // box.rotation.x+=0.01;
+      // })
+      this.group.add(this.box);
+
+      var dir = this._coordSystem.getDirection();
+
+      var _loop2 = function _loop2(key) {
+        var name = FaceNames[key];
+
+        _this3.faceAxises[name].forEach(function (axis) {
+          axis.setVisibel(false);
+
+          if (name == dir) {
+            axis.setVisibel(true);
+            axis.draw();
+          }
+        });
+      };
+
+      for (var key in FaceNames) {
+        _loop2(key);
+      }
+    }
+  }, {
+    key: "resetData",
+    value: function resetData() {
+      for (var key in FaceNames) {
+        var name = FaceNames[key];
+        this.faceAxises[name].forEach(function (axis) {
+          axis.resetData();
+        });
+      }
+    }
+  }]);
+
+  return CubeUI;
+}(Component);
+
+/**
+ * 1.文字太长省略号实现
+ * 
+ */
+
+var Cube =
+/*#__PURE__*/
+function (_InertialSystem) {
+  _inherits(Cube, _InertialSystem);
+
+  function Cube(root) {
+    var _this;
+
+    _classCallCheck(this, Cube);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cube).call(this, root)); // let ratio = root.width / root.height;
+    // let _frustumSize = 800;
+
+    _this.availableGraph = {
+      widthRatio: 0.8,
+      heightRatio: 0.8
+    };
+    _this.DefaultControls = {
+      autoRotate: false,
+      //默认不自动旋转
+      boxWidth: _this.width,
+      //空间中X的最大值(最大宽度)  
+      boxHeight: _this.height,
+      //空间中Y的最大值(最大高度)  
+      boxDepth: _this.height,
+      //空间中Z的最大值(最大深度)
+      distance: 1600,
+      //默认相机距离
+      maxDistance: 3000,
+      //最大相机距离
+      minDistance: 600,
+      //最小相机距离 
+      minZoom: 0.2,
+      //正交投影缩小的最小值
+      maxZoom: 1.5,
+      //正交投影放大的最大值
+      enableDamping: true,
+      enablePan: false,
+      enableKeys: false,
+      autoRotateSpeed: 1.0,
+      alpha: 5,
+      //绕X轴旋转
+      beta: 5,
+      //绕Y轴旋转
+      gamma: 0 //绕Z轴旋转
+      //默认坐标系原点偏移
+      //默认Y轴文字最大预留160,X轴文字最大100
+
+    };
+    _this.offset = new Vector3(Math.min(160, _this.width * 0.1), Math.min(100, _this.height * 0.1), 0); //this.offset.set(0,0,0);
+    //构建的数据集
+
+    _this._attributes = [];
+
+    if (_this.coord.offset) {
+      _this.offset.copy(_this.coord.offset);
+    }
+
+    root.init(_this.DefaultControls);
+    root.renderView.project('ortho');
+
+    _this.init();
+
+    return _this;
+  } //基类调用 初始化配置
+
+
+  _createClass(Cube, [{
+    key: "setDefaultOpts",
+    value: function setDefaultOpts(opts) {
+      var defaultCoord = {
+        xAxis: {
+          layoutType: "peak",
+          //"peak",  
+          label: {
+            textAlign: "center",
+            //水平方向对齐: left  right center 
+            offset: 2
+          }
+        },
+        yAxis: {
+          layoutType: "peak",
+          //"peak",
+          label: {
+            textAlign: "right",
+            offset: 2
+          }
+        },
+        zAxis: {
+          layoutType: "peak",
+          label: {
+            textAlign: "center",
+            offset: 2
+          }
+        }
+      };
+      opts.coord = _.extend(true, defaultCoord, opts.coord);
+      return opts;
+    }
+  }, {
+    key: "init",
+    value: function init() {
+      var opt = _.clone(this.coord);
+
+      var size = this.getGraphAreaSize();
+      this.xAxisAttribute = new AxisAttribute(opt.xAxis, this.getAxisDataFrame(opt.xAxis.field));
+      this.xAxisAttribute.setDataSection();
+      this.xAxisAttribute.setAxisLength(size.width);
+
+      this._attributes.push(this.xAxisAttribute);
+
+      this.yAxisAttribute = new AxisAttribute(opt.yAxis, this.getAxisDataFrame(opt.yAxis.field));
+      this.yAxisAttribute.setDataSection();
+      this.yAxisAttribute.setAxisLength(size.height);
+
+      this._attributes.push(this.yAxisAttribute);
+
+      this.zAxisAttribute = new AxisAttribute(opt.zAxis, this.getAxisDataFrame(opt.zAxis.field));
+      this.zAxisAttribute.setDataSection();
+      this.zAxisAttribute.setAxisLength(size.height);
+
+      this._attributes.push(this.zAxisAttribute);
+
+      this.addLights();
+      this.updatePosition();
+      this.group.position.copy(this.offset.clone().multiplyScalar(0.5));
+      this.bindEvent();
+    }
+  }, {
+    key: "bindEvent",
+    value: function bindEvent() {
+      var _this2 = this;
+
+      var controlOps = this._root.opt.coord.controls;
+      var second = 0.5;
+      var alpha = controlOps.alpha,
+          beta = controlOps.beta,
+          gamma = controlOps.gamma;
+      var duration = 1000 * second; // 持续的时间
+
+      var rotationCube = this.rotationCube();
+      this.on('toFront', function (e) {
+        rotationCube(5, 5, 0, duration);
+      });
+      this.on('toRight', function (e) {
+        rotationCube(5, 95, 0, duration);
+      });
+      this.on('toTop', function (e) {
+        rotationCube(95, 0, 5, duration);
+      });
+      this.on('planeclick', function (e) {
+        var dir = _this2.getDirection();
+
+        for (var face in FaceNames) {
+          if (FaceNames[face] !== dir) {
+            var cmp = _this2._root.getComponent({
+              name: "Heatmap_" + FaceNames[face]
+            });
+
+            if (cmp) {
+              cmp.cancelSelect();
+            }
+          }
+        }
+      });
+    }
+  }, {
+    key: "rotationCube",
+    value: function rotationCube() {
+      var _this3 = this;
+
+      var controlOps = this._root.opt.coord.controls;
+      var alpha = controlOps.alpha,
+          beta = controlOps.beta,
+          gamma = controlOps.gamma;
+      return function (alphaEnd, betaEnd, gammaEnd, duration) {
+        _this3._coordUI.hideAxis();
+
+        var alphaStart = alpha;
+        var spanAlpha = alphaEnd - alphaStart; //发生的变化
+
+        var betaStart = beta;
+        var spanBeta = betaEnd - betaStart; //发生的变化
+
+        var gammaStart = gamma;
+        var spanGamma = gammaEnd - gammaStart; //发生的变化
+
+        var currDate = new Date().getTime();
+
+        var fn = function fn() {
+          var pass = new Date().getTime() - currDate;
+
+          if (pass <= duration) {
+            _this3._root.app.forceRender();
+
+            alpha = alphaStart + spanAlpha * pass / duration;
+            beta = betaStart + spanBeta * pass / duration;
+            gamma = gammaStart + spanGamma * pass / duration;
+            _this3.group.rotation.x = _Math.degToRad(alpha);
+            _this3.group.rotation.y = _Math.degToRad(-beta);
+            _this3.group.rotation.z = _Math.degToRad(gamma);
+          } else {
+            alpha = alphaEnd;
+            beta = betaEnd;
+            gamma = gammaEnd;
+            _this3.group.rotation.x = _Math.degToRad(alpha);
+            _this3.group.rotation.y = _Math.degToRad(-beta);
+            _this3.group.rotation.z = _Math.degToRad(gamma);
+
+            _this3._coordUI.showAxis();
+
+            _this3._root.app._framework.off('renderbefore', fn);
+          }
+        };
+
+        _this3._root.app._framework.on('renderbefore', fn);
+      };
+    }
+  }, {
+    key: "addLights",
+    value: function addLights() {
+      //加入灯光
+      var ambientlight = new AmbientLight(0xffffff, 1); // soft white light
+
+      this._root.rootStage.add(ambientlight);
+
+      var center = this.center.clone();
+      center = this._getWorldPos(center); //center.setY(0);
+
+      var dirLights = [];
+      var intensity = 0.8;
+      var lightColor = 0xFFFFFF;
+      var position = new Vector3(0.5, 0.5, 1);
+      dirLights[0] = new DirectionalLight(lightColor, intensity);
+      position.multiplyScalar(10000);
+      dirLights[0].position.copy(position);
+      dirLights[0].target.position.copy(center);
+
+      this._root.rootStage.add(dirLights[0]);
+    }
+  }, {
+    key: "initCoordUI",
+    value: function initCoordUI() {
+      this._coordUI = new CubeUI(this);
+      this.group.add(this._coordUI.group);
+    }
+  }, {
+    key: "getGraphAreaSize",
+    value: function getGraphAreaSize() {
+      var _this$getSize$sub = this.getSize().sub(this.offset),
+          width = _this$getSize$sub.x,
+          height = _this$getSize$sub.y,
+          depth = _this$getSize$sub.z; //深度和宽度一直
+
+
+      return {
+        width: width * this.availableGraph.widthRatio,
+        height: height * this.availableGraph.heightRatio,
+        depth: height * this.availableGraph.heightRatio
+      };
+    }
+  }, {
+    key: "getOriginPosition",
+    value: function getOriginPosition(dir) {
+      var _this$getGraphAreaSiz = this.getGraphAreaSize(),
+          width = _this$getGraphAreaSiz.width,
+          height = _this$getGraphAreaSiz.height,
+          depth = _this$getGraphAreaSiz.depth;
+
+      var origin = new Vector3();
+      dir = dir || this.getDirection(); //正面
+
+      if (dir === FaceNames.FRONT) {
+        origin.set(-width * 0.5, -height * 0.5, depth * 0.5);
+      } //右面
+
+
+      if (dir === FaceNames.RIGHT) {
+        origin.set(width * 0.5, -height * 0.5, depth * 0.5);
+      } //上面
+
+
+      if (dir === FaceNames.TOP) {
+        origin.set(-width * 0.5, height * 0.5, depth * 0.5);
+      } //后面
+
+
+      if (dir === FaceNames.BACK) {
+        origin.set(width * 0.5, -height * 0.5, -depth * 0.5);
+      } //左面
+
+
+      if (dir === FaceNames.LEFT) {
+        origin.set(-width * 0.5, -height * 0.5, -depth * 0.5);
+      } //底面
+
+
+      if (dir === FaceNames.BOTTOM) {
+        origin.set(-width * 0.5, -height * 0.5, -depth * 0.5);
+      }
+
+      return origin;
+    }
+  }, {
+    key: "getDirection",
+    value: function getDirection() {
+      var dir = new Vector3();
+      this.group.getWorldDirection(dir); //cos(45)=0.7071067811865476
+      //面对我们的cube面
+
+      if (dir.dot(new Vector3(0, 0, 1)) > 0.7) {
+        return FaceNames.FRONT;
+      } else if (dir.dot(new Vector3(-1, 0, 0)) > 0.7) {
+        return FaceNames.RIGHT;
+      } else if (dir.dot(new Vector3(0, -1, 0)) > 0.7) {
+        return FaceNames.TOP;
+      } else if (dir.dot(new Vector3(1, 0, 0)) > 0.7) {
+        return FaceNames.LEFT;
+      } else if (dir.dot(new Vector3(0, 1, 0)) > 0.7) {
+        return FaceNames.BOTTOM;
+      } else if (dir.dot(new Vector3(0, 0, -1)) > 0.7) {
+        return FaceNames.BACK;
+      }
+
+      return null;
+    }
+  }, {
+    key: "updatePosition",
+    value: function updatePosition() {
+      //渲染对象,非相机
+      var controlOps = this._root.opt.coord.controls;
+
+      var phi = _Math.degToRad(controlOps.alpha); //(90-lat)*(Math.PI/180),
+
+
+      var theta = _Math.degToRad(-controlOps.beta);
+
+      var gamma = _Math.degToRad(controlOps.gamma);
+
+      this.group.rotateX(phi);
+      this.group.rotateY(theta);
+      this.group.rotateZ(gamma); //防止旋转碰到相机
+
+      var len = new Vector3(controlOps.boxWidth, controlOps.boxHeight, controlOps.boxDepth).length();
+
+      this._root.renderView._camera.position.setZ(len);
+    }
+  }, {
+    key: "drawUI",
+    value: function drawUI() {
+      this._coordUI.draw();
+
+      this._root.app._framework.on('renderbefore', function () {// this.group.rotation.x+=0.01;
+      });
+    }
+  }, {
+    key: "getAxisAttribute",
+    value: function getAxisAttribute(field) {
+      var attribute = null;
+
+      this._attributes.forEach(function (attr) {
+        if (_.isArray(field)) {
+          if (JSON.stringify(field) == JSON.stringify(attr.field)) {
+            attribute = att;
+          }
+        } else {
+          if (attr.field == field) {
+            attribute = attr;
+          }
+        }
+      });
+
+      return attribute;
+    }
+  }, {
+    key: "resetData",
+    value: function resetData() {
+      var opt = _.clone(this.coord);
+
+      this.xAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.xAxis.field));
+      this.xAxisAttribute.setDataSection();
+      this.xAxisAttribute.calculateProps();
+      this.yAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.yAxis.field));
+      this.yAxisAttribute.setDataSection();
+      this.yAxisAttribute.calculateProps();
+      this.zAxisAttribute.resetDataOrg(this.getAxisDataFrame(opt.zAxis.field));
+      this.zAxisAttribute.setDataSection();
+      this.zAxisAttribute.calculateProps(); //UI组件resetData
+
+      this._coordUI.resetData();
+    }
+  }]);
+
+  return Cube;
+}(InertialSystem);
 
 var GraphObject =
 /*#__PURE__*/
@@ -27577,6 +28667,10 @@ function (_GraphObject) {
 
 Bar._bar_prefix = "bar_one_";
 
+var __lastPosition = null;
+var __mousemove_lineEvent = null,
+    __mouseout_lineEvent = null;
+
 var Line$1 =
 /*#__PURE__*/
 function (_GraphObject) {
@@ -27611,8 +28705,7 @@ function (_GraphObject) {
       radius: 3,
       //半径 icon 圆点的半径
       fillStyle: '#ffffff',
-      strokeStyle: null,
-      lineWidth: 2
+      strokeStyle: null
     };
     _this.area = {
       //填充
@@ -27631,7 +28724,20 @@ function (_GraphObject) {
 
   _createClass(Line$$1, [{
     key: "init",
-    value: function init() {}
+    value: function init() {
+      this.lineGroup = this._root.app.addGroup({
+        name: 'line_lines_gruop'
+      });
+      this.areaGroup = this._root.app.addGroup({
+        name: 'line_areas_gruop'
+      });
+      this.nodeGroup = this._root.app.addGroup({
+        name: 'line_nodes_gruop'
+      });
+      this.group.add(this.lineGroup);
+      this.group.add(this.areaGroup);
+      this.group.add(this.nodeGroup);
+    }
   }, {
     key: "_getColor",
     value: function _getColor(c, dataOrg) {
@@ -27672,55 +28778,70 @@ function (_GraphObject) {
         }) || "red";
 
         var fieldObj = _this2.drawData[_field];
-        var points = null;
+        var points = null,
+            bottomPoints = [];
         var poses = fieldObj.map(function (item) {
           if (item.vInd > 0) {
+            bottomPoints.push(item.fromPos);
             return new Vector3().copy(item.pos).setY(item.pos.y + item.fromPos.y);
           }
 
           return item.pos;
         });
 
-        if (_this2.line.enabled) {
-          if (me.line.smooth) {
-            var curve = new CatmullRomCurve3(poses);
-            points = curve.getSpacedPoints(DIVISONS);
-          } else {
-            points = poses;
+        if (me.line.smooth) {
+          var curve = new CatmullRomCurve3(poses);
+          points = curve.getSpacedPoints(DIVISONS);
+
+          if (bottomPoints.length > 0) {
+            var curve2 = new CatmullRomCurve3(bottomPoints);
+            bottomPoints = curve2.getSpacedPoints(DIVISONS);
           }
+        } else {
+          points = poses;
+        }
 
-          var line = app.createBrokenLine(points, 2, _color, true);
+        var line = app.createBrokenLine(points, _this2.line.lineWidth, _color, true);
+        line.visible = !!_this2.line.enabled;
 
-          _this2.group.add(line);
-        } //绘制区域
+        _this2.lineGroup.add(line); //绘制区域
 
 
-        if (_this2.area.enabled) {
-          var pointArr = [];
-          points.forEach(function (point) {
-            pointArr = pointArr.concat(point.toArray());
-          });
+        var pointArr = [];
+        points.forEach(function (point) {
+          pointArr = pointArr.concat(point.toArray());
+        });
+
+        if (bottomPoints.length > 0) {
+          //绘制堆叠区域
+          for (var i = bottomPoints.length - 1; i >= 0; i--) {
+            pointArr = pointArr.concat(bottomPoints[i].toArray());
+          }
+        } else {
+          //绘制普通的区域
           pointArr.unshift(pointArr[0], 0, pointArr[2]);
           pointArr.push(pointArr[(points.length - 1) * 3], 0, pointArr[(points.length - 1) * 3 + 2]);
-          var polygon = app.createPolygonPlane(pointArr, {
+        }
+
+        var polygon = app.createPolygonPlane(pointArr, {
+          fillStyle: _color
+        });
+        polygon.userData = fieldObj;
+        polygon.visible = !!_this2.area.enabled;
+
+        _this2.areaGroup.add(polygon); //绘制node 点
+
+
+        poses.forEach(function (point) {
+          //let node = app.createSphere(10,{fillStyle:_color});
+          var node = app.createCirclePlane(10, {
             fillStyle: _color
           });
+          node.position.copy(point);
+          node.visible = !!_this2.icon.enabled;
 
-          _this2.group.add(polygon);
-        } //绘制node 点
-
-
-        if (_this2.icon.enabled) {
-          poses.forEach(function (point) {
-            //let node = app.createSphere(10,{fillStyle:_color});
-            var node = app.createCirclePlane(10, {
-              fillStyle: _color
-            });
-            node.position.copy(point);
-
-            _this2.group.add(node);
-          });
-        }
+          _this2.nodeGroup.add(node);
+        });
       };
 
       for (var _field in this.drawData) {
@@ -27731,7 +28852,106 @@ function (_GraphObject) {
     }
   }, {
     key: "bindEvent",
-    value: function bindEvent() {}
+    value: function bindEvent() {
+      var _this3 = this;
+
+      __mousemove_lineEvent = function __mousemove_lineEvent(e) {
+        var currObj = e.intersects[0];
+        var target = e.target;
+
+        if (currObj) {
+          var pos = currObj.point.clone();
+
+          var locPos = _this3._coordSystem.group.worldToLocal(pos);
+
+          var positions = target.userData.map(function (obj) {
+            if (obj.vInd > 0) {
+              return new Vector3().copy(obj.pos).setY(obj.pos.y + obj.fromPos.y);
+            }
+
+            return obj.pos;
+          });
+          var currPoint = findNearPointX(positions, locPos);
+
+          var currInfo = _.find(target.userData, function (item) {
+            var _pos = item.pos.clone();
+
+            if (item.vInd > 0) {
+              _pos = new Vector3().copy(item.pos).setY(item.pos.y + item.fromPos.y);
+            }
+
+            return _pos.equals(currPoint);
+          });
+
+          if (!__lastPosition || !currPoint.equals(__lastPosition)) {
+            //this._showLabel(currInfo);
+            _this3._root.fire({
+              type: 'tipShow',
+              event: e.event,
+              data: currInfo
+            });
+
+            __lastPosition = currPoint;
+
+            _this3.fire({
+              type: 'showLable',
+              data: currInfo
+            });
+          }
+
+          _this3.fire({
+            type: 'mousemove'
+          }); // console.log(currPoint);
+
+        }
+      };
+
+      __mouseout_lineEvent = function __mouseout_lineEvent(e) {
+        if (_this3.textTempGroup) ;
+
+        _this3._root.fire({
+          type: 'tipHide',
+          event: e.event,
+          data: null
+        });
+
+        _this3.fire({
+          type: 'mouseout'
+        });
+      };
+
+      this.areaGroup.traverse(function (obj) {
+        obj.on('mousemove', __mousemove_lineEvent);
+        obj.on("mouseout", __mouseout_lineEvent);
+      });
+      this.on('showLable', function (e) {
+        _this3.nodeGroup.traverse(function (obj) {
+          if (obj.userData.isScale) {
+            obj.userData.isScale = false;
+            obj.scale.multiplyScalar(0.5);
+          }
+
+          var _pos = e.data.pos.clone();
+
+          if (e.data.vInd > 0) {
+            _pos = new Vector3().copy(e.data.pos).setY(e.data.pos.y + e.data.fromPos.y);
+          }
+
+          if (!obj.userData.isScale && obj.position.equals(_pos)) {
+            obj.userData.isScale = true;
+            obj.scale.multiplyScalar(2);
+          }
+        });
+      });
+      this.on('mouseout', function (e) {
+        _this3.nodeGroup.traverse(function (obj) {
+          if (obj.userData.isScale) {
+            obj.userData.isScale = false;
+            obj.scale.multiplyScalar(0.5);
+          }
+        });
+      });
+    }
   }, {
     key: "resetData",
     value: function resetData() {
@@ -27743,7 +28963,7 @@ function (_GraphObject) {
   return Line$$1;
 }(GraphObject);
 
-var __lastPosition = null;
+var __lastPosition$1 = null;
 var __mousemove_areaEvent = null,
     __mouseout_areaEvent = null;
 
@@ -27848,19 +29068,18 @@ function (_GraphObject) {
 
         var thickness = Math.max(0.1, Math.min(boxDepth, this.area.thickness)); //绘制区域
 
-        if (this.area.enabled) {
-          points.unshift(points[0].clone().setY(0));
-          points.push(points[points.length - 1].clone().setY(0));
-          var polygon = app.createArea(points, thickness, {
-            fillStyle: _color
-          });
-          polygon.name = Area._area_prefix + _field;
-          polygon.userData = fieldObj;
-          var posZ = points[0].z;
-          posZ = posZ - thickness * 0.5;
-          polygon.position.setZ(posZ);
-          this.group.add(polygon);
-        }
+        points.unshift(points[0].clone().setY(0));
+        points.push(points[points.length - 1].clone().setY(0));
+        var polygon = app.createArea(points, thickness, {
+          fillStyle: _color
+        });
+        polygon.name = Area._area_prefix + _field;
+        polygon.userData = fieldObj;
+        var posZ = points[0].z;
+        posZ = posZ - thickness * 0.5;
+        polygon.visible = !!this.area.enabled;
+        polygon.position.setZ(posZ);
+        this.group.add(polygon);
       }
 
       me.bindEvent();
@@ -27882,13 +29101,13 @@ function (_GraphObject) {
           var positions = target.userData.map(function (obj) {
             return obj.pos;
           });
-          var currPoint = findNearPoint(positions, locPos);
+          var currPoint = findNearPointX(positions, locPos);
 
           var currInfo = _.find(target.userData, function (item) {
             return item.pos.equals(currPoint);
           });
 
-          if (!__lastPosition || !currPoint.equals(__lastPosition)) {
+          if (!__lastPosition$1 || !currPoint.equals(__lastPosition$1)) {
             _this2._showLabel(currInfo);
 
             _this2._root.fire({
@@ -27897,7 +29116,7 @@ function (_GraphObject) {
               data: currInfo
             });
 
-            __lastPosition = currPoint;
+            __lastPosition$1 = currPoint;
 
             _this2.fire({
               type: 'showLable',
@@ -28581,6 +29800,432 @@ function (_Component) {
 }(Component);
 
 Pie._pie_prefix = "pie_one_";
+
+var __mouseover_heatmapEvent = null,
+    __mouseout_heatmapEvent = null,
+    __mousemove_heatmapEvent = null,
+    __click_heatmapEvemt = null;
+
+var Heatmap =
+/*#__PURE__*/
+function (_GraphObject) {
+  _inherits(Heatmap, _GraphObject);
+
+  function Heatmap(chart3d, opt) {
+    var _this;
+
+    _classCallCheck(this, Heatmap);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Heatmap).call(this, chart3d));
+    _this.type = "heatmap";
+    _this._type = "heatmap3d";
+    _this.face = 'front'; //绘制在box的那个面上
+
+    _this.area = {
+      //填充
+      shapeType: "rect",
+      enabled: 1,
+      fillStyle: null,
+      alpha: 1.0,
+      highColor: 'yellow'
+    };
+    _this.label = {
+      enabled: 1,
+      fillStyle: '#333',
+      fontSize: 16
+    };
+    _this.gap = 1;
+
+    _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+
+    _this.name = "Heatmap_" + _this.face;
+
+    _this.init();
+
+    _this.setGroupName('heatmap_root_' + _this.face);
+
+    return _this;
+  }
+
+  _createClass(Heatmap, [{
+    key: "init",
+    value: function init() {
+      this.planeGroup = this._root.app.addGroup({
+        name: 'plane_groups'
+      });
+      this.textGroup = this._root.app.addGroup({
+        name: 'text_groups'
+      });
+      this.group.add(this.planeGroup);
+      this.group.add(this.textGroup);
+
+      var _this$_coordSystem$ge = this._coordSystem.getGraphAreaSize(),
+          width = _this$_coordSystem$ge.width,
+          height = _this$_coordSystem$ge.height,
+          depth = _this$_coordSystem$ge.depth;
+
+      if (this.face === FaceNames.BACK) {
+        this.group.rotateY(_Math.degToRad(180));
+        this.group.translateZ(height);
+        this.group.translateX(-width);
+      }
+
+      if (this.face === FaceNames.TOP) {
+        this.group.rotateX(_Math.degToRad(-90));
+        this.group.translateY(-height);
+      }
+
+      if (this.face === FaceNames.BOTTOM) {
+        this.group.rotateX(_Math.degToRad(90));
+        this.group.translateZ(height);
+      }
+
+      if (this.face === FaceNames.RIGHT) {
+        this.group.rotateY(_Math.degToRad(90));
+        this.group.translateX(-width * 0.5 - height * 0.5);
+        this.group.translateZ(height * 0.5);
+      }
+
+      if (this.face === FaceNames.LEFT) {
+        this.group.rotateY(_Math.degToRad(-90));
+        this.group.translateX(width * 0.5 - height * 0.5);
+        this.group.translateZ(height * 0.5 + width * 0.5);
+      }
+
+      this._initData();
+    }
+  }, {
+    key: "_initData",
+    value: function _initData() {
+      var _this2 = this;
+
+      this.xAttr = this._coordSystem.xAxisAttribute;
+      this.yAttr = this._coordSystem.yAxisAttribute;
+      this.zAttr = this._coordSystem.zAxisAttribute;
+      var xData = this.xAttr.dataSectionLayout;
+      var yData = this.yAttr.dataSectionLayout;
+      var zData = this.zAttr.dataSectionLayout;
+      var data1 = [],
+          data2 = [];
+      var dataFrame = this._root.dataFrame;
+      this.drawData = [];
+
+      var origin = this._coordSystem.getOriginPosition(this.face.toLowerCase());
+
+      if (this.face === FaceNames.FRONT) {
+        data1 = xData.concat([]);
+        data1.attr = this.xAttr;
+        data2 = yData.concat([]);
+        data2.attr = this.yAttr;
+      }
+
+      if (this.face === FaceNames.BACK) {
+        data1 = xData.concat([]);
+        data1.attr = this.xAttr;
+        data2 = yData.concat([]);
+        data2.attr = this.yAttr;
+      }
+
+      if (this.face === FaceNames.TOP) {
+        data1 = xData.concat([]);
+        data1.attr = this.xAttr;
+        data2 = zData.concat([]);
+        data2.attr = this.zAttr;
+      }
+
+      if (this.face === FaceNames.BOTTOM) {
+        data1 = xData.concat([]);
+        data1.attr = this.xAttr;
+        data2 = zData.concat([]);
+        data2.attr = this.zAttr;
+      }
+
+      if (this.face === FaceNames.RIGHT) {
+        data1 = zData.concat([]);
+        data1.attr = this.zAttr;
+        data2 = yData.concat([]);
+        data2.attr = this.yAttr;
+      }
+
+      if (this.face === FaceNames.LEFT) {
+        data1 = zData.concat([]);
+        data1.attr = this.zAttr;
+        data2 = yData.concat([]);
+        data2.attr = this.yAttr;
+      }
+
+      data1.forEach(function (xd, xi) {
+        data2.forEach(function (yd, yi) {
+          var _dataFrame$getRowData;
+
+          var rowDatas = dataFrame.getRowDataOf((_dataFrame$getRowData = {}, _defineProperty(_dataFrame$getRowData, data1.attr.field, xd.val), _defineProperty(_dataFrame$getRowData, data2.attr.field, yd.val), _dataFrame$getRowData));
+          if (!rowDatas.length) return;
+          var score = rowDatas[0][_this2.field] || 1;
+
+          _this2.drawData.push({
+            value: score,
+            color: hexToRgba(_this2.colorScheme, score * 0.1),
+            rowData: rowDatas[0],
+            field: _this2.field,
+            iNode: xi + yi,
+            face: _this2.face,
+            data: rowDatas[0],
+            pos: new Vector3(xd.pos, yd.pos, 0).add(origin),
+            width: data1.attr.getCellLength() - _this2.gap * 2,
+            height: data2.attr.getCellLength() - _this2.gap * 2
+          });
+        });
+      });
+    }
+  }, {
+    key: "draw",
+    value: function draw() {
+      var _this3 = this;
+
+      var app = this._root.app;
+      this.drawData.forEach(function (item, i) {
+        var score = item.data[_this3.field] || 0.5;
+
+        var materials = _this3.getMaterial(_this3.colorScheme, score);
+
+        var planetGeometry = new PlaneGeometry(item.width, item.height);
+        var plane = new Mesh(planetGeometry, materials);
+        plane.userData.info = item;
+        plane.name = Heatmap._heatmap_plane_prefix + _this3.face + '_' + i;
+        plane.position.copy(item.pos);
+
+        _this3.planeGroup.add(plane); //写文字
+
+
+        if (item.data[_this3.field]) {
+          var labels = _this3.createText(item.data[_this3.field], {
+            fontSize: _this3.label.fontSize,
+            fillStyle: _this3.label.fillStyle
+          });
+
+          var pos = item.pos.clone();
+          labels[0].position.copy(pos);
+
+          _this3.textGroup.add(labels[0]);
+        }
+      });
+      this.bindEvent();
+    }
+  }, {
+    key: "bindEvent",
+    value: function bindEvent() {
+      var _this4 = this;
+
+      var me = this;
+
+      var isTrigger = function isTrigger() {
+        return me._coordSystem.getDirection() === me.face.toLowerCase();
+      };
+
+      __mouseover_heatmapEvent = function __mouseover_heatmapEvent(e) {
+        if (!isTrigger()) return; //let score = this.userData.info.data[me.field] || 1;
+
+        this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
+        this.material.needsUpdate = true;
+
+        me._root.fire({
+          type: 'tipShow',
+          event: e.event,
+          data: this.userData.info
+        });
+
+        me.fire({
+          type: 'planeover',
+          data: this.userData.info
+        });
+      };
+
+      __mouseout_heatmapEvent = function __mouseout_heatmapEvent(e) {
+        if (!isTrigger()) return;
+        var score = this.userData.info.data[me.field] || 1;
+
+        if (!this.userData.select) {
+          this.material = me.getMaterial(me.colorScheme, score);
+          this.material.needsUpdate = true;
+        }
+
+        me._root.fire({
+          type: 'tipHide',
+          event: e.event,
+          data: this.userData.info
+        });
+
+        me.fire({
+          type: 'planeout',
+          data: this.userData.info
+        });
+      };
+
+      __mousemove_heatmapEvent = function __mousemove_heatmapEvent(e) {
+        if (!isTrigger()) return;
+
+        me._root.fire({
+          type: 'tipMove',
+          event: e.event,
+          data: this.userData.info
+        });
+
+        me.fire({
+          type: 'planemove',
+          data: this.userData.info
+        });
+      };
+
+      __click_heatmapEvemt = function __click_heatmapEvemt(e) {
+        if (!isTrigger()) return;
+        me.cancelSelect();
+
+        if (!e.target.userData.select) {
+          this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
+          this.material.needsUpdate = true;
+          e.target.userData.select = true;
+        }
+
+        me._coordSystem.fire({
+          type: 'planeclick',
+          data: this.userData.info
+        });
+      };
+
+      this.group.traverse(function (obj) {
+        if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + _this4.face)) {
+          obj.on('mouseover', __mouseover_heatmapEvent);
+          obj.on('mouseout', __mouseout_heatmapEvent);
+          obj.on('mousemove', __mousemove_heatmapEvent);
+          obj.on('click', __click_heatmapEvemt);
+        }
+      });
+    }
+  }, {
+    key: "getMaterial",
+    value: function getMaterial(colorScheme, score, highColor) {
+      this.materialMap = this.materialMap || {};
+      var key = highColor ? highColor : colorScheme + score;
+
+      if (this.materialMap[key]) {
+        return this.materialMap[key];
+      }
+
+      this.materialMap[key] = new MeshPhongMaterial({
+        color: highColor ? highColor : colorScheme || 0xffffff,
+        side: FrontSide,
+        transparent: true,
+        opacity: score * 0.1,
+        depthTest: true,
+        depthWrite: false
+      });
+      return this.materialMap[key];
+    }
+  }, {
+    key: "createText",
+    value: function createText(texts, fontStyle) {
+      var labels = [];
+      var renderFont = new RenderFont(fontStyle);
+
+      if (!_.isArray(texts)) {
+        texts = [texts];
+      }
+
+      var labelInfos = renderFont.drawTexts(texts);
+      var position = new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]);
+      var texture = new Texture();
+      texture.image = renderFont.canvas;
+      texture.wrapS = RepeatWrapping;
+      texture.wrapT = RepeatWrapping;
+      texture.minFilter = LinearFilter;
+      texture.magFilter = LinearFilter;
+      texture.anisotropy = 1;
+      texture.needsUpdate = true;
+      var textMatrial = new MeshPhongMaterial({
+        color: fontStyle.fillStyle,
+        map: texture,
+        transparent: true,
+        // polygonOffset: true,
+        // polygonOffsetFactor: 1,
+        // polygonOffsetUnits: 0.5,
+        depthWrite: false
+      });
+      var geometry = new BufferGeometry();
+      geometry.setIndex([0, 1, 2, 0, 2, 3]);
+      geometry.addAttribute('position', new Float32BufferAttribute(position, 3, false));
+      texts.forEach(function (text, index) {
+        geometry.addAttribute('uv', new Float32BufferAttribute(labelInfos.UVs[text], 2, false));
+        var realSize = labelInfos.sizes[text]; //realSize==[width,height]
+
+        var scale = new Vector3(realSize[0] / realSize[1], 1, 1);
+        scale.multiplyScalar(realSize[1]);
+        var txtObj = new Mesh(geometry, textMatrial);
+        txtObj.scale.copy(scale);
+        txtObj.userData = {
+          text: text,
+          size: realSize,
+          maxWidth: labelInfos.maxWidth,
+          maxHeight: labelInfos.maxHeight //默认不进行裁剪
+
+        };
+        txtObj.frustumCulled = false;
+        labels.push(txtObj);
+      });
+      return labels;
+    }
+  }, {
+    key: "cancelSelect",
+    value: function cancelSelect() {
+      var _this5 = this;
+
+      this.group.traverse(function (obj) {
+        if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + _this5.face)) {
+          var score = obj.userData.info.data[_this5.field] || 1;
+
+          if (obj.userData.select !== false) {
+            obj.userData.select = false;
+            obj.material = _this5.getMaterial(_this5.colorScheme, score);
+            obj.material.needsUpdate = true;
+          }
+        }
+      });
+    }
+  }, {
+    key: "dispose",
+    value: function dispose(group) {
+      var _this6 = this;
+
+      //删除所有事件
+      group = group || this.group;
+      group.traverse(function (obj) {
+        if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + _this6.face)) {
+          obj.off('mouseover', __mouseover_heatmapEvent);
+          obj.off('mouseout', __mouseout_heatmapEvent);
+          obj.off('mousemove', __mousemove_heatmapEvent);
+          obj.off('click', __click_heatmapEvemt);
+        }
+      });
+
+      _get(_getPrototypeOf(Heatmap.prototype), "dispose", this).call(this, group);
+    }
+  }, {
+    key: "resetData",
+    value: function resetData() {
+      this._initData();
+
+      this.materialMap = {};
+      this.dispose();
+      this.draw();
+    }
+  }], [{
+    key: "_heatmap_plane_prefix",
+    get: function get$$1() {
+      return 'heatmap_one_plane_';
+    }
+  }]);
+
+  return Heatmap;
+}(GraphObject);
 
 var Tips =
 /*#__PURE__*/
@@ -29528,10 +31173,12 @@ global.registerComponent(Chart3d, 'chart', 3); //global.registerComponent( empty
 
 global.registerComponent(Box, 'coord', 'box', 3);
 global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
+global.registerComponent(Cube, 'coord', 'cube', 3);
 global.registerComponent(Bar, 'graphs', 'bar', 3);
 global.registerComponent(Line$1, 'graphs', 'line', 3);
 global.registerComponent(Area, 'graphs', 'area', 3);
 global.registerComponent(Pie, 'graphs', 'pie', 3);
+global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
 global.registerComponent(Theme, 'theme', 3);
 global.registerComponent(Tips, 'tips', 3);
 global.registerComponent(MarkPoint, 'markpoint', 3);

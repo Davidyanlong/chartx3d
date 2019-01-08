@@ -311,7 +311,7 @@ class Heatmap extends GraphObject {
         texture.magFilter = LinearFilter;
         texture.anisotropy = 1;
         texture.needsUpdate = true;
-
+        
         let textMatrial = new MeshPhongMaterial({
             color: fontStyle.fillStyle,
             map: texture,

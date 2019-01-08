@@ -53,13 +53,14 @@ class Cube extends InertialSystem {
         //构建的数据集
         this._attributes = [];
 
-
+        if (this.coord.offset) {
+            this.offset.copy(this.coord.offset);
+        }
         root.init(this.DefaultControls);
         root.renderView.project('ortho');
         this.init();
 
-
-
+     
 
     }
     //基类调用 初始化配置
@@ -90,9 +91,7 @@ class Cube extends InertialSystem {
         };
 
         opts.coord = _.extend(true, defaultCoord, opts.coord);
-        if (opts.coord.offset) {
-            this.offset.copy(opts.coord.offset);
-        }
+
         return opts;
     }
     init() {
