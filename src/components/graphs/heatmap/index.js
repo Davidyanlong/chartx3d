@@ -331,7 +331,7 @@ class Heatmap extends GraphObject {
             let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
             scale.multiplyScalar(realSize[1]);
             let txtObj = new Mesh(geometry, textMatrial);
-
+            txtObj.name = "mesh_text_" + text + "_" + index;
             txtObj.scale.copy(scale);
             txtObj.userData = {
                 text: text,

@@ -23,9 +23,6 @@ class Chart3d extends Events {
 
         this.componentModules = componentModules;
 
-        // this.graphMap = opt.graphs;
-        // this.componentMap = opt.components;
-
 
         this.el = null;
         this.view = null;
@@ -42,7 +39,6 @@ class Chart3d extends Events {
         this.app = null;
         this.currCoord = null;
 
-        //this._theme = theme.colors.slice(0);
 
         //初始化画布
         this._createDomContainer(node);
@@ -79,10 +75,15 @@ class Chart3d extends Events {
         let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
         this._initRenderer(rendererOpts);
-
+        console.log('chart3dInit', Math.random());
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-        let interaction = this.interaction = new Interaction(this.renderView, this.view);
-        let interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
+        
+         
+
+        let interaction = this.interaction = new Interaction(this.view);
+    
+        interaction.addView(this.labelView);
+        interaction.addView(this.renderView);
 
 
         // controls.minDistance = controlOpts.minDistance;
@@ -121,11 +122,6 @@ class Chart3d extends Events {
 
         interaction.on('refresh', this._onChangeBind);
 
-
-        this._onRenderAfterLabelBind = onRenderAfter.bind(interactionLabel);
-        this.app._framework.on('renderafter', this._onRenderAfterLabelBind)
-
-        interactionLabel.on('refresh', this._onChangeBind);
 
         // //同步主相机的位置和方向
         // controls.on('change', (e) => {
@@ -263,9 +259,9 @@ class Chart3d extends Events {
         this.on('legendchange', __redraw);
 
         const TipName = 'Tips';
-      
+
         __tipShowEvent = (e) => {
-            
+
             let tips = this.getComponent({ name: TipName });
             let { offsetX: x, offsetY: y } = e.event;
             if (tips !== null) {
@@ -509,7 +505,7 @@ class Chart3d extends Events {
         this._onRenderAfterBind = null;
 
         this.interaction.off('refresh', this._onChangeBind);
-        this.interactionLabel.off('refresh', this._onChangeBind);
+      
         this._onChangeBind = null;
 
 
@@ -518,7 +514,7 @@ class Chart3d extends Events {
         this._onWindowResizeBind = null;
 
         this.interaction.dispose();
-        this.interactionLabel.dispose();
+      
         this.orbitControls.dispose();
 
         this.app.dispose();

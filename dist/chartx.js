@@ -22197,10 +22197,8 @@ var Chartx3d = (function () {
           this.near = 0.1;
           this.far = 10000;
           this.mode = null;
-
+          this.raycaster = new Raycaster$$1();
           this.controls = null;
-
-          //todo:相机变化需要派发事件出来
 
       }
 
@@ -22209,6 +22207,11 @@ var Chartx3d = (function () {
       }
       getScene() {
           return this._scene;
+      }
+      getRaycaster(pos) {
+
+          this.raycaster.setFromCamera(pos, this._camera);
+          return this.raycaster;
       }
 
       setSize(width, height) {
@@ -22264,7 +22267,7 @@ var Chartx3d = (function () {
           } else {
               //给定一个大的投影空间,方便数据的计算
               //this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
-              this._camera = new OrthographicCamera( controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2,  controlsOpts.boxHeight / 2,  controlsOpts.boxHeight / - 2, this.near, this.far);
+              this._camera = new OrthographicCamera(controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2, controlsOpts.boxHeight / 2, controlsOpts.boxHeight / - 2, this.near, this.far);
               this._camera.position.set(0, 0, distance);
           }
 
@@ -27291,16 +27294,13 @@ var Chartx3d = (function () {
   }
 
   class Interaction extends Events {
-      constructor(view, domElement) {
+      constructor(domElement) {
           super();
           let scope = this;
-          this.raycaster = new Raycaster$$1();
-          this.currMousePos = new Vector2();
 
-          this.camera = view.getCamera();
-          this.scene = view.getScene();
-          this.view = view;
-          this.target = null;
+          this.currMousePos = new Vector2();
+          this.views = [];
+
           this.domElement = (domElement !== undefined) ? domElement : document;
 
           this._onMouseMovebind = scope.onMouseMove.bind(scope);
@@ -27311,6 +27311,7 @@ var Chartx3d = (function () {
           this.domElement.addEventListener('mousedown', this._onMousedownbind, false);
           this.domElement.addEventListener('mouseup', this._onMouseupbind, false);
 
+
           this.lastPos = null;
           //避免多次触发
           this.isChange = false;
@@ -27320,68 +27321,85 @@ var Chartx3d = (function () {
           this.EVENT = null;
 
       }
+      addView(view) {
+          view.target = null;
+          this.views.push(view);
+      }
       update() {
-          this.camera = this.view.getCamera();
-          if (!this.isChange) return;
 
-          this.isChange = false;
-
-          this.camera.updateMatrixWorld();
-
-          // update the picking ray with the camera and mouse position
-          this.raycaster.setFromCamera(this.currMousePos, this.camera);
-
-          // calculate objects intersecting the picking ray
-          var intersects = this.raycaster.intersectObjects(this.scene.children, true);
-          //console.log(intersects.length)
-          //没有绑定事件的不往下计算
-          if (intersects.length > 0) {
-              intersects.forEach((item, i) => {
-                  if (_.isEmpty(item.object._listeners)) {
-                      intersects.splice(i, 1);
-                  }
-              });
-          }
-
-          if (intersects.length > 0) {
-              // if (this.camera.type === "OrthographicCamera") {
-              //     debugger
-              // }
-              // console.log('Interaction debug', intersects.length)
-              if (this.target) {
-                  this.target.fire({ type: 'mousemove', event: this.EVENT, intersects });
+          this.views.forEach(view => {
+              if (this.isChange) {
+                  view.isChange = true;
               }
-              if (intersects[0].object == this.target) {
-                  if (!this.isMouseOver) {
-                      this.target.fire({ type: 'mouseover', event: this.EVENT, intersects });
-                      this.isMouseOver = true;
-                      this.isMouseOut = false;
+          });
+          if (this.isChange) this.isChange = false;
+
+          this.views.forEach((view, i) => {
+
+              let scene = view.getScene();
+
+              if (!view.isChange) return;
+              view.isChange = false;
+
+              let raycaster = view.getRaycaster(this.currMousePos);
+              // calculate objects intersecting the picking ray
+              let intersects = raycaster.intersectObjects(scene.children, true);
+
+              //console.log('intersects', intersects.length, '----' + i + '-----');
+
+              //没有绑定事件的不往下计算
+              if (intersects.length > 0) {
+
+                  for (let i = 0, l = intersects.length; i < l; i++) {
+                      if (_.isEmpty(intersects[i].object._listeners)) {
+                          intersects.splice(i, 1);
+                          l--;
+                          i--;
+                      }
                   }
-                  if (this.isClick) {
-                      this.target.fire({ type: 'click', event: this.EVENT, intersects });
-                      this.isClick = false;
+                  
+              }
+
+
+              if (intersects.length > 0) {
+                  if (intersects[0].object == view.target) {
+                      if (view.target) {
+                          view.target.fire({ type: 'mousemove', event: this.EVENT, intersects });
+                      }
+
+                      if (!this.isMouseOver) {
+                          view.target.fire({ type: 'mouseover', event: this.EVENT, intersects });
+                          this.isMouseOver = true;
+                          this.isMouseOut = false;
+                      }
+                      if (this.isClick) {
+                          view.target.fire({ type: 'click', event: this.EVENT, intersects });
+                          this.isClick = false;
+                      }
+
+                  } else {
+                      if (view.target !== null && !this.isMouseOut) {
+                          view.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
+                          this.isMouseOut = true;
+                          this.isMouseOver = false;
+                          // console.log({ type: 'mouseout' })
+                      }
+                      view.target = intersects[0].object;
                   }
 
               } else {
-                  if (this.target !== null && !this.isMouseOut) {
-                      this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
+                  if (view.target !== null && !this.isMouseOut) {
+                      view.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
+                      view.target = null;
                       this.isMouseOut = true;
                       this.isMouseOver = false;
-                      // console.log({ type: 'mouseout' })
+                      //console.log({ type: 'mouseout' })
                   }
-                  this.target = intersects[0].object;
               }
 
-          } else {
-              if (this.target !== null && !this.isMouseOut) {
-                  this.target.fire({ type: 'mouseout', event: this.EVENT, intersects });
-                  this.target = null;
-                  this.isMouseOut = true;
-                  this.isMouseOver = false;
-                  //console.log({ type: 'mouseout' })
-              }
-          }
 
+
+          });
 
       }
 
@@ -27404,14 +27422,9 @@ var Chartx3d = (function () {
           scope._onMouseupbind = null;
           scope._onMouseMovebind = null;
 
-
-
-          this.raycaster = null;
           this.currMousePos = null;
+          this.views = [];
 
-          this.camera = null;
-          this.scene = null;
-          this.target = null;
           this.domElement = null;
 
 
@@ -27428,16 +27441,18 @@ var Chartx3d = (function () {
           this.EVENT = event;
           let { x, y } = e;
           this.lastPos = { x, y };
+          //console.log('down', x, y);
       }
       onMouseup(e) {
 
           this.isChange = true;
           let { x, y } = e;
-
+          //console.log('up', x, y);
           if (x == this.lastPos.x && y == this.lastPos.y) {
               this.isClick = true;
               this.fire({ type: 'click', event: event });
               // console.log('click');
+              this.lastPos = { x: -1, y: -1 };
           }
           setTimeout(() => {
               this.fire({ type: 'refresh' });
@@ -27473,9 +27488,6 @@ var Chartx3d = (function () {
 
           this.componentModules = componentModules;
 
-          // this.graphMap = opt.graphs;
-          // this.componentMap = opt.components;
-
 
           this.el = null;
           this.view = null;
@@ -27492,7 +27504,6 @@ var Chartx3d = (function () {
           this.app = null;
           this.currCoord = null;
 
-          //this._theme = theme.colors.slice(0);
 
           //初始化画布
           this._createDomContainer(node);
@@ -27529,10 +27540,15 @@ var Chartx3d = (function () {
           let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
           this._initRenderer(rendererOpts);
-
+          console.log('chart3dInit', Math.random());
           let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-          let interaction = this.interaction = new Interaction(this.renderView, this.view);
-          let interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view);
+          
+           
+
+          let interaction = this.interaction = new Interaction(this.view);
+      
+          interaction.addView(this.labelView);
+          interaction.addView(this.renderView);
 
 
           // controls.minDistance = controlOpts.minDistance;
@@ -27571,11 +27587,6 @@ var Chartx3d = (function () {
 
           interaction.on('refresh', this._onChangeBind);
 
-
-          this._onRenderAfterLabelBind = onRenderAfter.bind(interactionLabel);
-          this.app._framework.on('renderafter', this._onRenderAfterLabelBind);
-
-          interactionLabel.on('refresh', this._onChangeBind);
 
           // //同步主相机的位置和方向
           // controls.on('change', (e) => {
@@ -27713,9 +27724,9 @@ var Chartx3d = (function () {
           this.on('legendchange', __redraw);
 
           const TipName = 'Tips';
-        
+
           __tipShowEvent = (e) => {
-              
+
               let tips = this.getComponent({ name: TipName });
               let { offsetX: x, offsetY: y } = e.event;
               if (tips !== null) {
@@ -27955,7 +27966,7 @@ var Chartx3d = (function () {
           this._onRenderAfterBind = null;
 
           this.interaction.off('refresh', this._onChangeBind);
-          this.interactionLabel.off('refresh', this._onChangeBind);
+        
           this._onChangeBind = null;
 
 
@@ -27964,7 +27975,7 @@ var Chartx3d = (function () {
           this._onWindowResizeBind = null;
 
           this.interaction.dispose();
-          this.interactionLabel.dispose();
+        
           this.orbitControls.dispose();
 
           this.app.dispose();
@@ -30929,7 +30940,7 @@ var Chartx3d = (function () {
               let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
               scale.multiplyScalar(realSize[1]);
               let txtObj = new Mesh(geometry, textMatrial);
-
+              txtObj.name = "mesh_text_" + text + "_" + index;
               txtObj.scale.copy(scale);
               txtObj.userData = {
                   text: text,

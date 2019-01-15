@@ -4,6 +4,7 @@ import {
     OrthographicCamera,
     PerspectiveCamera,
     Vector3,
+    Raycaster,
     Math as _Math
 
 } from "mmgl/src/index"
@@ -29,10 +30,8 @@ class View {
         this.near = 0.1;
         this.far = 10000;
         this.mode = null;
-
+        this.raycaster = new Raycaster();
         this.controls = null;
-
-        //todo:相机变化需要派发事件出来
 
     }
 
@@ -41,6 +40,11 @@ class View {
     }
     getScene() {
         return this._scene;
+    }
+    getRaycaster(pos) {
+
+        this.raycaster.setFromCamera(pos, this._camera);
+        return this.raycaster;
     }
 
     setSize(width, height) {
@@ -96,7 +100,7 @@ class View {
         } else {
             //给定一个大的投影空间,方便数据的计算
             //this._camera = new OrthographicCamera(frustumSize * aspect / -2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, this.near, this.far);
-            this._camera = new OrthographicCamera( controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2,  controlsOpts.boxHeight / 2,  controlsOpts.boxHeight / - 2, this.near, this.far);
+            this._camera = new OrthographicCamera(controlsOpts.boxWidth / -2, controlsOpts.boxWidth / 2, controlsOpts.boxHeight / 2, controlsOpts.boxHeight / - 2, this.near, this.far);
             this._camera.position.set(0, 0, distance);
         }
 
