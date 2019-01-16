@@ -606,7 +606,7 @@
           src = target[name];
           copy = options[name];
 
-          if (target === copy) {
+          if (target === copy || copy === undefined) {
             continue;
           }
 
@@ -759,14 +759,101 @@
     }
   };
 
+  var cloneOptions = function cloneOptions(opt) {
+    return _.clone(opt);
+  };
+
+  var cloneData = function cloneData(data) {
+    return JSON.parse(JSON.stringify(data));
+  };
+
+  var is3dOpt = function is3dOpt(opt) {
+    var chartx3dCoordTypes = ["box", "polar3d", "cube"];
+    return opt.coord && opt.coord.type && chartx3dCoordTypes.indexOf(opt.coord.type) > -1;
+  };
+
+  var getDefaultProps = function getDefaultProps(dProps) {
+    var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+    for (var p in dProps) {
+      if (!!p.indexOf("_")) {
+        if (!dProps[p] || !dProps[p].propertys) {
+          //如果这个属性没有子属性了，那么就说明这个已经是叶子节点了
+          if (_.isObject(dProps[p]) && !_.isFunction(dProps[p]) && !_.isArray(dProps[p])) {
+            target[p] = dProps[p].default;
+          } else {
+            target[p] = dProps[p];
+          }
+        } else {
+          target[p] = {};
+          getDefaultProps(dProps[p].propertys, target[p]);
+        }
+      }
+    }
+
+    return target;
+  };
+
   var axis =
   /*#__PURE__*/
   function () {
+    _createClass(axis, null, [{
+      key: "defaultProps",
+      value: function defaultProps() {
+        return {
+          layoutType: {
+            detail: '布局方式',
+            default: 'proportion'
+          },
+          dataSection: {
+            detail: '轴数据集',
+            default: []
+          },
+          sectionHandler: {
+            detail: '自定义dataSection的计算公式',
+            default: null
+          },
+          waterLine: {
+            detail: '水位线',
+            default: null,
+            documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
+          },
+          middleweight: {
+            detail: '区间等分线',
+            default: null,
+            documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
+          },
+          symmetric: {
+            detail: '自动正负对称',
+            default: false,
+            documentation: 'proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要'
+          },
+          origin: {
+            detail: '轴的起源值',
+            default: null,
+            documentation: '\
+                    1，如果数据中又正数和负数，则默认为0 <br />\
+                    2，如果dataSection最小值小于0，则baseNumber为最小值<br />\
+                    3，如果dataSection最大值大于0，则baseNumber为最大值<br />\
+                    4，也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值\
+                '
+          },
+          sort: {
+            detail: '排序',
+            default: null
+          },
+          posParseToInt: {
+            detail: '是否位置计算取整',
+            default: false,
+            documentation: '比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的'
+          }
+        };
+      }
+    }]);
+
     function axis(opt, dataOrg) {
       _classCallCheck(this, axis);
 
-      //super();
-      this.layoutType = opt.layoutType || "proportion"; // rule , peak, proportion
       //源数据
       //这个是一个一定会有两层数组的数据结构，是一个标准的dataFrame数据
       // [ 
@@ -778,45 +865,27 @@
       //        [1,2,3] 
       //    ]   
       // ]
-
       this._opt = _.clone(opt);
-      this.dataOrg = dataOrg || [];
-      this.sectionHandler = null;
-      this.dataSection = []; //从原数据 dataOrg 中 结果 datasection 重新计算后的数据
+      this.dataOrg = dataOrg || []; //3d中有引用到
 
       this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
       //轴总长
 
-      this.axisLength = 1;
+      this._axisLength = 1;
       this._cellCount = null;
       this._cellLength = null; //数据变动的时候要置空
-      //下面三个目前yAxis中实现了，后续统一都会实现
-      //水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值
-      //这个值主要用于第三方的markline等组件， 自己的y值超过了yaxis的范围的时候，需要纳入来修复yaxis的section区间
+      //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
 
-      this.waterLine = null; //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
-
-      this.dataSectionGroup = []; //如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]
-
-      this.middleweight = null;
-      this.symmetric = false; //proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要
-      //1，如果数据中又正数和负数，则默认为0，
-      //2，如果dataSection最小值小于0，则baseNumber为最小值，
-      //3，如果dataSection最大值大于0，则baseNumber为最大值
-      //也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值
-
-      this.origin = null;
+      this.dataSectionGroup = [];
       this.originPos = 0; //value为 origin 对应的pos位置
 
       this._originTrans = 0; //当设置的 origin 和datasection的min不同的时候，
       //min,max不需要外面配置，没意义
 
       this._min = null;
-      this._max = null; //"asc" 排序，默认从小到大, desc为从大到小
-      //之所以不设置默认值为asc，是要用 null 来判断用户是否进行了配置
+      this._max = null;
 
-      this.sort = null;
-      this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
+      _.extend(true, this, getDefaultProps(axis.defaultProps()), opt);
     }
 
     _createClass(axis, [{
@@ -832,7 +901,7 @@
     }, {
       key: "setAxisLength",
       value: function setAxisLength(length) {
-        this.axisLength = length;
+        this._axisLength = length;
         this.calculateProps();
       }
     }, {
@@ -1153,7 +1222,7 @@
       value: function _getOriginTrans(origin) {
         var pos = 0;
         var dsgLen = this.dataSectionGroup.length;
-        var groupLength = this.axisLength / dsgLen;
+        var groupLength = this._axisLength / dsgLen;
 
         for (var i = 0, l = dsgLen; i < l; i++) {
           var ds = this.dataSectionGroup[i];
@@ -1241,7 +1310,7 @@
 
         if (this.layoutType == "proportion") {
           var dsgLen = this.dataSectionGroup.length;
-          var groupLength = this.axisLength / dsgLen;
+          var groupLength = this._axisLength / dsgLen;
 
           for (var i = 0, l = dsgLen; i < l; i++) {
             var ds = this.dataSectionGroup[i];
@@ -1272,7 +1341,7 @@
         } else {
           if (cellCount == 1) {
             //如果只有一数据，那么就全部默认在正中间
-            pos = this.axisLength / 2;
+            pos = this._axisLength / 2;
           } else {
             //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
             //因为可能有多个数据的val一样
@@ -1281,16 +1350,16 @@
             if (valInd != -1) {
               if (this.layoutType == "rule") {
                 //line 的xaxis就是 rule
-                pos = valInd / (cellCount - 1) * this.axisLength;
+                pos = valInd / (cellCount - 1) * this._axisLength;
               }
 
               if (this.layoutType == "peak") {
                 //bar的xaxis就是 peak
 
                 /*
-                pos = (this.axisLength/cellCount) 
+                pos = (this._axisLength/cellCount) 
                       * (valInd+1) 
-                      - (this.axisLength/cellCount)/2;
+                      - (this._axisLength/cellCount)/2;
                 */
                 var _cellLength = this.getCellLength();
 
@@ -1350,7 +1419,7 @@
         var val;
 
         if (this.layoutType == "proportion") {
-          var groupLength = this.axisLength / this.dataSectionGroup.length;
+          var groupLength = this._axisLength / this.dataSectionGroup.length;
 
           _.each(this.dataSectionGroup, function (ds, i) {
             if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
@@ -1444,8 +1513,8 @@
           return this._cellLength;
         }
 
-        var axisLength = this.axisLength;
-        var cellLength = axisLength;
+        var _axisLength = this._axisLength;
+        var cellLength = _axisLength;
 
         var cellCount = this._getCellCount();
 
@@ -1454,13 +1523,13 @@
             cellLength = 1;
           } else {
             //默认按照 peak 也就是柱状图的需要的布局方式
-            cellLength = axisLength / cellCount;
+            cellLength = _axisLength / cellCount;
 
             if (this.layoutType == "rule") {
               if (cellCount == 1) {
-                cellLength = axisLength / 2;
+                cellLength = _axisLength / 2;
               } else {
-                cellLength = axisLength / (cellCount - 1);
+                cellLength = _axisLength / (cellCount - 1);
               }
             }
 
@@ -1494,7 +1563,7 @@
         var cellCount = 0;
 
         if (this.layoutType == "proportion") {
-          cellCount = this.axisLength;
+          cellCount = this._axisLength;
         } else {
           if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
             cellCount = this.dataOrg[0][0].length;
@@ -1889,17 +1958,38 @@
     }
   };
 
-  var cloneOptions = function cloneOptions(opt) {
-    return _.clone(opt);
-  };
+  var parse = {
+    _eval: function _eval(code, target, paramName, paramValue) {
+      return paramName ? new Function(paramName, code + "; return ".concat(target, ";"))(paramValue) : new Function(code + "; return ".concat(target, ";"))();
+    },
+    parse: function parse(code, range, data, variablesFromComponent) {
+      try {
+        var isVariablesDefined = range && range.length && range.length === 2 && range[1] > range[0]; // 若未定义
 
-  var cloneData = function cloneData(data) {
-    return JSON.parse(JSON.stringify(data));
-  };
+        if (!isVariablesDefined) {
+          return this._eval(code, 'options');
+        }
 
-  var is3dOpt = function is3dOpt(opt) {
-    var chartx3dCoordTypes = ["box", "polar3d", "cube"];
-    return opt.coord && opt.coord.type && chartx3dCoordTypes.indexOf(opt.coord.type) > -1;
+        var variablesInCode = this._eval(code, 'variables');
+
+        if (typeof variablesInCode === 'function') {
+          variablesInCode = variablesInCode(data) || {};
+        }
+
+        var variables = {};
+
+        if (variablesFromComponent !== undefined) {
+          variables = typeof variablesFromComponent === 'function' ? variablesFromComponent(data) : variablesFromComponent;
+        }
+
+        variables = _.extend(true, {}, variablesInCode, variables);
+        var codeWithoutVariables = code.slice(0, range[0]) + code.slice(range[1]);
+        return this._eval(codeWithoutVariables, 'options', 'variables', variables);
+      } catch (e) {
+        console.log('parse error');
+        return {};
+      }
+    }
   };
 
   //图表皮肤
@@ -1982,7 +2072,7 @@
         suffix: '_JSON_FUN_SUFFIX]]'
       };
 
-      var parse = function parse(string) {
+      var parse$$1 = function parse$$1(string) {
         return JSON.parse(string, function (key, value) {
           if (typeof value === 'string' && value.indexOf(JsonSerialize.suffix) > 0 && value.indexOf(JsonSerialize.prefix) == 0) {
             return new Function('return ' + value.replace(JsonSerialize.prefix, '').replace(JsonSerialize.suffix, ''))();
@@ -1991,7 +2081,22 @@
         }) || {};
       };
 
-      var opt = parse(decodeURIComponent(this.options[chartPark_cid] || {}));
+      var opt = parse$$1(decodeURIComponent(this.options[chartPark_cid] || {}));
+
+      if (userOptions) {
+        opt = _.extend(true, opt, userOptions);
+      }
+      return opt;
+    },
+    getOptionsNew: function getOptionsNew(chartPark_cid, userOptions, data, variables) {
+      if (!this.options[chartPark_cid]) {
+        return userOptions || {};
+      }
+      var chartConfig = this.options[chartPark_cid] || {};
+      var code = decodeURIComponent(chartConfig.code);
+      var range = chartConfig.range; // var code = decodeURIComponent(this.options[chartPark_cid]);
+
+      var opt = parse.parse(code, range, data, variables);
 
       if (userOptions) {
         opt = _.extend(true, opt, userOptions);
@@ -3017,7 +3122,7 @@
     return Events;
   }();
 
-  var version = "0.0.42";
+  var version = "0.0.43";
 
   var REVISION = version; //draw Point
 
@@ -3503,8 +3608,7 @@
     }, {
       key: "unproject",
       value: function unproject(camera, matrix) {
-        matrix.multiplyMatrices(camera.matrixWorld, matrix.getInverse(camera.projectionMatrix));
-        return this.applyMatrix4(matrix);
+        return this.applyMatrix4(matrix.getInverse(camera.projectionMatrix)).applyMatrix4(camera.matrixWorld);
       }
     }, {
       key: "transformDirection",
@@ -20827,7 +20931,8 @@
       this.near = 0.1;
       this.far = 10000;
       this.mode = null;
-      this.controls = null; //todo:相机变化需要派发事件出来
+      this.raycaster = new Raycaster$$1();
+      this.controls = null;
     }
 
     _createClass(View, [{
@@ -20839,6 +20944,12 @@
       key: "getScene",
       value: function getScene() {
         return this._scene;
+      }
+    }, {
+      key: "getRaycaster",
+      value: function getRaycaster(pos) {
+        this.raycaster.setFromCamera(pos, this._camera);
+        return this.raycaster;
       }
     }, {
       key: "setSize",
@@ -22204,6 +22315,10 @@
       _this.group = _this._root.app.addGroup({
         name: _this.constructor.name.toLowerCase() + '_root'
       });
+      _this.__mouseover = null;
+      _this.__mouseout = null;
+      _this.__mousemove = null;
+      _this.__click = null;
       return _this;
     }
 
@@ -22240,6 +22355,11 @@
             obj = null;
           }
         }
+
+        this.__mouseover = null;
+        this.__mouseout = null;
+        this.__mousemove = null;
+        this.__click = null;
       }
     }, {
       key: "draw",
@@ -25996,7 +26116,7 @@
   function (_Events) {
     _inherits(Interaction, _Events);
 
-    function Interaction(view, domElement) {
+    function Interaction(domElement) {
       var _this;
 
       _classCallCheck(this, Interaction);
@@ -26005,12 +26125,8 @@
 
       var scope = _assertThisInitialized(_assertThisInitialized(_this));
 
-      _this.raycaster = new Raycaster$$1();
       _this.currMousePos = new Vector2();
-      _this.camera = view.getCamera();
-      _this.scene = view.getScene();
-      _this.view = view;
-      _this.target = null;
+      _this.views = [];
       _this.domElement = domElement !== undefined ? domElement : document;
       _this._onMouseMovebind = scope.onMouseMove.bind(scope);
       _this._onMousedownbind = scope.onMousedown.bind(scope);
@@ -26033,83 +26149,95 @@
     }
 
     _createClass(Interaction, [{
+      key: "addView",
+      value: function addView(view) {
+        view.target = null;
+        this.views.push(view);
+      }
+    }, {
       key: "update",
       value: function update() {
-        this.camera = this.view.getCamera();
-        if (!this.isChange) return;
-        this.isChange = false;
-        this.camera.updateMatrixWorld(); // update the picking ray with the camera and mouse position
+        var _this2 = this;
 
-        this.raycaster.setFromCamera(this.currMousePos, this.camera); // calculate objects intersecting the picking ray
+        this.views.forEach(function (view) {
+          if (_this2.isChange) {
+            view.isChange = true;
+          }
+        });
+        if (this.isChange) this.isChange = false;
+        this.views.forEach(function (view, i) {
+          var scene = view.getScene();
+          if (!view.isChange) return;
+          view.isChange = false;
+          var raycaster = view.getRaycaster(_this2.currMousePos); // calculate objects intersecting the picking ray
 
-        var intersects = this.raycaster.intersectObjects(this.scene.children, true); //console.log(intersects.length)
-        //没有绑定事件的不往下计算
+          var intersects = raycaster.intersectObjects(scene.children, true); //console.log('intersects', intersects.length, '----' + i + '-----');
+          //没有绑定事件的不往下计算
 
-        if (intersects.length > 0) {
-          intersects.forEach(function (item, i) {
-            if (!item.object._listeners) {
-              intersects.splice(i, 1);
+          if (intersects.length > 0) {
+            for (var _i = 0, l = intersects.length; _i < l; _i++) {
+              if (_.isEmpty(intersects[_i].object._listeners)) {
+                intersects.splice(_i, 1);
+                l--;
+                _i--;
+              }
             }
-          });
-        }
-
-        if (intersects.length > 0) {
-          // if (this.camera.type === "OrthographicCamera") {
-          //     debugger
-          // }
-          // console.log('Interaction debug', intersects.length)
-          if (this.target) {
-            this.target.fire({
-              type: 'mousemove',
-              event: this.EVENT,
-              intersects: intersects
-            });
           }
 
-          if (intersects[0].object == this.target) {
-            if (!this.isMouseOver) {
-              this.target.fire({
-                type: 'mouseover',
-                event: this.EVENT,
-                intersects: intersects
-              });
-              this.isMouseOver = true;
-              this.isMouseOut = false;
-            }
+          if (intersects.length > 0) {
+            if (intersects[0].object == view.target) {
+              if (view.target) {
+                view.target.fire({
+                  type: 'mousemove',
+                  event: _this2.EVENT,
+                  intersects: intersects
+                });
+              }
 
-            if (this.isClick) {
-              this.target.fire({
-                type: 'click',
-                event: this.EVENT,
-                intersects: intersects
-              });
-              this.isClick = false;
+              if (!_this2.isMouseOver) {
+                view.target.fire({
+                  type: 'mouseover',
+                  event: _this2.EVENT,
+                  intersects: intersects
+                });
+                _this2.isMouseOver = true;
+                _this2.isMouseOut = false;
+              }
+
+              if (_this2.isClick) {
+                view.target.fire({
+                  type: 'click',
+                  event: _this2.EVENT,
+                  intersects: intersects
+                });
+                _this2.isClick = false;
+              }
+            } else {
+              if (view.target !== null && !_this2.isMouseOut) {
+                view.target.fire({
+                  type: 'mouseout',
+                  event: _this2.EVENT,
+                  intersects: intersects
+                });
+                _this2.isMouseOut = true;
+                _this2.isMouseOver = false; // console.log({ type: 'mouseout' })
+              }
+
+              view.target = intersects[0].object;
             }
           } else {
-            if (this.target !== null && !this.isMouseOut) {
-              this.target.fire({
+            if (view.target !== null && !_this2.isMouseOut) {
+              view.target.fire({
                 type: 'mouseout',
-                event: this.EVENT,
+                event: _this2.EVENT,
                 intersects: intersects
               });
-              this.isMouseOut = true;
-              this.isMouseOver = false; // console.log({ type: 'mouseout' })
+              view.target = null;
+              _this2.isMouseOut = true;
+              _this2.isMouseOver = false; //console.log({ type: 'mouseout' })
             }
-
-            this.target = intersects[0].object;
           }
-        } else {
-          if (this.target !== null && !this.isMouseOut) {
-            this.target.fire({
-              type: 'mouseout',
-              event: this.EVENT,
-              intersects: intersects
-            });
-            this.target = null;
-            this.isMouseOut = true;
-            this.isMouseOver = false; //console.log({ type: 'mouseout' })
-          }
-        }
+        });
       }
     }, {
       key: "dispose",
@@ -26128,11 +26256,8 @@
         scope._onMousedownbind = null;
         scope._onMouseupbind = null;
         scope._onMouseMovebind = null;
-        this.raycaster = null;
         this.currMousePos = null;
-        this.camera = null;
-        this.scene = null;
-        this.target = null;
+        this.views = [];
         this.domElement = null;
         this.lastPos = null;
         this.isChange = false;
@@ -26151,16 +26276,16 @@
         this.lastPos = {
           x: x,
           y: y
-        };
+        }; //console.log('down', x, y);
       }
     }, {
       key: "onMouseup",
       value: function onMouseup(e) {
-        var _this2 = this;
+        var _this3 = this;
 
         this.isChange = true;
         var x = e.x,
-            y = e.y;
+            y = e.y; //console.log('up', x, y);
 
         if (x == this.lastPos.x && y == this.lastPos.y) {
           this.isClick = true;
@@ -26168,10 +26293,15 @@
             type: 'click',
             event: event
           }); // console.log('click');
+
+          this.lastPos = {
+            x: -1,
+            y: -1
+          };
         }
 
         setTimeout(function () {
-          _this2.fire({
+          _this3.fire({
             type: 'refresh'
           });
         }, 16);
@@ -26218,9 +26348,7 @@
       _this.domSelector = node;
       _this.opt = opt;
       _this.data = data;
-      _this.componentModules = componentModules; // this.graphMap = opt.graphs;
-      // this.componentMap = opt.components;
-
+      _this.componentModules = componentModules;
       _this.el = null;
       _this.view = null;
       _this.domView = null;
@@ -26234,8 +26362,7 @@
       _this.renderer = null;
       _this.renderView = null;
       _this.app = null;
-      _this.currCoord = null; //this._theme = theme.colors.slice(0);
-      //初始化画布
+      _this.currCoord = null; //初始化画布
 
       _this._createDomContainer(node); // //初始化数据
       // //不管传入的是data = [ ['xfield','yfield'] , ['2016', 111]]
@@ -26273,9 +26400,11 @@
 
         this._initRenderer(rendererOpts);
 
+        console.log('chart3dInit', Math.random());
         var controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-        var interaction = this.interaction = new Interaction(this.renderView, this.view);
-        var interactionLabel = this.interactionLabel = new Interaction(this.labelView, this.view); // controls.minDistance = controlOpts.minDistance;
+        var interaction = this.interaction = new Interaction(this.view);
+        interaction.addView(this.labelView);
+        interaction.addView(this.renderView); // controls.minDistance = controlOpts.minDistance;
         // controls.maxDistance = controlOpts.maxDistance;
         // controls.minZoom = controlOpts.minZoom;
         // controls.maxZoom = controlOpts.maxZoom;
@@ -26286,10 +26415,14 @@
         // controls.autoRotateSpeed = 1.0;
 
         _.extend(true, controls, controlOpts); //自动旋转时间
-        // window.setTimeout(() => {
-        //     controls.autoRotate = false;
-        // }, 15000);
-        //如果发生交互停止自动旋转
+
+
+        if (controls.autoRotate) {
+          debugger;
+          window.setTimeout(function () {
+            controls.autoRotate = false;
+          }, 15000);
+        } //如果发生交互停止自动旋转
 
 
         controls.on('start', onStart); //有交互开始渲染
@@ -26304,12 +26437,7 @@
 
         this.app._framework.on('renderafter', this._onRenderAfterBind);
 
-        interaction.on('refresh', this._onChangeBind);
-        this._onRenderAfterLabelBind = onRenderAfter.bind(interactionLabel);
-
-        this.app._framework.on('renderafter', this._onRenderAfterLabelBind);
-
-        interactionLabel.on('refresh', this._onChangeBind); // //同步主相机的位置和方向
+        interaction.on('refresh', this._onChangeBind); // //同步主相机的位置和方向
         // controls.on('change', (e) => {
         //    this.labelView._camera.position.copy(e.target.object.position);
         //    this.labelView._camera.lookAt(e.target.target);
@@ -26450,10 +26578,17 @@
         var _this3 = this;
 
         __redraw = function __redraw(e) {
+          if (_this3.currCoord) {
+            _this3.currCoord.fire({
+              type: 'legendchange',
+              data: e.data
+            });
+          }
+
           _this3.draw();
         };
 
-        this.on('redraw', __redraw);
+        this.on('legendchange', __redraw);
         var TipName = 'Tips';
 
         __tipShowEvent = function __tipShowEvent(e) {
@@ -26651,11 +26786,10 @@
       key: "resetData",
       value: function resetData(data, dataTrigger) {
         //销毁默认绑定的事件
-        this.off('tipShow', __tipShowEvent);
-        this.off('tipHide', __tipHideEvent);
-        this.off('tipMove', __tipMoveEvent);
-        this.off('redraw', __redraw);
-
+        // this.off('tipShow', __tipShowEvent);
+        // this.off('tipHide', __tipHideEvent)
+        // this.off('tipMove', __tipMoveEvent)
+        //this.off('legendchange', __redraw);
         if (data) {
           this.data = data; //this._data = parse2MatrixData(data);
 
@@ -26709,12 +26843,10 @@
 
         this._onRenderAfterBind = null;
         this.interaction.off('refresh', this._onChangeBind);
-        this.interactionLabel.off('refresh', this._onChangeBind);
         this._onChangeBind = null;
         window.removeEventListener('resize', this._onWindowResizeBind, false);
         this._onWindowResizeBind = null;
         this.interaction.dispose();
-        this.interactionLabel.dispose();
         this.orbitControls.dispose();
         this.app.dispose();
         this.app = null;
@@ -26943,7 +27075,8 @@
       value: function getLegendData() {
         var legendData = [//{name: "uv", style: "#ff8533", enabled: true, ind: 0}
         ];
-        this.dataAttribute.layoutData.forEach(function (item) {
+        this.dataAttribute.layoutData.forEach(function (item, i) {
+          item.ind = i;
           legendData.push(item);
         }); // _.each( this.graphs, function( _g ){
         //     _.each( _g.getLegendData(), function( item ){
@@ -27292,6 +27425,15 @@
         this._tickText.draw();
       }
     }, {
+      key: "dispose",
+      value: function dispose() {
+        this._tickLine.dispose();
+
+        this._tickText.dispose();
+
+        this.axisAttribute = null;
+      }
+    }, {
       key: "resetData",
       value: function resetData() {
         this._initData();
@@ -27565,7 +27707,7 @@
             });
           };
 
-          var geometry = new BoxGeometry(width, height, height);
+          var geometry = new BoxGeometry(width, height, depth);
           this.box = new Mesh(geometry, getBasicMaterial());
         }
       }
@@ -27633,6 +27775,20 @@
         }
       }
     }, {
+      key: "dispose",
+      value: function dispose() {
+        for (var key in FaceNames) {
+          var name = FaceNames[key];
+          this.faceAxises[name].forEach(function (axis) {
+            axis.dispose();
+          });
+        }
+
+        this.faceAxises = null;
+
+        _get(_getPrototypeOf(CubeUI.prototype), "dispose", this).call(this, this.box);
+      }
+    }, {
       key: "resetData",
       value: function resetData() {
         for (var key in FaceNames) {
@@ -27646,11 +27802,6 @@
 
     return CubeUI;
   }(Component);
-
-  /**
-   * 1.文字太长省略号实现
-   * 
-   */
 
   var Cube =
   /*#__PURE__*/
@@ -27667,7 +27818,7 @@
 
       _this.availableGraph = {
         widthRatio: 0.8,
-        heightRatio: 0.8
+        heightRatio: 0.7
       };
       _this.DefaultControls = {
         autoRotate: false,
@@ -27771,7 +27922,7 @@
 
         this.zAxisAttribute = new AxisAttribute(opt.zAxis, this.getAxisDataFrame(opt.zAxis.field));
         this.zAxisAttribute.setDataSection();
-        this.zAxisAttribute.setAxisLength(size.height);
+        this.zAxisAttribute.setAxisLength(size.depth);
 
         this._attributes.push(this.zAxisAttribute);
 
@@ -27785,11 +27936,7 @@
       value: function bindEvent() {
         var _this2 = this;
 
-        var controlOps = this._root.opt.coord.controls;
         var second = 0.5;
-        var alpha = controlOps.alpha,
-            beta = controlOps.beta,
-            gamma = controlOps.gamma;
         var duration = 1000 * second; // 持续的时间
 
         var rotationCube = this.rotationCube();
@@ -27816,6 +27963,19 @@
               }
             }
           }
+        });
+        this.on('legendchange', function (e) {
+          var face = e.data && e.data.face;
+          var mapEvent = {
+            top: 'toTop',
+            front: 'toFront',
+            right: 'toRight'
+          };
+          if (!face) return;
+
+          _this2.fire({
+            type: mapEvent[face]
+          });
         });
       }
     }, {
@@ -27895,6 +28055,10 @@
     }, {
       key: "initCoordUI",
       value: function initCoordUI() {
+        if (this._coordUI) {
+          this._coordUI.dispose();
+        }
+
         this._coordUI = new CubeUI(this);
         this.group.add(this._coordUI.group);
       }
@@ -27910,7 +28074,7 @@
         return {
           width: width * this.availableGraph.widthRatio,
           height: height * this.availableGraph.heightRatio,
-          depth: height * this.availableGraph.heightRatio
+          depth: Math.min(width, height) * this.availableGraph.heightRatio
         };
       }
     }, {
@@ -28358,11 +28522,6 @@
     return NodeData;
   }();
 
-  var __mouseover_barEvent = null,
-      __mouseout_barEvent = null,
-      __mousemove_barEvent = null,
-      __click_barEvemt = null;
-
   var Bar =
   /*#__PURE__*/
   function (_GraphObject) {
@@ -28551,9 +28710,11 @@
     }, {
       key: "bindEvent",
       value: function bindEvent() {
+        var _this3 = this;
+
         var me = this;
 
-        __mouseover_barEvent = function __mouseover_barEvent(e) {
+        this.__mouseover = function (e) {
           //上下文中的this 是bar 对象
           this.userData.color = this.material.color.clone(); //高亮
 
@@ -28575,7 +28736,7 @@
           });
         };
 
-        __mouseout_barEvent = function __mouseout_barEvent(e) {
+        this.__mouseout = function (e) {
           this.material.setValues({
             color: this.userData.color
           });
@@ -28592,7 +28753,7 @@
           });
         };
 
-        __mousemove_barEvent = function __mousemove_barEvent(e) {
+        this.__mousemove = function (e) {
           me._root.fire({
             type: 'tipMove',
             event: e.event,
@@ -28605,7 +28766,7 @@
           });
         };
 
-        __click_barEvemt = function __click_barEvemt(e) {
+        this.__click = function (e) {
           me.fire({
             type: 'barclick',
             data: this.userData.info
@@ -28614,10 +28775,10 @@
 
         this.group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-            obj.on('mouseover', __mouseover_barEvent);
-            obj.on('mouseout', __mouseout_barEvent);
-            obj.on('mousemove', __mousemove_barEvent);
-            obj.on('click', __click_barEvemt);
+            obj.on('mouseover', _this3.__mouseover);
+            obj.on('mouseout', _this3.__mouseout);
+            obj.on('mousemove', _this3.__mousemove);
+            obj.on('click', _this3.__click);
           }
         });
       }
@@ -28645,13 +28806,15 @@
     }, {
       key: "dispose",
       value: function dispose() {
+        var _this4 = this;
+
         //this.materialMap.clear();
         this.group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Bar._bar_prefix)) {
-            obj.off('click', __click_barEvemt);
-            obj.off('mouseover', __mouseover_barEvent);
-            obj.off('mouseout', __mouseout_barEvent);
-            obj.off('mousemove', __mousemove_barEvent);
+            obj.off('click', _this4.__click);
+            obj.off('mouseover', _this4.__mouseover);
+            obj.off('mouseout', _this4.__mouseout);
+            obj.off('mousemove', _this4.__mousemove);
           }
         });
 
@@ -28671,8 +28834,6 @@
   Bar._bar_prefix = "bar_one_";
 
   var __lastPosition = null;
-  var __mousemove_lineEvent = null,
-      __mouseout_lineEvent = null;
 
   var Line$1 =
   /*#__PURE__*/
@@ -28858,7 +29019,7 @@
       value: function bindEvent() {
         var _this3 = this;
 
-        __mousemove_lineEvent = function __mousemove_lineEvent(e) {
+        this.__mousemove = function (e) {
           var currObj = e.intersects[0];
           var target = e.target;
 
@@ -28909,7 +29070,7 @@
           }
         };
 
-        __mouseout_lineEvent = function __mouseout_lineEvent(e) {
+        this.__mouseout = function (e) {
           if (_this3.textTempGroup) ;
 
           _this3._root.fire({
@@ -28924,8 +29085,8 @@
         };
 
         this.areaGroup.traverse(function (obj) {
-          obj.on('mousemove', __mousemove_lineEvent);
-          obj.on("mouseout", __mouseout_lineEvent);
+          obj.on('mousemove', _this3.__mousemove);
+          obj.on("mouseout", _this3.__mouseout);
         });
         this.on('showLable', function (e) {
           _this3.nodeGroup.traverse(function (obj) {
@@ -28956,6 +29117,18 @@
         });
       }
     }, {
+      key: "dispose",
+      value: function dispose() {
+        var _this4 = this;
+
+        this.areaGroup.traverse(function (obj) {
+          obj.off('mousemove', _this4.__mousemove);
+          obj.off("mouseout", _this4.__mouseout);
+        });
+
+        _get(_getPrototypeOf(Line$$1.prototype), "dispose", this).call(this);
+      }
+    }, {
       key: "resetData",
       value: function resetData() {
         this.dispose();
@@ -28967,8 +29140,6 @@
   }(GraphObject);
 
   var __lastPosition$1 = null;
-  var __mousemove_areaEvent = null,
-      __mouseout_areaEvent = null;
 
   var Area =
   /*#__PURE__*/
@@ -29092,7 +29263,7 @@
       value: function bindEvent() {
         var _this2 = this;
 
-        __mousemove_areaEvent = function __mousemove_areaEvent(e) {
+        this.__mousemove = function (e) {
           var currObj = e.intersects[0];
           var target = e.target;
 
@@ -29134,7 +29305,7 @@
           }
         };
 
-        __mouseout_areaEvent = function __mouseout_areaEvent(e) {
+        this.__mouseout = function (e) {
           if (_this2.textTempGroup) {
             _this2.textTempGroup.traverse(function (item) {
               item.on('removed', function (e) {
@@ -29161,8 +29332,8 @@
 
         this.group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Area._area_prefix)) {
-            obj.on('mousemove', __mousemove_areaEvent);
-            obj.on("mouseout", __mouseout_areaEvent);
+            obj.on('mousemove', _this2.__mousemove);
+            obj.on("mouseout", _this2.__mouseout);
           }
         });
       }
@@ -29196,12 +29367,14 @@
     }, {
       key: "dispose",
       value: function dispose(group) {
+        var _this3 = this;
+
         //删除所有事件
         group = group || this.group;
         group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Area._area_prefix)) {
-            obj.off('mousemove', __mousemove_areaEvent);
-            obj.off("mouseout", __mouseout_areaEvent);
+            obj.off('mousemove', _this3.__mousemove);
+            obj.off("mouseout", _this3.__mouseout);
           }
         });
 
@@ -29213,11 +29386,6 @@
   }(GraphObject);
 
   Area._area_prefix = 'polygon_area_';
-
-  var __mouseout_pieEvent = null,
-      __mouseover_pieEvent = null,
-      __mousemove_pieEvent = null,
-      __click_pieEvent = null;
 
   var Pie =
   /*#__PURE__*/
@@ -29397,9 +29565,11 @@
     }, {
       key: "bindEvent",
       value: function bindEvent() {
+        var _this3 = this;
+
         var me = this;
 
-        __mouseover_pieEvent = function __mouseover_pieEvent(e) {
+        this.__mouseover = function (e) {
           //上下文中的this 是bar 对象
           this.userData.color = this.material.color.clone(); //高亮
 
@@ -29424,7 +29594,7 @@
           });
         };
 
-        __mouseout_pieEvent = function __mouseout_pieEvent(e) {
+        this.__mouseout = function (e) {
           this.material.setValues({
             color: this.userData.color
           });
@@ -29444,7 +29614,7 @@
           });
         };
 
-        __mousemove_pieEvent = function __mousemove_pieEvent(e) {
+        this.__mousemove = function (e) {
           var _data = this.userData.info;
 
           me._root.fire({
@@ -29461,7 +29631,7 @@
           });
         };
 
-        __click_pieEvent = function __click_pieEvent(e) {
+        this.__click = function (e) {
           var _data = this.userData.info;
 
           if (!this.userData.isChecked) {
@@ -29489,10 +29659,10 @@
 
         this.group.traverse(function (sector) {
           if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-            sector.on('mouseover', __mouseover_pieEvent);
-            sector.on('mouseout', __mouseout_pieEvent);
-            sector.on('mousemove', __mousemove_pieEvent);
-            sector.on('click', __click_pieEvent);
+            sector.on('mouseover', _this3.__mouseover);
+            sector.on('mouseout', _this3.__mouseout);
+            sector.on('mousemove', _this3.__mousemove);
+            sector.on('click', _this3.__click);
           }
         });
       }
@@ -29620,7 +29790,7 @@
     }, {
       key: "_widgetLabel",
       value: function _widgetLabel(quadrant, indexs, lmin, rmin, isEnd, ySpaceInfo) {
-        var _this3 = this;
+        var _this4 = this;
 
         var me = this;
         var count = 0;
@@ -29750,7 +29920,7 @@
             this.updateMatrixWorld(true);
           };
 
-          _this3.textGroup.add(label);
+          _this4.textGroup.add(label);
         });
       }
     }, {
@@ -29772,13 +29942,15 @@
     }, {
       key: "dispose",
       value: function dispose(group) {
+        var _this5 = this;
+
         group = group || this.group;
         group.traverse(function (sector) {
           if (sector.name && sector.name.includes(Pie._pie_prefix)) {
-            sector.off('mouseover', __mouseover_pieEvent);
-            sector.off('mouseout', __mouseout_pieEvent);
-            sector.off('mousemove', __mousemove_pieEvent);
-            sector.off('click', __click_pieEvent);
+            sector.off('mouseover', _this5.__mouseover);
+            sector.off('mouseout', _this5.__mouseout);
+            sector.off('mousemove', _this5.__mousemove);
+            sector.off('click', _this5.__click);
           }
         });
 
@@ -29803,11 +29975,6 @@
   }(Component);
 
   Pie._pie_prefix = "pie_one_";
-
-  var __mouseover_heatmapEvent = null,
-      __mouseout_heatmapEvent = null,
-      __mousemove_heatmapEvent = null,
-      __click_heatmapEvemt = null;
 
   var Heatmap =
   /*#__PURE__*/
@@ -29869,30 +30036,31 @@
 
         if (this.face === FaceNames.BACK) {
           this.group.rotateY(_Math.degToRad(180));
-          this.group.translateZ(height);
+          this.group.translateZ(depth);
           this.group.translateX(-width);
         }
 
         if (this.face === FaceNames.TOP) {
           this.group.rotateX(_Math.degToRad(-90));
-          this.group.translateY(-height);
+          this.group.translateY(-height * 0.5 - depth * 0.5);
+          this.group.translateZ(height * 0.5 - depth * 0.5);
         }
 
         if (this.face === FaceNames.BOTTOM) {
           this.group.rotateX(_Math.degToRad(90));
-          this.group.translateZ(height);
+          this.group.translateZ(depth);
         }
 
         if (this.face === FaceNames.RIGHT) {
           this.group.rotateY(_Math.degToRad(90));
-          this.group.translateX(-width * 0.5 - height * 0.5);
-          this.group.translateZ(height * 0.5);
+          this.group.translateX(-width * 0.5 - depth * 0.5);
+          this.group.translateZ(width * 0.5 - depth * 0.5);
         }
 
         if (this.face === FaceNames.LEFT) {
           this.group.rotateY(_Math.degToRad(-90));
           this.group.translateX(width * 0.5 - height * 0.5);
-          this.group.translateZ(height * 0.5 + width * 0.5);
+          this.group.translateZ(depth * 0.5 + width * 0.5);
         }
 
         this._initData();
@@ -29985,7 +30153,7 @@
       value: function draw() {
         var _this3 = this;
 
-        var app = this._root.app;
+        this.dispose();
         this.drawData.forEach(function (item, i) {
           var score = item.data[_this3.field] || 0.5;
 
@@ -30025,7 +30193,7 @@
           return me._coordSystem.getDirection() === me.face.toLowerCase();
         };
 
-        __mouseover_heatmapEvent = function __mouseover_heatmapEvent(e) {
+        this.__mouseover = function (e) {
           if (!isTrigger()) return; //let score = this.userData.info.data[me.field] || 1;
 
           this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
@@ -30043,7 +30211,7 @@
           });
         };
 
-        __mouseout_heatmapEvent = function __mouseout_heatmapEvent(e) {
+        this.__mouseout = function (e) {
           if (!isTrigger()) return;
           var score = this.userData.info.data[me.field] || 1;
 
@@ -30064,7 +30232,7 @@
           });
         };
 
-        __mousemove_heatmapEvent = function __mousemove_heatmapEvent(e) {
+        this.__mousemove = function (e) {
           if (!isTrigger()) return;
 
           me._root.fire({
@@ -30079,7 +30247,7 @@
           });
         };
 
-        __click_heatmapEvemt = function __click_heatmapEvemt(e) {
+        this.__click = function (e) {
           if (!isTrigger()) return;
           me.cancelSelect();
 
@@ -30097,10 +30265,10 @@
 
         this.group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + _this4.face)) {
-            obj.on('mouseover', __mouseover_heatmapEvent);
-            obj.on('mouseout', __mouseout_heatmapEvent);
-            obj.on('mousemove', __mousemove_heatmapEvent);
-            obj.on('click', __click_heatmapEvemt);
+            obj.on('mouseover', _this4.__mouseover);
+            obj.on('mouseout', _this4.__mouseout);
+            obj.on('mousemove', _this4.__mousemove);
+            obj.on('click', _this4.__click);
           }
         });
       }
@@ -30163,6 +30331,7 @@
           var scale = new Vector3(realSize[0] / realSize[1], 1, 1);
           scale.multiplyScalar(realSize[1]);
           var txtObj = new Mesh(geometry, textMatrial);
+          txtObj.name = "mesh_text_" + text + "_" + index;
           txtObj.scale.copy(scale);
           txtObj.userData = {
             text: text,
@@ -30202,12 +30371,14 @@
         group = group || this.group;
         group.traverse(function (obj) {
           if (obj.name && obj.name.includes(Heatmap._heatmap_plane_prefix + _this6.face)) {
-            obj.off('mouseover', __mouseover_heatmapEvent);
-            obj.off('mouseout', __mouseout_heatmapEvent);
-            obj.off('mousemove', __mousemove_heatmapEvent);
-            obj.off('click', __click_heatmapEvemt);
+            obj.off('mouseover', _this6.__mouseover);
+            obj.off('mouseout', _this6.__mouseout);
+            obj.off('mousemove', _this6.__mousemove);
+            obj.off('click', _this6.__click);
           }
         });
+        var highMaterial = this.getMaterial(this.colorScheme, 10, this.area.highColor);
+        highMaterial.dispose(); //this.materialMap = null;
 
         _get(_getPrototypeOf(Heatmap.prototype), "dispose", this).call(this, group);
       }
@@ -30287,6 +30458,8 @@
 
 
       _this.group.on("removed", function () {
+        _this._removeContent();
+
         _this._tipDom = null;
       });
 
@@ -30806,6 +30979,8 @@
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Legend).call(this, chart3d.currCoord));
       _this.name = "Legend";
       _this.type = "legend3d";
+      _this.mode = 'checkbox'; //checkbox  radio
+
       _this.opt = opt;
       /* data的数据结构为
       [
@@ -30877,7 +31052,7 @@
 
         if (legendData) {
           _.each(legendData, function (item, i) {
-            item.enabled = true;
+            item.enabled = 'enabled' in item ? item.enabled : true;
             item.ind = i;
           });
 
@@ -30968,13 +31143,13 @@
 
         var viewWidth = currCoord.width - currCoord.padding.left - currCoord.padding.right - this.margin.left - this.margin.right;
         var viewHeight = currCoord.height - currCoord.padding.top - currCoord.padding.bottom - this.margin.top - this.margin.bottom;
+        this.dispose();
         var maxItemWidth = 0;
         var width = 0,
             height = 0;
         var x = 0,
             y = 0;
         var rows = 1;
-        this.dispose();
         var isOver = false; //如果legend过多
 
         __legend_clickEvent = this._getInfoHandler.bind(this);
@@ -31091,11 +31266,24 @@
       value: function _getInfoHandler(e) {
         var info = e.target.parent.userData.info;
 
-        if (info) {
-          info.enabled = !info.enabled;
+        if (this.mode === 'radio') {
+          _.each(this.data, function (item) {
+            if (item.ind !== info.ind) {
+              item.enabled = false;
+            } else {
+              item.enabled = true;
+            }
+          });
+        }
 
+        if (this.mode === 'checkbox') {
+          info.enabled = !info.enabled;
+        }
+
+        if (info) {
+          // this._root.fire({ type: 'redraw', data: info });
           this._root.fire({
-            type: 'redraw',
+            type: 'legendchange',
             data: info
           });
         }
