@@ -812,8 +812,9 @@ function () {
 
     this.dataSectionLayout = []; //和dataSection一一对应的，每个值的pos，//get xxx OfPos的时候，要先来这里做一次寻找
     //轴总长
+    //3d中有引用到
 
-    this._axisLength = 1;
+    this.axisLength = 1;
     this._cellCount = null;
     this._cellLength = null; //数据变动的时候要置空
     //默认的 dataSectionGroup = [ dataSection ], dataSection 其实就是 dataSectionGroup 去重后的一维版本
@@ -843,7 +844,7 @@ function () {
   }, {
     key: "setAxisLength",
     value: function setAxisLength(length) {
-      this._axisLength = length;
+      this.axisLength = length;
       this.calculateProps();
     }
   }, {
@@ -1164,7 +1165,7 @@ function () {
     value: function _getOriginTrans(origin) {
       var pos = 0;
       var dsgLen = this.dataSectionGroup.length;
-      var groupLength = this._axisLength / dsgLen;
+      var groupLength = this.axisLength / dsgLen;
 
       for (var i = 0, l = dsgLen; i < l; i++) {
         var ds = this.dataSectionGroup[i];
@@ -1252,7 +1253,7 @@ function () {
 
       if (this.layoutType == "proportion") {
         var dsgLen = this.dataSectionGroup.length;
-        var groupLength = this._axisLength / dsgLen;
+        var groupLength = this.axisLength / dsgLen;
 
         for (var i = 0, l = dsgLen; i < l; i++) {
           var ds = this.dataSectionGroup[i];
@@ -1283,7 +1284,7 @@ function () {
       } else {
         if (cellCount == 1) {
           //如果只有一数据，那么就全部默认在正中间
-          pos = this._axisLength / 2;
+          pos = this.axisLength / 2;
         } else {
           //TODO 这里在非proportion情况下，如果没有opt.ind 那么getIndexOfVal 其实是有风险的，
           //因为可能有多个数据的val一样
@@ -1292,16 +1293,16 @@ function () {
           if (valInd != -1) {
             if (this.layoutType == "rule") {
               //line 的xaxis就是 rule
-              pos = valInd / (cellCount - 1) * this._axisLength;
+              pos = valInd / (cellCount - 1) * this.axisLength;
             }
 
             if (this.layoutType == "peak") {
               //bar的xaxis就是 peak
 
               /*
-              pos = (this._axisLength/cellCount) 
+              pos = (this.axisLength/cellCount) 
                     * (valInd+1) 
-                    - (this._axisLength/cellCount)/2;
+                    - (this.axisLength/cellCount)/2;
               */
               var _cellLength = this.getCellLength();
 
@@ -1361,7 +1362,7 @@ function () {
       var val;
 
       if (this.layoutType == "proportion") {
-        var groupLength = this._axisLength / this.dataSectionGroup.length;
+        var groupLength = this.axisLength / this.dataSectionGroup.length;
 
         _.each(this.dataSectionGroup, function (ds, i) {
           if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
@@ -1455,8 +1456,8 @@ function () {
         return this._cellLength;
       }
 
-      var _axisLength = this._axisLength;
-      var cellLength = _axisLength;
+      var axisLength = this.axisLength;
+      var cellLength = axisLength;
 
       var cellCount = this._getCellCount();
 
@@ -1465,13 +1466,13 @@ function () {
           cellLength = 1;
         } else {
           //默认按照 peak 也就是柱状图的需要的布局方式
-          cellLength = _axisLength / cellCount;
+          cellLength = axisLength / cellCount;
 
           if (this.layoutType == "rule") {
             if (cellCount == 1) {
-              cellLength = _axisLength / 2;
+              cellLength = axisLength / 2;
             } else {
-              cellLength = _axisLength / (cellCount - 1);
+              cellLength = axisLength / (cellCount - 1);
             }
           }
 
@@ -1505,7 +1506,7 @@ function () {
       var cellCount = 0;
 
       if (this.layoutType == "proportion") {
-        cellCount = this._axisLength;
+        cellCount = this.axisLength;
       } else {
         if (this.dataOrg.length && this.dataOrg[0].length && this.dataOrg[0][0].length) {
           cellCount = this.dataOrg[0][0].length;

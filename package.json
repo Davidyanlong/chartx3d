@@ -2,7 +2,7 @@
   "name": "chartx3d",
   "title": "chartx3D.js",
   "description": "Data Visualization Chart Library",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "homepage": "https://thx.github.io/chartx/",
   "license": "MIT",
   "keywords": [
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "mmgl": "0.0.44",
-    "mmvis": "0.0.46"
+    "mmvis": "0.0.47"
   },
   "scripts": {
     "rollup": "NODE_ENV=dev rollup -c",
