@@ -2,7 +2,7 @@
   "name": "chartx3d",
   "title": "chartx3D.js",
   "description": "Data Visualization Chart Library",
-  "version": "0.0.17",
+  "version": "0.0.19",
   "homepage": "https://thx.github.io/chartx/",
   "license": "MIT",
   "keywords": [
@@ -21,6 +21,7 @@
   },
   "repository": "https://github.com/Davidyanlong/chartx3d",
   "main": "./dist/cjs/chartx.js",
+  "module": "./src/index.js",
   "devDependencies": {
     "@babel/core": "7.2.0",
     "@babel/plugin-external-helpers": "7.2.0",
@@ -28,6 +29,8 @@
     "rollup": "0.67.4",
     "rollup-plugin-babel": "4.1.0",
     "rollup-plugin-commonjs": "9.2.0",
+    "@babel/plugin-proposal-class-properties": "7.2.3",
+    "@babel/plugin-transform-new-target": "7.0.0",
     "rollup-plugin-node-resolve": "4.0.0",
     "rollup-plugin-uglify": "6.0.0",
     "rollup-plugin-json": "3.1.0",
@@ -39,13 +42,13 @@
     "cloudBuild": true
   },
   "dependencies": {
-    "mmgl": "0.0.42",
-    "mmvis": "0.0.38"
+    "mmgl": "0.0.43",
+    "mmvis": "0.0.45"
   },
   "scripts": {
     "rollup": "NODE_ENV=dev rollup -c",
-    "build": "NODE_ENV=production rollup -c",
-    "dev": "NODE_ENV=dev rollup -c -w",
+    "build": "NODE_ENV=production rollup -c ",
+    "dev": "NODE_ENV=dev rollup -c -w -m",
     "build:watch": "onchange 'src/**/**' -- npm run dev"
   }
 }
