@@ -55,16 +55,7 @@ class Tips extends Component {
         console.log('tips component loaded!');
     }
 
-    // static register(opt, app) {
-    //     //所有的tips放在一个单独的tips中
-    //     var _tips = new this(opt, app);
-    //     app.stage.addChild(_tips.sprite);
-    //     app.components.push({
-    //         type: "tips",
-    //         id: "tips",
-    //         plug: _tips
-    //     });
-    // }
+
 
     show(e) {
 

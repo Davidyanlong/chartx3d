@@ -387,9 +387,9 @@ class Heatmap extends GraphObject {
         this.dispose();
         this.draw();
     }
-    static get _heatmap_plane_prefix() {
-        return 'heatmap_one_plane_'
-    }
 }
+
+Heatmap._heatmap_plane_prefix='heatmap_one_plane_'
+
 
 export default Heatmap;

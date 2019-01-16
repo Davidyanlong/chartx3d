@@ -793,60 +793,6 @@ var getDefaultProps = function getDefaultProps(dProps) {
 var axis =
 /*#__PURE__*/
 function () {
-  _createClass(axis, null, [{
-    key: "defaultProps",
-    value: function defaultProps() {
-      return {
-        layoutType: {
-          detail: '布局方式',
-          default: 'proportion'
-        },
-        dataSection: {
-          detail: '轴数据集',
-          default: []
-        },
-        sectionHandler: {
-          detail: '自定义dataSection的计算公式',
-          default: null
-        },
-        waterLine: {
-          detail: '水位线',
-          default: null,
-          documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
-        },
-        middleweight: {
-          detail: '区间等分线',
-          default: null,
-          documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
-        },
-        symmetric: {
-          detail: '自动正负对称',
-          default: false,
-          documentation: 'proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要'
-        },
-        origin: {
-          detail: '轴的起源值',
-          default: null,
-          documentation: '\
-                    1，如果数据中又正数和负数，则默认为0 <br />\
-                    2，如果dataSection最小值小于0，则baseNumber为最小值<br />\
-                    3，如果dataSection最大值大于0，则baseNumber为最大值<br />\
-                    4，也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值\
-                '
-        },
-        sort: {
-          detail: '排序',
-          default: null
-        },
-        posParseToInt: {
-          detail: '是否位置计算取整',
-          default: false,
-          documentation: '比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的'
-        }
-      };
-    }
-  }]);
-
   function axis(opt, dataOrg) {
     _classCallCheck(this, axis);
 
@@ -881,7 +827,7 @@ function () {
     this._min = null;
     this._max = null;
 
-    _.extend(true, this, getDefaultProps(axis.defaultProps()), opt);
+    _.extend(true, this, getDefaultProps(axis.defaultProps), opt);
   }
 
   _createClass(axis, [{
@@ -1572,6 +1518,55 @@ function () {
 
   return axis;
 }();
+
+axis.defaultProps = {
+  layoutType: {
+    detail: '布局方式',
+    default: 'proportion'
+  },
+  dataSection: {
+    detail: '轴数据集',
+    default: []
+  },
+  sectionHandler: {
+    detail: '自定义dataSection的计算公式',
+    default: null
+  },
+  waterLine: {
+    detail: '水位线',
+    default: null,
+    documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
+  },
+  middleweight: {
+    detail: '区间等分线',
+    default: null,
+    documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
+  },
+  symmetric: {
+    detail: '自动正负对称',
+    default: false,
+    documentation: 'proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要'
+  },
+  origin: {
+    detail: '轴的起源值',
+    default: null,
+    documentation: '\
+            1，如果数据中又正数和负数，则默认为0 <br />\
+            2，如果dataSection最小值小于0，则baseNumber为最小值<br />\
+            3，如果dataSection最大值大于0，则baseNumber为最大值<br />\
+            4，也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值\
+        '
+  },
+  sort: {
+    detail: '排序',
+    default: null
+  },
+  posParseToInt: {
+    detail: '是否位置计算取整',
+    default: false,
+    documentation: '比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的'
+  }
+};
 
 /**
 * 把原始的数据
@@ -2524,86 +2519,80 @@ function () {
 
       return points;
     }
-  }], [{
-    key: "filterPointsInRect",
-    value: function filterPointsInRect(points, origin, width, height) {
-      for (var i = 0, l = points.length; i < l; i++) {
-        if (!Polar.checkPointInRect(points[i], origin, width, height)) {
-          //该点不在root rect范围内，去掉
-          points.splice(i, 1);
-          i--, l--;
-        }
-      }
-      return points;
-    }
-  }, {
-    key: "checkPointInRect",
-    value: function checkPointInRect(p, origin, width, height) {
-      var _tansRoot = {
-        x: p.x + origin.x,
-        y: p.y + origin.y
-      };
-      return !(_tansRoot.x < 0 || _tansRoot.x > width || _tansRoot.y < 0 || _tansRoot.y > height);
-    } //检查由n个相交点分割出来的圆弧是否在rect内
-
-  }, {
-    key: "checkArcInRect",
-    value: function checkArcInRect(arc, r, origin, width, height) {
-      var start = arc[0];
-      var to = arc[1];
-      var differenceR = to.radian - start.radian;
-
-      if (to.radian < start.radian) {
-        differenceR = Math.PI * 2 + to.radian - start.radian;
-      }
-      var middleR = (start.radian + differenceR / 2) % (Math.PI * 2);
-      return Polar.checkPointInRect(Polar.getPointInRadianOfR(middleR, r), origin, width, height);
-    } //获取某个点相对圆心的弧度值
-
-  }, {
-    key: "getRadianInPoint",
-    value: function getRadianInPoint(point) {
-      var pi2 = Math.PI * 2;
-      return (Math.atan2(point.y, point.x) + pi2) % pi2;
-    } //获取某个弧度方向，半径为r的时候的point坐标点位置
-
-  }, {
-    key: "getPointInRadianOfR",
-    value: function getPointInRadianOfR(radian, r) {
-      var pi = Math.PI;
-      var x = Math.cos(radian) * r;
-
-      if (radian == pi / 2 || radian == pi * 3 / 2) {
-        //90度或者270度的时候
-        x = 0;
-      }
-      var y = Math.sin(radian) * r;
-
-      if (radian % pi == 0) {
-        y = 0;
-      }
-      return {
-        x: x,
-        y: y
-      };
-    }
-  }, {
-    key: "getROfNum",
-    value: function getROfNum(num, dataSection, width, height) {
-      var r = 0;
-
-      var maxNum = _.max(dataSection);
-
-      var minNum = 0; //Math.min( this.rAxis.dataSection );
-
-      var maxR = parseInt(Math.max(width, height) / 2);
-      r = maxR * ((num - minNum) / (maxNum - minNum));
-      return r;
-    }
   }]);
 
   return Polar;
 }();
+
+Polar.filterPointsInRect = function (points, origin, width, height) {
+  for (var i = 0, l = points.length; i < l; i++) {
+    if (!Polar.checkPointInRect(points[i], origin, width, height)) {
+      //该点不在root rect范围内，去掉
+      points.splice(i, 1);
+      i--, l--;
+    }
+  }
+  return points;
+};
+
+Polar.checkPointInRect = function (p, origin, width, height) {
+  var _tansRoot = {
+    x: p.x + origin.x,
+    y: p.y + origin.y
+  };
+  return !(_tansRoot.x < 0 || _tansRoot.x > width || _tansRoot.y < 0 || _tansRoot.y > height);
+}; //检查由n个相交点分割出来的圆弧是否在rect内
+
+
+Polar.checkArcInRect = function (arc, r, origin, width, height) {
+  var start = arc[0];
+  var to = arc[1];
+  var differenceR = to.radian - start.radian;
+
+  if (to.radian < start.radian) {
+    differenceR = Math.PI * 2 + to.radian - start.radian;
+  }
+  var middleR = (start.radian + differenceR / 2) % (Math.PI * 2);
+  return Polar.checkPointInRect(Polar.getPointInRadianOfR(middleR, r), origin, width, height);
+}; //获取某个点相对圆心的弧度值
+
+
+Polar.getRadianInPoint = function (point) {
+  var pi2 = Math.PI * 2;
+  return (Math.atan2(point.y, point.x) + pi2) % pi2;
+}; //获取某个弧度方向，半径为r的时候的point坐标点位置
+
+
+Polar.getPointInRadianOfR = function (radian, r) {
+  var pi = Math.PI;
+  var x = Math.cos(radian) * r;
+
+  if (radian == pi / 2 || radian == pi * 3 / 2) {
+    //90度或者270度的时候
+    x = 0;
+  }
+  var y = Math.sin(radian) * r;
+
+  if (radian % pi == 0) {
+    y = 0;
+  }
+  return {
+    x: x,
+    y: y
+  };
+};
+
+Polar.getROfNum = function (num, dataSection, width, height) {
+  var r = 0;
+
+  var maxNum = _.max(dataSection);
+
+  var minNum = 0; //Math.min( this.rAxis.dataSection );
+
+  var maxR = parseInt(Math.max(width, height) / 2);
+  r = maxR * ((num - minNum) / (maxNum - minNum));
+  return r;
+};
 
 /**
  * Canvax
@@ -3118,7 +3107,7 @@ function () {
   return Events;
 }();
 
-var version = "0.0.43";
+var version = "0.0.44";
 
 var REVISION = version; //draw Point
 
@@ -9042,35 +9031,33 @@ function () {
       var v = object[name];
       if (v !== undefined) this.setValue(name, v);
     }
-  }], [{
-    key: "upload",
-    value: function upload(gl, seq, values, renderer) {
-      for (var i = 0, n = seq.length; i !== n; ++i) {
-        var u = seq[i],
-            v = values[u.id];
-
-        if (v.needsUpdate !== false) {
-          // note: always updating when .needsUpdate is undefined
-          u.setValue(v.value, renderer);
-        }
-      }
-    }
-  }, {
-    key: "seqWithValue",
-    value: function seqWithValue(seq, values) {
-      var r = [];
-
-      for (var i = 0, n = seq.length; i !== n; ++i) {
-        var u = seq[i];
-        if (u.id in values) r.push(u);
-      }
-
-      return r;
-    }
   }]);
 
   return WebGLUniforms;
 }();
+
+WebGLUniforms.upload = function (gl, seq, values, renderer) {
+  for (var i = 0, n = seq.length; i !== n; ++i) {
+    var u = seq[i],
+        v = values[u.id];
+
+    if (v.needsUpdate !== false) {
+      // note: always updating when .needsUpdate is undefined
+      u.setValue(v.value, renderer);
+    }
+  }
+};
+
+WebGLUniforms.seqWithValue = function (seq, values) {
+  var r = [];
+
+  for (var i = 0, n = seq.length; i !== n; ++i) {
+    var u = seq[i];
+    if (u.id in values) r.push(u);
+  }
+
+  return r;
+};
 
 var StructuredUniform =
 /*#__PURE__*/
@@ -12085,61 +12072,59 @@ function () {
       this._w = value;
       this.onChangeCallback();
     }
-  }], [{
-    key: "slerp",
-    value: function slerp(qa, qb, qm, t) {
-      return qm.copy(qa).slerp(qb, t);
-    }
-  }, {
-    key: "slerpFlat",
-    value: function slerpFlat(dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t) {
-      // fuzz-free, array-based Quaternion SLERP operation
-      var x0 = src0[srcOffset0 + 0],
-          y0 = src0[srcOffset0 + 1],
-          z0 = src0[srcOffset0 + 2],
-          w0 = src0[srcOffset0 + 3],
-          x1 = src1[srcOffset1 + 0],
-          y1 = src1[srcOffset1 + 1],
-          z1 = src1[srcOffset1 + 2],
-          w1 = src1[srcOffset1 + 3];
-
-      if (w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1) {
-        var s = 1 - t,
-            cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1,
-            dir = cos >= 0 ? 1 : -1,
-            sqrSin = 1 - cos * cos; // Skip the Slerp for tiny steps to avoid numeric problems:
-
-        if (sqrSin > Number.EPSILON) {
-          var sin = Math.sqrt(sqrSin),
-              len = Math.atan2(sin, cos * dir);
-          s = Math.sin(s * len) / sin;
-          t = Math.sin(t * len) / sin;
-        }
-
-        var tDir = t * dir;
-        x0 = x0 * s + x1 * tDir;
-        y0 = y0 * s + y1 * tDir;
-        z0 = z0 * s + z1 * tDir;
-        w0 = w0 * s + w1 * tDir; // Normalize in case we just did a lerp:
-
-        if (s === 1 - t) {
-          var f = 1 / Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0);
-          x0 *= f;
-          y0 *= f;
-          z0 *= f;
-          w0 *= f;
-        }
-      }
-
-      dst[dstOffset] = x0;
-      dst[dstOffset + 1] = y0;
-      dst[dstOffset + 2] = z0;
-      dst[dstOffset + 3] = w0;
-    }
   }]);
 
   return Quaternion;
 }();
+
+Quaternion.slerp = function (qa, qb, qm, t) {
+  return qm.copy(qa).slerp(qb, t);
+};
+
+Quaternion.slerpFlat = function (dst, dstOffset, src0, srcOffset0, src1, srcOffset1, t) {
+  // fuzz-free, array-based Quaternion SLERP operation
+  var x0 = src0[srcOffset0 + 0],
+      y0 = src0[srcOffset0 + 1],
+      z0 = src0[srcOffset0 + 2],
+      w0 = src0[srcOffset0 + 3],
+      x1 = src1[srcOffset1 + 0],
+      y1 = src1[srcOffset1 + 1],
+      z1 = src1[srcOffset1 + 2],
+      w1 = src1[srcOffset1 + 3];
+
+  if (w0 !== w1 || x0 !== x1 || y0 !== y1 || z0 !== z1) {
+    var s = 1 - t,
+        cos = x0 * x1 + y0 * y1 + z0 * z1 + w0 * w1,
+        dir = cos >= 0 ? 1 : -1,
+        sqrSin = 1 - cos * cos; // Skip the Slerp for tiny steps to avoid numeric problems:
+
+    if (sqrSin > Number.EPSILON) {
+      var sin = Math.sqrt(sqrSin),
+          len = Math.atan2(sin, cos * dir);
+      s = Math.sin(s * len) / sin;
+      t = Math.sin(t * len) / sin;
+    }
+
+    var tDir = t * dir;
+    x0 = x0 * s + x1 * tDir;
+    y0 = y0 * s + y1 * tDir;
+    z0 = z0 * s + z1 * tDir;
+    w0 = w0 * s + w1 * tDir; // Normalize in case we just did a lerp:
+
+    if (s === 1 - t) {
+      var f = 1 / Math.sqrt(x0 * x0 + y0 * y0 + z0 * z0 + w0 * w0);
+      x0 *= f;
+      y0 *= f;
+      z0 *= f;
+      w0 *= f;
+    }
+  }
+
+  dst[dstOffset] = x0;
+  dst[dstOffset + 1] = y0;
+  dst[dstOffset + 2] = z0;
+  dst[dstOffset + 3] = w0;
+};
 
 var matrix = new Matrix4();
 var q = new Quaternion();
@@ -13366,8 +13351,7 @@ function () {
       this.b.copy(triangle.b);
       this.c.copy(triangle.c);
       return this;
-    } // static/instance method to calculate barycentric coordinates
-    // based on: http://www.blackpawn.com/texts/pointinpoly/default.html
+    } // based on: http://www.blackpawn.com/texts/pointinpoly/default.html
 
   }, {
     key: "area",
@@ -13439,76 +13423,12 @@ function () {
     value: function equals(triangle) {
       return triangle.a.equals(this.a) && triangle.b.equals(this.b) && triangle.c.equals(this.c);
     }
-  }], [{
-    key: "normal",
-    value: function normal(a, b, c, optionalTarget) {
-      var result = optionalTarget || new Vector3();
-      result.subVectors(c, b);
-      v$1.subVectors(a, b);
-      result.cross(v$1);
-      var resultLengthSq = result.lengthSq();
-
-      if (resultLengthSq > 0) {
-        return result.multiplyScalar(1 / Math.sqrt(resultLengthSq));
-      }
-
-      return result.set(0, 0, 0);
-    }
-  }, {
-    key: "getNormal",
-    value: function getNormal(a, b, c, target) {
-      return _getNormal.call(this, a, b, c, target);
-    } // static/instance method to calculate barycentric coordinates
-    // based on: http://www.blackpawn.com/texts/pointinpoly/default.html
-
-  }, {
-    key: "barycoordFromPoint",
-    value: function barycoordFromPoint(point, a, b, c, optionalTarget) {
-      v0.subVectors(c, a);
-      v1$5.subVectors(b, a);
-      v2$3.subVectors(point, a);
-      var dot00 = v0.dot(v0);
-      var dot01 = v0.dot(v1$5);
-      var dot02 = v0.dot(v2$3);
-      var dot11 = v1$5.dot(v1$5);
-      var dot12 = v1$5.dot(v2$3);
-      var denom = dot00 * dot11 - dot01 * dot01;
-      var result = optionalTarget || new Vector3(); // collinear or singular triangle
-
-      if (denom === 0) {
-        // arbitrary location outside of triangle?
-        // not sure if this is the best idea, maybe should be returning undefined
-        return result.set(-2, -1, -1);
-      }
-
-      var invDenom = 1 / denom;
-      var u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-      var v = (dot00 * dot12 - dot01 * dot02) * invDenom; // barycentric coordinates must always sum to 1
-
-      return result.set(1 - u - v, v, u);
-    }
-  }, {
-    key: "containsPoint",
-    value: function containsPoint(point, a, b, c) {
-      var result = Triangle.barycoordFromPoint(point, a, b, c, v4$1);
-      return result.x >= 0 && result.y >= 0 && result.x + result.y <= 1;
-    }
-  }, {
-    key: "getBarycoord",
-    value: function getBarycoord(point, a, b, c, target) {
-      return _getBarycoord.call(this, point, a, b, c, target);
-    }
-  }, {
-    key: "getUV",
-    value: function getUV(point, p1, p2, p3, uv1, uv2, uv3, target) {
-      return _getUV.call(this, point, p1, p2, p3, uv1, uv2, uv3, target);
-    }
   }]);
 
   return Triangle;
 }();
 
-var _getUV = function () {
+var getUV = function () {
   var barycoord = new Vector3();
   return function getUV(point, p1, p2, p3, uv1, uv2, uv3, target) {
     this.getBarycoord(point, p1, p2, p3, barycoord);
@@ -13520,7 +13440,7 @@ var _getUV = function () {
   };
 }();
 
-var _getBarycoord = function () {
+var getBarycoord = function () {
   var v0 = new Vector3();
   var v1 = new Vector3();
   var v2 = new Vector3();
@@ -13555,7 +13475,64 @@ var _getBarycoord = function () {
   };
 }();
 
-var _getNormal = function () {
+Triangle.getUV = function (point, p1, p2, p3, uv1, uv2, uv3, target) {
+  return getUV.call(Triangle, point, p1, p2, p3, uv1, uv2, uv3, target);
+};
+
+Triangle.getBarycoord = function (point, a, b, c, target) {
+  return getBarycoord.call(Triangle, point, a, b, c, target);
+};
+
+Triangle.normal = function (a, b, c, optionalTarget) {
+  var result = optionalTarget || new Vector3();
+  result.subVectors(c, b);
+  v$1.subVectors(a, b);
+  result.cross(v$1);
+  var resultLengthSq = result.lengthSq();
+
+  if (resultLengthSq > 0) {
+    return result.multiplyScalar(1 / Math.sqrt(resultLengthSq));
+  }
+
+  return result.set(0, 0, 0);
+};
+
+Triangle.getNormal = function (a, b, c, target) {
+  return getNormal.call(Triangle, a, b, c, target);
+}; // based on: http://www.blackpawn.com/texts/pointinpoly/default.html
+
+
+Triangle.barycoordFromPoint = function (point, a, b, c, optionalTarget) {
+  v0.subVectors(c, a);
+  v1$5.subVectors(b, a);
+  v2$3.subVectors(point, a);
+  var dot00 = v0.dot(v0);
+  var dot01 = v0.dot(v1$5);
+  var dot02 = v0.dot(v2$3);
+  var dot11 = v1$5.dot(v1$5);
+  var dot12 = v1$5.dot(v2$3);
+  var denom = dot00 * dot11 - dot01 * dot01;
+  var result = optionalTarget || new Vector3(); // collinear or singular triangle
+
+  if (denom === 0) {
+    // arbitrary location outside of triangle?
+    // not sure if this is the best idea, maybe should be returning undefined
+    return result.set(-2, -1, -1);
+  }
+
+  var invDenom = 1 / denom;
+  var u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+  var v = (dot00 * dot12 - dot01 * dot02) * invDenom; // barycentric coordinates must always sum to 1
+
+  return result.set(1 - u - v, v, u);
+};
+
+Triangle.containsPoint = function (point, a, b, c) {
+  var result = Triangle.barycoordFromPoint(point, a, b, c, v4$1);
+  return result.x >= 0 && result.y >= 0 && result.x + result.y <= 1;
+};
+
+var getNormal = function () {
   var v0 = new Vector3();
   return function getNormal(a, b, c, target) {
     if (target === undefined) {
@@ -15497,7 +15474,7 @@ function (_Texture) {
     key: "textWidthInPixels",
     get: function get() {
       if (Lang_isUndefined(this._textWidthInPixels)) {
-        this._textWidthInPixels = _getTextWidth(this.textLines, this.font);
+        this._textWidthInPixels = getTextWidth(this.textLines, this.font);
       }
 
       return this._textWidthInPixels;
@@ -15553,15 +15530,14 @@ function (_Texture) {
 
       return 1;
     }
-  }], [{
-    key: "getTextWidth",
-    value: function getTextWidth(textLines, font) {
-      return _getTextWidth(textLines, font);
-    }
   }]);
 
   return TextTexture;
 }(Texture);
+
+TextTexture.getTextWidth = function (textLines, font) {
+  return getTextWidth(textLines, font);
+};
 
 function Lang_isUndefined(value) {
   return value === undefined;
@@ -15575,7 +15551,7 @@ function getFont(fontStyle, fontVariant, fontWeight, fontSize, fontFamily) {
   return [fontStyle, fontVariant, fontWeight, "".concat(fontSize, "px"), fontFamily].join(' ');
 }
 
-function _getTextWidth(textLines, font) {
+function getTextWidth(textLines, font) {
   if (textLines.length) {
     var ctx = createCanvas().getContext('2d');
     ctx.font = font;
@@ -24674,10 +24650,10 @@ function (_Axis) {
     value: function setMiddleweight(val) {
       this.middleweight = val;
     } //多轴重新计算数据集
+    //OVERFLOW Class
 
   }, {
     key: "_getCellCount",
-    //OVERFLOW Class
     value: function _getCellCount() {
       if (this._cellCount !== null) {
         return this._cellCount;
@@ -24726,62 +24702,61 @@ function (_Axis) {
 
       return valInd;
     }
-  }], [{
-    key: "resetDataSection",
-    value: function resetDataSection(_axisAttributeDs) {
-      var maxSegment = 0;
-      var minSegmentUser = Infinity; //如果用户制定了某个轴的dataSection,就采用用户制定的最短dataSection的个数定义Y轴的数据
-      //否则则采用自动计算后最多的段,重新计算其他的坐标轴
-      //先计算一下,需要划分的段数
-
-      for (var key in _axisAttributeDs) {
-        var _axisAtt = _axisAttributeDs[key];
-
-        var _currSection = _axisAtt.getDataSection();
-
-        if (!_.isEmpty(_axisAtt._opt.dataSection)) {
-          minSegmentUser = Math.min(minSegmentUser, _currSection.length);
-        } else {
-          maxSegment = Math.max(maxSegment, _currSection.length);
-        }
-      }
-
-      var segment = minSegmentUser !== Infinity ? minSegmentUser : maxSegment;
-
-      for (var _key in _axisAttributeDs) {
-        var _axisAtt2 = _axisAttributeDs[_key];
-
-        var _section = _axisAtt2.getDataSection();
-
-        if (_section.length !== segment) {
-          var step = (_section[_section.length - 1] - _section[0]) / (segment - 1);
-          var newSection = [];
-
-          for (var i = 0; i < segment; i++) {
-            if (i == segment - 1) {
-              newSection.push(_section[_section.length - 1]);
-            } else {
-              //这里默认数据保留两位小数,后期通过坐标轴配置中的format进行自定义的格式化
-              var val = _section[0] + step * i;
-
-              if (val.toString().split(".")[1] && val.toString().split(".")[1].length > 2) {
-                newSection.push(+val.toFixed(2));
-              } else {
-                newSection.push(val);
-              }
-            }
-          }
-
-          _axisAtt2.setDataSection(newSection);
-
-          _axisAtt2.calculateProps();
-        }
-      }
-    }
   }]);
 
   return AxisAttribute;
 }(axis);
+
+AxisAttribute.resetDataSection = function (_axisAttributeDs) {
+  var maxSegment = 0;
+  var minSegmentUser = Infinity; //如果用户制定了某个轴的dataSection,就采用用户制定的最短dataSection的个数定义Y轴的数据
+  //否则则采用自动计算后最多的段,重新计算其他的坐标轴
+  //先计算一下,需要划分的段数
+
+  for (var key in _axisAttributeDs) {
+    var _axisAtt = _axisAttributeDs[key];
+
+    var _currSection = _axisAtt.getDataSection();
+
+    if (!_.isEmpty(_axisAtt._opt.dataSection)) {
+      minSegmentUser = Math.min(minSegmentUser, _currSection.length);
+    } else {
+      maxSegment = Math.max(maxSegment, _currSection.length);
+    }
+  }
+
+  var segment = minSegmentUser !== Infinity ? minSegmentUser : maxSegment;
+
+  for (var _key in _axisAttributeDs) {
+    var _axisAtt2 = _axisAttributeDs[_key];
+
+    var _section = _axisAtt2.getDataSection();
+
+    if (_section.length !== segment) {
+      var step = (_section[_section.length - 1] - _section[0]) / (segment - 1);
+      var newSection = [];
+
+      for (var i = 0; i < segment; i++) {
+        if (i == segment - 1) {
+          newSection.push(_section[_section.length - 1]);
+        } else {
+          //这里默认数据保留两位小数,后期通过坐标轴配置中的format进行自定义的格式化
+          var val = _section[0] + step * i;
+
+          if (val.toString().split(".")[1] && val.toString().split(".")[1].length > 2) {
+            newSection.push(+val.toFixed(2));
+          } else {
+            newSection.push(val);
+          }
+        }
+      }
+
+      _axisAtt2.setDataSection(newSection);
+
+      _axisAtt2.calculateProps();
+    }
+  }
+};
 
 /** note: 
  * 获取所有的配置信息,取去配置中影响布局的相关参数
@@ -30387,15 +30362,12 @@ function (_GraphObject) {
       this.dispose();
       this.draw();
     }
-  }], [{
-    key: "_heatmap_plane_prefix",
-    get: function get$$1() {
-      return 'heatmap_one_plane_';
-    }
   }]);
 
   return Heatmap;
 }(GraphObject);
+
+Heatmap._heatmap_plane_prefix = 'heatmap_one_plane_';
 
 var Tips =
 /*#__PURE__*/
@@ -30461,17 +30433,7 @@ function (_Component) {
 
     console.log('tips component loaded!');
     return _this;
-  } // static register(opt, app) {
-  //     //所有的tips放在一个单独的tips中
-  //     var _tips = new this(opt, app);
-  //     app.stage.addChild(_tips.sprite);
-  //     app.components.push({
-  //         type: "tips",
-  //         id: "tips",
-  //         plug: _tips
-  //     });
-  // }
-
+  }
 
   _createClass(Tips, [{
     key: "show",

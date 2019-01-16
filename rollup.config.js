@@ -71,8 +71,8 @@ let plugins = [
     commonjs()
 ];
 if (process.env.NODE_ENV == "production") {
-    plugins.push(babel({
-        exclude: /node_modules\/(?!.*@(mmvis|mmgl)\/).*/,
+    plugins.unshift(babel({
+        exclude: /node_modules\/(?!.*@*(mmvis|mmgl)\/).*/,
         externalHelpers: true,
         babelrc: false,
         presets: [
