@@ -63,4 +63,6 @@ for (var p in global) {
     chartx[p] = global[p];
 };
 
+chartx.__dimension = 3;
+
 export default chartx;

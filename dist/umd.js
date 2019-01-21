@@ -767,11 +767,6 @@
     return JSON.parse(JSON.stringify(data));
   };
 
-  var is3dOpt = function is3dOpt(opt) {
-    var chartx3dCoordTypes = ["box", "polar3d", "cube"];
-    return opt.coord && opt.coord.type && chartx3dCoordTypes.indexOf(opt.coord.type) > -1;
-  };
-
   var getDefaultProps = function getDefaultProps(dProps) {
     var target = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -797,6 +792,60 @@
   var axis =
   /*#__PURE__*/
   function () {
+    _createClass(axis, null, [{
+      key: "defaultProps",
+      value: function defaultProps() {
+        return {
+          layoutType: {
+            detail: '布局方式',
+            default: 'proportion'
+          },
+          dataSection: {
+            detail: '轴数据集',
+            default: []
+          },
+          sectionHandler: {
+            detail: '自定义dataSection的计算公式',
+            default: null
+          },
+          waterLine: {
+            detail: '水位线',
+            default: null,
+            documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
+          },
+          middleweight: {
+            detail: '区间等分线',
+            default: null,
+            documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
+          },
+          symmetric: {
+            detail: '自动正负对称',
+            default: false,
+            documentation: 'proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要'
+          },
+          origin: {
+            detail: '轴的起源值',
+            default: null,
+            documentation: '\
+                    1，如果数据中又正数和负数，则默认为0 <br />\
+                    2，如果dataSection最小值小于0，则baseNumber为最小值<br />\
+                    3，如果dataSection最大值大于0，则baseNumber为最大值<br />\
+                    4，也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值\
+                '
+          },
+          sort: {
+            detail: '排序',
+            default: null
+          },
+          posParseToInt: {
+            detail: '是否位置计算取整',
+            default: false,
+            documentation: '比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的'
+          }
+        };
+      }
+    }]);
+
     function axis(opt, dataOrg) {
       _classCallCheck(this, axis);
 
@@ -832,7 +881,7 @@
       this._min = null;
       this._max = null;
 
-      _.extend(true, this, getDefaultProps(axis.defaultProps), opt);
+      _.extend(true, this, getDefaultProps(axis.defaultProps()), opt);
     }
 
     _createClass(axis, [{
@@ -1524,55 +1573,6 @@
     return axis;
   }();
 
-  axis.defaultProps = {
-    layoutType: {
-      detail: '布局方式',
-      default: 'proportion'
-    },
-    dataSection: {
-      detail: '轴数据集',
-      default: []
-    },
-    sectionHandler: {
-      detail: '自定义dataSection的计算公式',
-      default: null
-    },
-    waterLine: {
-      detail: '水位线',
-      default: null,
-      documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
-    },
-    middleweight: {
-      detail: '区间等分线',
-      default: null,
-      documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
-    },
-    symmetric: {
-      detail: '自动正负对称',
-      default: false,
-      documentation: 'proportion下，是否需要设置数据为正负对称的数据，比如 [ 0,5,10 ] = > [ -10, 0 10 ]，象限坐标系的时候需要'
-    },
-    origin: {
-      detail: '轴的起源值',
-      default: null,
-      documentation: '\
-            1，如果数据中又正数和负数，则默认为0 <br />\
-            2，如果dataSection最小值小于0，则baseNumber为最小值<br />\
-            3，如果dataSection最大值大于0，则baseNumber为最大值<br />\
-            4，也可以由用户在第2、3种情况下强制配置为0，则section会补充满从0开始的刻度值\
-        '
-    },
-    sort: {
-      detail: '排序',
-      default: null
-    },
-    posParseToInt: {
-      detail: '是否位置计算取整',
-      default: false,
-      documentation: '比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的'
-    }
-  };
-
   /**
   * 把原始的数据
   * field1 field2 field3
@@ -2017,9 +2017,9 @@
         delete me.instances[chart_id];
       }
 
-      var dimension = 2;
+      var dimension = 2; //3d图表的话，本地调试的时候自己在全局chartx3d上面提供is3dOpt变量
 
-      if (is3dOpt(_opt)) {
+      if (me.__dimension == 3 || me.is3dOpt && me.is3dOpt(_opt)) {
         dimension = 3;
       }
 
@@ -31352,6 +31352,7 @@
   for (var p in global) {
     chartx[p] = global[p];
   }
+  chartx.__dimension = 3;
 
   return chartx;
 

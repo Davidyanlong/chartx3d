@@ -1,4 +1,4 @@
-import { _, cloneOptions, cloneData, is3dOpt } from "mmvis";
+import { _, cloneOptions, cloneData } from "mmvis";
 import { Vector3 } from "mmgl/src/index";
 /**
  * 数字千分位加','号
@@ -52,7 +52,6 @@ export {
     numAddSymbol,
     cloneOptions,
     cloneData,
-    is3dOpt,
     findNearPointX,
     hexToRgba
 };
