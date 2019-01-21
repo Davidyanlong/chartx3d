@@ -77,11 +77,11 @@ class Chart3d extends Events {
         this._initRenderer(rendererOpts);
         console.log('chart3dInit', Math.random());
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
-        
-         
+
+
 
         let interaction = this.interaction = new Interaction(this.view);
-    
+
         interaction.addView(this.labelView);
         interaction.addView(this.renderView);
 
@@ -481,46 +481,56 @@ class Chart3d extends Events {
         this.off('tipMove', __tipMoveEvent)
 
         //先销毁坐标系统
-        if(this.currCoord){
+        if (this.currCoord) {
             this.currCoord.dispose();
         }
-       
+
         //销毁组件
         this.components.forEach(cmp => {
             cmp.dispose();
         });
         this.components = [];
         //初始化渲染状态
-        this.app.resetState();
+        if (this.app) {
+            this.app.resetState();
+        }
+
 
         //清理渲染数据
-        this.renderer.dispose();
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+
 
 
         //清理事件
-        this.orbitControls.off('start', onStart);
-        this.orbitControls.off('change', this._onChangeBind);
+        if (this.orbitControls) {
+            this.orbitControls.off('start', onStart);
+            this.orbitControls.off('change', this._onChangeBind);
+            this.orbitControls.dispose();
+        }
 
-        this.app._framework.off('renderbefore', this._onRenderBeforeBind);
-        this._onRenderBeforeBind = null;
+        if (this.app) {
+            this.app._framework.off('renderbefore', this._onRenderBeforeBind);
+            this._onRenderBeforeBind = null;
 
-        this.app._framework.off('renderafter', this._onRenderAfterBind)
-        this._onRenderAfterBind = null;
+            this.app._framework.off('renderafter', this._onRenderAfterBind)
+            this._onRenderAfterBind = null;
+            this.app.dispose();
+        }
 
-        this.interaction.off('refresh', this._onChangeBind);
-      
-        this._onChangeBind = null;
+        if (this.interaction) {
+            this.interaction.off('refresh', this._onChangeBind);
+            this._onChangeBind = null;
+            this.interaction.dispose();
+        }
+
 
 
 
         window.removeEventListener('resize', this._onWindowResizeBind, false);
         this._onWindowResizeBind = null;
 
-        this.interaction.dispose();
-      
-        this.orbitControls.dispose();
-
-        this.app.dispose();
 
         this.app = null;
         this.renderer = null;
