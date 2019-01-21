@@ -481,7 +481,10 @@ class Chart3d extends Events {
         this.off('tipMove', __tipMoveEvent)
 
         //先销毁坐标系统
-        this.currCoord.dispose();
+        if(this.currCoord){
+            this.currCoord.dispose();
+        }
+       
         //销毁组件
         this.components.forEach(cmp => {
             cmp.dispose();
@@ -522,8 +525,6 @@ class Chart3d extends Events {
         this.app = null;
         this.renderer = null;
         this.currCoord = null;
-
-
 
         //todo 内存对象清除优化
 
