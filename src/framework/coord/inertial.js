@@ -1,6 +1,6 @@
 
 import { Events, Vector3, Box3, Matrix4, Vector2, Math as _Math, AmbientLight, DirectionalLight, PointLight, } from "mmgl/src/index";
-import { _ } from 'mmvis/src/index';
+import { _ } from 'mmvis';
 
 
 //默认坐标系的中心点与坐标系的原点都为世界坐标的[0,0,0]点

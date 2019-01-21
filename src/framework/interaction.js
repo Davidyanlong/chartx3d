@@ -1,5 +1,5 @@
 import { Events, Raycaster, Vector2 } from 'mmgl/src/index';
-import { _ } from 'mmvis/src/index';
+import { _ } from 'mmvis';
 class Interaction extends Events {
     constructor(domElement) {
         super();

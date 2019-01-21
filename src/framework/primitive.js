@@ -44,7 +44,7 @@ import {
     FrontSide
 } from 'mmgl/src/index';
 
-import { _ } from "mmvis/src/index";
+import { _ } from "mmvis";
 import { RenderFont } from './renderFont';
 
 const getBasicMaterial = () => {

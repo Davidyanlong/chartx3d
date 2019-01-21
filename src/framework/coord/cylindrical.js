@@ -1,7 +1,7 @@
 import { InertialSystem } from "./inertial";
 import { Vector3, Math as _Math } from "mmgl/src/index";
 import { PolarAttribute } from "./model/polarAttribute";
-import { _ } from "mmvis/src/index";
+import { _ } from "mmvis";
 
 
 /**

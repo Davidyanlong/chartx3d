@@ -1,5 +1,5 @@
 
-import { global } from "mmvis/src/index"
+import { global } from "mmvis"
 
 import Chart3d from './chart3d';
 

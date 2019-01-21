@@ -1,5 +1,5 @@
 import { Events } from "mmgl/src/index";
-import { _ } from 'mmvis/src/index';
+import { _ } from 'mmvis';
 
 //组件的标准
 class Component extends Events {

@@ -1,4 +1,4 @@
-import { _, cloneOptions, cloneData, is3dOpt } from "mmvis/src/index";
+import { _, cloneOptions, cloneData, is3dOpt } from "mmvis";
 import { Vector3 } from "mmgl/src/index";
 /**
  * 数字千分位加','号

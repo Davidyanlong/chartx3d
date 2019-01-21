@@ -1,4 +1,4 @@
-import { Polar } from 'mmvis/src/index'
+import { Polar } from 'mmvis'
 
 class PolarAttribute extends Polar {
     constructor(opt, dataFrame) {

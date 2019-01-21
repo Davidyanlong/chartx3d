@@ -1,4 +1,4 @@
-import { _, dataFrame, global, $ } from 'mmvis/src/index';
+import { _, dataFrame, global, $ } from 'mmvis';
 import { Application } from './framework/application';
 import { InertialSystem } from './framework/coord/inertial';
 import { Cartesian3D } from './framework/coord/cartesian3d';

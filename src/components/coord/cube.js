@@ -1,5 +1,5 @@
 import { InertialSystem } from "../../framework/coord/inertial";
-import { _ } from 'mmvis/src/index';
+import { _ } from 'mmvis';
 import { FaceNames } from '../../constants';
 import { CubeUI } from '../cubeUI/index.js';
 import { AxisAttribute } from '../../framework/coord/model/axisAttribute';

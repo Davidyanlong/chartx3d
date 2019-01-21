@@ -1,4 +1,4 @@
-import { _, dataSection, axis as Axis } from 'mmvis/src/index';
+import { _, dataSection, axis as Axis } from 'mmvis';
 
 class AxisAttribute extends Axis {
     constructor(opt, dataOrg) {

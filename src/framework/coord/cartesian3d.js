@@ -2,7 +2,7 @@
 import { InertialSystem } from './inertial';
 import { Vector3, Box3, Matrix3, Matrix4, Math as _Math, AmbientLight, PointLight, DirectionalLight } from 'mmgl/src/index'
 import { Cartesian3DUI } from '../../components/cartesian3dUI/index'
-import { _, dataSection, } from 'mmvis/src/index';
+import { _, dataSection, } from 'mmvis';
 import { AxisAttribute } from './model/axisAttribute';
 
 
