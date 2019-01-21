@@ -64,7 +64,7 @@ class Interaction extends Events {
                         i--;
                     }
                 }
-                
+
             }
 
 
@@ -112,18 +112,22 @@ class Interaction extends Events {
 
     dispose() {
         let scope = this;
-        // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
-        scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
-        scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false);
-        // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+        if (scope.domElement) {
+            // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
+            scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
+            scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false);
+            // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
 
-        // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
-        // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
-        // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+            // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
+            // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
+            // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
 
-        scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false);
-        // document.removeEventListener('mouseup', onMouseUp, false);
-        // window.removeEventListener('keydown', onKeyDown, false);
+            scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false);
+            // document.removeEventListener('mouseup', onMouseUp, false);
+            // window.removeEventListener('keydown', onKeyDown, false);
+
+        }
+
 
         scope._onMousedownbind = null;
         scope._onMouseupbind = null;
