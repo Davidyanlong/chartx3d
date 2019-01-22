@@ -26215,16 +26215,19 @@ var Chartx3d = (function () {
     }, {
       key: "dispose",
       value: function dispose() {
-        var scope = this; // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
+        var scope = this;
 
-        scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
-        scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false); // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
-        // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
-        // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
-        // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+        if (scope.domElement) {
+          // scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
+          scope.domElement.removeEventListener('mousedown', scope._onMousedownbind, false);
+          scope.domElement.removeEventListener('mouseup', scope._onMouseupbind, false); // scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+          // scope.domElement.removeEventListener('touchstart', onTouchStart, false);
+          // scope.domElement.removeEventListener('touchend', onTouchEnd, false);
+          // scope.domElement.removeEventListener('touchmove', onTouchMove, false);
 
-        scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false); // document.removeEventListener('mouseup', onMouseUp, false);
-        // window.removeEventListener('keydown', onKeyDown, false);
+          scope.domElement.removeEventListener('mousemove', scope._onMouseMovebind, false); // document.removeEventListener('mouseup', onMouseUp, false);
+          // window.removeEventListener('keydown', onKeyDown, false);
+        }
 
         scope._onMousedownbind = null;
         scope._onMouseupbind = null;
@@ -26794,34 +26797,51 @@ var Chartx3d = (function () {
         this.off('tipHide', __tipHideEvent);
         this.off('tipMove', __tipMoveEvent); //先销毁坐标系统
 
-        this.currCoord.dispose(); //销毁组件
+        if (this.currCoord) {
+          this.currCoord.dispose();
+        } //销毁组件
+
 
         this.components.forEach(function (cmp) {
           cmp.dispose();
         });
         this.components = []; //初始化渲染状态
 
-        this.app.resetState(); //清理渲染数据
+        if (this.app) {
+          this.app.resetState();
+        } //清理渲染数据
 
-        this.renderer.dispose(); //清理事件
 
-        this.orbitControls.off('start', onStart);
-        this.orbitControls.off('change', this._onChangeBind);
+        if (this.renderer) {
+          this.renderer.dispose();
+        } //清理事件
 
-        this.app._framework.off('renderbefore', this._onRenderBeforeBind);
 
-        this._onRenderBeforeBind = null;
+        if (this.orbitControls) {
+          this.orbitControls.off('start', onStart);
+          this.orbitControls.off('change', this._onChangeBind);
+          this.orbitControls.dispose();
+        }
 
-        this.app._framework.off('renderafter', this._onRenderAfterBind);
+        if (this.app) {
+          this.app._framework.off('renderbefore', this._onRenderBeforeBind);
 
-        this._onRenderAfterBind = null;
-        this.interaction.off('refresh', this._onChangeBind);
-        this._onChangeBind = null;
+          this._onRenderBeforeBind = null;
+
+          this.app._framework.off('renderafter', this._onRenderAfterBind);
+
+          this._onRenderAfterBind = null;
+          this.app.dispose();
+        }
+
+        if (this.interaction) {
+          this.interaction.off('refresh', this._onChangeBind);
+          this._onChangeBind = null;
+          this.interaction.dispose();
+        }
+
         window.removeEventListener('resize', this._onWindowResizeBind, false);
         this._onWindowResizeBind = null;
-        this.interaction.dispose();
-        this.orbitControls.dispose();
-        this.app.dispose();
         this.app = null;
         this.renderer = null;
         this.currCoord = null; //todo 内存对象清除优化

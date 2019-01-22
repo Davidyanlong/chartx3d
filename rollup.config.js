@@ -73,7 +73,6 @@ let plugins = [
 if (process.env.NODE_ENV == "production") {
     plugins.unshift(babel({
         exclude: /node_modules\/(?!.*@*(mmvis|mmgl)\/).*/,
-        externalHelpers: true,
         babelrc: false,
         presets: [
             [
@@ -84,7 +83,6 @@ if (process.env.NODE_ENV == "production") {
             ]
         ],
         plugins: [
-            "@babel/plugin-external-helpers"
         ]
     }))
 
