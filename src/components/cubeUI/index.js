@@ -1,7 +1,7 @@
 import { Component, _ } from "../Component";
 import { Axis } from './axis';
 import { FaceNames } from '../../constants';
-import { Vector3, MeshBasicMaterial, MeshPhongMaterial, BoxGeometry, Mesh, Math as _Math } from 'mmgl/src/index';
+import { Vector3, MeshBasicMaterial,MeshLambertMaterial, MeshPhongMaterial, BoxGeometry, Mesh, Math as _Math } from 'mmgl/src/index';
 
 
 class CubeUI extends Component {
@@ -179,7 +179,7 @@ class CubeUI extends Component {
                 depth } = this._coordSystem.getGraphAreaSize();
 
             let getBasicMaterial = () => {
-                return new MeshPhongMaterial({
+                return new MeshLambertMaterial({
                     polygonOffset: true,
                     polygonOffsetFactor: 1,
                     polygonOffsetUnits: 0.1,

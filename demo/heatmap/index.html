@@ -49,8 +49,6 @@
 
     computeData();
 
-
-//三色分别是： #385ACC（创意和定向）     #CC377C  （创意和资源包） #FA7836（资源包和定向）
     
  var options = {
         coord : {
@@ -86,76 +84,65 @@
         },
         graphs : [
             { 
-                type : "heatmap",     //名称或者 Heatmap
+                type : "heatmap",    
                 field:'score',
-                face:'front',      //绘制在box的那个面上 
-                colorScheme:'#385ACC',    //色系(其他的颜色自动计算)
-                //area:{
-                //    highColor:'red'
-                //},
-                //label:{
-                //    fontSize:30,
-                //    fillStyle:'#00FF00'
-                //}
-                    
+                face:'front',          //绘制在box的那个面上 
+                colorScheme:'#0A2A91',  //色系
+                area:{
+                    highColor:'#9254de'
+                }   
             },
-            { 
-                type : "heatmap",     //名称或者 Heatmap
-                field:'score',
-                face:'back',      //绘制在box的那个面上 
-                colorScheme:'#385ACC',    //色系(其他的颜色自动计算)
-                
-        },
           { 
-            type : "heatmap",     //名称或者 Heatmap
+            type : "heatmap",   
             field:'score',
-            face:'top',      //绘制在box的那个面上 
-            colorScheme:'#FA7836',    //色系(其他的颜色自动计算)      
+            face:'top',      
+            colorScheme:'#910044',
+            area:{
+                highColor:'#5278f8'
+            }   
+            
         },
-        //{ 
-        //    type : "heatmap",     //名称或者 Heatmap
-        //    field:'score',
-        //    face:'bottom',      //绘制在box的那个面上 
-        //    colorScheme:'#FA7836',    //色系(其他的颜色自动计算)      
-        //},
         { 
-            type : "heatmap",     //名称或者 Heatmap
+            type : "heatmap",     
             field:'score',
-            face:'right',      //绘制在box的那个面上 
-            colorScheme:'#CC377C',    //色系(其他的颜色自动计算)      
-        },
-       // { 
-       //     type : "heatmap",     //名称或者 Heatmap
-       //     field:'score',
-       //     face:'left',      //绘制在box的那个面上 
-       //     colorScheme:'#CC377C',    //色系(其他的颜色自动计算)      
-       // }
+            face:'right',        
+            colorScheme:'#007878',
+            area:{
+                highColor:'#41A9FF'
+            }   
+        }
     
         ],
         tips:{
-            //content(e){ 
-            // debugger   
-            //}
+            content(e){ 
+             let str='<div style="padding:5px">'
+              str+='<div><span style="color:#333">质量分:</span><span style="margin-left:5px">'+e.data.score+'</span></div>';
+             str+='<div><span style="color:#333">创意:</span><span style="margin-left:5px">'+e.data.creative+'</span></div>';
+             str+='<div><span style="color:#333">定向:</span><span style="margin-left:5px">'+e.data.target+'</span></div>';
+             str+='<div><span style="color:#333">资源包:</span><span style="margin-left:5px">'+e.data.resource+'</span></div>';
+             str+="</div>"
+             return str;
+            }
         },
-        legend:{
-            mode:'radio',
-            data:[{
-                color:'#385ACC',
-                name:'创意-定向',
-                face:'front',
-                enabled:true
-            },{
-                color:'#CC377C',
-                name:'创意-资源包',
-                face:'right',
-                enabled:false
-            },{
-                color:'#FA7836',
-                name:'资源包-定向',
-                face:'top',
-                enabled:false
-            }]
-        }
+        // legend:{
+            //     mode:'radio',
+            //     data:[{
+            //         color:'#385ACC',
+            //         name:'创意-定向',
+            //         face:'front',
+            //         enabled:true
+            //     },{
+            //         color:'#CC377C',
+            //         name:'创意-资源包',
+            //         face:'right',
+            //         enabled:false
+            //     },{
+            //         color:'#FA7836',
+            //         name:'资源包-定向',
+            //         face:'top',
+            //         enabled:false
+            //     }]
+            // }
           
     };
 
@@ -163,17 +150,20 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
 
             function rotationCube(val){
                 if(val==1){
-                    heatmap.currCoord.fire({type:'toFront'});
+                   // heatmap.getCoord().fire({type:'toFront'});
+                    heatmap.getCoord().rotationTo('front');
                 }
                 if(val==2){
-                    heatmap.currCoord.fire({type:'toRight'});
+                    //heatmap.getCoord().fire({type:'toRight'});
+                    heatmap.getCoord().rotationTo('right');
                 }
                 if(val==3){
-                    heatmap.currCoord.fire({type:'toTop'});
+                    //heatmap.getCoord().fire({type:'toTop'});
+                    heatmap.getCoord().rotationTo('top');
                 }
             }
 
-            heatmap.currCoord.on('planeclick',(e)=>{
+            heatmap.getCoord().on('planeclick',(e)=>{
                 alert(JSON.stringify(e.data.rowData));
             })
 

@@ -52,7 +52,7 @@ class Tips extends Component {
             this._removeContent();
             this._tipDom = null;
         });
-        console.log('tips component loaded!');
+        //console.log('tips component loaded!');
     }
 
 

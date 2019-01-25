@@ -20865,9 +20865,12 @@
     return Framework;
   }(Events);
 
+  var version$1 = "0.0.26";
+
   //viewName 
   var MainView = 'main_view';
-  var LabelView = 'label_view'; //停靠位置
+  var LabelView = 'label_view';
+  var VERSION = version$1; //停靠位置
 
   var DUCK = {
     LEFT: 'left',
@@ -21296,11 +21299,11 @@
           var txtArr = _this2._getTextLines(text);
 
           txtArr.forEach(function (txt, line) {
-            me.context.fillText(txt, uv[0], canvasHeight - uv[5] + _this2.style.fontSize * _this2.style.lineHeight * line);
-
             if (me.style.strokeStyle) {
               me.context.strokeText(txt, uv[0], canvasHeight - uv[5] + _this2.style.fontSize * _this2.style.lineHeight * line);
             }
+
+            me.context.fillText(txt, uv[0], canvasHeight - uv[5] + _this2.style.fontSize * _this2.style.lineHeight * line);
           });
         });
 
@@ -22898,6 +22901,134 @@
 
   function hexToRgba(hex, opacity) {
     return "rgba(" + parseInt("0x" + hex.slice(1, 3)) + "," + parseInt("0x" + hex.slice(3, 5)) + "," + parseInt("0x" + hex.slice(5, 7)) + "," + opacity + ")";
+  } // r,g,b范围为[0,255],转换成h范围为[0,360]
+  // s,v为百分比形式，范围是[0,100],可根据需求做相应调整
+
+
+  function hexToHSV(hex) {
+    var r = parseInt("0x" + hex.slice(1, 3)) / 255;
+    var g = parseInt("0x" + hex.slice(3, 5)) / 255;
+    var b = parseInt("0x" + hex.slice(5, 7)) / 255;
+    var h, s, v;
+    var min = Math.min(r, g, b);
+    var max = v = Math.max(r, g, b);
+    var difference = max - min;
+
+    if (max == min) {
+      h = 0;
+    } else {
+      switch (max) {
+        case r:
+          h = (g - b) / difference + (g < b ? 6 : 0);
+          break;
+
+        case g:
+          h = 2.0 + (b - r) / difference;
+          break;
+
+        case b:
+          h = 4.0 + (r - g) / difference;
+          break;
+      }
+
+      h = Math.round(h * 60);
+    }
+
+    if (max == 0) {
+      s = 0;
+    } else {
+      s = 1 - min / max;
+    }
+
+    s = Math.round(s * 100);
+    v = Math.round(v * 100);
+    return {
+      h: h,
+      s: s,
+      v: v
+    };
+  } //输入的h范围为[0,360],s,l为百分比形式的数值,范围是[0,100] 
+  //输出r,g,b范围为[0,255],可根据需求做相应调整
+
+
+  function hsvToRgb(h, s, v) {
+    var s = s / 100;
+    var v = v / 100;
+    var h1 = Math.floor(h / 60) % 6;
+    var f = h / 60 - h1;
+    var p = v * (1 - s);
+    var q = v * (1 - f * s);
+    var t = v * (1 - (1 - f) * s);
+    var r, g, b;
+
+    switch (h1) {
+      case 0:
+        r = v;
+        g = t;
+        b = p;
+        break;
+
+      case 1:
+        r = q;
+        g = v;
+        b = p;
+        break;
+
+      case 2:
+        r = p;
+        g = v;
+        b = t;
+        break;
+
+      case 3:
+        r = p;
+        g = q;
+        b = v;
+        break;
+
+      case 4:
+        r = t;
+        g = p;
+        b = v;
+        break;
+
+      case 5:
+        r = v;
+        g = p;
+        b = q;
+        break;
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+
+  function getHSVShemes(hex) {
+    var result = [];
+    var hslColor = hexToHSV(hex);
+    var S = [100, 99, 89, 78, 69, 59, 49, 39, 29, 19];
+    var V = [57, 67, 77, 87, 97, 100, 100, 100, 100, 100];
+
+    for (var i = 0; i < 10; i++) {
+      var h = hslColor.h;
+      result.push({
+        h: h,
+        s: S[i],
+        v: V[i]
+      });
+    }
+
+    result = result.map(function (item) {
+      var h = item.h,
+          s = item.s,
+          v = item.v;
+      var rgb = hsvToRgb(h, s, v);
+      var str = "#";
+      rgb.forEach(function (d) {
+        str += d.toString(16).length == 1 ? '0' + d.toString(16) : d.toString(16);
+      });
+      return str;
+    });
+    return result;
   }
 
   var YAxis =
@@ -26324,6 +26455,7 @@
       _classCallCheck(this, Chart3d);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Chart3d).call(this));
+      console.log('Chart3D ', VERSION);
       _this.domSelector = node;
       _this.opt = opt;
       _this.data = data;
@@ -26379,7 +26511,6 @@
 
         this._initRenderer(rendererOpts);
 
-        console.log('chart3dInit', Math.random());
         var controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
         var interaction = this.interaction = new Interaction(this.view);
         interaction.addView(this.labelView);
@@ -26438,6 +26569,11 @@
 
           this.rootStage.add(this.currCoord.group);
         }
+      }
+    }, {
+      key: "getCoord",
+      value: function getCoord() {
+        return this.currCoord;
       }
     }, {
       key: "initComponent",
@@ -27695,7 +27831,7 @@
               depth = _this$_coordSystem$ge.depth;
 
           var getBasicMaterial = function getBasicMaterial() {
-            return new MeshPhongMaterial({
+            return new MeshLambertMaterial({
               polygonOffset: true,
               polygonOffsetFactor: 1,
               polygonOffsetUnits: 0.1,
@@ -27895,7 +28031,28 @@
             }
           }
         };
-        opts.coord = _.extend(true, defaultCoord, opts.coord);
+        opts.coord = _.extend(true, defaultCoord, opts.coord); //当旋转到右侧的时候,由于存值一定的倾斜,就会看到cube的后面,
+        //所以,这里默认在后面再次绘制前面的内容
+
+        if (opts.graphs) {
+          //判断是否配置了后面
+          if (!opts.graphs.some(function (item) {
+            return item.face === FaceNames.BACK;
+          })) {
+            var frontFaceOpt = opts.graphs.filter(function (item) {
+              return item.face === FaceNames.FRONT;
+            });
+            var backFaceOpt = {};
+
+            if (frontFaceOpt.length > 0) {
+              _.extend(true, backFaceOpt, frontFaceOpt[0]);
+
+              backFaceOpt.face = FaceNames.BACK;
+              opts.graphs.push(backFaceOpt);
+            }
+          }
+        }
+
         return opts;
       }
     }, {
@@ -27926,26 +28083,14 @@
         this.updatePosition();
         this.group.position.copy(this.offset.clone().multiplyScalar(0.5));
         this.bindEvent();
+        this.rotationCube = this.rotationCube();
       }
     }, {
       key: "bindEvent",
       value: function bindEvent() {
         var _this2 = this;
 
-        var second = 0.5;
-        var duration = 1000 * second; // 持续的时间
-
-        var rotationCube = this.rotationCube();
-        this.on('toFront', function (e) {
-          rotationCube(5, 5, 0, duration);
-        });
-        this.on('toRight', function (e) {
-          rotationCube(5, 95, 0, duration);
-        });
-        this.on('toTop', function (e) {
-          rotationCube(95, 0, 5, duration);
-        });
-        this.on('planeclick', function (e) {
+        this.__planeclick = function (e) {
           var dir = _this2.getDirection();
 
           for (var face in FaceNames) {
@@ -27959,20 +28104,66 @@
               }
             }
           }
-        });
-        this.on('legendchange', function (e) {
+        };
+
+        this.__legendchange = function (e) {
           var face = e.data && e.data.face;
-          var mapEvent = {
-            top: 'toTop',
-            front: 'toFront',
-            right: 'toRight'
-          };
           if (!face) return;
 
-          _this2.fire({
-            type: mapEvent[face]
-          });
-        });
+          _this2.rotationTo(face);
+        }; //取消上次的选中
+
+
+        this.on('planeclick', this.__planeclick); //图例
+
+        this.on('legendchange', this.__legendchange);
+      }
+    }, {
+      key: "rotationTo",
+      value: function rotationTo(face, duration) {
+        var second = 0.5;
+        duration = duration || 1000 * second; // 持续的时间
+
+        var params = null;
+
+        switch (face) {
+          case FaceNames.FRONT:
+            params = {
+              alpha: 5,
+              bata: 5,
+              gamma: 0,
+              duration: duration
+            };
+            break;
+
+          case FaceNames.RIGHT:
+            params = {
+              alpha: 5,
+              bata: 95,
+              gamma: 0,
+              duration: duration
+            };
+            break;
+
+          case FaceNames.TOP:
+            params = {
+              alpha: 95,
+              bata: 0,
+              gamma: 5,
+              duration: duration
+            };
+            break;
+
+          default:
+            params = {
+              alpha: 5,
+              bata: 5,
+              gamma: 0,
+              duration: duration
+            };
+        }
+
+        this.rotationCube(params.alpha, params.bata, params.gamma, params.duration);
       }
     }, {
       key: "rotationCube",
@@ -28038,7 +28229,7 @@
         center = this._getWorldPos(center); //center.setY(0);
 
         var dirLights = [];
-        var intensity = 0.8;
+        var intensity = 1.0;
         var lightColor = 0xFFFFFF;
         var position = new Vector3(0.5, 0.5, 1);
         dirLights[0] = new DirectionalLight(lightColor, intensity);
@@ -28202,6 +28393,23 @@
         this.zAxisAttribute.calculateProps(); //UI组件resetData
 
         this._coordUI.resetData();
+      }
+    }, {
+      key: "dispose",
+      value: function dispose() {
+        if (this.__planeclick) {
+          this.off('planeclick', this.__planeclick);
+        }
+
+        if (this.__legendchange) {
+          this.off('legendchange', this.__legendchange);
+        }
+
+        if (this._coordUI) {
+          this._coordUI.dispose();
+        }
+
+        this._attributes = [];
       }
     }]);
 
@@ -29983,10 +30191,18 @@
       _classCallCheck(this, Heatmap);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Heatmap).call(this, chart3d));
+      var _colorMap = {
+        front: '#0A2A91',
+        back: '#0A2A91',
+        top: '#910044',
+        right: '#007878'
+      };
       _this.type = "heatmap";
       _this._type = "heatmap3d";
       _this.face = 'front'; //绘制在box的那个面上
+      //颜色默认值
 
+      _this.colorScheme = _colorMap[_this.face];
       _this.area = {
         //填充
         shapeType: "rect",
@@ -29997,7 +30213,9 @@
       };
       _this.label = {
         enabled: 1,
-        fillStyle: '#333',
+        strokeStyle: '#333333',
+        lineWidth: 2,
+        fillStyle: '#FFFFFF',
         fontSize: 16
       };
       _this.gap = 1;
@@ -30005,6 +30223,7 @@
       _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
 
       _this.name = "Heatmap_" + _this.face;
+      _this._colors = [];
 
       _this.init();
 
@@ -30129,9 +30348,11 @@
             if (!rowDatas.length) return;
             var score = rowDatas[0][_this2.field] || 1;
 
+            var _color = _this2.getColorByScore(score);
+
             _this2.drawData.push({
               value: score,
-              color: hexToRgba(_this2.colorScheme, score * 0.1),
+              color: _color,
               rowData: rowDatas[0],
               field: _this2.field,
               iNode: xi + yi,
@@ -30153,7 +30374,7 @@
         this.drawData.forEach(function (item, i) {
           var score = item.data[_this3.field] || 0.5;
 
-          var materials = _this3.getMaterial(_this3.colorScheme, score);
+          var materials = _this3.getMaterial(score);
 
           var planetGeometry = new PlaneGeometry(item.width, item.height);
           var plane = new Mesh(planetGeometry, materials);
@@ -30167,7 +30388,9 @@
           if (item.data[_this3.field]) {
             var labels = _this3.createText(item.data[_this3.field], {
               fontSize: _this3.label.fontSize,
-              fillStyle: _this3.label.fillStyle
+              fillStyle: _this3.label.fillStyle,
+              strokeStyle: hexToRgba(_this3.label.strokeStyle, 0.1),
+              lineWidth: _this3.label.lineWidth
             });
 
             var pos = item.pos.clone();
@@ -30212,7 +30435,7 @@
           var score = this.userData.info.data[me.field] || 1;
 
           if (!this.userData.select) {
-            this.material = me.getMaterial(me.colorScheme, score);
+            this.material = me.getMaterial(score);
             this.material.needsUpdate = true;
           }
 
@@ -30248,7 +30471,7 @@
           me.cancelSelect();
 
           if (!e.target.userData.select) {
-            this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
+            this.material = me.getMaterial(10, me.area.highColor);
             this.material.needsUpdate = true;
             e.target.userData.select = true;
           }
@@ -30270,19 +30493,22 @@
       }
     }, {
       key: "getMaterial",
-      value: function getMaterial(colorScheme, score, highColor) {
+      value: function getMaterial(score, highColor) {
         this.materialMap = this.materialMap || {};
-        var key = highColor ? highColor : colorScheme + score;
+        var key = this.face + "_" + (highColor ? "999" : score);
 
         if (this.materialMap[key]) {
           return this.materialMap[key];
         }
 
-        this.materialMap[key] = new MeshPhongMaterial({
-          color: highColor ? highColor : colorScheme || 0xffffff,
+        var _color = this.getColorByScore(score);
+
+        this.materialMap[key] = new MeshBasicMaterial$$1({
+          color: highColor ? highColor : _color || 0xffffff,
           side: FrontSide,
           transparent: true,
-          opacity: score * 0.1,
+          opacity: 1.0,
+          //_.isFunction(colorScheme) ? 1.0 : score * 0.1,
           depthTest: true,
           depthWrite: false
         });
@@ -30291,7 +30517,8 @@
     }, {
       key: "createText",
       value: function createText(texts, fontStyle) {
-        var labels = [];
+        var labels = []; // console.log(JSON.stringify(fontStyle));
+
         var renderFont = new RenderFont(fontStyle);
 
         if (!_.isArray(texts)) {
@@ -30308,8 +30535,9 @@
         texture.magFilter = LinearFilter;
         texture.anisotropy = 1;
         texture.needsUpdate = true;
-        var textMatrial = new MeshPhongMaterial({
-          color: fontStyle.fillStyle,
+        var textMatrial = new MeshBasicMaterial$$1({
+          color: '#FFFFFF',
+          //fontStyle.fillStyle,
           map: texture,
           transparent: true,
           // polygonOffset: true,
@@ -30352,11 +30580,30 @@
 
             if (obj.userData.select !== false) {
               obj.userData.select = false;
-              obj.material = _this5.getMaterial(_this5.colorScheme, score);
+              obj.material = _this5.getMaterial(score);
               obj.material.needsUpdate = true;
             }
           }
         });
+      }
+    }, {
+      key: "getColorByScore",
+      value: function getColorByScore(score) {
+        //score 为1-10分
+        score = Math.min(10, Math.max(score, 1)); //如果用户指定了颜色值,计算色系
+
+        if (this._colors.length == 0 && _.isString(this.colorScheme)) {
+          this._colors = getHSVShemes(this.colorScheme) || [];
+
+          this._colors.reverse(); // console.log(this.face, this._colors);
+
+        }
+
+        if (_.isFunction(this.colorScheme)) {
+          return this.colorScheme.call(this, score);
+        } else {
+          return this._colors[score - 1];
+        }
       }
     }, {
       key: "dispose",
@@ -30373,7 +30620,7 @@
             obj.off('click', _this6.__click);
           }
         });
-        var highMaterial = this.getMaterial(this.colorScheme, 10, this.area.highColor);
+        var highMaterial = this.getMaterial(10, this.area.highColor);
         highMaterial.dispose(); //this.materialMap = null;
 
         _get(_getPrototypeOf(Heatmap.prototype), "dispose", this).call(this, group);
@@ -30454,9 +30701,9 @@
         _this._removeContent();
 
         _this._tipDom = null;
-      });
+      }); //console.log('tips component loaded!');
 
-      console.log('tips component loaded!');
+
       return _this;
     }
 

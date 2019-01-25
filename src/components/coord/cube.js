@@ -84,6 +84,22 @@ class Cube extends InertialSystem {
 
         opts.coord = _.extend(true, defaultCoord, opts.coord);
 
+        //当旋转到右侧的时候,由于存值一定的倾斜,就会看到cube的后面,
+        //所以,这里默认在后面再次绘制前面的内容
+        if (opts.graphs) {
+            //判断是否配置了后面
+            if (!opts.graphs.some(item => { return item.face === FaceNames.BACK })) {
+                let frontFaceOpt = opts.graphs.filter(item => { return item.face === FaceNames.FRONT });
+                let backFaceOpt = {};
+                if (frontFaceOpt.length > 0) {
+                    _.extend(true, backFaceOpt, frontFaceOpt[0]);
+                    backFaceOpt.face = FaceNames.BACK;
+                    opts.graphs.push(backFaceOpt);
+                }
+
+            }
+        }
+
         return opts;
     }
     init() {
@@ -116,23 +132,10 @@ class Cube extends InertialSystem {
         this.group.position.copy(this.offset.clone().multiplyScalar(0.5));
 
         this.bindEvent();
+        this.rotationCube = this.rotationCube();
     }
     bindEvent() {
-        let second = 0.5;
-        let duration = 1000 * second; // 持续的时间
-        let rotationCube = this.rotationCube();
-
-        this.on('toFront', (e) => {
-            rotationCube(5, 5, 0, duration);
-        });
-        this.on('toRight', (e) => {
-            rotationCube(5, 95, 0, duration);
-        })
-        this.on('toTop', (e) => {
-            rotationCube(95, 0, 5, duration);
-        })
-
-        this.on('planeclick', (e) => {
+        this.__planeclick = (e) => {
             let dir = this.getDirection();
             for (let face in FaceNames) {
                 if (FaceNames[face] !== dir) {
@@ -142,23 +145,40 @@ class Cube extends InertialSystem {
                     }
                 }
             }
-        })
-
-        this.on('legendchange', (e) => {
+        };
+        this.__legendchange = (e) => {
             let face = e.data && e.data.face
-            let mapEvent = {
-                top: 'toTop',
-                front: 'toFront',
-                right: 'toRight'
-            }
             if (!face) return;
+            this.rotationTo(face);
+        };
 
-            this.fire({ type: mapEvent[face] });
+        //取消上次的选中
+        this.on('planeclick', this.__planeclick)
 
-        })
+        //图例
+        this.on('legendchange', this.__legendchange)
 
 
 
+    }
+    rotationTo(face, duration) {
+        let second = 0.5;
+        duration = duration || 1000 * second; // 持续的时间
+        let params = null;
+        switch (face) {
+            case FaceNames.FRONT:
+                params = { alpha: 5, bata: 5, gamma: 0, duration };
+                break;
+            case FaceNames.RIGHT:
+                params = { alpha: 5, bata: 95, gamma: 0, duration };
+                break;
+            case FaceNames.TOP:
+                params = { alpha: 95, bata: 0, gamma: 5, duration };
+                break;
+            default:
+                params = { alpha: 5, bata: 5, gamma: 0, duration };
+        }
+        this.rotationCube(params.alpha, params.bata, params.gamma, params.duration);
     }
     rotationCube() {
 
@@ -229,7 +249,7 @@ class Cube extends InertialSystem {
         //center.setY(0);
 
         let dirLights = [];
-        let intensity = 0.8;
+        let intensity = 1.0;
         let lightColor = 0xFFFFFF;
         let position = new Vector3(0.5, 0.5, 1);
 
@@ -375,6 +395,18 @@ class Cube extends InertialSystem {
 
         //UI组件resetData
         this._coordUI.resetData();
+    }
+    dispose() {
+        if (this.__planeclick) {
+            this.off('planeclick', this.__planeclick)
+        }
+        if (this.__legendchange) {
+            this.off('legendchange', this.__legendchange)
+        }
+        if (this._coordUI) {
+            this._coordUI.dispose();
+        }
+        this._attributes = [];
     }
 
 }

@@ -8,7 +8,7 @@ import { Component } from './components/Component';
 import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
 import { Interaction } from './framework/interaction';
-import { MainView, LabelView } from './constants';
+import { MainView, LabelView ,VERSION} from './constants';
 
 let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null, __redraw = null;
 
@@ -16,7 +16,7 @@ let _cid = 0;
 class Chart3d extends Events {
     constructor(node, data, opt, componentModules) {
         super();
-
+        console.log('Chart3D ',VERSION);
         this.domSelector = node;
         this.opt = opt;
         this.data = data;
@@ -75,7 +75,6 @@ class Chart3d extends Events {
         let controlOpts = this.opt.coord.controls = _.extend(rendererOpts, this.opt.coord.controls);
 
         this._initRenderer(rendererOpts);
-        console.log('chart3dInit', Math.random());
         let controls = this.orbitControls = new OrbitControls(this.renderView._camera, this.view);
 
 
@@ -148,6 +147,9 @@ class Chart3d extends Events {
         }
 
 
+    }
+    getCoord() {
+        return this.currCoord;
     }
 
     initComponent() {

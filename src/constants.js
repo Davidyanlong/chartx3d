@@ -1,7 +1,9 @@
 //viewName 
+import { version } from '../package.json';
 
 export const MainView = 'main_view';
 export const LabelView = 'label_view';
+export const VERSION = version;
 
 //停靠位置
 export const DUCK = {

@@ -2,17 +2,25 @@ import { GraphObject, _ } from '../graph';
 import { FaceNames } from '../../../constants';
 import { Vector3, PlaneGeometry, MeshLambertMaterial, MeshBasicMaterial, MeshPhongMaterial, BoxGeometry, Mesh, FrontSide, DoubleSide, Texture, RepeatWrapping, LinearFilter, BufferGeometry, Float32BufferAttribute, Math as _Math, Color } from 'mmgl/src/index';
 import { RenderFont } from '../../../framework/renderFont';
-import { hexToRgba } from '../../../../utils/tools'
+import { hexToRgba, getHSVShemes } from '../../../../utils/tools'
 
 class Heatmap extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
-
+        let _colorMap = {
+            front: '#0A2A91',
+            back: '#0A2A91',
+            top: '#910044',
+            right: '#007878'
+        }
         this.type = "heatmap";
         this._type = "heatmap3d";
 
         this.face = 'front'   //绘制在box的那个面上
+
+        //颜色默认值
+        this.colorScheme = _colorMap[this.face];
 
         this.area = { //填充
             shapeType: "rect",
@@ -23,7 +31,9 @@ class Heatmap extends GraphObject {
         };
         this.label = {
             enabled: 1,
-            fillStyle: '#333',
+            strokeStyle: '#333333',
+            lineWidth: 2,
+            fillStyle: '#FFFFFF',
             fontSize: 16,
         }
 
@@ -32,8 +42,13 @@ class Heatmap extends GraphObject {
         _.extend(true, this, opt);
 
         this.name = "Heatmap_" + this.face;
+        this._colors = [];
+
+
+
         this.init();
         this.setGroupName('heatmap_root_' + this.face);
+
 
     }
     init() {
@@ -151,10 +166,10 @@ class Heatmap extends GraphObject {
                 });
                 if (!rowDatas.length) return;
                 let score = rowDatas[0][this.field] || 1;
-
+                let _color = this.getColorByScore(score);
                 this.drawData.push({
                     value: score,
-                    color: hexToRgba(this.colorScheme, score * 0.1),
+                    color: _color,
                     rowData: rowDatas[0],
                     field: this.field,
                     iNode: xi + yi,
@@ -168,13 +183,12 @@ class Heatmap extends GraphObject {
         })
     }
 
-
     draw() {
         this.dispose();
         this.drawData.forEach((item, i) => {
 
             let score = item.data[this.field] || 0.5;
-            let materials = this.getMaterial(this.colorScheme, score);
+            let materials = this.getMaterial(score);
 
             let planetGeometry = new PlaneGeometry(item.width, item.height);
             let plane = new Mesh(planetGeometry, materials);
@@ -185,7 +199,7 @@ class Heatmap extends GraphObject {
             this.planeGroup.add(plane);
             //写文字
             if (item.data[this.field]) {
-                let labels = this.createText(item.data[this.field], { fontSize: this.label.fontSize, fillStyle: this.label.fillStyle });
+                let labels = this.createText(item.data[this.field], { fontSize: this.label.fontSize, fillStyle: this.label.fillStyle, strokeStyle: hexToRgba(this.label.strokeStyle,0.1), lineWidth: this.label.lineWidth });
                 let pos = item.pos.clone();
 
                 labels[0].position.copy(pos);
@@ -219,11 +233,10 @@ class Heatmap extends GraphObject {
             if (!isTrigger()) return;
             let score = this.userData.info.data[me.field] || 1;
             if (!this.userData.select) {
-                this.material = me.getMaterial(me.colorScheme, score);
+                this.material = me.getMaterial(score);
                 this.material.needsUpdate = true;
             }
-
-
+    
             me._root.fire({
                 type: 'tipHide',
                 event: e.event,
@@ -247,7 +260,7 @@ class Heatmap extends GraphObject {
 
             me.cancelSelect();
             if (!e.target.userData.select) {
-                this.material = me.getMaterial(me.colorScheme, 10, me.area.highColor);
+                this.material = me.getMaterial(10, me.area.highColor);
                 this.material.needsUpdate = true;
                 e.target.userData.select = true;
             }
@@ -264,17 +277,19 @@ class Heatmap extends GraphObject {
             }
         });
     }
-    getMaterial(colorScheme, score, highColor) {
+    getMaterial(score, highColor) {
         this.materialMap = this.materialMap || {};
-        let key = highColor ? highColor : colorScheme + score;
+        let key = this.face + "_" + (highColor ? "999" : score);
+
         if (this.materialMap[key]) {
             return this.materialMap[key];
         }
-        this.materialMap[key] = new MeshPhongMaterial({
-            color: (highColor ? highColor : colorScheme || 0xffffff),
+        let _color = this.getColorByScore(score)
+        this.materialMap[key] = new MeshBasicMaterial({
+            color: (highColor ? highColor : _color || 0xffffff),
             side: FrontSide,
             transparent: true,
-            opacity: score * 0.1,
+            opacity: 1.0, //_.isFunction(colorScheme) ? 1.0 : score * 0.1,
             depthTest: true,
             depthWrite: false
 
@@ -283,7 +298,7 @@ class Heatmap extends GraphObject {
     }
     createText(texts, fontStyle) {
         let labels = [];
-
+       // console.log(JSON.stringify(fontStyle));
         let renderFont = new RenderFont(fontStyle);
 
         if (!_.isArray(texts)) {
@@ -309,8 +324,8 @@ class Heatmap extends GraphObject {
         texture.anisotropy = 1;
         texture.needsUpdate = true;
 
-        let textMatrial = new MeshPhongMaterial({
-            color: fontStyle.fillStyle,
+        let textMatrial = new MeshBasicMaterial({
+            color: '#FFFFFF', //fontStyle.fillStyle,
             map: texture,
             transparent: true,
             // polygonOffset: true,
@@ -355,11 +370,28 @@ class Heatmap extends GraphObject {
                 let score = obj.userData.info.data[this.field] || 1;
                 if (obj.userData.select !== false) {
                     obj.userData.select = false;
-                    obj.material = this.getMaterial(this.colorScheme, score);
+                    obj.material = this.getMaterial(score);
                     obj.material.needsUpdate = true;
                 }
             }
         });
+    }
+    getColorByScore(score) {
+        //score 为1-10分
+        score = Math.min(10, Math.max(score, 1));
+
+        //如果用户指定了颜色值,计算色系
+        if (this._colors.length == 0 && _.isString(this.colorScheme)) {
+            this._colors = getHSVShemes(this.colorScheme) || [];
+            this._colors.reverse();
+           // console.log(this.face, this._colors);
+        }
+        if (_.isFunction(this.colorScheme)) {
+            return this.colorScheme.call(this, score);
+        } else {
+
+            return this._colors[score - 1];
+        }
     }
     dispose(group) {
         //删除所有事件
@@ -375,12 +407,11 @@ class Heatmap extends GraphObject {
                 obj.off('click', this.__click);
             }
         });
-        let highMaterial = this.getMaterial(this.colorScheme, 10, this.area.highColor);
+        let highMaterial = this.getMaterial(10, this.area.highColor);
         highMaterial.dispose();
         //this.materialMap = null;
         super.dispose(group);
     }
-
     resetData() {
         this._initData();
         this.materialMap = {};
@@ -389,7 +420,7 @@ class Heatmap extends GraphObject {
     }
 }
 
-Heatmap._heatmap_plane_prefix='heatmap_one_plane_'
+Heatmap._heatmap_plane_prefix = 'heatmap_one_plane_'
 
 
 export default Heatmap;

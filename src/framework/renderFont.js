@@ -207,10 +207,11 @@ class RenderFont {
             let txtArr = this._getTextLines(text);
 
             txtArr.forEach((txt, line) => {
-                me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
+               
                 if (me.style.strokeStyle) {
                     me.context.strokeText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
                 }
+                me.context.fillText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
             });
 
         })
