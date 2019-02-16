@@ -93,7 +93,7 @@ class Axis extends Component {
 
         } else {
             if (this.label.maxLength > 0) {
-                if (val.length > this.label.maxLength) {
+                if (val && val.length > this.label.maxLength) {
                     res = "";
                     let i = 0;
                     let l = val.length;

@@ -4,7 +4,7 @@ class AxisAttribute extends Axis {
     constructor(opt, dataOrg) {
         super(opt, dataOrg);
         this.field = opt.field || null;
-        this.exclude = opt.exclude || '';
+        this.exclude = opt.exclude || ['', undefined, null];
 
         if ("middleweight" in opt) {
             this.setMiddleweight(opt.middleweight);
@@ -18,7 +18,7 @@ class AxisAttribute extends Axis {
             this.dataSection = _.uniq(this.dataSection); //this._getDataSection();
             //空数据需要去除
             this.dataSection.forEach((item, i) => {
-                if (item === this.exclude) {
+                if (this.exclude.indexOf(item) !== -1) {
                     this.dataSection.splice(i, 1);
                 }
             })

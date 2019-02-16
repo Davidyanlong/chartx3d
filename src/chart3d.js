@@ -100,7 +100,6 @@ class Chart3d extends Events {
 
         //自动旋转时间
         if (controls.autoRotate) {
-            debugger
             window.setTimeout(() => {
                 controls.autoRotate = false;
             }, 15000);
