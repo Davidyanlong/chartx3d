@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { Component, _ } from "../Component";
 import { DUCK } from "../../constants";
 
@@ -308,7 +309,7 @@ class Legend extends Component {
         }
 
         if (info) {
-           // this._root.fire({ type: 'redraw', data: info });
+            // this._root.fire({ type: 'redraw', data: info });
             this._root.fire({ type: 'legendchange', data: info })
         }
 
@@ -326,5 +327,5 @@ class Legend extends Component {
 }
 Legend._legend_prefix = "legend_field_";
 
-
+global.registerComponent(Legend, 'legend', 3);
 export default Legend;

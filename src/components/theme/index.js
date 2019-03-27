@@ -1,17 +1,18 @@
 /**
  * 皮肤组件，不是一个具体的ui组件
  */
+import { global } from 'mmvis';
 import { Component, _ } from "../Component";
 
-export default class Theme extends Component {
+class Theme extends Component {
     constructor(chart3d, theme) {
-    
-        super(chart3d.currCoord,chart3d);
+
+        super(chart3d.currCoord, chart3d);
 
         this.name = "Theme";
         this.colors = theme || [];
     }
-
+    
     set(colors) {
         this.colors = colors;
         return this.colors;
@@ -41,3 +42,7 @@ export default class Theme extends Component {
     }
 
 }
+
+global.registerComponent(Theme, 'theme', 3);
+
+export default Theme

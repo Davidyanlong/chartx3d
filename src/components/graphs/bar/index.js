@@ -1,4 +1,5 @@
 
+import { global } from 'mmvis';
 import { GraphObject, _ } from '../graph';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3 } from 'mmgl/src/index';
 
@@ -7,7 +8,7 @@ class Bar extends GraphObject {
     constructor(chart3d, opt) {
         super(chart3d);
 
-        this.name='Bar';
+        this.name = 'Bar';
         this.type = "bar";
         this._type = "bar3d";
 
@@ -256,5 +257,6 @@ class Bar extends GraphObject {
 
 }
 Bar._bar_prefix = "bar_one_";
+global.registerComponent(Bar, 'graphs', 'bar', 3);
 export default Bar;
 

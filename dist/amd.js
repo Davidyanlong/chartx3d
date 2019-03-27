@@ -809,10 +809,14 @@ define(function () { 'use strict';
             default: null,
             documentation: '水位data，需要混入 计算 dataSection， 如果有设置waterLine， dataSection的最高水位不会低于这个值'
           },
-          middleweight: {
-            detail: '区间等分线',
+          middleWeight: {
+            detail: '区间分隔线',
             default: null,
             documentation: '如果middleweight有设置的话 dataSectionGroup 为被middleweight分割出来的n个数组>..[ [0,50 , 100],[100,500,1000] ]'
+          },
+          middleWeightPos: {
+            detail: '区间分隔线的物理位置，百分比,默认 0.5 ',
+            default: null
           },
           symmetric: {
             detail: '自动正负对称',
@@ -1036,6 +1040,8 @@ define(function () { 'use strict';
           this.dataSection = _dataSection || this._opt.dataSection;
           this.dataSectionGroup = [this.dataSection];
         }
+
+        this._middleWeightPos();
       }
     }, {
       key: "_getDataSection",
@@ -1171,10 +1177,11 @@ define(function () { 'use strict';
     }, {
       key: "_middleweight",
       value: function _middleweight() {
-        if (this.middleweight) {
+
+        if (this.middleWeight) {
           //支持多个量级的设置
-          if (!_.isArray(this.middleweight)) {
-            this.middleweight = [this.middleweight];
+          if (!_.isArray(this.middleWeight)) {
+            this.middleWeight = [this.middleWeight];
           }
 
           var dMin = _.min(this.dataSection);
@@ -1184,18 +1191,18 @@ define(function () { 'use strict';
           var newDS = [dMin];
           var newDSG = [];
 
-          for (var i = 0, l = this.middleweight.length; i < l; i++) {
+          for (var i = 0, l = this.middleWeight.length; i < l; i++) {
             var preMiddleweight = dMin;
 
             if (i > 0) {
-              preMiddleweight = this.middleweight[i - 1];
+              preMiddleweight = this.middleWeight[i - 1];
             }
-            var middleVal = preMiddleweight + parseInt((this.middleweight[i] - preMiddleweight) / 2);
+            var middleVal = preMiddleweight + parseInt((this.middleWeight[i] - preMiddleweight) / 2);
             newDS.push(middleVal);
-            newDS.push(this.middleweight[i]);
-            newDSG.push([preMiddleweight, middleVal, this.middleweight[i]]);
+            newDS.push(this.middleWeight[i]);
+            newDSG.push([preMiddleweight, middleVal, this.middleWeight[i]]);
           }
-          var lastMW = this.middleweight.slice(-1)[0];
+          var lastMW = this.middleWeight.slice(-1)[0];
 
           if (dMax > lastMW) {
             newDS.push(lastMW + (dMax - lastMW) / 2);
@@ -1207,17 +1214,68 @@ define(function () { 'use strict';
           this.dataSection = newDS;
           this.dataSectionGroup = newDSG;
         }
+      }
+    }, {
+      key: "_middleWeightPos",
+      value: function _middleWeightPos() {
+        var me = this;
+
+        if (this.middleWeightPos) {
+          if (!_.isArray(this.middleWeightPos)) {
+            this.middleWeightPos = [this.middleWeightPos];
+          }
+          //如果大于1了则默认按照均分设置
+
+          var _count = 0;
+
+          _.each(this.middleWeightPos, function (pos) {
+            _count += pos;
+          });
+
+          if (_count < 1) {
+            this.middleWeightPos.push(1 - _count);
+          }
+
+          if (_count > 1) {
+            this.middleWeightPos = null;
+          }
+        }
+
+        if (this.middleWeight) {
+          if (!this.middleWeightPos) {
+            this.middleWeightPos = [];
+            var _prePos = 0;
+
+            _.each(this.middleWeight, function () {
+              var _pos = 1 / (me.middleWeight.length + 1);
+
+              _prePos += _pos;
+              me.middleWeightPos.push(_pos);
+            });
+
+            this.middleWeightPos.push(1 - _prePos);
+          }
+        } else {
+          this.middleWeightPos = [1];
+        }
       } //origin 对应 this.origin 的值
 
     }, {
       key: "_getOriginTrans",
       value: function _getOriginTrans(origin) {
         var pos = 0;
-        var dsgLen = this.dataSectionGroup.length;
-        var groupLength = this.axisLength / dsgLen;
+        var dsgLen = this.dataSectionGroup.length; //var groupLength = this.axisLength / dsgLen;
 
         for (var i = 0, l = dsgLen; i < l; i++) {
           var ds = this.dataSectionGroup[i];
+          var groupLength = this.axisLength * this.middleWeightPos[i];
+          var preGroupLenth = 0;
+
+          _.each(this.middleWeightPos, function (mp, mi) {
+            if (mi < i) {
+              preGroupLenth += me.axisLength * mp;
+            }
+          });
 
           if (this.layoutType == "proportion") {
             var min = _.min(ds);
@@ -1227,7 +1285,7 @@ define(function () { 'use strict';
             var amountABS = Math.abs(max - min);
 
             if (origin >= min && origin <= max) {
-              pos = (origin - min) / amountABS * groupLength + i * groupLength;
+              pos = (origin - min) / amountABS * groupLength + preGroupLenth;
               break;
             }
           }
@@ -1295,17 +1353,25 @@ define(function () { 'use strict';
     }, {
       key: "getPosOf",
       value: function getPosOf(opt) {
+        var me = this;
         var pos;
 
         var cellCount = this._getCellCount(); //dataOrg上面的真实数据节点数，把轴分成了多少个节点
 
 
         if (this.layoutType == "proportion") {
-          var dsgLen = this.dataSectionGroup.length;
-          var groupLength = this.axisLength / dsgLen;
+          var dsgLen = this.dataSectionGroup.length; //var groupLength = this.axisLength / dsgLen;
 
           for (var i = 0, l = dsgLen; i < l; i++) {
             var ds = this.dataSectionGroup[i];
+            var groupLength = this.axisLength * this.middleWeightPos[i];
+            var preGroupLenth = 0;
+
+            _.each(this.middleWeightPos, function (mp, mi) {
+              if (mi < i) {
+                preGroupLenth += me.axisLength * mp;
+              }
+            });
 
             var min = _.min(ds);
 
@@ -1322,10 +1388,10 @@ define(function () { 'use strict';
               var maxGroupDisABS = Math.max(Math.abs(max - _origin), Math.abs(_origin - min));
               var amountABS = Math.abs(max - min);
               var h = maxGroupDisABS / amountABS * groupLength;
-              pos = (val - _origin) / maxGroupDisABS * h + i * groupLength;
+              pos = (val - _origin) / maxGroupDisABS * h + preGroupLenth;
 
               if (isNaN(pos)) {
-                pos = parseInt(i * groupLength);
+                pos = parseInt(preGroupLenth);
               }
               break;
             }
@@ -1411,15 +1477,24 @@ define(function () { 'use strict';
         var val;
 
         if (this.layoutType == "proportion") {
-          var groupLength = this.axisLength / this.dataSectionGroup.length;
+          var dsgLen = this.dataSectionGroup.length; //var groupLength = this.axisLength / dsgLen;
 
           _.each(this.dataSectionGroup, function (ds, i) {
+            var groupLength = me.axisLength * me.middleWeightPos[i];
+            var preGroupLenth = 0;
+
+            _.each(me.middleWeightPos, function (mp, mi) {
+              if (mi < i) {
+                preGroupLenth += me.axisLength * mp;
+              }
+            });
+
             if (parseInt(ind / groupLength) == i || i == me.dataSectionGroup.length - 1) {
               var min = _.min(ds);
 
               var max = _.max(ds);
 
-              val = min + (max - min) / groupLength * (ind - groupLength * i);
+              val = min + (max - min) / groupLength * (ind - preGroupLenth);
               return false;
             }
           });
@@ -2054,11 +2129,7 @@ define(function () { 'use strict';
       }
     },
     //第二个参数是用户要用来覆盖chartpark中的配置的options
-    getOptions: function getOptions(chartPark_cid, userOptions) {
-      //chartPark_cid,chartpark中的图表id
-      if (!this.options[chartPark_cid]) {
-        return userOptions || {};
-      }
+    getOptionsOld: function getOptionsOld(chartPark_cid) {
       var JsonSerialize = {
         prefix: '[[JSON_FUN_PREFIX_',
         suffix: '_JSON_FUN_SUFFIX]]'
@@ -2073,27 +2144,38 @@ define(function () { 'use strict';
         }) || {};
       };
 
-      var opt = parse$$1(decodeURIComponent(this.options[chartPark_cid] || {}));
-
-      if (userOptions) {
-        opt = _.extend(true, opt, userOptions);
-      }
-      return opt;
+      return parse$$1(decodeURIComponent(this.options[chartPark_cid] || '%7B%7D'));
     },
-    getOptionsNew: function getOptionsNew(chartPark_cid, userOptions, data, variables) {
+    getOptionsNew: function getOptionsNew(chartPark_cid, data, variables) {
+      var chartConfig = this.options[chartPark_cid];
+      var code = decodeURIComponent(chartConfig.code);
+      var range = chartConfig.range;
+      return parse.parse(code, range, data, variables);
+    },
+
+    /** 
+     * 获取图表配置并解析
+     * 
+     * @param {int} chartPark_cid  chartpark图表id
+     * @param {Object} userOptions 用户自定义图表options，若无chartPark_cid时默认使用该配置，否则使用该配置覆盖原chartpark中的图表配置
+     * @param {Array} data 绘制图表使用的数据
+     * @param {Object | Function} variables 用于覆盖chartpark图表配置的变量，为Function时，其返回值必须为Object
+     * @returns {Object} 正常情况返回图表配置，否则返回{}
+    */
+    getOptions: function getOptions(chartPark_cid, userOptions, data, variables) {
       if (!this.options[chartPark_cid]) {
         return userOptions || {};
       }
-      var chartConfig = this.options[chartPark_cid] || {};
-      var code = decodeURIComponent(chartConfig.code);
-      var range = chartConfig.range; // var code = decodeURIComponent(this.options[chartPark_cid]);
-
-      var opt = parse.parse(code, range, data, variables);
+      var chartConfig = this.options[chartPark_cid];
+      var optionsFromChartPark = typeof chartConfig === 'string' ? this.getOptionsOld(chartPark_cid) : this.getOptionsNew(chartPark_cid, data || [], variables || {});
 
       if (userOptions) {
-        opt = _.extend(true, opt, userOptions);
+        optionsFromChartPark = _.extend(true, optionsFromChartPark, userOptions);
       }
-      return opt;
+      return optionsFromChartPark;
+    },
+    calculateOptions: function calculateOptions(chartPark_cid, data, variables) {
+      return this.getOptions(chartPark_cid, undefined, data, variables);
     },
     components: {
       c_2d: {
@@ -2237,6 +2319,159 @@ define(function () { 'use strict';
     },
     getAnimationEnabled: function getAnimationEnabled(bool) {
       return globalAnimationEnabled;
+    },
+    //所有布局算法
+    layout: {},
+    registerLayout: function registerLayout(name, algorithm) {
+      this.layout[name] = algorithm;
+    },
+    props: {},
+    getProps: function getProps() {
+      //计算全量的 props 属性用来提供智能提示 begin
+      //这部分代码没必要部署到 打包的环境， 只是chartpark需要用来做智能提示， 自动化测试
+      var allProps = {};
+
+      var allModules = this._getComponentModules().modules;
+
+      var _loop = function _loop() {
+        if (n == 'chart') return "continue";
+        allProps[n] = {
+          detail: n,
+          propertys: {} //typeMap: {}
+
+        };
+
+        if (n == 'graphs') {
+          _graphNames = _.map(allModules.graphs, function (val, key) {
+            return key;
+          });
+          allProps.graphs.documentation = "可选的graphs类型有：\n" + _graphNames.join('\n');
+        }
+        allConstructorProps = {}; //整个原型链路上面的 defaultProps
+
+        protoModule = null;
+
+        for (mn in allModules[n]) {
+          if (protoModule) break;
+          protoModule = allModules[n][mn].prototype;
+        }
+
+        function _setProps(m) {
+          var constructorModule = m.constructor.__proto__; //m.constructor;
+
+          if (!constructorModule._isComponentRoot) {
+            _setProps(constructorModule.prototype);
+          }
+
+          if (constructorModule.defaultProps && _.isFunction(constructorModule.defaultProps)) {
+            var _dprops = constructorModule.defaultProps();
+
+            _.extend(allConstructorProps, _dprops);
+          }
+        }
+
+        _setProps(protoModule);
+
+        allProps[n].propertys = _.extend(allConstructorProps, allProps[n].propertys);
+
+        var _loop2 = function _loop2() {
+          module = allModules[n][mn];
+          moduleProps = module.defaultProps ? module.defaultProps() : {}; //处理props上面所有的 _props 依赖 begin
+
+          function setChildProps(p) {
+            if (p._props) {
+              var _propsIsArray = _.isArray(p._props);
+
+              for (var k in p._props) {
+                if (!_propsIsArray) {
+                  p[k] = {
+                    detail: k,
+                    propertys: {}
+                  };
+                }
+                var _module = p._props[k];
+
+                if (_module.defaultProps) {
+                  var _moduleProps;
+
+                  var allConstructorProps;
+
+                  (function () {
+                    var _setProps = function _setProps(m) {
+                      if (m.__proto__.__proto__) {
+                        _setProps(m.__proto__);
+                      }
+
+                      if (m.defaultProps && _.isFunction(m.defaultProps)) {
+                        var _dprops = m.defaultProps();
+
+                        if (_dprops._props) {
+                          //如果子元素还有 _props 依赖， 那么就继续处理
+                          setChildProps(_dprops);
+                        }
+                        _dprops && _.extend(allConstructorProps, _dprops);
+                      }
+                    };
+
+                    _moduleProps = _module.defaultProps(); //先把ta原型上面的所有属性都添加到 _moduleProps 
+
+                    allConstructorProps = {};
+
+                    _setProps(_module.__proto__);
+
+                    _moduleProps = _.extend(allConstructorProps, _moduleProps);
+
+                    if (_propsIsArray) {
+                      _.extend(p, _moduleProps);
+                    } else {
+                      p[k].propertys = _moduleProps;
+                      setChildProps(p[k].propertys);
+                    }
+                  })();
+                }
+              }
+            }
+          }
+          setChildProps(moduleProps); //处理props上面所有的 _props 依赖 end
+          //这里不能用下面的 extend 方法，
+
+          moduleProps = _.extend({}, allConstructorProps, moduleProps); //如果原型上面是有type 属性的，那么说明，自己是type分类路由的一个分支，放到typeMap下面
+
+          if (allConstructorProps.type) {
+            if (!allProps[n].typeMap) allProps[n].typeMap = {};
+
+            if (n == 'graphs') {
+              moduleProps.type.values = _graphNames;
+              moduleProps.type.documentation = "可选的graphs类型有：\n" + _graphNames.join('\n');
+            }
+            allProps[n].typeMap[mn] = moduleProps;
+          } else {
+            _.extend(allProps[n].propertys, moduleProps);
+          }
+        };
+
+        for (mn in allModules[n]) {
+          _loop2();
+        }
+      };
+
+      for (var n in allModules) {
+        var _graphNames;
+
+        var allConstructorProps;
+        var protoModule;
+        var mn;
+        var mn;
+        var module;
+        var moduleProps;
+
+        var _ret = _loop();
+
+        if (_ret === "continue") continue;
+      }
+      this.props = allProps; //计算全量的 props 属性用来提供智能提示 begin
+
+      return this.props;
     }
   };
 
@@ -2612,18 +2847,33 @@ define(function () { 'use strict';
 
     if (_.isObject(evt) && evt.type) {
       eventType = evt.type;
+
+      _.extend(this, evt);
     }
     this.target = null;
     this.currentTarget = null;
     this.type = eventType;
     this.point = null;
+    var me = this;
     this._stopPropagation = false; //默认不阻止事件冒泡
-  };
 
-  Event.prototype = {
-    stopPropagation: function stopPropagation() {
-      this._stopPropagation = true;
-    }
+    this.stopPropagation = function () {
+      me._stopPropagation = true;
+
+      if (_.isObject(evt)) {
+        evt._stopPropagation = true;
+      }
+    };
+
+    this._preventDefault = false; //是否组织事件冒泡
+
+    this.preventDefault = function () {
+      me._preventDefault = true;
+
+      if (_.isObject(evt)) {
+        evt._preventDefault = true;
+      }
+    };
   };
 
   /**
@@ -2633,7 +2883,7 @@ define(function () { 'use strict';
    *
    * canvas 上委托的事件管理
    */
-  var _mouseEvents = 'mousedown mouseup mouseover mousemove mouseout click dblclick';
+  var _mouseEvents = 'mousedown mouseup mouseover mousemove mouseout click dblclick wheel';
   var types = {
     _types: _mouseEvents.split(/,| /),
     register: function register(evts) {
@@ -2806,6 +3056,7 @@ define(function () { 'use strict';
 
       if (map) {
         if (!e.target) e.target = this;
+        if (!e.currentTarget) e.currentTarget = this;
         map = map.slice();
 
         for (var i = 0; i < map.length; i++) {
@@ -2902,15 +3153,13 @@ define(function () { 'use strict';
           for (var p in params) {
             if (p != "type") {
               e[p] = params[p];
-            } //然后，currentTarget要修正为自己
-
-
-            e.currentTarget = this;
+            }
           }
         }
         var me = this;
 
         _.each(eventType.split(" "), function (eType) {
+          //然后，currentTarget要修正为自己
           e.currentTarget = me;
           me.dispatchEvent(e);
         });
@@ -8018,7 +8267,7 @@ define(function () { 'use strict';
       _classCallCheck(this, BufferGeometry);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(BufferGeometry).call(this));
-      Object.defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), 'id', {
+      Object.defineProperty(_assertThisInitialized(_this), 'id', {
         value: bufferGeometryId += 2
       });
       _this.type = 'BufferGeometry'; // 顶点索引
@@ -8907,7 +9156,7 @@ define(function () { 'use strict';
       _classCallCheck(this, Texture);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Texture).call(this));
-      Object.defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), 'id', {
+      Object.defineProperty(_assertThisInitialized(_this), 'id', {
         value: textureId++
       });
       _this.image = image !== undefined ? image : Texture.DEFAULT_IMAGE;
@@ -12378,7 +12627,7 @@ define(function () { 'use strict';
       _classCallCheck(this, Object3D);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Object3D).call(this));
-      Object.defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), 'id', {
+      Object.defineProperty(_assertThisInitialized(_this), 'id', {
         value: object3DId++
       });
       _this.parent = null;
@@ -12399,7 +12648,7 @@ define(function () { 'use strict';
 
       rotation.onChange(onRotationChange);
       quaternion.onChange(onQuaternionChange);
-      Object.defineProperties(_assertThisInitialized(_assertThisInitialized(_this)), {
+      Object.defineProperties(_assertThisInitialized(_this), {
         position: {
           enumerable: true,
           value: position
@@ -13619,7 +13868,7 @@ define(function () { 'use strict';
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Material).call(this));
       _this.type = 'Material';
-      Object.defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), 'id', {
+      Object.defineProperty(_assertThisInitialized(_this), 'id', {
         value: materialId++
       });
       _this.opacity = 1;
@@ -15728,7 +15977,7 @@ define(function () { 'use strict';
       _classCallCheck(this, Geometry);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Geometry).call(this));
-      Object.defineProperty(_assertThisInitialized(_assertThisInitialized(_this)), 'id', {
+      Object.defineProperty(_assertThisInitialized(_this), 'id', {
         value: geometryId += 2
       });
       _this.type = 'Geometry';
@@ -16299,7 +16548,7 @@ define(function () { 'use strict';
         depthSegments: depthSegments
       };
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this2)); // segments
+      var scope = _assertThisInitialized(_this2); // segments
 
 
       widthSegments = Math.floor(widthSegments) || 1;
@@ -16584,7 +16833,7 @@ define(function () { 'use strict';
         thetaLength: thetaLength
       };
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this2));
+      var scope = _assertThisInitialized(_this2);
 
       radiusTop = radiusTop !== undefined ? radiusTop : 20;
       radiusBottom = radiusBottom !== undefined ? radiusBottom : 20;
@@ -16826,7 +17075,7 @@ define(function () { 'use strict';
         thetaLength: thetaLength
       };
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this2)); // buffers
+      var scope = _assertThisInitialized(_this2); // buffers
 
 
       var indices = [];
@@ -17786,7 +18035,7 @@ define(function () { 'use strict';
       };
       shapes = Array.isArray(shapes) ? shapes : [shapes];
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this2));
+      var scope = _assertThisInitialized(_this2);
 
       var verticesArray = [];
       var uvArray = [];
@@ -18825,7 +19074,7 @@ define(function () { 'use strict';
       _classCallCheck(this, InstancedBufferAttribute);
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(InstancedBufferAttribute).call(this));
-      BufferAttribute.call(_assertThisInitialized(_assertThisInitialized(_this)), array, itemSize);
+      BufferAttribute.call(_assertThisInitialized(_this), array, itemSize);
       _this.meshPerAttribute = meshPerAttribute || 1;
       _this.isInstancedBufferAttribute = true;
       return _this;
@@ -20861,7 +21110,7 @@ define(function () { 'use strict';
     return Framework;
   }(Events);
 
-  var version$1 = "0.0.26";
+  var version$1 = "0.0.28";
 
   //viewName 
   var MainView = 'main_view';
@@ -21889,7 +22138,7 @@ define(function () { 'use strict';
         name: 'InertialSystem'
       });
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), _this.setDefaultOpts(root.opt));
+      _.extend(true, _assertThisInitialized(_this), _this.setDefaultOpts(root.opt));
 
       return _this;
     }
@@ -23103,7 +23352,7 @@ define(function () { 'use strict';
       _this.boundboxSize = new Vector3();
       _this.axisAttribute = _this._coordSystem.yAxisAttribute[_this.name];
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.init(opt);
 
@@ -23491,7 +23740,7 @@ define(function () { 'use strict';
       _this.trimLayout = null;
       _this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt); // this.label.enabled = this.enabled && this.label.enabled;
+      _.extend(true, _assertThisInitialized(_this), opt); // this.label.enabled = this.enabled && this.label.enabled;
       // this.tickLine.enabled = this.enabled && this.tickLine.enabled;
       // this.axisLine.enabled = this.enabled && this.axisLine.enabled;
 
@@ -23884,7 +24133,7 @@ define(function () { 'use strict';
 
       _this.posParseToInt = false; //比如在柱状图中，有得时候需要高精度的能间隔1px的柱子，那么x轴的计算也必须要都是整除的
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.label.enabled = _this.enabled && _this.label.enabled;
       _this.tickLine.enabled = _this.enabled && _this.tickLine.enabled;
@@ -24262,7 +24511,7 @@ define(function () { 'use strict';
         alpha: 0.1
       };
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.init();
 
@@ -24498,7 +24747,7 @@ define(function () { 'use strict';
       _this.zAxis = opt.zAxis || {};
       _this.grid = opt.grid || {};
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       if (opt.horizontal) {
         _this.xAxis.isH = true;
@@ -24703,7 +24952,7 @@ define(function () { 'use strict';
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(AxisAttribute).call(this, opt, dataOrg));
       _this.field = opt.field || null;
-      _this.exclude = opt.exclude || '';
+      _this.exclude = opt.exclude || ['', undefined, null];
 
       if ("middleweight" in opt) {
         _this.setMiddleweight(opt.middleweight);
@@ -24725,7 +24974,7 @@ define(function () { 'use strict';
           //空数据需要去除
 
           this.dataSection.forEach(function (item, i) {
-            if (item === _this2.exclude) {
+            if (_this2.exclude.indexOf(item) !== -1) {
               _this2.dataSection.splice(i, 1);
             }
           });
@@ -25531,7 +25780,7 @@ define(function () { 'use strict';
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(OrbitControls).call(this));
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this));
+      var scope = _assertThisInitialized(_this);
 
       _this.object = object;
       _this.domElement = domElement !== undefined ? domElement : document; // Set to false to disable this control
@@ -26226,7 +26475,7 @@ define(function () { 'use strict';
 
       _this = _possibleConstructorReturn(this, _getPrototypeOf(Interaction).call(this));
 
-      var scope = _assertThisInitialized(_assertThisInitialized(_this));
+      var scope = _assertThisInitialized(_this);
 
       _this.currMousePos = new Vector2();
       _this.views = [];
@@ -26524,7 +26773,6 @@ define(function () { 'use strict';
 
 
         if (controls.autoRotate) {
-          debugger;
           window.setTimeout(function () {
             controls.autoRotate = false;
           }, 15000);
@@ -27007,6 +27255,8 @@ define(function () { 'use strict';
     this.update();
   }
 
+  global.registerComponent(Chart3d, 'chart', 3);
+
   var Box =
   /*#__PURE__*/
   function (_Cartesian3D) {
@@ -27057,6 +27307,8 @@ define(function () { 'use strict';
 
     return Box;
   }(Cartesian3D);
+
+  global.registerComponent(Box, 'coord', 'box', 3);
 
   var PolarAttribute =
   /*#__PURE__*/
@@ -27377,6 +27629,8 @@ define(function () { 'use strict';
     return Polar3D;
   }(Cylindrical);
 
+  global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
+
   var Axis =
   /*#__PURE__*/
   function (_Component) {
@@ -27425,7 +27679,7 @@ define(function () { 'use strict';
 
       _this._tickLineDir = null;
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.axisAttribute = _this._coordSystem.getAxisAttribute(opt.field); //默认不显示
 
@@ -27483,7 +27737,7 @@ define(function () { 'use strict';
           res = this.label.format.apply(this, arguments);
         } else {
           if (this.label.maxLength > 0) {
-            if (val.length > this.label.maxLength) {
+            if (val && val.length > this.label.maxLength) {
               res = "";
               var _i = 0;
               var l = val.length;
@@ -28412,6 +28666,8 @@ define(function () { 'use strict';
     return Cube;
   }(InertialSystem);
 
+  global.registerComponent(Cube, 'coord', 'cube', 3);
+
   var GraphObject =
   /*#__PURE__*/
   function (_Component) {
@@ -28779,7 +29035,7 @@ define(function () { 'use strict';
 
       _this.allGroupNum = 1;
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt); // this.materialMap = new Map();
+      _.extend(true, _assertThisInitialized(_this), opt); // this.materialMap = new Map();
 
 
       _this.init();
@@ -28987,21 +29243,21 @@ define(function () { 'use strict';
       value: function _getColor(c, dataOrg) {
         var field = dataOrg.field.split(',');
 
-        var color = this._coordSystem.getColor(field); //field对应的索引，， 取颜色这里不要用i
+        var color$$1 = this._coordSystem.getColor(field); //field对应的索引，， 取颜色这里不要用i
 
 
         if (_.isString(c)) {
-          color = c;
+          color$$1 = c;
         }
 
         if (_.isArray(c)) {
-          color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          color$$1 = _.flatten(c)[_.indexOf(_flattenField, field)];
         }
 
         if (_.isFunction(c)) {
-          color = c.apply(this, [rectData]);
+          color$$1 = c.apply(this, [rectData]);
         }
-        return color;
+        return color$$1;
       }
     }, {
       key: "dispose",
@@ -29032,6 +29288,7 @@ define(function () { 'use strict';
   }(GraphObject);
 
   Bar._bar_prefix = "bar_one_";
+  global.registerComponent(Bar, 'graphs', 'bar', 3);
 
   var __lastPosition = null;
 
@@ -29079,7 +29336,7 @@ define(function () { 'use strict';
         alpha: 0.3
       };
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.init();
 
@@ -29105,21 +29362,21 @@ define(function () { 'use strict';
     }, {
       key: "_getColor",
       value: function _getColor(c, dataOrg) {
-        var color = this._coordSystem.getColor(dataOrg.field); //field对应的索引，， 取颜色这里不要用i
+        var color$$1 = this._coordSystem.getColor(dataOrg.field); //field对应的索引，， 取颜色这里不要用i
 
 
         if (_.isString(c)) {
-          color = c;
+          color$$1 = c;
         }
 
         if (_.isArray(c)) {
-          color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          color$$1 = _.flatten(c)[_.indexOf(_flattenField, field)];
         }
 
         if (_.isFunction(c)) {
-          color = c.apply(this, [rectData]);
+          color$$1 = c.apply(this, [rectData]);
         }
-        return color;
+        return color$$1;
       }
     }, {
       key: "dataProcess",
@@ -29339,6 +29596,8 @@ define(function () { 'use strict';
     return Line$$1;
   }(GraphObject);
 
+  global.registerComponent(Line$1, 'graphs', 'line', 3);
+
   var __lastPosition$1 = null;
 
   var Area =
@@ -29365,7 +29624,7 @@ define(function () { 'use strict';
         smooth: true
       };
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.init();
 
@@ -29387,21 +29646,21 @@ define(function () { 'use strict';
     }, {
       key: "_getColor",
       value: function _getColor(c, dataOrg) {
-        var color = this._coordSystem.getColor(dataOrg.field); //field对应的索引，， 取颜色这里不要用i
+        var color$$1 = this._coordSystem.getColor(dataOrg.field); //field对应的索引，， 取颜色这里不要用i
 
 
         if (_.isString(c)) {
-          color = c;
+          color$$1 = c;
         }
 
         if (_.isArray(c)) {
-          color = _.flatten(c)[_.indexOf(_flattenField, field)];
+          color$$1 = _.flatten(c)[_.indexOf(_flattenField, field)];
         }
 
         if (_.isFunction(c)) {
-          color = c.apply(this, [rectData]);
+          color$$1 = c.apply(this, [rectData]);
         }
-        return color;
+        return color$$1;
       }
     }, {
       key: "dataProcess",
@@ -29586,6 +29845,7 @@ define(function () { 'use strict';
   }(GraphObject);
 
   Area._area_prefix = 'polygon_area_';
+  global.registerComponent(Area, 'graphs', 'area', 3);
 
   var Pie =
   /*#__PURE__*/
@@ -30079,7 +30339,7 @@ define(function () { 'use strict';
           labels.push(label[0]);
         }
 
-        labels.forEach(function (label, index) {
+        labels.forEach(function (label, index$$1) {
           label.userData.position = label.userData.position;
           label.matrixWorldNeedsUpdate = false;
 
@@ -30175,6 +30435,7 @@ define(function () { 'use strict';
   }(Component);
 
   Pie._pie_prefix = "pie_one_";
+  global.registerComponent(Pie, 'graphs', 'pie', 3);
 
   var Heatmap =
   /*#__PURE__*/
@@ -30216,7 +30477,7 @@ define(function () { 'use strict';
       };
       _this.gap = 1;
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.name = "Heatmap_" + _this.face;
       _this._colors = [];
@@ -30289,7 +30550,7 @@ define(function () { 'use strict';
         var zData = this.zAttr.dataSectionLayout;
         var data1 = [],
             data2 = [];
-        var dataFrame = this._root.dataFrame;
+        var dataFrame$$1 = this._root.dataFrame;
         this.drawData = [];
 
         var origin = this._coordSystem.getOriginPosition(this.face.toLowerCase());
@@ -30340,7 +30601,7 @@ define(function () { 'use strict';
           data2.forEach(function (yd, yi) {
             var _dataFrame$getRowData;
 
-            var rowDatas = dataFrame.getRowDataOf((_dataFrame$getRowData = {}, _defineProperty(_dataFrame$getRowData, data1.attr.field, xd.val), _defineProperty(_dataFrame$getRowData, data2.attr.field, yd.val), _dataFrame$getRowData));
+            var rowDatas = dataFrame$$1.getRowDataOf((_dataFrame$getRowData = {}, _defineProperty(_dataFrame$getRowData, data1.attr.field, xd.val), _defineProperty(_dataFrame$getRowData, data2.attr.field, yd.val), _dataFrame$getRowData));
             if (!rowDatas.length) return;
             var score = rowDatas[0][_this2.field] || 1;
 
@@ -30544,14 +30805,14 @@ define(function () { 'use strict';
         var geometry = new BufferGeometry();
         geometry.setIndex([0, 1, 2, 0, 2, 3]);
         geometry.addAttribute('position', new Float32BufferAttribute(position, 3, false));
-        texts.forEach(function (text, index) {
+        texts.forEach(function (text, index$$1) {
           geometry.addAttribute('uv', new Float32BufferAttribute(labelInfos.UVs[text], 2, false));
           var realSize = labelInfos.sizes[text]; //realSize==[width,height]
 
           var scale = new Vector3(realSize[0] / realSize[1], 1, 1);
           scale.multiplyScalar(realSize[1]);
           var txtObj = new Mesh(geometry, textMatrial);
-          txtObj.name = "mesh_text_" + text + "_" + index;
+          txtObj.name = "mesh_text_" + text + "_" + index$$1;
           txtObj.scale.copy(scale);
           txtObj.userData = {
             text: text,
@@ -30636,6 +30897,7 @@ define(function () { 'use strict';
   }(GraphObject);
 
   Heatmap._heatmap_plane_prefix = 'heatmap_one_plane_';
+  global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
 
   var Tips =
   /*#__PURE__*/
@@ -30687,7 +30949,7 @@ define(function () { 'use strict';
       _this.pointerAnim = true;
       _this._tipsPointer = null;
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt); // this.sprite = new Canvax.Display.Sprite({
+      _.extend(true, _assertThisInitialized(_this), opt); // this.sprite = new Canvax.Display.Sprite({
       //     id: "TipSprite"
       // });
       // var self = this;
@@ -30944,6 +31206,8 @@ define(function () { 'use strict';
     return Tips;
   }(Component);
 
+  global.registerComponent(Tips, 'tips', 3);
+
   var MarkPoint =
   /*#__PURE__*/
   function (_Component) {
@@ -30974,7 +31238,7 @@ define(function () { 'use strict';
       };
       _this.icon = {};
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), opt);
+      _.extend(true, _assertThisInitialized(_this), opt);
 
       _this.init();
 
@@ -31190,6 +31454,8 @@ define(function () { 'use strict';
     return MarkPoint;
   }(Component);
 
+  global.registerComponent(MarkPoint, 'markpoint', 3);
+
   var __legend_clickEvent = null;
 
   var Legend =
@@ -31260,7 +31526,7 @@ define(function () { 'use strict';
       _this.offsetX = 0;
       _this.offsetY = 0;
 
-      _.extend(true, _assertThisInitialized(_assertThisInitialized(_this)), {
+      _.extend(true, _assertThisInitialized(_this), {
         icon: {
           onChecked: function onChecked(obj) {},
           onUnChecked: function onUnChecked(obj) {}
@@ -31532,6 +31798,7 @@ define(function () { 'use strict';
   }(Component);
 
   Legend._legend_prefix = "legend_field_";
+  global.registerComponent(Legend, 'legend', 3);
 
   var Theme =
   /*#__PURE__*/
@@ -31586,20 +31853,8 @@ define(function () { 'use strict';
     return Theme;
   }(Component);
 
-  global.registerComponent(Chart3d, 'chart', 3); //global.registerComponent( emptyCoord, 'coord' );
-
-  global.registerComponent(Box, 'coord', 'box', 3);
-  global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
-  global.registerComponent(Cube, 'coord', 'cube', 3);
-  global.registerComponent(Bar, 'graphs', 'bar', 3);
-  global.registerComponent(Line$1, 'graphs', 'line', 3);
-  global.registerComponent(Area, 'graphs', 'area', 3);
-  global.registerComponent(Pie, 'graphs', 'pie', 3);
-  global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
   global.registerComponent(Theme, 'theme', 3);
-  global.registerComponent(Tips, 'tips', 3);
-  global.registerComponent(MarkPoint, 'markpoint', 3);
-  global.registerComponent(Legend, 'legend', 3); //皮肤设定begin ---------------
+
   //如果数据库中有项目皮肤
 
   var projectTheme = []; //从数据库中查询出来设计师设置的项目皮肤

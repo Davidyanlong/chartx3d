@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { Component, _ } from '../../Component';
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, Box3, Math as _Math, CatmullRomCurve3 } from 'mmgl/src/index';
 
@@ -485,13 +486,13 @@ class Pie extends Component {
                 if (cross.y > 0) {
                     // let flag = isSameDir < 0 ? 1 : -1;
                     pos.setX(pos.x - halfwidth - me.label.offset);
-                   // this.position.copy(pos);
+                    // this.position.copy(pos);
                 }
                 //left
                 if (cross.y < 0) {
                     // let flag = isSameDir < 0 ? -1 : 1;
                     pos.setX(pos.x + halfwidth + me.label.offset);
-                   // this.position.copy(pos);
+                    // this.position.copy(pos);
                 }
                 // if (me.verticalAlign == 'top') {
                 //     pos.setY(pos.y - halfHeight);
@@ -556,5 +557,5 @@ class Pie extends Component {
 }
 
 Pie._pie_prefix = "pie_one_";
-
+global.registerComponent(Pie, 'graphs', 'pie', 3);
 export default Pie;

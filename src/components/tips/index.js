@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { Component, _ } from "../Component";
 
 class Tips extends Component {
@@ -148,7 +149,7 @@ class Tips extends Component {
         me._tipDom.style.cssText += "; -moz-box-shadow:1px 1px 3px " + me.strokeStyle + "; -webkit-box-shadow:1px 1px 3px " + me.strokeStyle + "; box-shadow:1px 1px 3px " + me.strokeStyle + ";"
         me._tipDom.style.cssText += "; border:none;white-space:nowrap;word-wrap:normal;"
         me._tipDom.style.cssText += "; text-align:left;"
-       
+
         me.tipDomContainer.appendChild(this._tipDom);
     }
 
@@ -280,5 +281,7 @@ class Tips extends Component {
 
 
 }
+
+global.registerComponent(Tips, 'tips', 3);
 
 export default Tips;

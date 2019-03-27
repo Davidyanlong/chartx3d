@@ -1,13 +1,14 @@
 /**
  * 对外发布的极坐标
  */
-import { Cylindrical  } from "../../framework/coord/cylindrical";
+import { global } from 'mmvis';
+import { Cylindrical } from "../../framework/coord/cylindrical";
 
 class Polar3D extends Cylindrical {
     constructor(root) {
         super(root)
 
-        
+
         this.DefaultControls = {
             autoRotate: false,       //默认不自动旋转
             boxWidth: 1200,         //空间中X的最大值(最大宽度)  
@@ -29,5 +30,7 @@ class Polar3D extends Cylindrical {
 
     }
 }
+
+global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
 
 export default Polar3D;

@@ -8,7 +8,7 @@ import { Component } from './components/Component';
 import { Events } from 'mmgl/src/index';
 import { OrbitControls } from './framework/OrbitControls';
 import { Interaction } from './framework/interaction';
-import { MainView, LabelView ,VERSION} from './constants';
+import { MainView, LabelView, VERSION } from './constants';
 
 let __tipShowEvent = null, __tipHideEvent = null, __tipMoveEvent = null, __redraw = null;
 
@@ -16,7 +16,7 @@ let _cid = 0;
 class Chart3d extends Events {
     constructor(node, data, opt, componentModules) {
         super();
-        console.log('Chart3D ',VERSION);
+        console.log('Chart3D ', VERSION);
         this.domSelector = node;
         this.opt = opt;
         this.data = data;
@@ -563,5 +563,8 @@ function onRenderBefore() {
 function onRenderAfter() {
     this.update();
 }
+
+global.registerComponent(Chart3d, 'chart', 3);
+
 export default Chart3d;
 

@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { GraphObject, _ } from '../graph';
 import { FaceNames } from '../../../constants';
 import { Vector3, PlaneGeometry, MeshLambertMaterial, MeshBasicMaterial, MeshPhongMaterial, BoxGeometry, Mesh, FrontSide, DoubleSide, Texture, RepeatWrapping, LinearFilter, BufferGeometry, Float32BufferAttribute, Math as _Math, Color } from 'mmgl/src/index';
@@ -199,7 +200,7 @@ class Heatmap extends GraphObject {
             this.planeGroup.add(plane);
             //写文字
             if (item.data[this.field]) {
-                let labels = this.createText(item.data[this.field], { fontSize: this.label.fontSize, fillStyle: this.label.fillStyle, strokeStyle: hexToRgba(this.label.strokeStyle,0.1), lineWidth: this.label.lineWidth });
+                let labels = this.createText(item.data[this.field], { fontSize: this.label.fontSize, fillStyle: this.label.fillStyle, strokeStyle: hexToRgba(this.label.strokeStyle, 0.1), lineWidth: this.label.lineWidth });
                 let pos = item.pos.clone();
 
                 labels[0].position.copy(pos);
@@ -236,7 +237,7 @@ class Heatmap extends GraphObject {
                 this.material = me.getMaterial(score);
                 this.material.needsUpdate = true;
             }
-    
+
             me._root.fire({
                 type: 'tipHide',
                 event: e.event,
@@ -298,7 +299,7 @@ class Heatmap extends GraphObject {
     }
     createText(texts, fontStyle) {
         let labels = [];
-       // console.log(JSON.stringify(fontStyle));
+        // console.log(JSON.stringify(fontStyle));
         let renderFont = new RenderFont(fontStyle);
 
         if (!_.isArray(texts)) {
@@ -384,7 +385,7 @@ class Heatmap extends GraphObject {
         if (this._colors.length == 0 && _.isString(this.colorScheme)) {
             this._colors = getHSVShemes(this.colorScheme) || [];
             this._colors.reverse();
-           // console.log(this.face, this._colors);
+            // console.log(this.face, this._colors);
         }
         if (_.isFunction(this.colorScheme)) {
             return this.colorScheme.call(this, score);
@@ -422,5 +423,6 @@ class Heatmap extends GraphObject {
 
 Heatmap._heatmap_plane_prefix = 'heatmap_one_plane_'
 
+global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
 
 export default Heatmap;

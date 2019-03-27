@@ -1,4 +1,4 @@
-
+import { global } from 'mmvis';
 import { Component, _ } from "../Component";
 import { DEFAULT_AXIS } from "../../framework/coord/cartesian3d";
 import { Vector3 } from "mmgl/src/index";
@@ -8,7 +8,7 @@ class MarkPoint extends Component {
         super(chart3d.currCoord);
 
         this.opt = opt;
-        
+
         this.name = 'MarkPoint';
         this.type = "markline";
         this.markTo = null;
@@ -206,5 +206,5 @@ class MarkPoint extends Component {
 
 
 }
-
+global.registerComponent(MarkPoint, 'markpoint', 3);
 export default MarkPoint;

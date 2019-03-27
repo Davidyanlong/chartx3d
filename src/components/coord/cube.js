@@ -1,5 +1,5 @@
 import { InertialSystem } from "../../framework/coord/inertial";
-import { _ } from 'mmvis';
+import { _, global } from 'mmvis';
 import { FaceNames } from '../../constants';
 import { CubeUI } from '../cubeUI/index.js';
 import { AxisAttribute } from '../../framework/coord/model/axisAttribute';
@@ -410,5 +410,7 @@ class Cube extends InertialSystem {
     }
 
 }
+
+global.registerComponent(Cube, 'coord', 'cube', 3);
 
 export default Cube;;

@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { GraphObject, _ } from '../graph';
 import { findNearPointX } from "../../../../utils/tools";
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
@@ -203,5 +204,5 @@ class Area extends GraphObject {
 }
 
 Area._area_prefix = 'polygon_area_';
-
+global.registerComponent(Area, 'graphs', 'area', 3);
 export default Area;

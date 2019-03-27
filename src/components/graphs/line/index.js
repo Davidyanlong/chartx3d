@@ -1,3 +1,4 @@
+import { global } from 'mmvis';
 import { GraphObject, _ } from '../graph';
 import { findNearPointX } from "../../../../utils/tools";
 import { Vector3, MeshBasicMaterial, MeshLambertMaterial, FrontSide, DoubleSide, MeshPhongMaterial, Color, CatmullRomCurve3 } from 'mmgl/src/index';
@@ -181,7 +182,7 @@ class Line extends GraphObject {
                 // console.log(currPoint);
             }
         };
-       this.__mouseout = (e) => {
+        this.__mouseout = (e) => {
             if (this.textTempGroup) {
 
                 // this.textTempGroup.traverse(item => {
@@ -229,7 +230,7 @@ class Line extends GraphObject {
             })
         })
     }
-    dispose(){
+    dispose() {
         this.areaGroup.traverse(obj => {
             obj.off('mousemove', this.__mousemove);
             obj.off("mouseout", this.__mouseout);
@@ -241,5 +242,5 @@ class Line extends GraphObject {
         this.draw();
     }
 }
-
+global.registerComponent(Line, 'graphs', 'line', 3);
 export default Line;

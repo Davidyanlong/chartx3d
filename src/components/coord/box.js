@@ -1,6 +1,7 @@
 /**
  * 为了输入便捷,3D的笛卡尔坐标系,在配置中为Box
  */
+import { global } from 'mmvis'
 import { Cartesian3D } from "../../framework/coord/cartesian3d";
 
 class Box extends Cartesian3D {
@@ -36,5 +37,7 @@ class Box extends Cartesian3D {
     }
 
 }
+
+global.registerComponent(Box, 'coord', 'box', 3);
 
 export default Box;
