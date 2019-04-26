@@ -38,7 +38,7 @@ class RenderFont {
 
         this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
         this.context = this.canvas.getContext("2d");
-
+        //document.body.appendChild(this.canvas);
     }
     getFont() {
         return (this.style.isBold ? 'bold ' : 'normal ') + this.style.fontSize + 'px ' + this.style.fontFamily;
@@ -117,13 +117,13 @@ class RenderFont {
         texts.forEach((text, index) => {
             let width = this.getTextWidth(text);
             let height = this.getTextHeight(text);
+            // console.log(text, width, height);
             sizes[text] = [width, height];
             st = cw;
             cw += width;
             if (index == 0) {
                 ch = height;
             }
-
             if (cw < this.defaultTextureWidth) {
 
             } else {
@@ -171,7 +171,7 @@ class RenderFont {
         this.height = height;
 
         //透明清屏
-        this.context.fillStyle = "rgba(0,0,0,0)";
+        this.context.fillStyle = "rgba(0,0,0,1)";
         this.context.clearRect(0, 0, width * this.scale, height * this.scale);
     }
 
@@ -181,7 +181,6 @@ class RenderFont {
 
         let { maxWidth, maxHeight, canvasWidth, canvasHeight, uvs, sizes } = this.computeUvsAndCanvasSize(texts);
         this.setCanvasSize(canvasWidth, canvasHeight);
-
         me.context.fillStyle = me.style.fillStyle;
         if (me.style.strokeStyle) {
             me.context.strokeStyle = me.style.strokeStyle;
@@ -207,7 +206,7 @@ class RenderFont {
             let txtArr = this._getTextLines(text);
 
             txtArr.forEach((txt, line) => {
-               
+
                 if (me.style.strokeStyle) {
                     me.context.strokeText(txt, uv[0], canvasHeight - uv[5] + this.style.fontSize * this.style.lineHeight * line);
                 }

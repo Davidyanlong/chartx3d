@@ -3,7 +3,8 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <meta name="viewport"
+        content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
     <title>xChart demo -- heatmap</title>
 
     <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
@@ -44,21 +45,19 @@
     //构建数据
     let creatives=['创意A创意A创意A创意A','创意B创意B创意B创意B创意B','创意C','创意D','创意E','创意F'];
     let targets=['定向一定向一定向一定向一定向一定向一','定向二','定向三','定向四','定向五','定向六','定向七','定向八','定向九','定向十','定向十一'];
-    let resources=['资源包1','资源包2','资源包3','资源包4','资源包5','资源包6'];             
+    let resources=['PC购物链路','淘好物活动','首页猜你喜欢','购中猜你喜欢','购后猜你喜欢'];             
     let  data=  [];
 
     computeData();
 
-    
+ //为空的色块填充f5f5f6试试看   
  var options = {
         coord : {
             type : "cube",
-
-            
             xAxis : {
                 field : "target",
                 label:{
-                    rotation:10,
+                    rotation:20,
                     maxLength:6
                  },
                
@@ -67,12 +66,19 @@
             yAxis :{
                    field : "creative",
                    label:{
-                    maxLength:10
-                   }
+                    //textAlign:"right",
+
+                    //rotation:20,
+                    //maxLength:4
+                 },
                  //  dataSection:creatives
                 },
             zAxis:{
                 field : "resource", 
+                label:{
+                    //rotation:20,
+                    //maxLength:6
+                 },
                 //dataSection:resources 
             },
             controls:{
@@ -87,7 +93,7 @@
                 type : "heatmap",    
                 field:'score',
                 face:'front',          //绘制在box的那个面上 
-                colorScheme:'#0A2A91',  //色系
+                colorScheme: "#0A2A91",
                 area:{
                     highColor:'#9254de'
                 }   
@@ -96,7 +102,7 @@
             type : "heatmap",   
             field:'score',
             face:'top',      
-            colorScheme:'#910044',
+            colorScheme: "#910044",
             area:{
                 highColor:'#5278f8'
             }   
@@ -106,9 +112,9 @@
             type : "heatmap",     
             field:'score',
             face:'right',        
-            colorScheme:'#007878',
+            colorScheme: "#33007A",
             area:{
-                highColor:'#41A9FF'
+                highColor:'#E05A99'
             }   
         }
     
@@ -182,7 +188,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
                            creative,
                            target,
                            resource:'',
-                           score:Math.floor(Math.random()*10+1)
+                           score:Math.floor(Math.random()*10)
                        }) 
                    })
                 });
@@ -194,7 +200,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
                            creative,
                            target:'',
                            resource,
-                           score:Math.floor(Math.random()*10+1)
+                           score:Math.floor(Math.random()*10)
                        }) 
                    })
                 });
@@ -206,7 +212,7 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
                            creative:'',
                            target,
                            resource,
-                           score:Math.floor(Math.random()*10+1)
+                           score:Math.floor(Math.random()*10)
                        }) 
                    })
                 });
@@ -222,7 +228,8 @@ window.heatmap = Chartx3d.create("canvasTest" , data , options)
             </td>
             <td style="padding:0 10px;" id="td-vr">
                 <div id="chartdemo-r">
-                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;" id="callout-navs-anchor-disabled">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;"
+                        id="callout-navs-anchor-disabled">
                         <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
 
                         <h4>魔方-热力图（bar chart）</h4>

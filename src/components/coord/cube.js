@@ -209,7 +209,7 @@ class Cube extends InertialSystem {
             let fn = () => {
                 let pass = new Date().getTime() - currDate;
                 if (pass <= duration) {
-                    this._root.app.forceRender();
+
                     alpha = alphaStart + spanAlpha * pass / duration;
                     beta = betaStart + spanBeta * pass / duration;
                     gamma = gammaStart + spanGamma * pass / duration;
@@ -217,6 +217,7 @@ class Cube extends InertialSystem {
                     this.group.rotation.x = _Math.degToRad(alpha);
                     this.group.rotation.y = _Math.degToRad(-beta);
                     this.group.rotation.z = _Math.degToRad(gamma);
+
 
                 } else {
                     alpha = alphaEnd;
@@ -230,6 +231,8 @@ class Cube extends InertialSystem {
                     this._coordUI.showAxis();
                     this._root.app._framework.off('renderbefore', fn)
                 }
+
+                this._root.app.forceRender();
             };
 
             this._root.app._framework.on('renderbefore', fn)

@@ -35,7 +35,6 @@ class Axis extends Component {
         };
         //@params params包括 dataSection , 索引index，txt(canvax element) ，line(canvax element) 等属性
         this.filter = null; //function(params){}; 
-
         //原点
         this._origin = null;
 
@@ -133,11 +132,17 @@ class Axis extends Component {
 
         //初始化tickText
         let opt = _.clone(this.label);
+
+        //只有旋转就需要采用中间对齐
+        if (opt.rotation != 0) {
+            opt.textAlign = 'center';
+        }
+
         opt.offset = this._tickLineDir.clone().multiplyScalar(opt.offset);
-
         this._tickText = new TickTexts(_coordSystem, opt);
-        this._tickText.offset.add(this._tickLineDir.clone().multiplyScalar(this.tickLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset));
 
+        this._tickText.offset.add(this._tickLineDir.clone().multiplyScalar(this.tickLine.lineLength + this.tickLine.offset + this.tickLine.lineWidth));
+ 
         this._tickText.setDir(this._tickLineDir);
         this._tickText.initData({ dir: this._axisDir, origin: this._origin }, this.axisAttribute);
         this._tickText.autoUpdataPostion = true;

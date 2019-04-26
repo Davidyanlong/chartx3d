@@ -28,7 +28,8 @@ class Heatmap extends GraphObject {
             enabled: 1,
             fillStyle: null,
             alpha: 1.0,
-            highColor: 'yellow'
+            highColor: 'yellow',
+            defaultColor: '#F5F5F6'
         };
         this.label = {
             enabled: 1,
@@ -166,7 +167,7 @@ class Heatmap extends GraphObject {
                     [data2.attr.field]: yd.val
                 });
                 if (!rowDatas.length) return;
-                let score = rowDatas[0][this.field] || 1;
+                let score = rowDatas[0][this.field];
                 let _color = this.getColorByScore(score);
                 this.drawData.push({
                     value: score,
@@ -232,7 +233,7 @@ class Heatmap extends GraphObject {
         };
         this.__mouseout = function (e) {
             if (!isTrigger()) return;
-            let score = this.userData.info.data[me.field] || 1;
+            let score = this.userData.info.data[me.field];
             if (!this.userData.select) {
                 this.material = me.getMaterial(score);
                 this.material.needsUpdate = true;
@@ -281,7 +282,6 @@ class Heatmap extends GraphObject {
     getMaterial(score, highColor) {
         this.materialMap = this.materialMap || {};
         let key = this.face + "_" + (highColor ? "999" : score);
-
         if (this.materialMap[key]) {
             return this.materialMap[key];
         }
@@ -295,6 +295,7 @@ class Heatmap extends GraphObject {
             depthWrite: false
 
         });
+        
         return this.materialMap[key];
     }
     createText(texts, fontStyle) {
@@ -378,8 +379,7 @@ class Heatmap extends GraphObject {
         });
     }
     getColorByScore(score) {
-        //score 为1-10分
-        score = Math.min(10, Math.max(score, 1));
+
 
         //如果用户指定了颜色值,计算色系
         if (this._colors.length == 0 && _.isString(this.colorScheme)) {
@@ -391,7 +391,7 @@ class Heatmap extends GraphObject {
             return this.colorScheme.call(this, score);
         } else {
 
-            return this._colors[score - 1];
+            return this._colors[score - 1] || this.area.defaultColor;
         }
     }
     dispose(group) {

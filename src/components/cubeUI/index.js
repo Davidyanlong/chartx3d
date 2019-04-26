@@ -1,7 +1,7 @@
 import { Component, _ } from "../Component";
 import { Axis } from './axis';
 import { FaceNames } from '../../constants';
-import { Vector3, MeshBasicMaterial,MeshLambertMaterial, MeshPhongMaterial, BoxGeometry, Mesh, Math as _Math } from 'mmgl/src/index';
+import { Vector3, MeshBasicMaterial, MeshLambertMaterial, MeshPhongMaterial, CircleBufferGeometry, BoxGeometry, Mesh, Math as _Math } from 'mmgl/src/index';
 
 
 class CubeUI extends Component {
@@ -35,9 +35,12 @@ class CubeUI extends Component {
             xAxis.initModules();
             this.group.add(xAxis.group);
             axises[FaceNames.FRONT].push(xAxis);
+
+
             //初始化Y轴
             opt = _.clone(_coordSystem.coord.yAxis);
-            let yAxis = new Axis(this, opt)
+            let yAxis = new Axis(this, opt);
+
             yAxis.setOrigin(origin.clone());
             yAxis.setAxisDir(new Vector3(0, 1, 0));
             yAxis.setTickLineDir(new Vector3(-1, 0, 0))
@@ -75,8 +78,8 @@ class CubeUI extends Component {
         {
             let origin = _coordSystem.getOriginPosition(FaceNames.LEFT);
             //初始化X轴 实际为Z轴
-            opt = _.clone(_coordSystem.coord.zAxis);
-
+            opt = _.clone(_coordSystem.coord.xAxis);
+            opt.field = _coordSystem.coord.zAxis.field;
             let xAxis = new Axis(this, opt);
             xAxis.setOrigin(origin.clone());
             xAxis.setAxisDir(new Vector3(0, 0, 1));
@@ -99,9 +102,18 @@ class CubeUI extends Component {
         //_dir === 'RIGHT'
         {
             let origin = _coordSystem.getOriginPosition(FaceNames.RIGHT);
-            //初始化X轴 实际为Z轴
-            opt = _.clone(_coordSystem.coord.zAxis);
 
+            //测试原地
+            // let point = new Mesh(new CircleBufferGeometry(2), new MeshBasicMaterial({ color: 'red' }));
+            // let pos = origin.clone();
+            // pos.z += 0;
+            // point.position.copy(pos);
+
+            // this.group.add(point);
+
+            //初始化X轴 实际为Z轴
+            opt = _.clone(_coordSystem.coord.xAxis);
+            opt.field = _coordSystem.coord.zAxis.field;
             let xAxis = new Axis(this, opt);
             xAxis.setOrigin(origin.clone());
             xAxis.setAxisDir(new Vector3(0, 0, -1));
@@ -112,10 +124,13 @@ class CubeUI extends Component {
 
             //初始化Y轴
             opt = _.clone(_coordSystem.coord.yAxis);
+            //opt.label.offset = 40;
+            //opt.label.textAlign = "";
             let yAxis = new Axis(this, opt);
             yAxis.setOrigin(origin.clone());
             yAxis.setAxisDir(new Vector3(0, 1, 0));
             yAxis.setTickLineDir(new Vector3(0, 0, 1))
+
             yAxis.initModules();
             this.group.add(yAxis.group);
             axises[FaceNames.RIGHT].push(yAxis);
@@ -134,9 +149,19 @@ class CubeUI extends Component {
             this.group.add(xAxis.group);
             axises[FaceNames.TOP].push(xAxis);
 
+            //修复top面 X轴label的位置
+            xAxis.group.traverse(label => {
+                if (label.type == "Sprite") {
+                    label.position.add(new Vector3(0, 0, 1).multiplyScalar(label.userData.size[1] * 0.5))
+                }
+            })
+            //
+
             //初始化Y轴 实际为Z轴
-            opt = _.clone(_coordSystem.coord.zAxis);
-            opt.label.textAlign = 'right';
+            opt = _.clone(_coordSystem.coord.yAxis);
+            opt.field = _coordSystem.coord.zAxis.field;
+
+            //opt.label.textAlign = 'right';
             let yAxis = new Axis(this, opt)
             yAxis.setOrigin(origin.clone());
             yAxis.setAxisDir(new Vector3(0, 0, -1));
@@ -160,8 +185,8 @@ class CubeUI extends Component {
             axises[FaceNames.BOTTOM].push(xAxis);
 
             //初始化Y轴 实际为Z轴
-            opt = _.clone(_coordSystem.coord.zAxis);
-            opt.label.textAlign = 'right';
+            opt = _.clone(_coordSystem.coord.yAxis);
+            opt.field = _coordSystem.coord.zAxis.field
             let yAxis = new Axis(this, opt)
             yAxis.setOrigin(origin.clone());
             yAxis.setAxisDir(new Vector3(0, 0, 1));
@@ -207,7 +232,7 @@ class CubeUI extends Component {
             this.faceAxises[name].forEach(axis => {
                 axis.setVisibel(false);
                 if (name == dir) {
-                    axis.setVisibel(true); Î
+                    axis.setVisibel(true);
                 }
             });
         }
@@ -217,6 +242,7 @@ class CubeUI extends Component {
         // app._framework.on('renderbefore', () => {
         //     // box.rotation.x+=0.01;
         // })
+
         this.group.add(this.box);
         let dir = this._coordSystem.getDirection();
         for (let key in FaceNames) {
@@ -225,8 +251,8 @@ class CubeUI extends Component {
                 axis.setVisibel(false);
                 if (name == dir) {
                     axis.setVisibel(true);
-                    axis.draw();
                 }
+                axis.draw();
             });
         }
 

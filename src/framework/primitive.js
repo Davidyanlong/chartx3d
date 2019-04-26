@@ -49,7 +49,7 @@ import { RenderFont } from './renderFont';
 
 const getBasicMaterial = () => {
     return new MeshBasicMaterial({
-        color:0xffffff*Math.random()
+        color: 0xffffff * Math.random()
     });
 }
 
@@ -169,7 +169,7 @@ const primitive = {
     },
 
     //创建一个面
-    createPlane(width = 1, height = 1, materials = undefined, showInfo = {dir:new Vector3()}, group = undefined, faceStyle = {}) {
+    createPlane(width = 1, height = 1, materials = undefined, showInfo = { dir: new Vector3() }, group = undefined, faceStyle = {}) {
 
         if (!materials) {
 
@@ -405,18 +405,20 @@ const primitive = {
         texture.needsUpdate = true;
 
         let spriteMatrial = new SpriteMaterial({
-            color: fontStyle.fillStyle,
+            color:fontStyle.fillStyle,
             map: texture,
             transparent: true,
-            depthWrite: false
+            depthWrite: false,
+            
         });
 
 
         texts.forEach((text, index) => {
             let realSize = labelInfos.sizes[text];
             //realSize==[width,height]
-            let scale = new Vector3(realSize[0] / realSize[1], 1, 1);
-            scale.multiplyScalar(realSize[1]);
+            let scale = new Vector3(realSize[0], realSize[1], 1);
+            //scale.multiplyScalar(realSize[1]);
+            //debugger
             let sprite = new Sprite(spriteMatrial);
 
 
@@ -434,6 +436,7 @@ const primitive = {
                 maxHeight: labelInfos.maxHeight
             }
 
+        
             //默认不进行裁剪
             sprite.frustumCulled = false;
             labels.push(sprite);

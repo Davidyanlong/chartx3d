@@ -1,6 +1,7 @@
 
 import { Component, _ } from '../Component';
-import { Vector3, Math as _Math } from 'mmgl/src/index';
+import { FaceNames } from '../../constants';
+import { Vector3, Math as _Math, CircleBufferGeometry, Mesh, MeshBasicMaterial } from 'mmgl/src/index';
 
 class TickTexts extends Component {
     constructor(_coordSystem, opts) {
@@ -87,29 +88,41 @@ class TickTexts extends Component {
         let zDir = new Vector3(0, 0, -1);
         this.texts = texts || this.texts;
         this.labels = [];
+
         let labels = app.creatSpriteText(texts, { fontSize, fillStyle: color });
 
         labels.forEach((label, index) => {
             label.userData.position = me.origins[index].clone();
 
-
             if (me.autoUpdataPostion) {
-                let _dir = this._coordSystem.getDirection()
+
+                let _dir = new Vector3(1, 0, 0);
+                if (this.dir.z > 0) {
+                    _dir = new Vector3(0, 0, -1);
+                }
                 label.position.copy(me.origins[index].clone());
 
                 if (this.textAlign === 'right') {
-                    // if (_dir === 'FRONT') {
-                    //     label.position.sub(new Vector3(label.userData.size[0] * 0.5, 0, 0));
-                    // }
-                    // if (_dir === 'RIGHT') {
-                    //     label.position.sub(new Vector3(0, 0, -label.userData.size[0] * 0.5))
-                    // }
-                    label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[0] * 0.5))
+                    label.position.sub(_dir.multiplyScalar(label.userData.size[0] * 0.5))
 
                 }
-                if (this.textAlign === 'center') {
-                    label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
+
+                if (this.textAlign === 'left') {
+                    _dir.multiplyScalar(-1);
+                    label.position.sub(_dir.multiplyScalar(label.userData.size[0] * 0.5))
                 }
+
+                if (this.textAlign === 'center') {
+                    //默认横向居中
+                    // label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
+                }
+                
+                //根据文字高度，调整位置
+                if (this.dir.equals(new Vector3(0, 1, 0)) || this.dir.equals(new Vector3(0, -1, 0))) {
+                    label.position.add(this.dir.clone().multiplyScalar(label.userData.size[1] * 0.5))
+                }
+
+
                 if (this.rotation !== 0) {
                     label.material.rotation = _Math.degToRad(this.rotation);
                     label.center.set(1, 0.5);
@@ -126,7 +139,6 @@ class TickTexts extends Component {
                 label.matrixWorldNeedsUpdate = false;
                 label.onBeforeRender = function (render, scene, camera) {
                     me.updataOrigins();
-
                     //更新坐标后的位置
 
                     let pos = me._coordSystem.positionToScreen(me.getTextPos(this.userData.text).clone());
@@ -164,7 +176,11 @@ class TickTexts extends Component {
                 }
             }
 
+
+
+           // console.log(JSON.stringify(label.userData), label.position.toArray());
             me._tickTextGroup.add(label);
+            // me._tickTextGroup.add(point);
             this.labels.push(label);
         });
 

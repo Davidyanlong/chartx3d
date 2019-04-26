@@ -21111,7 +21111,7 @@ var Chartx3d = (function () {
     return Framework;
   }(Events);
 
-  var version$1 = "0.0.28";
+  var version$1 = "0.0.29";
 
   //viewName 
   var MainView = 'main_view';
@@ -21367,7 +21367,7 @@ var Chartx3d = (function () {
       this.defaultTextureWidth = defaultTextureWidth;
       this._reNewline = /\r?\n/;
       this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
-      this.context = this.canvas.getContext("2d");
+      this.context = this.canvas.getContext("2d"); //document.body.appendChild(this.canvas);
     }
 
     _createClass(RenderFont, [{
@@ -21463,7 +21463,8 @@ var Chartx3d = (function () {
         texts.forEach(function (text, index) {
           var width = _this.getTextWidth(text);
 
-          var height = _this.getTextHeight(text);
+          var height = _this.getTextHeight(text); // console.log(text, width, height);
+
 
           sizes[text] = [width, height];
           st = cw;
@@ -21507,7 +21508,7 @@ var Chartx3d = (function () {
         this.width = width;
         this.height = height; //透明清屏
 
-        this.context.fillStyle = "rgba(0,0,0,0)";
+        this.context.fillStyle = "rgba(0,0,0,1)";
         this.context.clearRect(0, 0, width * this.scale, height * this.scale);
       }
     }, {
@@ -21894,8 +21895,9 @@ var Chartx3d = (function () {
       texts.forEach(function (text, index$$1) {
         var realSize = labelInfos.sizes[text]; //realSize==[width,height]
 
-        var scale = new Vector3(realSize[0] / realSize[1], 1, 1);
-        scale.multiplyScalar(realSize[1]);
+        var scale = new Vector3(realSize[0], realSize[1], 1); //scale.multiplyScalar(realSize[1]);
+        //debugger
+
         var sprite = new Sprite(spriteMatrial);
         var geometry = new BufferGeometry();
         geometry.setIndex([0, 1, 2, 0, 2, 3]);
@@ -22970,22 +22972,31 @@ var Chartx3d = (function () {
           label.userData.position = me.origins[index].clone();
 
           if (me.autoUpdataPostion) {
-            var _dir = _this2._coordSystem.getDirection();
+            var _dir = new Vector3(1, 0, 0);
+
+            if (_this2.dir.z > 0) {
+              _dir = new Vector3(0, 0, -1);
+            }
 
             label.position.copy(me.origins[index].clone());
 
             if (_this2.textAlign === 'right') {
-              // if (_dir === 'FRONT') {
-              //     label.position.sub(new Vector3(label.userData.size[0] * 0.5, 0, 0));
-              // }
-              // if (_dir === 'RIGHT') {
-              //     label.position.sub(new Vector3(0, 0, -label.userData.size[0] * 0.5))
-              // }
-              label.position.sub(_this2.dir.clone().multiplyScalar(-label.userData.size[0] * 0.5));
+              label.position.sub(_dir.multiplyScalar(label.userData.size[0] * 0.5));
             }
 
-            if (_this2.textAlign === 'center') {
-              label.position.sub(_this2.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5));
+            if (_this2.textAlign === 'left') {
+              _dir.multiplyScalar(-1);
+
+              label.position.sub(_dir.multiplyScalar(label.userData.size[0] * 0.5));
+            }
+
+            if (_this2.textAlign === 'center') ; //默认横向居中
+            // label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
+            //根据文字高度，调整位置
+
+
+            if (_this2.dir.equals(new Vector3(0, 1, 0)) || _this2.dir.equals(new Vector3(0, -1, 0))) {
+              label.position.add(_this2.dir.clone().multiplyScalar(label.userData.size[1] * 0.5));
             }
 
             if (_this2.rotation !== 0) {
@@ -23041,9 +23052,11 @@ var Chartx3d = (function () {
               this.position.copy(pos);
               this.updateMatrixWorld(true);
             };
-          }
+          } // console.log(JSON.stringify(label.userData), label.position.toArray());
 
-          me._tickTextGroup.add(label);
+
+          me._tickTextGroup.add(label); // me._tickTextGroup.add(point);
+
 
           _this2.labels.push(label);
         });
@@ -27780,12 +27793,17 @@ var Chartx3d = (function () {
 
         this.group.add(this._tickLine.group); //初始化tickText
 
-        var opt = _.clone(this.label);
+        var opt = _.clone(this.label); //只有旋转就需要采用中间对齐
+
+
+        if (opt.rotation != 0) {
+          opt.textAlign = 'center';
+        }
 
         opt.offset = this._tickLineDir.clone().multiplyScalar(opt.offset);
         this._tickText = new TickTexts(_coordSystem, opt);
 
-        this._tickText.offset.add(this._tickLineDir.clone().multiplyScalar(this.tickLine.lineWidth + this.tickLine.lineLength + this.tickLine.offset));
+        this._tickText.offset.add(this._tickLineDir.clone().multiplyScalar(this.tickLine.lineLength + this.tickLine.offset + this.tickLine.lineWidth));
 
         this._tickText.setDir(this._tickLineDir);
 
@@ -27937,7 +27955,8 @@ var Chartx3d = (function () {
           var _origin2 = _coordSystem.getOriginPosition(FaceNames.LEFT); //初始化X轴 实际为Z轴
 
 
-          opt = _.clone(_coordSystem.coord.zAxis);
+          opt = _.clone(_coordSystem.coord.xAxis);
+          opt.field = _coordSystem.coord.zAxis.field;
 
           var _xAxis2 = new Axis(this, opt);
 
@@ -27970,10 +27989,17 @@ var Chartx3d = (function () {
         } //_dir === 'RIGHT'
 
         {
-          var _origin3 = _coordSystem.getOriginPosition(FaceNames.RIGHT); //初始化X轴 实际为Z轴
+          var _origin3 = _coordSystem.getOriginPosition(FaceNames.RIGHT); //测试原地
+          // let point = new Mesh(new CircleBufferGeometry(2), new MeshBasicMaterial({ color: 'red' }));
+          // let pos = origin.clone();
+          // pos.z += 0;
+          // point.position.copy(pos);
+          // this.group.add(point);
+          //初始化X轴 实际为Z轴
 
 
-          opt = _.clone(_coordSystem.coord.zAxis);
+          opt = _.clone(_coordSystem.coord.xAxis);
+          opt.field = _coordSystem.coord.zAxis.field;
 
           var _xAxis3 = new Axis(this, opt);
 
@@ -27988,7 +28014,8 @@ var Chartx3d = (function () {
           this.group.add(_xAxis3.group);
           axises[FaceNames.RIGHT].push(_xAxis3); //初始化Y轴
 
-          opt = _.clone(_coordSystem.coord.yAxis);
+          opt = _.clone(_coordSystem.coord.yAxis); //opt.label.offset = 40;
+          //opt.label.textAlign = "";
 
           var _yAxis3 = new Axis(this, opt);
 
@@ -28021,10 +28048,18 @@ var Chartx3d = (function () {
           _xAxis4.initModules();
 
           this.group.add(_xAxis4.group);
-          axises[FaceNames.TOP].push(_xAxis4); //初始化Y轴 实际为Z轴
+          axises[FaceNames.TOP].push(_xAxis4); //修复top面 X轴label的位置
 
-          opt = _.clone(_coordSystem.coord.zAxis);
-          opt.label.textAlign = 'right';
+          _xAxis4.group.traverse(function (label) {
+            if (label.type == "Sprite") {
+              label.position.add(new Vector3(0, 0, 1).multiplyScalar(label.userData.size[1] * 0.5));
+            }
+          }); //
+          //初始化Y轴 实际为Z轴
+
+
+          opt = _.clone(_coordSystem.coord.yAxis);
+          opt.field = _coordSystem.coord.zAxis.field; //opt.label.textAlign = 'right';
 
           var _yAxis4 = new Axis(this, opt);
 
@@ -28059,8 +28094,8 @@ var Chartx3d = (function () {
           this.group.add(_xAxis5.group);
           axises[FaceNames.BOTTOM].push(_xAxis5); //初始化Y轴 实际为Z轴
 
-          opt = _.clone(_coordSystem.coord.zAxis);
-          opt.label.textAlign = 'right';
+          opt = _.clone(_coordSystem.coord.yAxis);
+          opt.field = _coordSystem.coord.zAxis.field;
 
           var _yAxis5 = new Axis(this, opt);
 
@@ -28148,8 +28183,9 @@ var Chartx3d = (function () {
 
             if (name == dir) {
               axis.setVisibel(true);
-              axis.draw();
             }
+
+            axis.draw();
           });
         };
 
@@ -28443,8 +28479,6 @@ var Chartx3d = (function () {
             var pass = new Date().getTime() - currDate;
 
             if (pass <= duration) {
-              _this3._root.app.forceRender();
-
               alpha = alphaStart + spanAlpha * pass / duration;
               beta = betaStart + spanBeta * pass / duration;
               gamma = gammaStart + spanGamma * pass / duration;
@@ -28463,6 +28497,8 @@ var Chartx3d = (function () {
 
               _this3._root.app._framework.off('renderbefore', fn);
             }
+
+            _this3._root.app.forceRender();
           };
 
           _this3._root.app._framework.on('renderbefore', fn);
@@ -30467,7 +30503,8 @@ var Chartx3d = (function () {
         enabled: 1,
         fillStyle: null,
         alpha: 1.0,
-        highColor: 'yellow'
+        highColor: 'yellow',
+        defaultColor: '#F5F5F6'
       };
       _this.label = {
         enabled: 1,
@@ -30604,7 +30641,7 @@ var Chartx3d = (function () {
 
             var rowDatas = dataFrame$$1.getRowDataOf((_dataFrame$getRowData = {}, _defineProperty(_dataFrame$getRowData, data1.attr.field, xd.val), _defineProperty(_dataFrame$getRowData, data2.attr.field, yd.val), _dataFrame$getRowData));
             if (!rowDatas.length) return;
-            var score = rowDatas[0][_this2.field] || 1;
+            var score = rowDatas[0][_this2.field];
 
             var _color = _this2.getColorByScore(score);
 
@@ -30690,7 +30727,7 @@ var Chartx3d = (function () {
 
         this.__mouseout = function (e) {
           if (!isTrigger()) return;
-          var score = this.userData.info.data[me.field] || 1;
+          var score = this.userData.info.data[me.field];
 
           if (!this.userData.select) {
             this.material = me.getMaterial(score);
@@ -30847,9 +30884,7 @@ var Chartx3d = (function () {
     }, {
       key: "getColorByScore",
       value: function getColorByScore(score) {
-        //score 为1-10分
-        score = Math.min(10, Math.max(score, 1)); //如果用户指定了颜色值,计算色系
-
+        //如果用户指定了颜色值,计算色系
         if (this._colors.length == 0 && _.isString(this.colorScheme)) {
           this._colors = getHSVShemes(this.colorScheme) || [];
 
@@ -30860,7 +30895,7 @@ var Chartx3d = (function () {
         if (_.isFunction(this.colorScheme)) {
           return this.colorScheme.call(this, score);
         } else {
-          return this._colors[score - 1];
+          return this._colors[score - 1] || this.area.defaultColor;
         }
       }
     }, {
