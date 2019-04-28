@@ -39,7 +39,7 @@ class RenderFont {
         this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
         this.context = this.canvas.getContext("2d");
         //debug 调试使用
-       // document.body.appendChild(this.canvas);
+        //document.body.appendChild(this.canvas);
     }
     getFont() {
         return (this.style.isBold ? 'bold ' : 'normal ') + this.style.fontSize + 'px ' + this.style.fontFamily;
@@ -128,7 +128,7 @@ class RenderFont {
             if (cw < this.defaultTextureWidth) {
 
             } else {
-                ch += height;
+                ch += maxHeight;
                 cw = width;
                 st = 0;
             }

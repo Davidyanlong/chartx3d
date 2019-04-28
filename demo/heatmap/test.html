@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport"
+        content="user-scalable=no, width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1, maximum-scale=1" />
+    <title>xChart demo -- heatmap</title>
+
+    <script type="text/javascript" src="../../lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="../../dist/chartx.js"></script>
+    <!-- <script type="text/javascript" src="//at.alicdn.com/chart/70_iife_2.js"></script> -->
+    <!-- codemirror -->
+    <script type="text/javascript" src="../../lib/codemirror/codemirror.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/active-line.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/javascript.js"></script>
+    <script type="text/javascript" src="../../lib/codemirror/matchbrackets.js"></script>
+    <link rel="stylesheet" href="../../lib/codemirror/codemirror.css">
+    <link rel="stylesheet" href="../../lib/codemirror/zenburn.css">
+    <link rel="stylesheet" href="../../lib/codemirror/docs.css">
+    <!-- codemirror end -->
+    <!--bootstrap-->
+    <script type="text/javascript" src="../../lib/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/docs.min.css">
+    <link rel="stylesheet" href="../../lib/bootstrap/css/bootstrap.min.css">
+    <!--bootstrap end-->
+    <script type="text/javascript" src="../../lib/demo.js"></script>
+    <link rel="stylesheet" href="../../lib/demo.css">
+    <style>
+        canvas {
+            border: gray 1px solid;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table>
+        <tr>
+            <td id="td-vl">
+                <form><textarea id="code" name="code">
+
+
+ //为空的色块填充f5f5f6试试看   
+ var options = {
+        coord : {
+            type : "cube",
+            xAxis : {
+                field : "targetName",
+                label:{
+                    rotation:20,
+                    maxLength:6
+                 },
+               
+               // dataSection:targets   
+            },
+            yAxis :{
+                   field : "creativeName",
+                   label:{
+                    //textAlign:"right",
+
+                    //rotation:20,
+                    //maxLength:4
+                 },
+                 //  dataSection:creatives
+                },
+            zAxis:{
+                field : "adzoneName", 
+                label:{
+                    //rotation:20,
+                    //maxLength:6
+                 },
+                //dataSection:resources 
+            },
+            controls:{
+                alpha: 5,    //绕X轴旋转
+                beta: 5,      //绕Y轴旋转
+                gamma: 0      //绕Z轴旋转
+            }
+          
+        },
+        graphs : [
+            { 
+                type : "heatmap",    
+                field:'qualityScore',
+                face:'front',          //绘制在box的那个面上 
+                colorScheme: "#0A2A91",
+                area:{
+                    highColor:'#9254de'
+                }   
+            },
+          { 
+            type : "heatmap",   
+            field:'qualityScore',
+            face:'top',      
+            colorScheme: "#910044",
+            area:{
+                highColor:'#5278f8'
+            }   
+            
+        },
+        { 
+            type : "heatmap",     
+            field:'qualityScore',
+            face:'right',        
+            colorScheme: "#33007A",
+            area:{
+                highColor:'#E05A99'
+            }   
+        }
+    
+        ],
+        tips:{
+            content(e){ 
+             let str='<div style="padding:5px">'
+              str+='<div><span style="color:#333">质量分:</span><span style="margin-left:5px">'+e.data.score+'</span></div>';
+             str+='<div><span style="color:#333">创意:</span><span style="margin-left:5px">'+e.data.creative+'</span></div>';
+             str+='<div><span style="color:#333">定向:</span><span style="margin-left:5px">'+e.data.target+'</span></div>';
+             str+='<div><span style="color:#333">资源包:</span><span style="margin-left:5px">'+e.data.resource+'</span></div>';
+             str+="</div>"
+             return str;
+            }
+        },
+          
+    };
+
+    var data=[
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似店铺的人群",
+        "targetType": 26
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人的宝贝的人群",
+        "targetType": 101
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似宝贝的人群",
+        "targetType": 28
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "智能定向",
+        "targetType": 1
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人",
+        "targetType": 25
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": null,
+        "adzoneName": null,
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "达摩盘定向",
+        "targetType": 29
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人",
+        "targetType": 25
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似店铺的人群",
+        "targetType": 26
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人的宝贝的人群",
+        "targetType": 101
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "智能定向",
+        "targetType": 1
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": null,
+        "targetName": "智能定向",
+        "targetType": 1
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": null,
+        "targetName": "智能定向",
+        "targetType": 1
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似宝贝的人群",
+        "targetType": 28
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似宝贝的人群",
+        "targetType": 28
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "达摩盘定向",
+        "targetType": 29
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似店铺的人群",
+        "targetType": 26
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似宝贝的人群",
+        "targetType": 28
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人的宝贝的人群",
+        "targetType": 101
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "达摩盘定向",
+        "targetType": 29
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢相似店铺的人群",
+        "targetType": 26
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "达摩盘定向",
+        "targetType": 29
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人的宝贝的人群",
+        "targetType": 101
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人",
+        "targetType": 25
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": null,
+        "creativeName": null,
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": "喜欢我店铺的人",
+        "targetType": 25
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 23,
+        "adzoneName": "首页猜你喜欢",
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": null,
+        "targetType": null
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 24,
+        "adzoneName": "购中猜你喜欢",
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": null,
+        "targetType": null
+    },
+    {
+        "adgroupId": 1464887216,
+        "adzoneId": 25,
+        "adzoneName": "购后猜你喜欢",
+        "bizCode": null,
+        "creativeId": 1358151170,
+        "creativeName": "荷兰艾优APIYOO电动牙刷SUP声波红色网红限量版软毛成人男女S",
+        "logDate": null,
+        "pv": null,
+        "qualityScore": 2,
+        "targetName": null,
+        "targetType": null
+    }
+];
+
+window.heatmap = Chartx3d.create("canvasTest" , data , options)
+
+            function rotationCube(val){
+                if(val==1){
+                   // heatmap.getCoord().fire({type:'toFront'});
+                    heatmap.getCoord().rotationTo('front');
+                }
+                if(val==2){
+                    //heatmap.getCoord().fire({type:'toRight'});
+                    heatmap.getCoord().rotationTo('right');
+                }
+                if(val==3){
+                    //heatmap.getCoord().fire({type:'toTop'});
+                    heatmap.getCoord().rotationTo('top');
+                }
+            }
+
+            heatmap.getCoord().on('planeclick',(e)=>{
+                alert(JSON.stringify(e.data.rowData));
+            })
+
+            </textarea></form>
+            </td>
+            <td style="padding:0 10px;" id="td-vr">
+                <div id="chartdemo-r">
+                    <div class="bs-callout bs-callout-warning" style="margin-top:10px;"
+                        id="callout-navs-anchor-disabled">
+                        <span id="run" class="glyphicon glyphicon-play-circle" title="run"></span>
+
+                        <h4>魔方-热力图（bar chart）</h4>
+                        <p>
+                            联系人：@不决
+                        </p>
+                    </div>
+
+                    <div class="test-c">
+                        <div style="margin:5px 0 15px 50px">
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="1" onchange="rotationCube(1)" checked>
+                                创意-定向
+                            </label>
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="2" onchange="rotationCube(2)">
+                                创意-资源包
+                            </label>
+                            <label style="margin-right:10px">
+                                <input type="radio" name='item' value="3" onchange="rotationCube(3)">
+                                资源包-定向
+                            </label>
+                        </div>
+                        <div id="canvasTest" style='width:600px;height:400px;position:relative;'></div>
+                    </div>
+
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+</body>
+
+</html>
