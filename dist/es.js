@@ -21108,7 +21108,7 @@ function (_Events) {
   return Framework;
 }(Events);
 
-var version$1 = "0.0.29";
+var version$1 = "0.0.31";
 
 //viewName 
 var MainView = 'main_view';
@@ -21364,7 +21364,8 @@ function () {
     this.defaultTextureWidth = defaultTextureWidth;
     this._reNewline = /\r?\n/;
     this.canvas = canvas || document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
-    this.context = this.canvas.getContext("2d"); //document.body.appendChild(this.canvas);
+    this.context = this.canvas.getContext("2d"); //debug 调试使用
+    // document.body.appendChild(this.canvas);
   }
 
   _createClass(RenderFont, [{
@@ -21468,7 +21469,7 @@ function () {
         cw += width;
 
         if (index == 0) {
-          ch = height;
+          ch = maxHeight;
         }
 
         if (cw < _this.defaultTextureWidth) ; else {
@@ -27753,7 +27754,7 @@ function (_Component) {
             var _i = 0;
             var l = val.length;
 
-            while (l--) {
+            while (l) {
               if (_i < this.label.maxLength) {
                 res += (val + '').charAt(val.length - l);
                 _i++;
@@ -27762,6 +27763,8 @@ function (_Component) {
                 res += (val + '').charAt(val.length - l);
                 _i = 0;
               }
+
+              l--;
             }
           }
         }

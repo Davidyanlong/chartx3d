@@ -96,7 +96,7 @@ class Axis extends Component {
                     res = "";
                     let i = 0;
                     let l = val.length;
-                    while (l--) {
+                    while (l) {
                         if (i < this.label.maxLength) {
                             res += (val + '').charAt(val.length - l);
                             i++;
@@ -105,7 +105,7 @@ class Axis extends Component {
                             res += (val + '').charAt(val.length - l);
                             i = 0;
                         }
-
+                        l--;
 
                     }
 
