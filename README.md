@@ -111,4 +111,6 @@ chartx3d  0.1 代码规范
 
         };
         Chartx.create("canvasTest", data, options)
- ```       
+ ```     
+
+ * 使用demo,请访问[https://davidyanlong.github.io](https://davidyanlong.github.io)  
