@@ -1,6 +1,8 @@
 'use strict';
 
 function _typeof(obj) {
+  "@babel/helpers - typeof";
+
   if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
     _typeof = function (obj) {
       return typeof obj;
@@ -82,7 +84,7 @@ function _setPrototypeOf(o, p) {
   return _setPrototypeOf(o, p);
 }
 
-function isNativeReflectConstruct() {
+function _isNativeReflectConstruct() {
   if (typeof Reflect === "undefined" || !Reflect.construct) return false;
   if (Reflect.construct.sham) return false;
   if (typeof Proxy === "function") return true;
@@ -96,7 +98,7 @@ function isNativeReflectConstruct() {
 }
 
 function _construct(Parent, args, Class) {
-  if (isNativeReflectConstruct()) {
+  if (_isNativeReflectConstruct()) {
     _construct = Reflect.construct;
   } else {
     _construct = function _construct(Parent, args, Class) {
@@ -126,6 +128,25 @@ function _possibleConstructorReturn(self, call) {
   }
 
   return _assertThisInitialized(self);
+}
+
+function _createSuper(Derived) {
+  var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+  return function _createSuperInternal() {
+    var Super = _getPrototypeOf(Derived),
+        result;
+
+    if (hasNativeReflectConstruct) {
+      var NewTarget = _getPrototypeOf(this).constructor;
+
+      result = Reflect.construct(Super, arguments, NewTarget);
+    } else {
+      result = Super.apply(this, arguments);
+    }
+
+    return _possibleConstructorReturn(this, result);
+  };
 }
 
 function _superPropBase(object, property) {
@@ -159,23 +180,36 @@ function _get(target, property, receiver) {
 }
 
 function _toConsumableArray(arr) {
-  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+  return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
 }
 
 function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
-
-    return arr2;
-  }
+  if (Array.isArray(arr)) return _arrayLikeToArray(arr);
 }
 
 function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+  if (typeof Symbol !== "undefined" && Symbol.iterator in Object(iter)) return Array.from(iter);
+}
+
+function _unsupportedIterableToArray(o, minLen) {
+  if (!o) return;
+  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
+  var n = Object.prototype.toString.call(o).slice(8, -1);
+  if (n === "Object" && o.constructor) n = o.constructor.name;
+  if (n === "Map" || n === "Set") return Array.from(o);
+  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
+}
+
+function _arrayLikeToArray(arr, len) {
+  if (len == null || len > arr.length) len = arr.length;
+
+  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
+
+  return arr2;
 }
 
 function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance");
+  throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
 }
 
 var _ = {};
@@ -785,9 +819,7 @@ var getDefaultProps = function getDefaultProps(dProps) {
   return target;
 };
 
-var axis =
-/*#__PURE__*/
-function () {
+var axis = /*#__PURE__*/function () {
   _createClass(axis, null, [{
     key: "defaultProps",
     value: function defaultProps() {
@@ -2482,9 +2514,7 @@ var aRound = 360; //一圈的度数
 var Cos = Math.cos;
 var Sin = Math.sin;
 
-var Polar =
-/*#__PURE__*/
-function () {
+var Polar = /*#__PURE__*/function () {
   function Polar() {
     var opt = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
     var dataFrame = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -3089,15 +3119,15 @@ Manager.prototype = {
   }
 };
 
-var Dispatcher =
-/*#__PURE__*/
-function (_Manager) {
+var Dispatcher = /*#__PURE__*/function (_Manager) {
   _inherits(Dispatcher, _Manager);
+
+  var _super = _createSuper(Dispatcher);
 
   function Dispatcher() {
     _classCallCheck(this, Dispatcher);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Dispatcher).call(this));
+    return _super.call(this);
   }
 
   _createClass(Dispatcher, [{
@@ -3290,9 +3320,7 @@ var contains = document && document.compareDocumentPosition ? function (parent, 
  * @description 事件对象
  * @author bujue
  */
-var Events =
-/*#__PURE__*/
-function () {
+var Events = /*#__PURE__*/function () {
   function Events() {
     _classCallCheck(this, Events);
   }
@@ -3444,9 +3472,7 @@ var NoColors = 0; //不用颜色
  * @description 用x,y,z,w 表示的四维向量 
  * @author bujue
  */
-var Vector4 =
-/*#__PURE__*/
-function () {
+var Vector4 = /*#__PURE__*/function () {
   function Vector4(x, y, z, w) {
     _classCallCheck(this, Vector4);
 
@@ -3586,9 +3612,7 @@ var _Math = {
 // var v1 = new Vector3();
 // var v2 = new Vector3();
 
-var Vector3 =
-/*#__PURE__*/
-function () {
+var Vector3 = /*#__PURE__*/function () {
   function Vector3(x, y, z) {
     _classCallCheck(this, Vector3);
 
@@ -4167,9 +4191,7 @@ function () {
  * @author bujue
  */
 
-var Color$1 =
-/*#__PURE__*/
-function () {
+var Color$1 = /*#__PURE__*/function () {
   function Color(r, g, b, a) {
     _classCallCheck(this, Color);
 
@@ -4631,9 +4653,7 @@ var x = new Vector3();
 var y = new Vector3();
 var z = new Vector3();
 
-var Matrix4 =
-/*#__PURE__*/
-function () {
+var Matrix4 = /*#__PURE__*/function () {
   function Matrix4() {
     _classCallCheck(this, Matrix4);
 
@@ -5412,9 +5432,7 @@ var _decompose2 = function () {
   };
 }();
 
-var Box3 =
-/*#__PURE__*/
-function () {
+var Box3 = /*#__PURE__*/function () {
   function Box3(min, max) {
     _classCallCheck(this, Box3);
 
@@ -5784,9 +5802,7 @@ var _applyMatrix = function () {
   };
 }();
 
-var Sphere =
-/*#__PURE__*/
-function () {
+var Sphere = /*#__PURE__*/function () {
   function Sphere(center, radius) {
     _classCallCheck(this, Sphere);
 
@@ -5912,9 +5928,7 @@ function () {
 
 var v1$1 = new Vector3();
 
-var Matrix3 =
-/*#__PURE__*/
-function () {
+var Matrix3 = /*#__PURE__*/function () {
   function Matrix3() {
     _classCallCheck(this, Matrix3);
 
@@ -6205,9 +6219,7 @@ var v3 = new Vector3();
 var v4 = new Vector3();
 var m1 = new Matrix3();
 
-var Plane =
-/*#__PURE__*/
-function () {
+var Plane = /*#__PURE__*/function () {
   function Plane(normal, constant) {
     _classCallCheck(this, Plane);
 
@@ -6363,9 +6375,7 @@ function () {
   return Plane;
 }();
 
-var Frustum =
-/*#__PURE__*/
-function () {
+var Frustum = /*#__PURE__*/function () {
   function Frustum(p0, p1, p2, p3, p4, p5) {
     _classCallCheck(this, Frustum);
 
@@ -6531,9 +6541,7 @@ var _intersectsBox = function () {
   };
 }();
 
-var WebGLExtensions =
-/*#__PURE__*/
-function () {
+var WebGLExtensions = /*#__PURE__*/function () {
   function WebGLExtensions(gl) {
     _classCallCheck(this, WebGLExtensions);
 
@@ -6569,9 +6577,7 @@ function () {
  * @description 将Material相关的设置转换为对应的渲染参数并关联起来
  * @author bujue
  */
-var WebGLProperties =
-/*#__PURE__*/
-function () {
+var WebGLProperties = /*#__PURE__*/function () {
   function WebGLProperties() {
     _classCallCheck(this, WebGLProperties);
 
@@ -6627,9 +6633,7 @@ function () {
  * maxFragmentUniforms  片元着色器中Uniform的最大个数
  * maxVaryings          着色器中最多的 VARYING 变量个数 
  */
-var WebGLCapabilities =
-/*#__PURE__*/
-function () {
+var WebGLCapabilities = /*#__PURE__*/function () {
   function WebGLCapabilities(gl, parameters) {
     _classCallCheck(this, WebGLCapabilities);
 
@@ -6692,9 +6696,7 @@ function () {
  * @author bujue
  */
 
-var WebGLUtils =
-/*#__PURE__*/
-function () {
+var WebGLUtils = /*#__PURE__*/function () {
   function WebGLUtils(gl) {
     var _this$_map;
 
@@ -6715,9 +6717,7 @@ function () {
   return WebGLUtils;
 }();
 
-var ColorBuffer =
-/*#__PURE__*/
-function () {
+var ColorBuffer = /*#__PURE__*/function () {
   function ColorBuffer(gl) {
     _classCallCheck(this, ColorBuffer);
 
@@ -6768,9 +6768,7 @@ function () {
   return ColorBuffer;
 }();
 
-var DepthBuffer =
-/*#__PURE__*/
-function () {
+var DepthBuffer = /*#__PURE__*/function () {
   function DepthBuffer(gl) {
     _classCallCheck(this, DepthBuffer);
 
@@ -6875,9 +6873,7 @@ function () {
   return DepthBuffer;
 }();
 
-var StencilBuffer =
-/*#__PURE__*/
-function () {
+var StencilBuffer = /*#__PURE__*/function () {
   function StencilBuffer(gl) {
     _classCallCheck(this, StencilBuffer);
 
@@ -6917,9 +6913,7 @@ function () {
 
 var capabilitiesSwitch = {};
 
-var Switch =
-/*#__PURE__*/
-function () {
+var Switch = /*#__PURE__*/function () {
   function Switch(gl) {
     _classCallCheck(this, Switch);
 
@@ -6952,9 +6946,7 @@ function () {
   return Switch;
 }();
 
-var AttributeSwitch =
-/*#__PURE__*/
-function () {
+var AttributeSwitch = /*#__PURE__*/function () {
   function AttributeSwitch(gl, extensions, capabilities) {
     _classCallCheck(this, AttributeSwitch);
 
@@ -7015,9 +7007,7 @@ function () {
   return AttributeSwitch;
 }();
 
-var BlendingState =
-/*#__PURE__*/
-function () {
+var BlendingState = /*#__PURE__*/function () {
   function BlendingState(gl) {
     _classCallCheck(this, BlendingState);
 
@@ -7136,9 +7126,7 @@ function () {
   return BlendingState;
 }();
 
-var TextureState =
-/*#__PURE__*/
-function () {
+var TextureState = /*#__PURE__*/function () {
   function TextureState(gl, capabilities) {
     _classCallCheck(this, TextureState);
 
@@ -7246,9 +7234,7 @@ function getLineWidthAvailable(gl) {
   return lineWidthAvailable;
 }
 
-var WebGLState =
-/*#__PURE__*/
-function () {
+var WebGLState = /*#__PURE__*/function () {
   function WebGLState(gl, extensions, capabilities) {
     _classCallCheck(this, WebGLState);
 
@@ -7477,9 +7463,7 @@ function () {
  *              获取Buffer 更新(创建)buffer  删除buffer
  * @author bujue
  */
-var WebGLAttributes =
-/*#__PURE__*/
-function () {
+var WebGLAttributes = /*#__PURE__*/function () {
   function WebGLAttributes(gl) {
     _classCallCheck(this, WebGLAttributes);
 
@@ -7596,9 +7580,7 @@ function typeArray2GLType(gl, array) {
  * @description 二维向量
  * @author bujue
  */
-var Vector2 =
-/*#__PURE__*/
-function () {
+var Vector2 = /*#__PURE__*/function () {
   function Vector2(x, y) {
     _classCallCheck(this, Vector2);
 
@@ -7754,9 +7736,7 @@ function () {
  * @author bujue
  */
 
-var BufferAttribute =
-/*#__PURE__*/
-function () {
+var BufferAttribute = /*#__PURE__*/function () {
   function BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, BufferAttribute);
 
@@ -7938,15 +7918,15 @@ function () {
  */
 
 
-var Int8BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute) {
+var Int8BufferAttribute = /*#__PURE__*/function (_BufferAttribute) {
   _inherits(Int8BufferAttribute, _BufferAttribute);
+
+  var _super = _createSuper(Int8BufferAttribute);
 
   function Int8BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Int8BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Int8BufferAttribute).call(this, new Int8Array(array), itemSize, normalized));
+    return _super.call(this, new Int8Array(array), itemSize, normalized);
   }
 
   return Int8BufferAttribute;
@@ -7959,15 +7939,15 @@ function (_BufferAttribute) {
  */
 
 
-var Uint8BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute2) {
+var Uint8BufferAttribute = /*#__PURE__*/function (_BufferAttribute2) {
   _inherits(Uint8BufferAttribute, _BufferAttribute2);
+
+  var _super2 = _createSuper(Uint8BufferAttribute);
 
   function Uint8BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Uint8BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Uint8BufferAttribute).call(this, new Uint8Array(array), itemSize, normalized));
+    return _super2.call(this, new Uint8Array(array), itemSize, normalized);
   }
 
   return Uint8BufferAttribute;
@@ -7980,15 +7960,15 @@ function (_BufferAttribute2) {
  */
 
 
-var Uint8ClampedBufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute3) {
+var Uint8ClampedBufferAttribute = /*#__PURE__*/function (_BufferAttribute3) {
   _inherits(Uint8ClampedBufferAttribute, _BufferAttribute3);
+
+  var _super3 = _createSuper(Uint8ClampedBufferAttribute);
 
   function Uint8ClampedBufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Uint8ClampedBufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Uint8ClampedBufferAttribute).call(this, new Uint8ClampedArray(array), itemSize, normalized));
+    return _super3.call(this, new Uint8ClampedArray(array), itemSize, normalized);
   }
 
   return Uint8ClampedBufferAttribute;
@@ -8001,15 +7981,15 @@ function (_BufferAttribute3) {
  */
 
 
-var Int16BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute4) {
+var Int16BufferAttribute = /*#__PURE__*/function (_BufferAttribute4) {
   _inherits(Int16BufferAttribute, _BufferAttribute4);
+
+  var _super4 = _createSuper(Int16BufferAttribute);
 
   function Int16BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Int16BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Int16BufferAttribute).call(this, new Int16Array(array), itemSize, normalized));
+    return _super4.call(this, new Int16Array(array), itemSize, normalized);
   }
 
   return Int16BufferAttribute;
@@ -8022,15 +8002,15 @@ function (_BufferAttribute4) {
  */
 
 
-var Uint16BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute5) {
+var Uint16BufferAttribute = /*#__PURE__*/function (_BufferAttribute5) {
   _inherits(Uint16BufferAttribute, _BufferAttribute5);
+
+  var _super5 = _createSuper(Uint16BufferAttribute);
 
   function Uint16BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Uint16BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Uint16BufferAttribute).call(this, new Uint16Array(array), itemSize, normalized));
+    return _super5.call(this, new Uint16Array(array), itemSize, normalized);
   }
 
   return Uint16BufferAttribute;
@@ -8043,15 +8023,15 @@ function (_BufferAttribute5) {
  */
 
 
-var Int32BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute6) {
+var Int32BufferAttribute = /*#__PURE__*/function (_BufferAttribute6) {
   _inherits(Int32BufferAttribute, _BufferAttribute6);
+
+  var _super6 = _createSuper(Int32BufferAttribute);
 
   function Int32BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Int32BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Int32BufferAttribute).call(this, new Int32Array(array), itemSize, normalized));
+    return _super6.call(this, new Int32Array(array), itemSize, normalized);
   }
 
   return Int32BufferAttribute;
@@ -8064,15 +8044,15 @@ function (_BufferAttribute6) {
  */
 
 
-var Uint32BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute7) {
+var Uint32BufferAttribute = /*#__PURE__*/function (_BufferAttribute7) {
   _inherits(Uint32BufferAttribute, _BufferAttribute7);
+
+  var _super7 = _createSuper(Uint32BufferAttribute);
 
   function Uint32BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Uint32BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Uint32BufferAttribute).call(this, new Uint32Array(array), itemSize, normalized));
+    return _super7.call(this, new Uint32Array(array), itemSize, normalized);
   }
 
   return Uint32BufferAttribute;
@@ -8085,15 +8065,15 @@ function (_BufferAttribute7) {
  */
 
 
-var Float32BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute8) {
+var Float32BufferAttribute = /*#__PURE__*/function (_BufferAttribute8) {
   _inherits(Float32BufferAttribute, _BufferAttribute8);
+
+  var _super8 = _createSuper(Float32BufferAttribute);
 
   function Float32BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Float32BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Float32BufferAttribute).call(this, new Float32Array(array), itemSize, normalized));
+    return _super8.call(this, new Float32Array(array), itemSize, normalized);
   }
 
   return Float32BufferAttribute;
@@ -8105,15 +8085,15 @@ function (_BufferAttribute8) {
  */
 
 
-var Float64BufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute9) {
+var Float64BufferAttribute = /*#__PURE__*/function (_BufferAttribute9) {
   _inherits(Float64BufferAttribute, _BufferAttribute9);
+
+  var _super9 = _createSuper(Float64BufferAttribute);
 
   function Float64BufferAttribute(array, itemSize, normalized) {
     _classCallCheck(this, Float64BufferAttribute);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Float64BufferAttribute).call(this, new Float64Array(array), itemSize, normalized));
+    return _super9.call(this, new Float64Array(array), itemSize, normalized);
   }
 
   return Float64BufferAttribute;
@@ -8125,9 +8105,7 @@ function (_BufferAttribute9) {
  * @author bujue
  */
 
-var DirectGeometry =
-/*#__PURE__*/
-function () {
+var DirectGeometry = /*#__PURE__*/function () {
   function DirectGeometry() {
     _classCallCheck(this, DirectGeometry);
 
@@ -8256,17 +8234,17 @@ function () {
 
 var bufferGeometryId = 1;
 
-var BufferGeometry =
-/*#__PURE__*/
-function (_Events) {
+var BufferGeometry = /*#__PURE__*/function (_Events) {
   _inherits(BufferGeometry, _Events);
+
+  var _super = _createSuper(BufferGeometry);
 
   function BufferGeometry() {
     var _this;
 
     _classCallCheck(this, BufferGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(BufferGeometry).call(this));
+    _this = _super.call(this);
     Object.defineProperty(_assertThisInitialized(_this), 'id', {
       value: bufferGeometryId += 2
     });
@@ -8690,9 +8668,7 @@ var _computeBoundingSphere = function () {
  * @author bujue
  */
 
-var WebGLGeometries =
-/*#__PURE__*/
-function () {
+var WebGLGeometries = /*#__PURE__*/function () {
   function WebGLGeometries(gl, attributes, info) {
     _classCallCheck(this, WebGLGeometries);
 
@@ -9053,12 +9029,14 @@ var ShaderLib = {
     fragmentShader: ShaderChunk.linemesh_frag
   },
   points: {
-    uniforms: UniformsUtils$1.merge([UniformsLib.points]),
+    uniforms: UniformsUtils$1.merge([UniformsLib.points //UniformsLib.fog
+    ]),
     vertexShader: ShaderChunk.points_vert,
     fragmentShader: ShaderChunk.points_frag
   },
   sprite: {
-    uniforms: UniformsUtils$1.merge([UniformsLib.sprite]),
+    uniforms: UniformsUtils$1.merge([UniformsLib.sprite //UniformsLib.fog
+    ]),
     vertexShader: ShaderChunk.sprite_vert,
     fragmentShader: ShaderChunk.sprite_frag
   }
@@ -9069,9 +9047,7 @@ var ShaderLib = {
  * @description 保存渲染的基本数据
  * @author bujue
  */
-var WebGLInfo =
-/*#__PURE__*/
-function () {
+var WebGLInfo = /*#__PURE__*/function () {
   function WebGLInfo(gl) {
     _classCallCheck(this, WebGLInfo);
 
@@ -9145,17 +9121,17 @@ function () {
 
 var textureId = 0;
 
-var Texture =
-/*#__PURE__*/
-function (_Events) {
+var Texture = /*#__PURE__*/function (_Events) {
   _inherits(Texture, _Events);
+
+  var _super = _createSuper(Texture);
 
   function Texture(image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding) {
     var _this;
 
     _classCallCheck(this, Texture);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Texture).call(this));
+    _this = _super.call(this);
     Object.defineProperty(_assertThisInitialized(_this), 'id', {
       value: textureId++
     });
@@ -9248,9 +9224,7 @@ Texture.DEFAULT_MAPPING = UVMapping;
  * gl.uniform1iv(samplerCubeUniformLoc, [v]); // for samplerCube or samplerCube array
  */
 
-var WebGLUniforms =
-/*#__PURE__*/
-function () {
+var WebGLUniforms = /*#__PURE__*/function () {
   function WebGLUniforms(gl, program, renderer) {
     _classCallCheck(this, WebGLUniforms);
 
@@ -9309,9 +9283,7 @@ WebGLUniforms.seqWithValue = function (seq, values) {
   return r;
 };
 
-var StructuredUniform =
-/*#__PURE__*/
-function () {
+var StructuredUniform = /*#__PURE__*/function () {
   function StructuredUniform(gl, id) {
     _classCallCheck(this, StructuredUniform);
 
@@ -9890,9 +9862,7 @@ function WebGLShader(gl, type, string) {
 
 var programIdCount = 0;
 
-var WebGLProgram =
-/*#__PURE__*/
-function () {
+var WebGLProgram = /*#__PURE__*/function () {
   function WebGLProgram(gl, extensions, material, code, shader, parameters) {
     _classCallCheck(this, WebGLProgram);
 
@@ -10061,9 +10031,7 @@ function filterEmptyLine(string) {
   return string !== '';
 }
 
-var WebGLPrograms =
-/*#__PURE__*/
-function () {
+var WebGLPrograms = /*#__PURE__*/function () {
   function WebGLPrograms(gl, extensions, capabilities) {
     _classCallCheck(this, WebGLPrograms);
 
@@ -10182,9 +10150,7 @@ function () {
   return WebGLPrograms;
 }();
 
-var WebGLRenderList =
-/*#__PURE__*/
-function () {
+var WebGLRenderList = /*#__PURE__*/function () {
   function WebGLRenderList() {
     _classCallCheck(this, WebGLRenderList);
 
@@ -10269,9 +10235,7 @@ function reversePainterSortStable(a, b) {
   }
 }
 
-var WebGLRenderLists =
-/*#__PURE__*/
-function () {
+var WebGLRenderLists = /*#__PURE__*/function () {
   function WebGLRenderLists() {
     _classCallCheck(this, WebGLRenderLists);
 
@@ -10302,9 +10266,7 @@ function () {
   return WebGLRenderLists;
 }();
 
-var WebGLBufferRenderer =
-/*#__PURE__*/
-function () {
+var WebGLBufferRenderer = /*#__PURE__*/function () {
   function WebGLBufferRenderer(gl, extensions, info) {
     _classCallCheck(this, WebGLBufferRenderer);
 
@@ -10350,9 +10312,7 @@ function () {
  * @description 通过更新帧来控制更新WebGLGemetries update
  * @author bujue
  */
-var WebGLObjects =
-/*#__PURE__*/
-function () {
+var WebGLObjects = /*#__PURE__*/function () {
   function WebGLObjects(geometries, info) {
     _classCallCheck(this, WebGLObjects);
 
@@ -10391,9 +10351,7 @@ function () {
   return WebGLObjects;
 }();
 
-var WebGLIndexedBufferRenderer =
-/*#__PURE__*/
-function () {
+var WebGLIndexedBufferRenderer = /*#__PURE__*/function () {
   function WebGLIndexedBufferRenderer(gl, extensions, info) {
     _classCallCheck(this, WebGLIndexedBufferRenderer);
 
@@ -10442,9 +10400,7 @@ function () {
   return WebGLIndexedBufferRenderer;
 }();
 
-var WebGLTextures =
-/*#__PURE__*/
-function () {
+var WebGLTextures = /*#__PURE__*/function () {
   function WebGLTextures(_gl, extensions, state, properties, capabilities, utils, info) {
     _classCallCheck(this, WebGLTextures);
 
@@ -10701,9 +10657,7 @@ var webglLightsCount = 0;
 
 var _webGLLightsVector3 = new Vector3();
 
-var WebGLLights =
-/*#__PURE__*/
-function () {
+var WebGLLights = /*#__PURE__*/function () {
   function WebGLLights() {
     _classCallCheck(this, WebGLLights);
 
@@ -10805,9 +10759,7 @@ function () {
   return WebGLLights;
 }();
 
-var UniformsCache =
-/*#__PURE__*/
-function () {
+var UniformsCache = /*#__PURE__*/function () {
   function UniformsCache() {
     _classCallCheck(this, UniformsCache);
 
@@ -10872,9 +10824,7 @@ function () {
   return UniformsCache;
 }();
 
-var WebGLRenderState =
-/*#__PURE__*/
-function () {
+var WebGLRenderState = /*#__PURE__*/function () {
   function WebGLRenderState() {
     _classCallCheck(this, WebGLRenderState);
 
@@ -10919,9 +10869,7 @@ function () {
   return WebGLRenderState;
 }();
 
-var WebGLRenderStates =
-/*#__PURE__*/
-function () {
+var WebGLRenderStates = /*#__PURE__*/function () {
   function WebGLRenderStates() {
     _classCallCheck(this, WebGLRenderStates);
 
@@ -10960,17 +10908,17 @@ function () {
  * @author bujue
  */
 
-var WebGLRenderer =
-/*#__PURE__*/
-function (_Events) {
+var WebGLRenderer = /*#__PURE__*/function (_Events) {
   _inherits(WebGLRenderer, _Events);
+
+  var _super = _createSuper(WebGLRenderer);
 
   function WebGLRenderer(params) {
     var _this;
 
     _classCallCheck(this, WebGLRenderer);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(WebGLRenderer).call(this));
+    _this = _super.call(this);
     params = params || {}; //canvas context 渲染对象的上下文
 
     _this.gl = null; //canvasDOM 对象
@@ -11935,9 +11883,7 @@ var v1$3 = new Vector3();
 var r;
 var EPS = 0.000001;
 
-var Quaternion =
-/*#__PURE__*/
-function () {
+var Quaternion = /*#__PURE__*/function () {
   function Quaternion(x, y, z, w) {
     _classCallCheck(this, Quaternion);
 
@@ -12379,9 +12325,7 @@ Quaternion.slerpFlat = function (dst, dstOffset, src0, srcOffset0, src1, srcOffs
 var matrix = new Matrix4();
 var q = new Quaternion();
 
-var Euler =
-/*#__PURE__*/
-function () {
+var Euler = /*#__PURE__*/function () {
   function Euler(x, y, z, order) {
     _classCallCheck(this, Euler);
 
@@ -12616,17 +12560,17 @@ Euler.DefaultOrder = 'XYZ';
 
 var object3DId = 0;
 
-var Object3D =
-/*#__PURE__*/
-function (_Events) {
+var Object3D = /*#__PURE__*/function (_Events) {
   _inherits(Object3D, _Events);
+
+  var _super = _createSuper(Object3D);
 
   function Object3D() {
     var _this;
 
     _classCallCheck(this, Object3D);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Object3D).call(this));
+    _this = _super.call(this);
     Object.defineProperty(_assertThisInitialized(_this), 'id', {
       value: object3DId++
     });
@@ -13030,17 +12974,17 @@ var _getWorldDirection = function () {
  * @author bujue
  */
 
-var Scene =
-/*#__PURE__*/
-function (_Object3D) {
+var Scene = /*#__PURE__*/function (_Object3D) {
   _inherits(Scene, _Object3D);
+
+  var _super = _createSuper(Scene);
 
   function Scene() {
     var _this;
 
     _classCallCheck(this, Scene);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Scene).call(this));
+    _this = _super.call(this);
     _this.background = null;
     _this.isScene = true;
     _this.autoUpdate = true; // checked by the renderer
@@ -13057,17 +13001,17 @@ function (_Object3D) {
  * @author bujue
  */
 
-var Group =
-/*#__PURE__*/
-function (_Object3D) {
+var Group = /*#__PURE__*/function (_Object3D) {
   _inherits(Group, _Object3D);
+
+  var _super = _createSuper(Group);
 
   function Group() {
     var _this;
 
     _classCallCheck(this, Group);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Group).call(this));
+    _this = _super.call(this);
     _this.type = 'Group';
     return _this;
   }
@@ -13094,9 +13038,7 @@ var edge1 = new Vector3();
 var edge2 = new Vector3();
 var normal = new Vector3();
 
-var Ray =
-/*#__PURE__*/
-function () {
+var Ray = /*#__PURE__*/function () {
   function Ray(origin, direction) {
     _classCallCheck(this, Ray);
 
@@ -13454,9 +13396,7 @@ function () {
 var startP = new Vector3();
 var startEnd = new Vector3();
 
-var Line3 =
-/*#__PURE__*/
-function () {
+var Line3 = /*#__PURE__*/function () {
   function Line3(start, end) {
     _classCallCheck(this, Line3);
 
@@ -13562,9 +13502,7 @@ var edgeList = [new Line3(), new Line3(), new Line3()];
 var projectedPoint = new Vector3();
 var closestPoint = new Vector3();
 
-var Triangle =
-/*#__PURE__*/
-function () {
+var Triangle = /*#__PURE__*/function () {
   function Triangle(a, b, c) {
     _classCallCheck(this, Triangle);
 
@@ -13803,9 +13741,7 @@ var getNormal = function () {
   };
 }();
 
-var Face3 =
-/*#__PURE__*/
-function () {
+var Face3 = /*#__PURE__*/function () {
   function Face3(a, b, c, normal, color, materialIndex) {
     _classCallCheck(this, Face3);
 
@@ -13856,17 +13792,17 @@ function () {
 
 var materialId = 0;
 
-var Material =
-/*#__PURE__*/
-function (_Events) {
+var Material = /*#__PURE__*/function (_Events) {
   _inherits(Material, _Events);
+
+  var _super = _createSuper(Material);
 
   function Material() {
     var _this;
 
     _classCallCheck(this, Material);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Material).call(this));
+    _this = _super.call(this);
     _this.type = 'Material';
     Object.defineProperty(_assertThisInitialized(_this), 'id', {
       value: materialId++
@@ -13991,17 +13927,17 @@ function (_Events) {
   return Material;
 }(Events);
 
-var MeshBasicMaterial$$1 =
-/*#__PURE__*/
-function (_Material) {
+var MeshBasicMaterial$$1 = /*#__PURE__*/function (_Material) {
   _inherits(MeshBasicMaterial$$1, _Material);
+
+  var _super = _createSuper(MeshBasicMaterial$$1);
 
   function MeshBasicMaterial$$1(parameters) {
     var _this;
 
     _classCallCheck(this, MeshBasicMaterial$$1);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(MeshBasicMaterial$$1).call(this));
+    _this = _super.call(this);
     _this.color = new Color$1(0xffffff); // emissive
 
     _this.map = null;
@@ -14042,17 +13978,17 @@ function (_Material) {
  * @author bujue
  */
 
-var Mesh =
-/*#__PURE__*/
-function (_Object3D) {
+var Mesh = /*#__PURE__*/function (_Object3D) {
   _inherits(Mesh, _Object3D);
+
+  var _super = _createSuper(Mesh);
 
   function Mesh(geometry, material) {
     var _this;
 
     _classCallCheck(this, Mesh);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Mesh).call(this));
+    _this = _super.call(this);
     _this.geometry = geometry;
     _this.material = material;
     _this.drawMode = TrianglesDrawMode;
@@ -14265,17 +14201,17 @@ var _raycast = function () {
   };
 }();
 
-var LineBasicMaterial =
-/*#__PURE__*/
-function (_Material) {
+var LineBasicMaterial = /*#__PURE__*/function (_Material) {
   _inherits(LineBasicMaterial, _Material);
+
+  var _super = _createSuper(LineBasicMaterial);
 
   function LineBasicMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, LineBasicMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineBasicMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'LineBasicMaterial';
     _this.color = new Color$1(0xffffff);
     _this.linewidth = 1; //todo 暂不需要
@@ -14312,17 +14248,17 @@ function (_Material) {
  * @author bujue
  */
 
-var Line =
-/*#__PURE__*/
-function (_Object3D) {
+var Line = /*#__PURE__*/function (_Object3D) {
   _inherits(Line, _Object3D);
+
+  var _super = _createSuper(Line);
 
   function Line(geometry, material) {
     var _this;
 
     _classCallCheck(this, Line);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Line).call(this));
+    _this = _super.call(this);
     _this.type = 'Line';
     _this.geometry = geometry !== undefined ? geometry : new BufferGeometry();
     _this.material = material !== undefined ? material : new LineBasicMaterial({
@@ -14500,17 +14436,17 @@ var _raycast$1 = function () {
   };
 }();
 
-var InstancedBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var InstancedBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(InstancedBufferGeometry, _BufferGeometry);
+
+  var _super = _createSuper(InstancedBufferGeometry);
 
   function InstancedBufferGeometry() {
     var _this;
 
     _classCallCheck(this, InstancedBufferGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(InstancedBufferGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'InstancedBufferGeometry';
     _this.maxInstancedCount = undefined;
     _this.isInstancedBufferGeometry = true;
@@ -14535,9 +14471,7 @@ function (_BufferGeometry) {
   return InstancedBufferGeometry;
 }(BufferGeometry);
 
-var InterleavedBuffer =
-/*#__PURE__*/
-function () {
+var InterleavedBuffer = /*#__PURE__*/function () {
   function InterleavedBuffer(array, stride) {
     _classCallCheck(this, InterleavedBuffer);
 
@@ -14622,17 +14556,17 @@ function () {
   return InterleavedBuffer;
 }();
 
-var InstancedInterleavedBuffer =
-/*#__PURE__*/
-function (_InterleavedBuffer) {
+var InstancedInterleavedBuffer = /*#__PURE__*/function (_InterleavedBuffer) {
   _inherits(InstancedInterleavedBuffer, _InterleavedBuffer);
+
+  var _super = _createSuper(InstancedInterleavedBuffer);
 
   function InstancedInterleavedBuffer(array, stride, meshPerAttribute) {
     var _this;
 
     _classCallCheck(this, InstancedInterleavedBuffer);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(InstancedInterleavedBuffer).call(this, array, stride));
+    _this = _super.call(this, array, stride);
     _this.meshPerAttribute = meshPerAttribute || 1;
     _this.isInstancedInterleavedBuffer = true;
     return _this;
@@ -14651,9 +14585,7 @@ function (_InterleavedBuffer) {
   return InstancedInterleavedBuffer;
 }(InterleavedBuffer);
 
-var InterleavedBufferAttribute =
-/*#__PURE__*/
-function () {
+var InterleavedBufferAttribute = /*#__PURE__*/function () {
   function InterleavedBufferAttribute(interleavedBuffer, itemSize, offset, normalized) {
     _classCallCheck(this, InterleavedBufferAttribute);
 
@@ -14747,17 +14679,17 @@ function () {
   return InterleavedBufferAttribute;
 }();
 
-var LineSegmentsGeometry =
-/*#__PURE__*/
-function (_InstancedBufferGeome) {
+var LineSegmentsGeometry = /*#__PURE__*/function (_InstancedBufferGeome) {
   _inherits(LineSegmentsGeometry, _InstancedBufferGeome);
+
+  var _super = _createSuper(LineSegmentsGeometry);
 
   function LineSegmentsGeometry() {
     var _this;
 
     _classCallCheck(this, LineSegmentsGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineSegmentsGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'LineSegmentsGeometry';
     var positions = [-1, 2, 0, 1, 2, 0, -1, 1, 0, 1, 1, 0, -1, 0, 0, 1, 0, 0, -1, -1, 0, 1, -1, 0];
     var uvs = [-1, 2, 1, 2, -1, 1, 1, 1, -1, -1, 1, -1, -1, -2, 1, -2];
@@ -14911,17 +14843,17 @@ function getTypeArray(array) {
   return new InstancedInterleavedBuffer(typeArray, 6, 1);
 }
 
-var LineGeometry =
-/*#__PURE__*/
-function (_LineSegmentsGeometry) {
+var LineGeometry = /*#__PURE__*/function (_LineSegmentsGeometry) {
   _inherits(LineGeometry, _LineSegmentsGeometry);
+
+  var _super = _createSuper(LineGeometry);
 
   function LineGeometry() {
     var _this;
 
     _classCallCheck(this, LineGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'LineGeometry';
     _this.isLineGeometry = true;
     return _this;
@@ -14981,17 +14913,17 @@ function createVertexs(array) {
   return Vertexs;
 }
 
-var LineMeshMaterial =
-/*#__PURE__*/
-function (_Material) {
+var LineMeshMaterial = /*#__PURE__*/function (_Material) {
   _inherits(LineMeshMaterial, _Material);
+
+  var _super = _createSuper(LineMeshMaterial);
 
   function LineMeshMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, LineMeshMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineMeshMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'LineMeshMaterial';
     _this.color = new Color$1(0xffffff);
     _this.linewidth = 1;
@@ -15035,17 +14967,17 @@ function (_Material) {
   return LineMeshMaterial;
 }(Material);
 
-var Line2 =
-/*#__PURE__*/
-function (_Mesh) {
+var Line2 = /*#__PURE__*/function (_Mesh) {
   _inherits(Line2, _Mesh);
+
+  var _super = _createSuper(Line2);
 
   function Line2(geometry, material) {
     var _this;
 
     _classCallCheck(this, Line2);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Line2).call(this, geometry, material));
+    _this = _super.call(this, geometry, material);
     _this.geometry = geometry !== undefined ? geometry : new LineGeometry();
     _this.material = material !== undefined ? material : new LineMeshMaterial({
       color: Math.random() * 0xffffff
@@ -15095,17 +15027,17 @@ var _computeLineDistances$1 = function () {
   };
 }();
 
-var PointsMaterial =
-/*#__PURE__*/
-function (_Material) {
+var PointsMaterial = /*#__PURE__*/function (_Material) {
   _inherits(PointsMaterial, _Material);
+
+  var _super = _createSuper(PointsMaterial);
 
   function PointsMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, PointsMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PointsMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'PointsMaterial';
     _this.color = new Color$1(0xffffff);
     _this.map = null; //点的大小
@@ -15142,17 +15074,17 @@ function (_Material) {
   return PointsMaterial;
 }(Material);
 
-var Points =
-/*#__PURE__*/
-function (_Object3D) {
+var Points = /*#__PURE__*/function (_Object3D) {
   _inherits(Points, _Object3D);
+
+  var _super = _createSuper(Points);
 
   function Points(geometry, material) {
     var _this;
 
     _classCallCheck(this, Points);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Points).call(this));
+    _this = _super.call(this);
     _this.type = 'Points';
     _this.geometry = geometry !== undefined ? geometry : new BufferGeometry();
     _this.material = material !== undefined ? material : new PointsMaterial({
@@ -15247,17 +15179,17 @@ var _raycast$2 = function () {
   };
 }();
 
-var SpriteMaterial$$1 =
-/*#__PURE__*/
-function (_Material) {
+var SpriteMaterial$$1 = /*#__PURE__*/function (_Material) {
   _inherits(SpriteMaterial$$1, _Material);
+
+  var _super = _createSuper(SpriteMaterial$$1);
 
   function SpriteMaterial$$1(parameters) {
     var _this;
 
     _classCallCheck(this, SpriteMaterial$$1);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SpriteMaterial$$1).call(this));
+    _this = _super.call(this);
     _this.type = 'SpriteMaterial';
     _this.color = new Color$1(0xffffff);
     _this.map = null;
@@ -15294,17 +15226,17 @@ function (_Material) {
 
 var geometry;
 
-var Sprite =
-/*#__PURE__*/
-function (_Object3D) {
+var Sprite = /*#__PURE__*/function (_Object3D) {
   _inherits(Sprite, _Object3D);
+
+  var _super = _createSuper(Sprite);
 
   function Sprite(material) {
     var _this;
 
     _classCallCheck(this, Sprite);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Sprite).call(this));
+    _this = _super.call(this);
     _this.type = 'Sprite';
 
     if (geometry === undefined) {
@@ -15426,10 +15358,10 @@ var _raycast$3 = function () {
   };
 }();
 
-var TextTexture =
-/*#__PURE__*/
-function (_Texture) {
+var TextTexture = /*#__PURE__*/function (_Texture) {
   _inherits(TextTexture, _Texture);
+
+  var _super = _createSuper(TextTexture);
 
   function TextTexture() {
     var _this;
@@ -15474,7 +15406,7 @@ function (_Texture) {
 
     _classCallCheck(this, TextTexture);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TextTexture).call(this, createCanvas(), mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy));
+    _this = _super.call(this, createCanvas(), mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy);
     _this.autoRedraw = autoRedraw;
     _this._text = text;
     _this._textAlign = textAlign;
@@ -15825,10 +15757,10 @@ function createCanvas() {
   return document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
 }
 
-var TextSprite =
-/*#__PURE__*/
-function (_Sprite) {
+var TextSprite = /*#__PURE__*/function (_Sprite) {
   _inherits(TextSprite, _Sprite);
+
+  var _super = _createSuper(TextSprite);
 
   function TextSprite() {
     var _this;
@@ -15852,7 +15784,7 @@ function (_Sprite) {
     }
 
     params['map'] = new TextTexture(texture);
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TextSprite).call(this, new SpriteMaterial$$1(params)));
+    _this = _super.call(this, new SpriteMaterial$$1(params));
     _this.fontSize = fontSize;
     _this.redrawInterval = redrawInterval;
     _this.lastRedraw = 0;
@@ -15966,17 +15898,17 @@ var getOptimalFontSize = function () {
 
 var geometryId = 0;
 
-var Geometry =
-/*#__PURE__*/
-function (_Events) {
+var Geometry = /*#__PURE__*/function (_Events) {
   _inherits(Geometry, _Events);
+
+  var _super = _createSuper(Geometry);
 
   function Geometry() {
     var _this;
 
     _classCallCheck(this, Geometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Geometry).call(this));
+    _this = _super.call(this);
     Object.defineProperty(_assertThisInitialized(_this), 'id', {
       value: geometryId += 2
     });
@@ -16292,17 +16224,17 @@ function (_Events) {
   return Geometry;
 }(Events);
 
-var CircleGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var CircleGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(CircleGeometry, _Geometry);
+
+  var _super = _createSuper(CircleGeometry);
 
   function CircleGeometry(radius, segments, thetaStart, thetaLength) {
     var _this;
 
     _classCallCheck(this, CircleGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CircleGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'CircleGeometry';
     _this.parameters = {
       radius: radius,
@@ -16322,17 +16254,17 @@ function (_Geometry) {
 }(Geometry); // CircleBufferGeometry
 
 
-var CircleBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var CircleBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(CircleBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(CircleBufferGeometry);
 
   function CircleBufferGeometry(radius, segments, thetaStart, thetaLength) {
     var _this2;
 
     _classCallCheck(this, CircleBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(CircleBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'CircleBufferGeometry';
     _this2.parameters = {
       radius: radius,
@@ -16392,17 +16324,17 @@ function (_BufferGeometry) {
   return CircleBufferGeometry;
 }(BufferGeometry);
 
-var PlaneGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var PlaneGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(PlaneGeometry, _Geometry);
+
+  var _super = _createSuper(PlaneGeometry);
 
   function PlaneGeometry(width, height, widthSegments, heightSegments) {
     var _this;
 
     _classCallCheck(this, PlaneGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PlaneGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'PlaneGeometry';
     _this.parameters = {
       width: width,
@@ -16422,17 +16354,17 @@ function (_Geometry) {
 }(Geometry); // PlaneBufferGeometry
 
 
-var PlaneBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var PlaneBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(PlaneBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(PlaneBufferGeometry);
 
   function PlaneBufferGeometry(width, height, widthSegments, heightSegments) {
     var _this2;
 
     _classCallCheck(this, PlaneBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(PlaneBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'PlaneBufferGeometry';
     _this2.parameters = {
       width: width,
@@ -16495,17 +16427,17 @@ function (_BufferGeometry) {
   return PlaneBufferGeometry;
 }(BufferGeometry);
 
-var BoxGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var BoxGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(BoxGeometry, _Geometry);
+
+  var _super = _createSuper(BoxGeometry);
 
   function BoxGeometry(width, height, depth, widthSegments, heightSegments, depthSegments) {
     var _this;
 
     _classCallCheck(this, BoxGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(BoxGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'BoxGeometry';
     _this.parameters = {
       width: width,
@@ -16527,17 +16459,17 @@ function (_Geometry) {
 }(Geometry); // BoxBufferGeometry
 
 
-var BoxBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var BoxBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(BoxBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(BoxBufferGeometry);
 
   function BoxBufferGeometry(width, height, depth, widthSegments, heightSegments, depthSegments) {
     var _this2;
 
     _classCallCheck(this, BoxBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(BoxBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'BoxBufferGeometry';
     _this2.parameters = {
       width: width,
@@ -16654,17 +16586,17 @@ function (_BufferGeometry) {
   return BoxBufferGeometry;
 }(BufferGeometry);
 
-var SphereGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var SphereGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(SphereGeometry, _Geometry);
+
+  var _super = _createSuper(SphereGeometry);
 
   function SphereGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength) {
     var _this;
 
     _classCallCheck(this, SphereGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SphereGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'SphereGeometry';
     _this.parameters = {
       radius: radius,
@@ -16687,17 +16619,17 @@ function (_Geometry) {
 }(Geometry); // SphereBufferGeometry
 
 
-var SphereBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var SphereBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(SphereBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(SphereBufferGeometry);
 
   function SphereBufferGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength) {
     var _this2;
 
     _classCallCheck(this, SphereBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(SphereBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'SphereBufferGeometry';
     _this2.parameters = {
       radius: radius,
@@ -16776,17 +16708,17 @@ function (_BufferGeometry) {
   return SphereBufferGeometry;
 }(BufferGeometry);
 
-var CylinderGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var CylinderGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(CylinderGeometry, _Geometry);
+
+  var _super = _createSuper(CylinderGeometry);
 
   function CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength) {
     var _this;
 
     _classCallCheck(this, CylinderGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CylinderGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'CylinderGeometry';
     _this.parameters = {
       radiusTop: radiusTop,
@@ -16810,17 +16742,17 @@ function (_Geometry) {
 }(Geometry); // CylinderBufferGeometry
 
 
-var CylinderBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var CylinderBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(CylinderBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(CylinderBufferGeometry);
 
   function CylinderBufferGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength) {
     var _this2;
 
     _classCallCheck(this, CylinderBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(CylinderBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'CylinderBufferGeometry';
     _this2.parameters = {
       radiusTop: radiusTop,
@@ -17003,10 +16935,10 @@ function (_BufferGeometry) {
   return CylinderBufferGeometry;
 }(BufferGeometry);
 
-var DoughnutGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var DoughnutGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(DoughnutGeometry, _Geometry);
+
+  var _super = _createSuper(DoughnutGeometry);
 
   /**
    * 
@@ -17027,7 +16959,7 @@ function (_Geometry) {
 
     _classCallCheck(this, DoughnutGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(DoughnutGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'DoughnutGeometry';
     _this.parameters = {
       outterRadius: outterRadius,
@@ -17049,10 +16981,10 @@ function (_Geometry) {
 }(Geometry); // DoughnutBufferGeometry
 
 
-var DoughnutBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var DoughnutBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(DoughnutBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(DoughnutBufferGeometry);
 
   function DoughnutBufferGeometry(outterRadius, height) {
     var _this2;
@@ -17064,7 +16996,7 @@ function (_BufferGeometry) {
 
     _classCallCheck(this, DoughnutBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(DoughnutBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'DoughnutBufferGeometry';
     _this2.parameters = {
       outterRadius: outterRadius,
@@ -17989,17 +17921,17 @@ function addContour(vertices, contour) {
   }
 }
 
-var ExtrudeGeometry =
-/*#__PURE__*/
-function (_Geometry) {
+var ExtrudeGeometry = /*#__PURE__*/function (_Geometry) {
   _inherits(ExtrudeGeometry, _Geometry);
+
+  var _super = _createSuper(ExtrudeGeometry);
 
   function ExtrudeGeometry(shapes, options) {
     var _this;
 
     _classCallCheck(this, ExtrudeGeometry);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ExtrudeGeometry).call(this));
+    _this = _super.call(this);
     _this.type = 'ExtrudeGeometry';
     _this.parameters = {
       shapes: shapes,
@@ -18017,17 +17949,17 @@ function (_Geometry) {
 }(Geometry); // ExtrudeBufferGeometry
 
 
-var ExtrudeBufferGeometry =
-/*#__PURE__*/
-function (_BufferGeometry) {
+var ExtrudeBufferGeometry = /*#__PURE__*/function (_BufferGeometry) {
   _inherits(ExtrudeBufferGeometry, _BufferGeometry);
+
+  var _super2 = _createSuper(ExtrudeBufferGeometry);
 
   function ExtrudeBufferGeometry(shapes, options) {
     var _this2;
 
     _classCallCheck(this, ExtrudeBufferGeometry);
 
-    _this2 = _possibleConstructorReturn(this, _getPrototypeOf(ExtrudeBufferGeometry).call(this));
+    _this2 = _super2.call(this);
     _this2.type = 'ExtrudeBufferGeometry';
     _this2.parameters = {
       shapes: shapes,
@@ -18509,17 +18441,17 @@ var WorldUVGenerator = {
 
 //所有的预定几何体
 
-var MeshLambertMaterial =
-/*#__PURE__*/
-function (_Material) {
+var MeshLambertMaterial = /*#__PURE__*/function (_Material) {
   _inherits(MeshLambertMaterial, _Material);
+
+  var _super = _createSuper(MeshLambertMaterial);
 
   function MeshLambertMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, MeshLambertMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(MeshLambertMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'MeshLambertMaterial';
     _this.color = new Color$1(0xffffff); // diffuse
 
@@ -18559,17 +18491,17 @@ function (_Material) {
   return MeshLambertMaterial;
 }(Material);
 
-var MeshPhongMaterial =
-/*#__PURE__*/
-function (_Material) {
+var MeshPhongMaterial = /*#__PURE__*/function (_Material) {
   _inherits(MeshPhongMaterial, _Material);
+
+  var _super = _createSuper(MeshPhongMaterial);
 
   function MeshPhongMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, MeshPhongMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(MeshPhongMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'MeshPhongMaterial';
     _this.color = new Color$1(0xffffff); // diffuse
     //高亮的颜色 todo:目前测试没有效果
@@ -18615,17 +18547,17 @@ function (_Material) {
   return MeshPhongMaterial;
 }(Material);
 
-var LineDashedMaterial =
-/*#__PURE__*/
-function (_LineBasicMaterial) {
+var LineDashedMaterial = /*#__PURE__*/function (_LineBasicMaterial) {
   _inherits(LineDashedMaterial, _LineBasicMaterial);
+
+  var _super = _createSuper(LineDashedMaterial);
 
   function LineDashedMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, LineDashedMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineDashedMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'LineDashedMaterial'; //以下三个参数的配置与顶点数据的大小有关 
 
     _this.scale = 1; //虚线整体的缩放 
@@ -18659,17 +18591,17 @@ function (_LineBasicMaterial) {
   return LineDashedMaterial;
 }(LineBasicMaterial);
 
-var ShaderMaterial =
-/*#__PURE__*/
-function (_Material) {
+var ShaderMaterial = /*#__PURE__*/function (_Material) {
   _inherits(ShaderMaterial, _Material);
+
+  var _super = _createSuper(ShaderMaterial);
 
   function ShaderMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, ShaderMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ShaderMaterial).call(this));
+    _this = _super.call(this);
     _this.type = 'ShaderMaterial';
     _this.defines = {};
     _this.uniforms = {};
@@ -18724,17 +18656,17 @@ function (_Material) {
   return ShaderMaterial;
 }(Material);
 
-var RawShaderMaterial =
-/*#__PURE__*/
-function (_ShaderMaterial) {
+var RawShaderMaterial = /*#__PURE__*/function (_ShaderMaterial) {
   _inherits(RawShaderMaterial, _ShaderMaterial);
+
+  var _super = _createSuper(RawShaderMaterial);
 
   function RawShaderMaterial(parameters) {
     var _this;
 
     _classCallCheck(this, RawShaderMaterial);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(RawShaderMaterial).call(this, parameters));
+    _this = _super.call(this, parameters);
     _this.type = 'RawShaderMaterial';
     return _this;
   }
@@ -18751,17 +18683,17 @@ function (_ShaderMaterial) {
 
 //所有的材质
 
-var Light =
-/*#__PURE__*/
-function (_Object3D) {
+var Light = /*#__PURE__*/function (_Object3D) {
   _inherits(Light, _Object3D);
+
+  var _super = _createSuper(Light);
 
   function Light(color, intensity) {
     var _this;
 
     _classCallCheck(this, Light);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Light).call(this));
+    _this = _super.call(this);
     _this.type = 'Light';
     _this.color = new Color$1(color);
     _this.intensity = intensity !== undefined ? intensity : 1;
@@ -18778,17 +18710,17 @@ function (_Object3D) {
   return Light;
 }(Object3D);
 
-var SpotLight =
-/*#__PURE__*/
-function (_Light) {
+var SpotLight = /*#__PURE__*/function (_Light) {
   _inherits(SpotLight, _Light);
+
+  var _super = _createSuper(SpotLight);
 
   function SpotLight(color, intensity, distance, angle, penumbra, decay) {
     var _this;
 
     _classCallCheck(this, SpotLight);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SpotLight).call(this, color, intensity));
+    _this = _super.call(this, color, intensity);
     _this.type = 'SpotLight';
 
     _this.position.copy(Object3D.DefaultUp);
@@ -18824,17 +18756,17 @@ function (_Light) {
   return SpotLight;
 }(Light);
 
-var PointLight =
-/*#__PURE__*/
-function (_Light) {
+var PointLight = /*#__PURE__*/function (_Light) {
   _inherits(PointLight, _Light);
+
+  var _super = _createSuper(PointLight);
 
   function PointLight(color, intensity, distance, decay) {
     var _this;
 
     _classCallCheck(this, PointLight);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PointLight).call(this, color, intensity));
+    _this = _super.call(this, color, intensity);
     _this.type = 'PointLight';
     _this.distance = distance !== undefined ? distance : 0;
     _this.decay = decay !== undefined ? decay : 1; // for physically correct lights, should be 2.
@@ -18862,17 +18794,17 @@ function (_Light) {
   return PointLight;
 }(Light);
 
-var DirectionalLight =
-/*#__PURE__*/
-function (_Light) {
+var DirectionalLight = /*#__PURE__*/function (_Light) {
   _inherits(DirectionalLight, _Light);
+
+  var _super = _createSuper(DirectionalLight);
 
   function DirectionalLight(color, intensity) {
     var _this;
 
     _classCallCheck(this, DirectionalLight);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(DirectionalLight).call(this, color, intensity));
+    _this = _super.call(this, color, intensity);
     _this.type = 'DirectionalLight';
 
     _this.position.copy(Object3D.DefaultUp);
@@ -18893,17 +18825,17 @@ function (_Light) {
   return DirectionalLight;
 }(Light);
 
-var AmbientLight =
-/*#__PURE__*/
-function (_Light) {
+var AmbientLight = /*#__PURE__*/function (_Light) {
   _inherits(AmbientLight, _Light);
+
+  var _super = _createSuper(AmbientLight);
 
   function AmbientLight(color, intensity) {
     var _this;
 
     _classCallCheck(this, AmbientLight);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(AmbientLight).call(this, color, intensity));
+    _this = _super.call(this, color, intensity);
     _this.type = 'AmbientLight';
     return _this;
   }
@@ -18918,17 +18850,17 @@ function (_Light) {
   return AmbientLight;
 }(Light);
 
-var Camera =
-/*#__PURE__*/
-function (_Object3D) {
+var Camera = /*#__PURE__*/function (_Object3D) {
   _inherits(Camera, _Object3D);
+
+  var _super = _createSuper(Camera);
 
   function Camera() {
     var _this;
 
     _classCallCheck(this, Camera);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Camera).call(this)); //viewMatrix
+    _this = _super.call(this); //viewMatrix
 
     _this.matrixWorldInverse = new Matrix4();
     _this.projectionMatrix = new Matrix4();
@@ -18971,17 +18903,17 @@ var _getWorldDirection$1 = function () {
  * @author bujue
  */
 
-var PerspectiveCamera =
-/*#__PURE__*/
-function (_Camera) {
+var PerspectiveCamera = /*#__PURE__*/function (_Camera) {
   _inherits(PerspectiveCamera, _Camera);
+
+  var _super = _createSuper(PerspectiveCamera);
 
   function PerspectiveCamera(fov, aspect, near, far) {
     var _this;
 
     _classCallCheck(this, PerspectiveCamera);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PerspectiveCamera).call(this));
+    _this = _super.call(this);
     _this.type = 'PerspectiveCamera';
     _this.fov = fov !== undefined ? fov : 50;
     _this.zoom = 1;
@@ -19018,17 +18950,17 @@ function (_Camera) {
  * @author bujue
  */
 
-var OrthographicCamera =
-/*#__PURE__*/
-function (_Camera) {
+var OrthographicCamera = /*#__PURE__*/function (_Camera) {
   _inherits(OrthographicCamera, _Camera);
+
+  var _super = _createSuper(OrthographicCamera);
 
   function OrthographicCamera(left, right, top, bottom, near, far) {
     var _this;
 
     _classCallCheck(this, OrthographicCamera);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(OrthographicCamera).call(this));
+    _this = _super.call(this);
     _this.type = 'OrthographicCamera';
     _this.zoom = 1;
     _this.view = null;
@@ -19063,17 +18995,17 @@ function (_Camera) {
   return OrthographicCamera;
 }(Camera);
 
-var InstancedBufferAttribute =
-/*#__PURE__*/
-function (_BufferAttribute) {
+var InstancedBufferAttribute = /*#__PURE__*/function (_BufferAttribute) {
   _inherits(InstancedBufferAttribute, _BufferAttribute);
+
+  var _super = _createSuper(InstancedBufferAttribute);
 
   function InstancedBufferAttribute(array, itemSize, meshPerAttribute) {
     var _this;
 
     _classCallCheck(this, InstancedBufferAttribute);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(InstancedBufferAttribute).call(this));
+    _this = _super.call(this);
     BufferAttribute.call(_assertThisInitialized(_this), array, itemSize);
     _this.meshPerAttribute = meshPerAttribute || 1;
     _this.isInstancedBufferAttribute = true;
@@ -19093,9 +19025,7 @@ function (_BufferAttribute) {
   return InstancedBufferAttribute;
 }(BufferAttribute);
 
-var Raycaster$$1 =
-/*#__PURE__*/
-function () {
+var Raycaster$$1 = /*#__PURE__*/function () {
   function Raycaster$$1(origin, direction, near, far) {
     _classCallCheck(this, Raycaster$$1);
 
@@ -19200,9 +19130,7 @@ function _intersectObject(object, raycaster, intersects, recursive) {
  * The equator starts at positive z.
  */
 
-var Spherical =
-/*#__PURE__*/
-function () {
+var Spherical = /*#__PURE__*/function () {
   function Spherical(radius, phi, theta) {
     _classCallCheck(this, Spherical);
 
@@ -19299,9 +19227,7 @@ function () {
  *	Abstract Curve base class
  **************************************************************/
 
-var Curve =
-/*#__PURE__*/
-function () {
+var Curve = /*#__PURE__*/function () {
   function Curve() {
     _classCallCheck(this, Curve);
 
@@ -19587,17 +19513,17 @@ function () {
   return Curve;
 }();
 
-var EllipseCurve =
-/*#__PURE__*/
-function (_Curve) {
+var EllipseCurve = /*#__PURE__*/function (_Curve) {
   _inherits(EllipseCurve, _Curve);
+
+  var _super = _createSuper(EllipseCurve);
 
   function EllipseCurve(aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation) {
     var _this;
 
     _classCallCheck(this, EllipseCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(EllipseCurve).call(this));
+    _this = _super.call(this);
     _this.type = 'EllipseCurve';
     _this.aX = aX || 0;
     _this.aY = aY || 0;
@@ -19682,17 +19608,17 @@ function (_Curve) {
   return EllipseCurve;
 }(Curve);
 
-var ArcCurve =
-/*#__PURE__*/
-function (_EllipseCurve) {
+var ArcCurve = /*#__PURE__*/function (_EllipseCurve) {
   _inherits(ArcCurve, _EllipseCurve);
+
+  var _super = _createSuper(ArcCurve);
 
   function ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise) {
     var _this;
 
     _classCallCheck(this, ArcCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ArcCurve).call(this, aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise));
+    _this = _super.call(this, aX, aY, aRadius, aRadius, aStartAngle, aEndAngle, aClockwise);
     _this.type = 'ArcCurve';
     return _this;
   }
@@ -19776,10 +19702,10 @@ var px = new CubicPoly(),
     py = new CubicPoly(),
     pz = new CubicPoly();
 
-var CatmullRomCurve3 =
-/*#__PURE__*/
-function (_Curve) {
+var CatmullRomCurve3 = /*#__PURE__*/function (_Curve) {
   _inherits(CatmullRomCurve3, _Curve);
+
+  var _super = _createSuper(CatmullRomCurve3);
 
   function CatmullRomCurve3() {
     var _this;
@@ -19791,7 +19717,7 @@ function (_Curve) {
 
     _classCallCheck(this, CatmullRomCurve3);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CatmullRomCurve3).call(this));
+    _this = _super.call(this);
     _this.type = 'CatmullRomCurve3';
     _this.points = points;
     _this.closed = closed;
@@ -19978,17 +19904,17 @@ function CubicBezier(t, p0, p1, p2, p3) {
   return CubicBezierP0(t, p0) + CubicBezierP1(t, p1) + CubicBezierP2(t, p2) + CubicBezierP3(t, p3);
 }
 
-var CubicBezierCurve =
-/*#__PURE__*/
-function (_Curve) {
+var CubicBezierCurve = /*#__PURE__*/function (_Curve) {
   _inherits(CubicBezierCurve, _Curve);
+
+  var _super = _createSuper(CubicBezierCurve);
 
   function CubicBezierCurve(v0, v1, v2, v3) {
     var _this;
 
     _classCallCheck(this, CubicBezierCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CubicBezierCurve).call(this));
+    _this = _super.call(this);
     _this.type = 'CubicBezierCurve';
     _this.v0 = v0 || new Vector2();
     _this.v1 = v1 || new Vector2();
@@ -20028,17 +19954,17 @@ function (_Curve) {
   return CubicBezierCurve;
 }(Curve);
 
-var CubicBezierCurve3 =
-/*#__PURE__*/
-function (_Curve) {
+var CubicBezierCurve3 = /*#__PURE__*/function (_Curve) {
   _inherits(CubicBezierCurve3, _Curve);
+
+  var _super = _createSuper(CubicBezierCurve3);
 
   function CubicBezierCurve3(v0, v1, v2, v3) {
     var _this;
 
     _classCallCheck(this, CubicBezierCurve3);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CubicBezierCurve3).call(this));
+    _this = _super.call(this);
     _this.type = 'CubicBezierCurve3';
     _this.v0 = v0 || new Vector3();
     _this.v1 = v1 || new Vector3();
@@ -20079,17 +20005,17 @@ function (_Curve) {
   return CubicBezierCurve3;
 }(Curve);
 
-var LineCurve =
-/*#__PURE__*/
-function (_Curve) {
+var LineCurve = /*#__PURE__*/function (_Curve) {
   _inherits(LineCurve, _Curve);
+
+  var _super = _createSuper(LineCurve);
 
   function LineCurve(v1, v2) {
     var _this;
 
     _classCallCheck(this, LineCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineCurve).call(this));
+    _this = _super.call(this);
     _this.type = 'LineCurve';
     _this.v1 = v1 || new Vector2();
     _this.v2 = v2 || new Vector2();
@@ -20143,17 +20069,17 @@ function (_Curve) {
   return LineCurve;
 }(Curve);
 
-var LineCurve3 =
-/*#__PURE__*/
-function (_Curve) {
+var LineCurve3 = /*#__PURE__*/function (_Curve) {
   _inherits(LineCurve3, _Curve);
+
+  var _super = _createSuper(LineCurve3);
 
   function LineCurve3(v1, v2) {
     var _this;
 
     _classCallCheck(this, LineCurve3);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LineCurve3).call(this));
+    _this = _super.call(this);
     _this.type = 'LineCurve3';
     _this.v1 = v1 || new Vector3();
     _this.v2 = v2 || new Vector3();
@@ -20199,17 +20125,17 @@ function (_Curve) {
   return LineCurve3;
 }(Curve);
 
-var QuadraticBezierCurve =
-/*#__PURE__*/
-function (_Curve) {
+var QuadraticBezierCurve = /*#__PURE__*/function (_Curve) {
   _inherits(QuadraticBezierCurve, _Curve);
+
+  var _super = _createSuper(QuadraticBezierCurve);
 
   function QuadraticBezierCurve(v0, v1, v2) {
     var _this;
 
     _classCallCheck(this, QuadraticBezierCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(QuadraticBezierCurve).call(this));
+    _this = _super.call(this);
     _this.type = 'QuadraticBezierCurve';
     _this.v0 = v0 || new Vector2();
     _this.v1 = v1 || new Vector2();
@@ -20247,17 +20173,17 @@ function (_Curve) {
   return QuadraticBezierCurve;
 }(Curve);
 
-var QuadraticBezierCurve3 =
-/*#__PURE__*/
-function (_Curve) {
+var QuadraticBezierCurve3 = /*#__PURE__*/function (_Curve) {
   _inherits(QuadraticBezierCurve3, _Curve);
+
+  var _super = _createSuper(QuadraticBezierCurve3);
 
   function QuadraticBezierCurve3(v0, v1, v2) {
     var _this;
 
     _classCallCheck(this, QuadraticBezierCurve3);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(QuadraticBezierCurve3).call(this));
+    _this = _super.call(this);
     _this.type = 'QuadraticBezierCurve3';
     _this.v0 = v0 || new Vector3();
     _this.v1 = v1 || new Vector3();
@@ -20295,10 +20221,10 @@ function (_Curve) {
   return QuadraticBezierCurve3;
 }(Curve);
 
-var SplineCurve =
-/*#__PURE__*/
-function (_Curve) {
+var SplineCurve = /*#__PURE__*/function (_Curve) {
   _inherits(SplineCurve, _Curve);
+
+  var _super = _createSuper(SplineCurve);
 
   function SplineCurve(points
   /* array of Vector2 */
@@ -20307,7 +20233,7 @@ function (_Curve) {
 
     _classCallCheck(this, SplineCurve);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SplineCurve).call(this));
+    _this = _super.call(this);
     _this.type = 'SplineCurve';
     _this.points = points || [];
     return _this;
@@ -20362,17 +20288,17 @@ function (_Curve) {
  *  curves, but retains the api of a curve
  **************************************************************/
 
-var CurvePath =
-/*#__PURE__*/
-function (_Curve) {
+var CurvePath = /*#__PURE__*/function (_Curve) {
   _inherits(CurvePath, _Curve);
+
+  var _super = _createSuper(CurvePath);
 
   function CurvePath() {
     var _this;
 
     _classCallCheck(this, CurvePath);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CurvePath).call(this));
+    _this = _super.call(this);
     _this.type = 'CurvePath';
     _this.curves = [];
     _this.autoClose = false; // Automatically closes the path
@@ -20531,17 +20457,17 @@ function (_Curve) {
  * Creates free form 2d path using series of points, lines or curves.
  **/
 
-var Path =
-/*#__PURE__*/
-function (_CurvePath) {
+var Path = /*#__PURE__*/function (_CurvePath) {
   _inherits(Path, _CurvePath);
+
+  var _super = _createSuper(Path);
 
   function Path(points) {
     var _this;
 
     _classCallCheck(this, Path);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Path).call(this));
+    _this = _super.call(this);
     _this.type = 'Path';
     _this.currentPoint = new Vector2();
 
@@ -20657,17 +20583,17 @@ function (_CurvePath) {
 // STEP 3a - Extract points from each shape, turn to vertices
 // STEP 3b - Triangulate each shape, add faces.
 
-var Shape =
-/*#__PURE__*/
-function (_Path) {
+var Shape = /*#__PURE__*/function (_Path) {
   _inherits(Shape, _Path);
+
+  var _super = _createSuper(Shape);
 
   function Shape(points) {
     var _this;
 
     _classCallCheck(this, Shape);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Shape).call(this, points)); //this.uuid = _Math.generateUUID();
+    _this = _super.call(this, points); //this.uuid = _Math.generateUUID();
 
     _this.type = 'Shape';
     _this.holes = [];
@@ -20713,9 +20639,7 @@ function (_Path) {
   return Shape;
 }(Path);
 
-var ShapePath =
-/*#__PURE__*/
-function () {
+var ShapePath = /*#__PURE__*/function () {
   function ShapePath() {
     _classCallCheck(this, ShapePath);
 
@@ -20935,17 +20859,17 @@ function () {
   return ShapePath;
 }();
 
-var Framework =
-/*#__PURE__*/
-function (_Events) {
+var Framework = /*#__PURE__*/function (_Events) {
   _inherits(Framework, _Events);
+
+  var _super = _createSuper(Framework);
 
   function Framework() {
     var _this;
 
     _classCallCheck(this, Framework);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Framework).call(this));
+    _this = _super.call(this);
     _this.layers = [];
     _this.isUpdate = true;
     _this.currTick = new Date().getTime();
@@ -20999,6 +20923,8 @@ function (_Events) {
         this.layers.forEach(function (view, index) {
           //reset时候又可能暂时渲染上下午丢失
           if (!_this2.renderer) return;
+
+          _this2.renderer.setClearAlpha(0);
 
           if (_this2.layers.length > 1 && index !== _this2.layers.length - 1) {
             _this2.renderer.autoClear = true;
@@ -21110,7 +21036,7 @@ function (_Events) {
   return Framework;
 }(Events);
 
-var version$1 = "0.0.32";
+var version$1 = "0.0.34";
 
 //viewName 
 var MainView = 'main_view';
@@ -21126,9 +21052,9 @@ var DUCK = {
   TOPLEFT: 'topLeft',
   TOPRIGHT: 'topRight',
   BOTTOMLEFT: 'bottomLeft',
-  BOTTOMRIGHT: 'bottomRight' //立方体六个面的名称
+  BOTTOMRIGHT: 'bottomRight'
+}; //立方体六个面的名称
 
-};
 var FaceNames = {
   LEFT: 'left',
   RIGHT: 'right',
@@ -21138,9 +21064,7 @@ var FaceNames = {
   BACK: 'back'
 };
 
-var View =
-/*#__PURE__*/
-function () {
+var View = /*#__PURE__*/function () {
   function View(_frameWork, viewName) {
     _classCallCheck(this, View);
 
@@ -21322,9 +21246,7 @@ var _computeCanvasContent = function () {
   return context;
 }();
 
-var RenderFont =
-/*#__PURE__*/
-function () {
+var RenderFont = /*#__PURE__*/function () {
   function RenderFont() {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$scale = _ref.scale,
@@ -21909,9 +21831,9 @@ var primitive = {
         text: text,
         size: realSize,
         maxWidth: labelInfos.maxWidth,
-        maxHeight: labelInfos.maxHeight //默认不进行裁剪
+        maxHeight: labelInfos.maxHeight
+      }; //默认不进行裁剪
 
-      };
       sprite.frustumCulled = false;
       labels.push(sprite);
     });
@@ -22015,9 +21937,7 @@ var primitive = {
   }
 };
 
-var Application =
-/*#__PURE__*/
-function () {
+var Application = /*#__PURE__*/function () {
   function Application(viewWidth, viewHeight) {
     _classCallCheck(this, Application);
 
@@ -22106,17 +22026,17 @@ Object.assign(Application.prototype, primitive);
 
 //惯性坐标系
 
-var InertialSystem =
-/*#__PURE__*/
-function (_Events) {
+var InertialSystem = /*#__PURE__*/function (_Events) {
   _inherits(InertialSystem, _Events);
+
+  var _super = _createSuper(InertialSystem);
 
   function InertialSystem(root) {
     var _this;
 
     _classCallCheck(this, InertialSystem);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(InertialSystem).call(this));
+    _this = _super.call(this);
     _this._root = root;
     _this.coord = {}; //坐标原点
 
@@ -22524,17 +22444,17 @@ var _screenToWorld = function () {
   };
 }();
 
-var Component =
-/*#__PURE__*/
-function (_Events) {
+var Component = /*#__PURE__*/function (_Events) {
   _inherits(Component, _Events);
+
+  var _super = _createSuper(Component);
 
   function Component(_coordSystem, root) {
     var _this;
 
     _classCallCheck(this, Component);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Component).call(this));
+    _this = _super.call(this);
     _this._coordSystem = _coordSystem;
     _this._root = _coordSystem ? _coordSystem._root : root; // //每一个组件存放在一个Group中
     // this.group = new Group();
@@ -22602,17 +22522,17 @@ function (_Events) {
   return Component;
 }(Events);
 
-var AxisLine =
-/*#__PURE__*/
-function (_Component) {
+var AxisLine = /*#__PURE__*/function (_Component) {
   _inherits(AxisLine, _Component);
+
+  var _super = _createSuper(AxisLine);
 
   function AxisLine(_coordSystem, opts) {
     var _this;
 
     _classCallCheck(this, AxisLine);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(AxisLine).call(this, _coordSystem));
+    _this = _super.call(this, _coordSystem);
     _this.name = "AxisLine"; //轴的起点
 
     _this.origin = new Vector3(0, 0, 0); //轴的方向
@@ -22715,17 +22635,17 @@ function (_Component) {
   return AxisLine;
 }(Component);
 
-var TickLines =
-/*#__PURE__*/
-function (_Component) {
+var TickLines = /*#__PURE__*/function (_Component) {
   _inherits(TickLines, _Component);
+
+  var _super = _createSuper(TickLines);
 
   function TickLines(_coordSystem, opts) {
     var _this;
 
     _classCallCheck(this, TickLines);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TickLines).call(this, _coordSystem));
+    _this = _super.call(this, _coordSystem);
     _this.name = 'TickLines'; //点的起点位置集合
 
     _this.origins = []; //刻度线的绘制方向
@@ -22865,17 +22785,17 @@ function (_Component) {
   return TickLines;
 }(Component);
 
-var TickTexts =
-/*#__PURE__*/
-function (_Component) {
+var TickTexts = /*#__PURE__*/function (_Component) {
   _inherits(TickTexts, _Component);
+
+  var _super = _createSuper(TickTexts);
 
   function TickTexts(_coordSystem, opts) {
     var _this;
 
     _classCallCheck(this, TickTexts);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TickTexts).call(this, _coordSystem));
+    _this = _super.call(this, _coordSystem);
     _this.name = 'TickTexts'; //起点位置集合
 
     _this.origins = [];
@@ -22990,9 +22910,7 @@ function (_Component) {
             label.position.sub(_dir.multiplyScalar(label.userData.size[0] * 0.5));
           }
 
-          if (_this2.textAlign === 'center') ; //默认横向居中
-          // label.position.sub(this.dir.clone().multiplyScalar(-label.userData.size[1] * 0.5))
-          //根据文字高度，调整位置
+          if (_this2.textAlign === 'center') ; //根据文字高度，调整位置
 
 
           if (_this2.dir.equals(new Vector3(0, 1, 0)) || _this2.dir.equals(new Vector3(0, -1, 0))) {
@@ -23290,17 +23208,17 @@ function getHSVShemes(hex) {
   return result;
 }
 
-var YAxis =
-/*#__PURE__*/
-function (_Component) {
+var YAxis = /*#__PURE__*/function (_Component) {
   _inherits(YAxis, _Component);
+
+  var _super = _createSuper(YAxis);
 
   function YAxis(_cartesionUI, opt) {
     var _this;
 
     _classCallCheck(this, YAxis);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(YAxis).call(this, _cartesionUI._coordSystem));
+    _this = _super.call(this, _cartesionUI._coordSystem);
     _this.name = 'YAxis';
     _this._opt = opt;
     _this._coord = _this._coordSystem.coord || {};
@@ -23358,9 +23276,9 @@ function (_Component) {
       offset: {
         x: 0,
         y: 0,
-        z: 40 //和刻度线的距离
+        z: 40
+      } //和刻度线的距离
 
-      }
     };
     _this.origin = new Vector3();
     _this.boundboxSize = new Vector3();
@@ -23653,17 +23571,17 @@ function (_Component) {
   return YAxis;
 }(Component);
 
-var XAxis =
-/*#__PURE__*/
-function (_Component) {
+var XAxis = /*#__PURE__*/function (_Component) {
   _inherits(XAxis, _Component);
+
+  var _super = _createSuper(XAxis);
 
   function XAxis(_cartesionUI) {
     var _this;
 
     _classCallCheck(this, XAxis);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(XAxis).call(this, _cartesionUI._coordSystem));
+    _this = _super.call(this, _cartesionUI._coordSystem);
     _this.name = 'XAxis';
     var opt = _this._opt = _this._coordSystem.coord.xAxis;
     _this._cartesionUI = _cartesionUI;
@@ -23970,24 +23888,24 @@ function (_Component) {
     }
   }, {
     key: "_getName",
-    value: function _getName() {} // if ( this.title.content ) {
-    //     if( !this._title ){
-    //         this._title = new Canvax.Display.Text(this.title.content, {
-    //             context: {
-    //                 fontSize: this.title.fontSize,
-    //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
-    //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
-    //                 fillStyle: this.title.fontColor,
-    //                 strokeStyle: this.title.strokeStyle,
-    //                 lineWidth : this.title.lineWidth,
-    //                 rotation: this.isH ? -180 : 0
-    //             }
-    //         });
-    //     } else {
-    //         this._title.resetText( this.title.content );
-    //     }
-    // }
-    // evade() {
+    value: function _getName() {// if ( this.title.content ) {
+      //     if( !this._title ){
+      //         this._title = new Canvax.Display.Text(this.title.content, {
+      //             context: {
+      //                 fontSize: this.title.fontSize,
+      //                 textAlign: this.title.textAlign,  //"center",//this.isH ? "center" : "left",
+      //                 textBaseline: this.title.textBaseline,//"middle", //this.isH ? "top" : "middle",
+      //                 fillStyle: this.title.fontColor,
+      //                 strokeStyle: this.title.strokeStyle,
+      //                 lineWidth : this.title.lineWidth,
+      //                 rotation: this.isH ? -180 : 0
+      //             }
+      //         });
+      //     } else {
+      //         this._title.resetText( this.title.content );
+      //     }
+      // }
+    } // evade() {
     //     //label个数
     //     let num = this.axisAttribute.dataSectionLayout.length;
     //     //轴长
@@ -24042,17 +23960,17 @@ function (_Component) {
   return XAxis;
 }(Component);
 
-var ZAxis =
-/*#__PURE__*/
-function (_Component) {
+var ZAxis = /*#__PURE__*/function (_Component) {
   _inherits(ZAxis, _Component);
+
+  var _super = _createSuper(ZAxis);
 
   function ZAxis(_cartesionUI) {
     var _this;
 
     _classCallCheck(this, ZAxis);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ZAxis).call(this, _cartesionUI._coordSystem));
+    _this = _super.call(this, _cartesionUI._coordSystem);
     _this.name = 'ZAxis';
     var opt = _this._opt = _this._coordSystem.coord.zAxis;
     _this._cartesionUI = _cartesionUI;
@@ -24496,17 +24414,17 @@ function (_Component) {
   return ZAxis;
 }(Component);
 
-var Grid =
-/*#__PURE__*/
-function (_Component) {
+var Grid = /*#__PURE__*/function (_Component) {
   _inherits(Grid, _Component);
+
+  var _super = _createSuper(Grid);
 
   function Grid(_cartesionUI) {
     var _this;
 
     _classCallCheck(this, Grid);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Grid).call(this, _cartesionUI._coordSystem));
+    _this = _super.call(this, _cartesionUI._coordSystem);
     _this.name = "Grid";
     var opt = _this._opt = _this._coordSystem.coord.grid;
     _this.coord = _this._coordSystem.coord;
@@ -24735,17 +24653,17 @@ function (_Component) {
   return Grid;
 }(Component);
 
-var Cartesian3DUI =
-/*#__PURE__*/
-function (_Component) {
+var Cartesian3DUI = /*#__PURE__*/function (_Component) {
   _inherits(Cartesian3DUI, _Component);
+
+  var _super = _createSuper(Cartesian3DUI);
 
   function Cartesian3DUI(_coordSystem) {
     var _this;
 
     _classCallCheck(this, Cartesian3DUI);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cartesian3DUI).call(this, _coordSystem)); //坐标轴实例
+    _this = _super.call(this, _coordSystem); //坐标轴实例
 
     _this._xAxis = null;
     _this._yAxis = [];
@@ -24954,17 +24872,17 @@ function (_Component) {
   return Cartesian3DUI;
 }(Component);
 
-var AxisAttribute =
-/*#__PURE__*/
-function (_Axis) {
+var AxisAttribute = /*#__PURE__*/function (_Axis) {
   _inherits(AxisAttribute, _Axis);
+
+  var _super = _createSuper(AxisAttribute);
 
   function AxisAttribute(opt, dataOrg) {
     var _this;
 
     _classCallCheck(this, AxisAttribute);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(AxisAttribute).call(this, opt, dataOrg));
+    _this = _super.call(this, opt, dataOrg);
     _this.field = opt.field || null;
     _this.exclude = opt.exclude || ['', undefined, null];
 
@@ -25171,17 +25089,17 @@ AxisAttribute.resetDataSection = function (_axisAttributeDs) {
 
 var DEFAULT_AXIS = 'default_axis_for_Y';
 
-var Cartesian3D =
-/*#__PURE__*/
-function (_InertialSystem) {
+var Cartesian3D = /*#__PURE__*/function (_InertialSystem) {
   _inherits(Cartesian3D, _InertialSystem);
+
+  var _super = _createSuper(Cartesian3D);
 
   function Cartesian3D(root) {
     var _this;
 
     _classCallCheck(this, Cartesian3D);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cartesian3D).call(this, root));
+    _this = _super.call(this, root);
     _this.type = "Cartesian3D";
     _this.offset = new Vector3(0, 0, 0);
     _this._coordUI = null;
@@ -25782,17 +25700,17 @@ var STATE = {
   TOUCH_DOLLY_PAN: 4
 };
 
-var OrbitControls =
-/*#__PURE__*/
-function (_Events) {
+var OrbitControls = /*#__PURE__*/function (_Events) {
   _inherits(OrbitControls, _Events);
+
+  var _super = _createSuper(OrbitControls);
 
   function OrbitControls(object, domElement) {
     var _this;
 
     _classCallCheck(this, OrbitControls);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(OrbitControls).call(this));
+    _this = _super.call(this);
 
     var scope = _assertThisInitialized(_this);
 
@@ -26317,8 +26235,8 @@ function handleTouchMoveDollyPan(event) {
   scope.update();
 }
 
-function handleTouchEnd(event) {} //console.log( 'handleTouchEnd' );
-//
+function handleTouchEnd(event) {//console.log( 'handleTouchEnd' );
+} //
 // event handlers - FSM: listen for events and reset state
 //
 
@@ -26477,17 +26395,17 @@ function onContextMenu(event) {
   event.preventDefault();
 }
 
-var Interaction =
-/*#__PURE__*/
-function (_Events) {
+var Interaction = /*#__PURE__*/function (_Events) {
   _inherits(Interaction, _Events);
+
+  var _super = _createSuper(Interaction);
 
   function Interaction(domElement) {
     var _this;
 
     _classCallCheck(this, Interaction);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Interaction).call(this));
+    _this = _super.call(this);
 
     var scope = _assertThisInitialized(_this);
 
@@ -26703,17 +26621,17 @@ var __tipShowEvent = null,
     __redraw = null;
 var _cid = 0;
 
-var Chart3d =
-/*#__PURE__*/
-function (_Events) {
+var Chart3d = /*#__PURE__*/function (_Events) {
   _inherits(Chart3d, _Events);
+
+  var _super = _createSuper(Chart3d);
 
   function Chart3d(node, data, opt, componentModules) {
     var _this;
 
     _classCallCheck(this, Chart3d);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Chart3d).call(this));
+    _this = _super.call(this);
     console.log('Chart3D ', VERSION);
     _this.domSelector = node;
     _this.opt = opt;
@@ -27271,17 +27189,17 @@ function onRenderAfter() {
 
 global.registerComponent(Chart3d, 'chart', 3);
 
-var Box =
-/*#__PURE__*/
-function (_Cartesian3D) {
+var Box = /*#__PURE__*/function (_Cartesian3D) {
   _inherits(Box, _Cartesian3D);
 
+  var _super = _createSuper(Box);
+
   function Box(root) {
-    var _this;
+    var _thisSuper, _this;
 
     _classCallCheck(this, Box);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, root));
+    _this = _super.call(this, root);
     _this.DefaultControls = {
       autoRotate: false,
       //默认不自动旋转
@@ -27314,7 +27232,7 @@ function (_Cartesian3D) {
     };
     root.init(_this.DefaultControls);
 
-    _get(_getPrototypeOf(Box.prototype), "init", _assertThisInitialized(_this)).call(_assertThisInitialized(_this));
+    _get((_thisSuper = _assertThisInitialized(_this), _getPrototypeOf(Box.prototype)), "init", _thisSuper).call(_thisSuper);
 
     return _this;
   }
@@ -27324,17 +27242,17 @@ function (_Cartesian3D) {
 
 global.registerComponent(Box, 'coord', 'box', 3);
 
-var PolarAttribute =
-/*#__PURE__*/
-function (_Polar) {
+var PolarAttribute = /*#__PURE__*/function (_Polar) {
   _inherits(PolarAttribute, _Polar);
+
+  var _super = _createSuper(PolarAttribute);
 
   function PolarAttribute(opt, dataFrame$$1) {
     var _this;
 
     _classCallCheck(this, PolarAttribute);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PolarAttribute).call(this, opt, dataFrame$$1));
+    _this = _super.call(this, opt, dataFrame$$1);
     _this.field = opt.field || null;
     _this.height = 0;
     return _this;
@@ -27402,17 +27320,17 @@ function (_Polar) {
  * y=y
  */
 
-var Cylindrical =
-/*#__PURE__*/
-function (_InertialSystem) {
+var Cylindrical = /*#__PURE__*/function (_InertialSystem) {
   _inherits(Cylindrical, _InertialSystem);
+
+  var _super = _createSuper(Cylindrical);
 
   function Cylindrical(root) {
     var _this;
 
     _classCallCheck(this, Cylindrical);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cylindrical).call(this, root)); //这里暂时没有使用到坐标系的相关操作,预留
+    _this = _super.call(this, root); //这里暂时没有使用到坐标系的相关操作,预留
     //this.height = 0;
 
     _this.r = 0;
@@ -27596,17 +27514,17 @@ function (_InertialSystem) {
   return Cylindrical;
 }(InertialSystem);
 
-var Polar3D =
-/*#__PURE__*/
-function (_Cylindrical) {
+var Polar3D = /*#__PURE__*/function (_Cylindrical) {
   _inherits(Polar3D, _Cylindrical);
 
+  var _super = _createSuper(Polar3D);
+
   function Polar3D(root) {
-    var _this;
+    var _thisSuper, _this;
 
     _classCallCheck(this, Polar3D);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Polar3D).call(this, root));
+    _this = _super.call(this, root);
     _this.DefaultControls = {
       autoRotate: false,
       //默认不自动旋转
@@ -27635,7 +27553,7 @@ function (_Cylindrical) {
     };
     root.init(_this.DefaultControls);
 
-    _get(_getPrototypeOf(Polar3D.prototype), "init", _assertThisInitialized(_this)).call(_assertThisInitialized(_this));
+    _get((_thisSuper = _assertThisInitialized(_this), _getPrototypeOf(Polar3D.prototype)), "init", _thisSuper).call(_thisSuper);
 
     return _this;
   }
@@ -27645,17 +27563,17 @@ function (_Cylindrical) {
 
 global.registerComponent(Polar3D, 'coord', 'polar3d', 3);
 
-var Axis =
-/*#__PURE__*/
-function (_Component) {
+var Axis = /*#__PURE__*/function (_Component) {
   _inherits(Axis, _Component);
+
+  var _super = _createSuper(Axis);
 
   function Axis(_cubeUI, opt) {
     var _this;
 
     _classCallCheck(this, Axis);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Axis).call(this, _cubeUI._coordSystem));
+    _this = _super.call(this, _cubeUI._coordSystem);
     _this.name = 'Axis';
     _this._cubeUI = _cubeUI;
     _this.enabled = true;
@@ -27860,17 +27778,17 @@ function (_Component) {
   return Axis;
 }(Component);
 
-var CubeUI =
-/*#__PURE__*/
-function (_Component) {
+var CubeUI = /*#__PURE__*/function (_Component) {
   _inherits(CubeUI, _Component);
+
+  var _super = _createSuper(CubeUI);
 
   function CubeUI(_coordSystem) {
     var _this;
 
     _classCallCheck(this, CubeUI);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(CubeUI).call(this, _coordSystem));
+    _this = _super.call(this, _coordSystem);
     _this.name = 'CubeUI';
     _this.faceAxises = {};
 
@@ -28224,17 +28142,17 @@ function (_Component) {
   return CubeUI;
 }(Component);
 
-var Cube =
-/*#__PURE__*/
-function (_InertialSystem) {
+var Cube = /*#__PURE__*/function (_InertialSystem) {
   _inherits(Cube, _InertialSystem);
+
+  var _super = _createSuper(Cube);
 
   function Cube(root) {
     var _this;
 
     _classCallCheck(this, Cube);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Cube).call(this, root)); // let ratio = root.width / root.height;
+    _this = _super.call(this, root); // let ratio = root.width / root.height;
     // let _frustumSize = 800;
 
     _this.availableGraph = {
@@ -28269,10 +28187,10 @@ function (_InertialSystem) {
       beta: 5,
       //绕Y轴旋转
       gamma: 0 //绕Z轴旋转
-      //默认坐标系原点偏移
-      //默认Y轴文字最大预留160,X轴文字最大100
 
-    };
+    }; //默认坐标系原点偏移
+    //默认Y轴文字最大预留160,X轴文字最大100
+
     _this.offset = new Vector3(Math.min(160, _this.width * 0.1), Math.min(100, _this.height * 0.1), 0); //this.offset.set(0,0,0);
     //构建的数据集
 
@@ -28707,17 +28625,17 @@ function (_InertialSystem) {
 
 global.registerComponent(Cube, 'coord', 'cube', 3);
 
-var GraphObject =
-/*#__PURE__*/
-function (_Component) {
+var GraphObject = /*#__PURE__*/function (_Component) {
   _inherits(GraphObject, _Component);
+
+  var _super = _createSuper(GraphObject);
 
   function GraphObject(chart3d) {
     var _this;
 
     _classCallCheck(this, GraphObject);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(GraphObject).call(this, chart3d.currCoord)); //todo 每个图表初始化前最基本的属性放在这里
+    _this = _super.call(this, chart3d.currCoord); //todo 每个图表初始化前最基本的属性放在这里
 
     _this.enabledField = [];
     _this.drawData = [];
@@ -28928,9 +28846,7 @@ function (_Component) {
   return GraphObject;
 }(Component);
 
-var NodeData =
-/*#__PURE__*/
-function () {
+var NodeData = /*#__PURE__*/function () {
   function NodeData() {
     var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
         _ref$type = _ref.type,
@@ -29017,17 +28933,17 @@ function () {
   return NodeData;
 }();
 
-var Bar =
-/*#__PURE__*/
-function (_GraphObject) {
+var Bar = /*#__PURE__*/function (_GraphObject) {
   _inherits(Bar, _GraphObject);
+
+  var _super = _createSuper(Bar);
 
   function Bar(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Bar);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Bar).call(this, chart3d));
+    _this = _super.call(this, chart3d);
     _this.name = 'Bar';
     _this.type = "bar";
     _this._type = "bar3d";
@@ -29331,17 +29247,17 @@ global.registerComponent(Bar, 'graphs', 'bar', 3);
 
 var __lastPosition = null;
 
-var Line$1 =
-/*#__PURE__*/
-function (_GraphObject) {
+var Line$1 = /*#__PURE__*/function (_GraphObject) {
   _inherits(Line$$1, _GraphObject);
+
+  var _super = _createSuper(Line$$1);
 
   function Line$$1(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Line$$1);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Line$$1).call(this, chart3d));
+    _this = _super.call(this, chart3d);
     _this.name = 'Line';
     _this.type = "line";
     _this._type = "line3d";
@@ -29639,17 +29555,17 @@ global.registerComponent(Line$1, 'graphs', 'line', 3);
 
 var __lastPosition$1 = null;
 
-var Area =
-/*#__PURE__*/
-function (_GraphObject) {
+var Area = /*#__PURE__*/function (_GraphObject) {
   _inherits(Area, _GraphObject);
+
+  var _super = _createSuper(Area);
 
   function Area(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Area);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Area).call(this, chart3d));
+    _this = _super.call(this, chart3d);
     _this.name = "Area";
     _this.type = "area";
     _this._type = "area3d";
@@ -29886,17 +29802,17 @@ function (_GraphObject) {
 Area._area_prefix = 'polygon_area_';
 global.registerComponent(Area, 'graphs', 'area', 3);
 
-var Pie =
-/*#__PURE__*/
-function (_Component) {
+var Pie = /*#__PURE__*/function (_Component) {
   _inherits(Pie, _Component);
+
+  var _super = _createSuper(Pie);
 
   function Pie(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Pie);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Pie).call(this, chart3d.currCoord));
+    _this = _super.call(this, chart3d.currCoord);
     _this.name = 'Pie';
     _this.type = "pie3d";
     _this._type = "pie";
@@ -30476,17 +30392,17 @@ function (_Component) {
 Pie._pie_prefix = "pie_one_";
 global.registerComponent(Pie, 'graphs', 'pie', 3);
 
-var Heatmap =
-/*#__PURE__*/
-function (_GraphObject) {
+var Heatmap = /*#__PURE__*/function (_GraphObject) {
   _inherits(Heatmap, _GraphObject);
+
+  var _super = _createSuper(Heatmap);
 
   function Heatmap(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Heatmap);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Heatmap).call(this, chart3d));
+    _this = _super.call(this, chart3d);
     var _colorMap = {
       front: '#0A2A91',
       back: '#0A2A91',
@@ -30858,9 +30774,9 @@ function (_GraphObject) {
           text: text,
           size: realSize,
           maxWidth: labelInfos.maxWidth,
-          maxHeight: labelInfos.maxHeight //默认不进行裁剪
+          maxHeight: labelInfos.maxHeight
+        }; //默认不进行裁剪
 
-        };
         txtObj.frustumCulled = false;
         labels.push(txtObj);
       });
@@ -30937,17 +30853,17 @@ function (_GraphObject) {
 Heatmap._heatmap_plane_prefix = 'heatmap_one_plane_';
 global.registerComponent(Heatmap, 'graphs', 'heatmap', 3);
 
-var Tips =
-/*#__PURE__*/
-function (_Component) {
+var Tips = /*#__PURE__*/function (_Component) {
   _inherits(Tips, _Component);
+
+  var _super = _createSuper(Tips);
 
   function Tips(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Tips);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Tips).call(this, chart3d.currCoord));
+    _this = _super.call(this, chart3d.currCoord);
     _this.name = 'Tips';
     _this.type = 'tips3d';
     _this.tipDomContainer = chart3d.domView;
@@ -31246,17 +31162,17 @@ function (_Component) {
 
 global.registerComponent(Tips, 'tips', 3);
 
-var MarkPoint =
-/*#__PURE__*/
-function (_Component) {
+var MarkPoint = /*#__PURE__*/function (_Component) {
   _inherits(MarkPoint, _Component);
+
+  var _super = _createSuper(MarkPoint);
 
   function MarkPoint(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, MarkPoint);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(MarkPoint).call(this, chart3d.currCoord));
+    _this = _super.call(this, chart3d.currCoord);
     _this.opt = opt;
     _this.name = 'MarkPoint';
     _this.type = "markline";
@@ -31496,17 +31412,17 @@ global.registerComponent(MarkPoint, 'markpoint', 3);
 
 var __legend_clickEvent = null;
 
-var Legend =
-/*#__PURE__*/
-function (_Component) {
+var Legend = /*#__PURE__*/function (_Component) {
   _inherits(Legend, _Component);
+
+  var _super = _createSuper(Legend);
 
   function Legend(chart3d, opt) {
     var _this;
 
     _classCallCheck(this, Legend);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Legend).call(this, chart3d.currCoord));
+    _this = _super.call(this, chart3d.currCoord);
     _this.name = "Legend";
     _this.type = "legend3d";
     _this.mode = 'checkbox'; //checkbox  radio
@@ -31838,17 +31754,17 @@ function (_Component) {
 Legend._legend_prefix = "legend_field_";
 global.registerComponent(Legend, 'legend', 3);
 
-var Theme =
-/*#__PURE__*/
-function (_Component) {
+var Theme = /*#__PURE__*/function (_Component) {
   _inherits(Theme, _Component);
+
+  var _super = _createSuper(Theme);
 
   function Theme(chart3d, theme) {
     var _this;
 
     _classCallCheck(this, Theme);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Theme).call(this, chart3d.currCoord, chart3d));
+    _this = _super.call(this, chart3d.currCoord, chart3d);
     _this.name = "Theme";
     _this.colors = theme || [];
     return _this;

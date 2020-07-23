@@ -1,5 +1,5 @@
 
-import { WebGLRenderer, Events, Group } from "mmgl/src/index"
+import { WebGLRenderer, Events, Group,Color } from "mmgl/src/index"
 
 class Framework extends Events {
     constructor() {
@@ -60,6 +60,7 @@ class Framework extends Events {
             this.layers.forEach((view, index) => {
                 //reset时候又可能暂时渲染上下午丢失
                 if(!this.renderer) return;
+                this.renderer.setClearAlpha(0)
                 if (this.layers.length > 1 && index !== this.layers.length - 1) {
                     this.renderer.autoClear = true
                 } else {
